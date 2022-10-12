@@ -1,0 +1,629 @@
+object LccThrottleAppForm: TLccThrottleAppForm
+  Left = 0
+  Top = 0
+  ActiveControl = TabItem1
+  Caption = 'Form56'
+  ClientHeight = 536
+  ClientWidth = 405
+  FormFactor.Width = 320
+  FormFactor.Height = 480
+  FormFactor.Devices = [Desktop]
+  OnCreate = FormCreate
+  OnCloseQuery = FormCloseQuery
+  OnDestroy = FormDestroy
+  OnKeyUp = FormKeyUp
+  OnShow = FormShow
+  DesignerMasterStyle = 0
+  object TabControl1: TTabControl
+    Touch.GestureManager = GestureManager1
+    OnGesture = GestureDone
+    Align = Client
+    FullSize = True
+    Size.Width = 405.000000000000000000
+    Size.Height = 536.000000000000000000
+    Size.PlatformDefault = False
+    TabHeight = 49.000000000000000000
+    TabIndex = 3
+    TabOrder = 0
+    TabPosition = PlatformDefault
+    Sizes = (
+      405s
+      487s
+      405s
+      487s
+      405s
+      487s
+      405s
+      487s)
+    object TabItem1: TTabItem
+      CustomIcon = <
+        item
+        end>
+      IsSelected = False
+      Size.Width = 100.000000000000000000
+      Size.Height = 49.000000000000000000
+      Size.PlatformDefault = False
+      StyleLookup = 'tabitemfavorites'
+      TabOrder = 0
+      Text = 'TabItem1'
+      ExplicitSize.cx = 101.000000000000000000
+      ExplicitSize.cy = 49.000000000000000000
+      object Layout1: TLayout
+        Align = Client
+        Size.Width = 405.000000000000000000
+        Size.Height = 439.000000000000000000
+        Size.PlatformDefault = False
+        TabOrder = 1
+        object MultiViewConsist: TMultiView
+          MasterButton = SpeedButtonTab2Hamburger
+          NavigationPaneOptions.CollapsedWidth = 190.000000000000000000
+          OnHidden = MultiViewConsistHidden
+          Size.Width = 250.000000000000000000
+          Size.Height = 50.000000000000000000
+          Size.PlatformDefault = False
+          TabOrder = 1
+          object TabControlTrainRoster: TTabControl
+            Align = Client
+            Size.Width = 190.000000000000000000
+            Size.Height = 439.000000000000000000
+            Size.PlatformDefault = False
+            TabIndex = 2
+            TabOrder = 0
+            TabPosition = PlatformDefault
+            OnChange = TabControlTrainRosterChange
+            Sizes = (
+              190s
+              413s
+              190s
+              413s
+              190s
+              413s)
+            object TabItemTrainRosterSelect: TTabItem
+              CustomIcon = <
+                item
+                end>
+              IsSelected = False
+              Size.Width = 54.000000000000000000
+              Size.Height = 26.000000000000000000
+              Size.PlatformDefault = False
+              StyleLookup = ''
+              TabOrder = 0
+              Text = 'Roster'
+              ExplicitSize.cx = 54.000000000000000000
+              ExplicitSize.cy = 26.000000000000000000
+              object ListViewTrainRoster: TListView
+                ItemAppearanceClassName = 'TListItemAppearance'
+                ItemEditAppearanceClassName = 'TListItemDeleteAppearance'
+                HeaderAppearanceClassName = 'TListHeaderObjects'
+                FooterAppearanceClassName = 'TListHeaderObjects'
+                Align = Client
+                Size.Width = 190.000000000000000000
+                Size.Height = 413.000000000000000000
+                Size.PlatformDefault = False
+                TabOrder = 0
+                ItemAppearanceObjects.ItemObjects.Accessory.AccessoryType = Detail
+                OnItemClickEx = ListViewTrainRosterItemClickEx
+                SearchVisible = True
+              end
+            end
+            object TabItemTrainRosterDetails: TTabItem
+              CustomIcon = <
+                item
+                end>
+              IsSelected = False
+              Size.Width = 56.000000000000000000
+              Size.Height = 26.000000000000000000
+              Size.PlatformDefault = False
+              StyleLookup = ''
+              TabOrder = 0
+              Text = 'Details'
+              ExplicitSize.cx = 56.000000000000000000
+              ExplicitSize.cy = 26.000000000000000000
+              object ListBoxTrainRosterItem: TListBox
+                Align = Client
+                Size.Width = 190.000000000000000000
+                Size.Height = 373.000000000000000000
+                Size.PlatformDefault = False
+                TabOrder = 0
+                DisableFocusEffect = True
+                DefaultItemStyles.ItemStyle = ''
+                DefaultItemStyles.GroupHeaderStyle = ''
+                DefaultItemStyles.GroupFooterStyle = ''
+                Viewport.Width = 186.000000000000000000
+                Viewport.Height = 369.000000000000000000
+                object ListBoxGroupHeaderTrainDetails: TListBoxGroupHeader
+                  StyleLookup = 'listboxplainheader'
+                  TabOrder = 0
+                  Text = 'Train Node Info'
+                end
+                object ListBoxItem1: TListBoxItem
+                  Position.Y = 19.000000000000000000
+                  Size.Width = 186.000000000000000000
+                  Size.Height = 36.000000000000000000
+                  Size.PlatformDefault = False
+                  StyleLookup = 'listboxitembottomdetail'
+                  TabOrder = 1
+                  Text = 'Manufacturer'
+                end
+                object ListBoxItem3: TListBoxItem
+                  Position.Y = 55.000000000000000000
+                  Size.Width = 186.000000000000000000
+                  Size.Height = 36.000000000000000000
+                  Size.PlatformDefault = False
+                  StyleLookup = 'listboxitembottomdetail'
+                  TabOrder = 2
+                  Text = 'Model Number :'
+                end
+                object ListBoxItem5: TListBoxItem
+                  Position.Y = 91.000000000000000000
+                  Size.Width = 186.000000000000000000
+                  Size.Height = 36.000000000000000000
+                  Size.PlatformDefault = False
+                  StyleLookup = 'listboxitembottomdetail'
+                  TabOrder = 3
+                  Text = 'Software Version :'
+                end
+                object ListBoxItem7: TListBoxItem
+                  Position.Y = 127.000000000000000000
+                  Size.Width = 186.000000000000000000
+                  Size.Height = 36.000000000000000000
+                  Size.PlatformDefault = False
+                  StyleLookup = 'listboxitembottomdetail'
+                  TabOrder = 4
+                  Text = 'Hardware Version :'
+                end
+                object ListBoxItem9: TListBoxItem
+                  ItemData.Accessory = aMore
+                  Position.Y = 163.000000000000000000
+                  Size.Width = 186.000000000000000000
+                  Size.Height = 36.000000000000000000
+                  Size.PlatformDefault = False
+                  StyleLookup = 'listboxitembottomdetail'
+                  TabOrder = 5
+                  Text = 'User Name :'
+                end
+                object ListBoxItem11: TListBoxItem
+                  ItemData.Accessory = aMore
+                  Position.Y = 199.000000000000000000
+                  Size.Width = 186.000000000000000000
+                  Size.Height = 36.000000000000000000
+                  Size.PlatformDefault = False
+                  StyleLookup = 'listboxitembottomdetail'
+                  TabOrder = 6
+                  Text = 'User Description :'
+                end
+              end
+              object ToolBarTrainRosterDetails: TToolBar
+                Size.Width = 190.000000000000000000
+                Size.Height = 40.000000000000000000
+                Size.PlatformDefault = False
+                TabOrder = 1
+                object LabelTrainRosterHeader: TLabel
+                  Align = Client
+                  Size.Width = 190.000000000000000000
+                  Size.Height = 40.000000000000000000
+                  Size.PlatformDefault = False
+                  TextSettings.HorzAlign = Center
+                  Text = 'Train Details'
+                  TabOrder = 0
+                  object SpeedButtonTrainRosterBack: TSpeedButton
+                    Align = Left
+                    Size.Width = 33.000000000000000000
+                    Size.Height = 40.000000000000000000
+                    Size.PlatformDefault = False
+                    StyleLookup = 'arrowlefttoolbutton'
+                    Text = 'SpeedButtonTrainRosterBack'
+                    OnClick = SpeedButtonTrainRosterBackClick
+                  end
+                end
+              end
+            end
+            object TabItemTrainRosterEdit: TTabItem
+              CustomIcon = <
+                item
+                end>
+              IsSelected = True
+              Size.Width = 41.000000000000000000
+              Size.Height = 26.000000000000000000
+              Size.PlatformDefault = False
+              StyleLookup = ''
+              TabOrder = 0
+              Text = 'Edit'
+              ExplicitSize.cx = 41.000000000000000000
+              ExplicitSize.cy = 26.000000000000000000
+              object ToolBarTrainRosterEdit: TToolBar
+                Size.Width = 190.000000000000000000
+                Size.Height = 40.000000000000000000
+                Size.PlatformDefault = False
+                TabOrder = 1
+                object LabelTrainRosterEdit: TLabel
+                  Align = Client
+                  Size.Width = 190.000000000000000000
+                  Size.Height = 40.000000000000000000
+                  Size.PlatformDefault = False
+                  TextSettings.HorzAlign = Center
+                  Text = 'Edit Train Info'
+                  TabOrder = 0
+                  object SpeedButtonTrainRosterEdit: TSpeedButton
+                    Align = Left
+                    Size.Width = 33.000000000000000000
+                    Size.Height = 40.000000000000000000
+                    Size.PlatformDefault = False
+                    StyleLookup = 'arrowlefttoolbutton'
+                    Text = 'SpeedButtonTrainRosterBack'
+                    OnClick = SpeedButtonTrainRosterBackClick
+                  end
+                end
+              end
+              object LayoutTrainRosterEdit: TLayout
+                Align = Client
+                Size.Width = 190.000000000000000000
+                Size.Height = 373.000000000000000000
+                Size.PlatformDefault = False
+                TabOrder = 2
+              end
+            end
+          end
+        end
+      end
+      object ToolBar3: TToolBar
+        Size.Width = 405.000000000000000000
+        Size.Height = 48.000000000000000000
+        Size.PlatformDefault = False
+        TabOrder = 0
+        object lblTitle3: TLabel
+          Align = Contents
+          Size.Width = 405.000000000000000000
+          Size.Height = 48.000000000000000000
+          Size.PlatformDefault = False
+          StyleLookup = 'toollabel'
+          TextSettings.HorzAlign = Center
+          Text = 'Title'
+        end
+        object SpeedButtonTab2Hamburger: TSpeedButton
+          Align = Left
+          Size.Width = 49.000000000000000000
+          Size.Height = 48.000000000000000000
+          Size.PlatformDefault = False
+          StyleLookup = 'detailstoolbutton'
+          Text = 'SpeedButtonTab2Hamburger'
+        end
+      end
+    end
+    object TabItem2: TTabItem
+      CustomIcon = <
+        item
+        end>
+      IsSelected = False
+      Size.Width = 100.000000000000000000
+      Size.Height = 49.000000000000000000
+      Size.PlatformDefault = False
+      StyleLookup = 'tabitemcontacts'
+      TabOrder = 0
+      Text = 'TabItem2'
+      ExplicitSize.cx = 102.000000000000000000
+      ExplicitSize.cy = 49.000000000000000000
+      object LayoutLog: TLayout
+        Align = Client
+        Size.Width = 405.000000000000000000
+        Size.Height = 487.000000000000000000
+        Size.PlatformDefault = False
+        TabOrder = 0
+        object HeaderLogHeader: THeader
+          Sides = [Top, Left, Bottom, Right]
+          Align = Top
+          Size.Width = 405.000000000000000000
+          Size.Height = 50.000000000000000000
+          Size.PlatformDefault = False
+          TabOrder = 0
+          object LabelLogHeader: TLabel
+            Align = Client
+            Text = 'Logging'
+            TabOrder = 1
+          end
+        end
+        object MemoLog: TMemo
+          Touch.InteractiveGestures = [Pan, LongTap, DoubleTap]
+          DataDetectorTypes = []
+          Align = Client
+          Size.Width = 405.000000000000000000
+          Size.Height = 437.000000000000000000
+          Size.PlatformDefault = False
+          TabOrder = 1
+          Viewport.Width = 401.000000000000000000
+          Viewport.Height = 433.000000000000000000
+        end
+      end
+    end
+    object TabItem3: TTabItem
+      CustomIcon = <
+        item
+        end>
+      IsSelected = False
+      Size.Width = 100.000000000000000000
+      Size.Height = 49.000000000000000000
+      Size.PlatformDefault = False
+      StyleLookup = 'tabitemsearch'
+      TabOrder = 0
+      Text = 'TabItem3'
+      ExplicitSize.cx = 101.000000000000000000
+      ExplicitSize.cy = 49.000000000000000000
+      object ToolBar4: TToolBar
+        Size.Width = 405.000000000000000000
+        Size.Height = 48.000000000000000000
+        Size.PlatformDefault = False
+        TabOrder = 0
+        object lblTitle4: TLabel
+          Align = Contents
+          Size.Width = 405.000000000000000000
+          Size.Height = 48.000000000000000000
+          Size.PlatformDefault = False
+          StyleLookup = 'toollabel'
+          TextSettings.HorzAlign = Center
+          Text = 'Title'
+        end
+      end
+    end
+    object TabItem4: TTabItem
+      CustomIcon = <
+        item
+        end>
+      IsSelected = True
+      Size.Width = 103.000000000000000000
+      Size.Height = 49.000000000000000000
+      Size.PlatformDefault = False
+      StyleLookup = 'tabitembookmarks'
+      TabOrder = 0
+      Text = 'Settings'
+      ExplicitSize.cx = 99.000000000000000000
+      ExplicitSize.cy = 49.000000000000000000
+      object ToolBar5: TToolBar
+        Size.Width = 405.000000000000000000
+        Size.Height = 48.000000000000000000
+        Size.PlatformDefault = False
+        TabOrder = 0
+        object LabelSettingsHeader: TLabel
+          Align = Contents
+          Size.Width = 405.000000000000000000
+          Size.Height = 48.000000000000000000
+          Size.PlatformDefault = False
+          StyleLookup = 'toollabel'
+          TextSettings.HorzAlign = Center
+          Text = 'Enter your Command Station and LCC Node settings here'
+        end
+      end
+      object LayoutSettingTab: TLayout
+        Align = Client
+        Size.Width = 405.000000000000000000
+        Size.Height = 439.000000000000000000
+        Size.PlatformDefault = False
+        TabOrder = 1
+        object ButtonResetConnection: TButton
+          Anchors = [akLeft, akTop, akRight]
+          Position.X = 8.000000000000000000
+          Position.Y = 185.000000000000000000
+          Size.Width = 389.000000000000000000
+          Size.Height = 22.000000000000000000
+          Size.PlatformDefault = False
+          TabOrder = 6
+          Text = 'Reset Connection'
+          OnClick = ButtonResetConnectionClick
+          object Layout3D1: TLayout3D
+            Height = 4.000000000000000000
+            Width = 5.000000000000000000
+          end
+        end
+        object CheckBoxRawTCP: TCheckBox
+          Anchors = [akLeft, akRight, akBottom]
+          Position.X = 8.000000000000000000
+          Position.Y = 407.000000000000000000
+          Size.Width = 326.000000000000000000
+          Size.Height = 19.000000000000000000
+          Size.PlatformDefault = False
+          TabOrder = 7
+          Text = 'Raw TCP (Experimental)'
+        end
+        object EditNodeID: TEdit
+          Touch.InteractiveGestures = [LongTap, DoubleTap]
+          Anchors = [akLeft, akTop, akRight]
+          TabOrder = 1
+          Text = '02.02.04.05.0A.0B'
+          Position.X = 208.000000000000000000
+          Position.Y = 112.000000000000000000
+          Size.Width = 189.000000000000000000
+          Size.Height = 32.000000000000000000
+          Size.PlatformDefault = False
+          OnKeyDown = EditNodeIDKeyDown
+          OnExit = EditNodeIDExit
+        end
+        object TextNodeID: TText
+          Position.X = 8.000000000000000000
+          Position.Y = 112.000000000000000000
+          Size.Width = 192.000000000000000000
+          Size.Height = 32.000000000000000000
+          Size.PlatformDefault = False
+          Text = 'Node ID'
+          TextSettings.HorzAlign = Leading
+        end
+        object TextPort: TText
+          Position.X = 8.000000000000000000
+          Position.Y = 48.000000000000000000
+          Size.Width = 192.000000000000000000
+          Size.Height = 32.000000000000000000
+          Size.PlatformDefault = False
+          Text = 'Command Station Port'
+          TextSettings.HorzAlign = Leading
+        end
+        object EditPort: TEdit
+          Touch.InteractiveGestures = [LongTap, DoubleTap]
+          Anchors = [akLeft, akTop, akRight]
+          TabOrder = 0
+          Text = '12021'
+          Position.X = 208.000000000000000000
+          Position.Y = 48.000000000000000000
+          Size.Width = 81.000000000000000000
+          Size.Height = 31.000000000000000000
+          Size.PlatformDefault = False
+          OnKeyDown = EditPortKeyDown
+          OnExit = EditPortExit
+        end
+        object EditIpAddress: TEdit
+          Touch.InteractiveGestures = [LongTap, DoubleTap]
+          Anchors = [akLeft, akTop, akRight]
+          TabOrder = 2
+          Text = '192.168.0.35'
+          Position.X = 208.000000000000000000
+          Position.Y = 8.000000000000000000
+          Size.Width = 189.000000000000000000
+          Size.Height = 32.000000000000000000
+          Size.PlatformDefault = False
+          OnKeyDown = EditIpAddressKeyDown
+          OnExit = EditIpAddressExit
+        end
+        object TextIpAddress: TText
+          Position.X = 8.000000000000000000
+          Position.Y = 8.000000000000000000
+          Size.Width = 192.000000000000000000
+          Size.Height = 32.000000000000000000
+          Size.PlatformDefault = False
+          Text = 'Command Station IP Address'
+          TextSettings.HorzAlign = Leading
+        end
+        object LabelSystemDocumentsPath: TLabel
+          Anchors = [akLeft, akTop, akRight]
+          HitTest = True
+          PopupMenu = PopupMenuLabelPath
+          Position.X = 8.000000000000000000
+          Position.Y = 332.000000000000000000
+          Size.Width = 389.000000000000000000
+          Size.Height = 17.000000000000000000
+          Size.PlatformDefault = False
+          Text = 'LabelSystemDocumentsPath'
+          TabOrder = 14
+        end
+        object TextConnectionStatus: TText
+          Anchors = [akLeft, akTop, akRight]
+          Position.X = 8.000000000000000000
+          Position.Y = 152.000000000000000000
+          Size.Width = 389.000000000000000000
+          Size.Height = 25.000000000000000000
+          Size.PlatformDefault = False
+        end
+        object ButtonDeleteSettingsFile: TButton
+          Anchors = [akLeft, akTop, akRight]
+          Position.X = 8.000000000000000000
+          Position.Y = 240.000000000000000000
+          Size.Width = 389.000000000000000000
+          Size.Height = 22.000000000000000000
+          Size.PlatformDefault = False
+          TabOrder = 16
+          Text = 'Delete Settings File'
+          OnClick = ButtonDeleteSettingsFileClick
+        end
+        object ButtonDeleteAppFolder: TButton
+          Anchors = [akLeft, akTop, akRight]
+          Position.X = 8.000000000000000000
+          Position.Y = 270.000000000000000000
+          Size.Width = 389.000000000000000000
+          Size.Height = 22.000000000000000000
+          Size.PlatformDefault = False
+          TabOrder = 15
+          Text = 'Delete Application Files Folder'
+          OnClick = ButtonDeleteAppFolderClick
+        end
+        object LabelSystemDocumentsPathHeader: TLabel
+          Anchors = [akLeft, akTop, akRight]
+          HitTest = True
+          PopupMenu = PopupMenuLabelPath
+          Position.X = 8.000000000000000000
+          Position.Y = 315.000000000000000000
+          Size.Width = 389.000000000000000000
+          Size.Height = 17.000000000000000000
+          Size.PlatformDefault = False
+          Text = 'System Documents Path'
+          TabOrder = 13
+        end
+        object LabelApplicationDocumentsHeader: TLabel
+          Anchors = [akLeft, akTop, akRight]
+          HitTest = True
+          PopupMenu = PopupMenuLabelPath
+          Position.X = 8.000000000000000000
+          Position.Y = 356.000000000000000000
+          Size.Width = 389.000000000000000000
+          Size.Height = 17.000000000000000000
+          Size.PlatformDefault = False
+          Text = 'Application Documents Path'
+          TabOrder = 11
+        end
+        object LabelApplicationDocumentsPath: TLabel
+          Anchors = [akLeft, akTop, akRight]
+          HitTest = True
+          PopupMenu = PopupMenuLabelPath
+          Position.X = 8.000000000000000000
+          Position.Y = 373.000000000000000000
+          Size.Width = 389.000000000000000000
+          Size.Height = 17.000000000000000000
+          Size.PlatformDefault = False
+          Text = 'LabelDocumentsPath'
+          TabOrder = 12
+        end
+        object TextDebugHeader: TText
+          Position.X = 8.000000000000000000
+          Position.Y = 217.000000000000000000
+          Size.Width = 389.000000000000000000
+          Size.Height = 15.000000000000000000
+          Size.PlatformDefault = False
+          Text = 'Useful stuff for debugging File Storage'
+        end
+      end
+    end
+  end
+  object TimerLogin: TTimer
+    Enabled = False
+    OnTimer = TimerLoginTimer
+    Left = 320
+    Top = 304
+  end
+  object PopupMenuLabelPath: TPopupMenu
+    Left = 320
+    Top = 361
+    object MenuItemSettingsLabelPath: TMenuItem
+      Text = 'Copy To Clipboard'
+      OnClick = MenuItemSettingsLabelPathClick
+    end
+  end
+  object GestureManager1: TGestureManager
+    Sensitivity = 80.000000000000000000
+    Left = 240
+    Top = 305
+    GestureData = <
+      item
+        Control = TabControl1
+        Collection = <
+          item
+            GestureID = sgiLeft
+          end
+          item
+            GestureID = sgiRight
+          end>
+      end>
+  end
+  object ActionList1: TActionList
+    Left = 224
+    Top = 360
+    object NextTabAction1: TNextTabAction
+      Category = 'Tab'
+    end
+    object PreviousTabAction1: TPreviousTabAction
+      Category = 'Tab'
+    end
+    object ActionTrainRosterTabNext: TNextTabAction
+      Category = 'Tab'
+      TabControl = TabControlTrainRoster
+    end
+    object ActionTrainRosterTabPrev: TPreviousTabAction
+      Category = 'Tab'
+      TabControl = TabControlTrainRoster
+    end
+  end
+end

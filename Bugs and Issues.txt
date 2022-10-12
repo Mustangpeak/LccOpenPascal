@@ -1,0 +1,6 @@
+
+10/10/2022 - [OPEN] When another node does not know another node goes off line and tries to access it we can go into an infinite loop trying to get the Alias mapping because I think I am trying to use all messages as indicators to get mapping done.  
+
+10/10/2022 - [OPEN] Converted the Client to Indy so it would work with 64 bit OSX (and probably 64 bit iOS).  Need to convert the Server, HTTP, WebSocket, ComPort.
+
+10/10/2022 - [OPEN] ResolveWindowsIP is broken with Indy.  Legacy function used Synapsis Sockets.
