@@ -71,6 +71,8 @@ type
     property ClientThread: TLccEthernetClientThread read FClientThread write FClientThread;
     function OpenConnection(ConnectionInfo: TLccHardwareConnectionInfo): TLccConnectionThread; override;
     procedure CloseConnection; override;
+    procedure SendMessage(ALccMessage: TLccMessage); override;
+    procedure ReceiveMessage; override;
   published
     { Published declarations }
   end;
@@ -88,6 +90,18 @@ begin
   Result := False;
   if Assigned(ClientThread) and Assigned(ClientThread.IdTCPClient) then
     Result := ClientThread.idTCPClient.Connected;
+end;
+
+procedure TLccEthernetClient.SendMessage(ALccMessage: TLccMessage);
+begin
+  inherited SendMessage(ALccMessage);
+  ClientThread.OutgoingGridConnect.Add(ALccMessage.ConvertToGridConnectStr(#10, False));
+end;
+
+procedure TLccEthernetClient.ReceiveMessage;
+begin
+  NodeManager.ReceiveMessage(ClientThread.WorkerMessage);
+  DoReceiveMessage(ClientThread.WorkerMessage);
 end;
 
 function TLccEthernetClient.OpenConnection(ConnectionInfo: TLccHardwareConnectionInfo): TLccConnectionThread;
@@ -216,7 +230,7 @@ begin
   end;
     // https://stackoverflow.com/questions/64593756/delphi-rio-indy-tcpserver-high-cpu-usage
     // There is another way to do this but with this simple program this is fine
-   IndySleep(500);
+   IndySleep(200);
 end;
 
 end.

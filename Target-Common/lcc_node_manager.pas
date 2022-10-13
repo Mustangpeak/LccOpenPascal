@@ -132,6 +132,7 @@ type
   TLccNodeManager = class(TComponent, INodeManagerCallbacks, INodeManager)
   private
     FGridConnect: Boolean;
+    FHardwarewareConnectionList: TInterfaceList;
     FOnAliasMappingChange: TOnAliasMappingChange;
     FOnLccNodeAliasIDChanged: TOnLccNodeMessage;
     FOnLccMessageReceive: TOnMessageEvent;
@@ -183,10 +184,6 @@ type
     FWorkerMessage: TLccMessage;
     function GetNode(Index: Integer): TLccNode;
   protected
-    HardwareConnectionLinkArray: array[0..MAX_HARDWARE_CONNECTIONS] of IHardwareConnectionManagerLink;
-    HardwareConnectionLinkCount: Integer;
-    HardwareConnectionConnectedCount: Integer;
-
     procedure DoAliasIDChanged(LccNode: TLccNode); virtual;               //*
     procedure DoCANAliasMapReset(LccNode: TLccNode); virtual;             //*
     procedure DoCDIRead(LccNode: TLccNode); virtual;
@@ -236,20 +233,20 @@ type
     procedure DoLccMessageSend(Sender: TObject; Message: TLccMessage); virtual;
     procedure DoLccMessageReceive(Message: TLccMessage); virtual;
 
-    procedure LccMessageSendCallback(Sender: TObject; LccMessage: TLccMessage); //  The Callback function for all Nodes use to reply to message they can automaticallly
-
-  public
+   public
     // Connection Manager
 
     property GridConnect: Boolean read FGridConnect;
     {$IFDEF DELPHI}
-    property Nodes: TOBjectList<TLccNode> read FNodes write FNodes;
+    property Nodes: TObjectList<TLccNode> read FNodes write FNodes;
     {$ELSE}
-    property Nodes: TOBjectList read FNodes write FNodes;
+    property Nodes: TObjectList read FNodes write FNodes;
     {$ENDIF}
     property Node[Index: Integer]: TLccNode read GetNode;
-
     property WorkerMessage: TLccMessage read FWorkerMessage write FWorkerMessage;
+    // May have many places a message needs to go such at TCP, WebSocket, UART, etc
+    // Automatically updated through the TLccHardwareConnectionManager when it is created/destroyed
+    property HardwarewareConnectionList: TInterfaceList read FHardwarewareConnectionList write FHardwarewareConnectionList;
 
     constructor Create(AnOwner: TComponent; GridConnectLink: Boolean); reintroduce; virtual;
     destructor Destroy; override;
@@ -264,14 +261,9 @@ type
 
     procedure LogoutAll;
 
-    function FindConnectedLink: IHardwareConnectionManagerLink;
-
     procedure ProcessMessage(LccMessage: TLccMessage);  // Takes incoming messages and dispatches them to the nodes
     procedure SendMessage(Sender: TObject; LccMessage: TLccMessage); // Outgoing messages are passed through this method, its address is given to Nodes and other objects that need to send messages
-    procedure ReceiveMessage(ConnectionManager: IHardwareConnectionManagerLink; ALccMessage: TLccMessage);  // Takes all incoming messages from all Connection object and dispatches them to the nodes and dispaches them to other Connections that are registered
-
-    procedure RegisterHardwareConnectionLink(AConnectionManagerLink: IHardwareConnectionManagerLink); // Any Connection that needs to send/receive OpenLCB message must register with the NodeManager here
-    procedure UnRegisterHardwareConnectionLink(AConnectionManagerLink: IHardwareConnectionManagerLink);
+    procedure ReceiveMessage(LccMessage: TLccMessage);  // Takes all incoming messages from all TLccHardwareConnectionManager objects and dispatches them to the nodes and dispaches them to other Connections that are registered
 
   published
 
@@ -652,12 +644,13 @@ begin
   FNodes.OwnsObjects := False;
 
   FGridConnect := GridConnectLink;
+  FHardwarewareConnectionList := TInterfaceList.Create;
   FWorkerMessage := TLccMessage.Create;
 end;
 
 function TLccNodeManager.AddNode(CdiXML: string; AutoLogin: Boolean): TLccNode;
 begin
-  Result := TLccNode.Create({$IFDEF FPC}@{$ENDIF}LccMessageSendCallback, Self, CdiXML, GridConnect);
+  Result := TLccNode.Create({$IFDEF FPC}@{$ENDIF}SendMessage, Self, CdiXML, GridConnect);
   Nodes.Add(Result);
   DoCreateLccNode(Result);
   if AutoLogin then
@@ -669,7 +662,7 @@ begin
   Result := nil;
   if Assigned(NodeClass) then
   begin
-    Result := NodeClass.Create({$IFDEF FPC}@{$ENDIF}LccMessageSendCallback, Self, CdiXML, GridConnect);
+    Result := NodeClass.Create({$IFDEF FPC}@{$ENDIF}SendMessage, Self, CdiXML, GridConnect);
     Nodes.Add(Result);
     DoCreateLccNode(Result);
     if AutoLogin then
@@ -683,6 +676,7 @@ begin
   Clear;
   FNodes.Free;
   FreeAndNil(FWorkerMessage);
+  FreeAndNil(FHardwarewareConnectionList);
   inherited Destroy;
 end;
 
@@ -723,20 +717,6 @@ begin
   end;
 end;
 
-function TLccNodeManager.FindConnectedLink: IHardwareConnectionManagerLink;
-var
-  i: Integer;
-begin
-  Result := nil;
-  i := 0;
-  while (i < HardwareConnectionConnectedCount) and not Assigned(Result) do
-  begin
-    if HardwareConnectionLinkArray[i].IsLccLink and HardwareConnectionLinkArray[i].GetConnected then
-      Result := HardwareConnectionLinkArray[i];
-    Inc(i);
-  end;
-end;
-
 procedure TLccNodeManager.ProcessMessage(LccMessage: TLccMessage);
 var
   i: Integer;
@@ -750,11 +730,10 @@ procedure TLccNodeManager.SendMessage(Sender: TObject; LccMessage: TLccMessage);
 var
   i: Integer;
 begin
-  // Send the message to the wire
+  // Send the message to the interfaces (Ethernet, WebSocket, UART, ect)
+  for i := 0 to HardwarewareConnectionList.Count -1 do
+    (HardwarewareConnectionList[i] as IHardwareConnectionManagerLink).SendMessage(LccMessage);
 
-  // Emumerate all Hardware Connections and pass on the message to send
-  for i := 0 to HardwareConnectionLinkCount - 1 do
-    HardwareConnectionLinkArray[i].SendMessage(LccMessage);
 
   // Send the messages to all the other virtual nodes.
   if Sender is TLccNode then
@@ -775,44 +754,12 @@ begin
   DoLccMessageSend(Sender, LccMessage);
 end;
 
-procedure TLccNodeManager.ReceiveMessage(ConnectionManager: IHardwareConnectionManagerLink; ALccMessage: TLccMessage);
-var
-  i: Integer;
+procedure TLccNodeManager.ReceiveMessage(LccMessage: TLccMessage);
 begin
-  // This message came in through a hardware connection so relay it out to the other connections
-  for i := 0 to HardwareConnectionLinkCount - 1 do
-  begin
-    if (HardwareConnectionLinkArray[i].IsLccLink) and (HardwareConnectionLinkArray[i] <> ConnectionManager)  then
-      HardwareConnectionLinkArray[i].SendMessage(ALccMessage);
-  end;
-
-  ProcessMessage(ALccMessage);
-end;
-
-procedure TLccNodeManager.LccMessageSendCallback(Sender: TObject; LccMessage: TLccMessage);
-begin
-  SendMessage(Sender, LccMessage);
-end;
-
-procedure TLccNodeManager.RegisterHardwareConnectionLink(AConnectionManagerLink: IHardwareConnectionManagerLink);
-begin
-  HardwareConnectionLinkArray[HardwareConnectionLinkCount] := AConnectionManagerLink;
-  Inc(HardwareConnectionLinkCount);
-end;
-
-procedure TLccNodeManager.UnRegisterHardwareConnectionLink(AConnectionManagerLink: IHardwareConnectionManagerLink);
-var
-  i, j: Integer;
-begin
-  for i := 0 to HardwareConnectionLinkCount - 1 do
-  begin  // Find the index of the link
-    if HardwareConnectionLinkArray[i] = AConnectionManagerLink then
-    begin  // remove it by sliding the rest of the links down in the array then decrementing the index
-      for j := i to HardwareConnectionLinkCount - 1 do
-        HardwareConnectionLinkArray[j] := HardwareConnectionLinkArray[j+1];
-      Dec(HardwareConnectionLinkCount);
-    end;
-  end;
+  // Do I need to dispatch to other HardwareConnection (like a Hub?)
+  // Should the node manager be the hub?  It may make more sense as there should only be
+  // one Node Manager per application.
+  ProcessMessage(LccMessage);
 end;
 
 end.

@@ -135,6 +135,11 @@ if TargetOS = &apos;linux&apos; then
         </Win32>
       </Options>
     </Linking>
+    <Other>
+      <Verbosity>
+        <ShowHints Value="False"/>
+      </Verbosity>
+    </Other>
   </CompilerOptions>
   <Debugging>
     <Exceptions Count="4">

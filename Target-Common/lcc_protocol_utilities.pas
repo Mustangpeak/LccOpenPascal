@@ -357,7 +357,7 @@ constructor TNodeProtocolBase.Create(ASendMessageFunc: TOnMessageEvent);
 begin
   inherited Create;
   {$IFDEF FPC}
-  FCreateTime := GetTickCount;
+  FCreateTime := GetTickCount64;
   {$ELSE}
   FCreateTime := TThread.GetTickCount;
   {$ENDIF}

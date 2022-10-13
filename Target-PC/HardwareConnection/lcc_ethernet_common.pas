@@ -265,8 +265,8 @@ procedure TLccBaseEthernetThread.TryReceiveGridConnect(RcvByte: Byte; AGridConne
 var
   GridConnectStrPtr: PGridConnectString;
 begin
- { GridConnectStrPtr := nil;
-  if AGridConnectHelper.GridConnect_DecodeMachine(RcvByte, GridConnectStrPtr) then
+  GridConnectStrPtr := nil;
+ (* if AGridConnectHelper.GridConnect_DecodeMachine(RcvByte, GridConnectStrPtr) then
   begin
     ConnectionInfo.MessageStr := GridConnectBufferToString(GridConnectStrPtr^);
     ConnectionInfo.LccMessage.LoadByGridConnectStr(ConnectionInfo.MessageStr);
@@ -284,7 +284,7 @@ begin
       imgcr_False,
       imgcr_UnknownError : begin end;
     end;
-  end;   }
+  end;   *)
 end;
 
 procedure TLccBaseEthernetThread.TryReceiveTCPProtocol(RcvByte: Byte);

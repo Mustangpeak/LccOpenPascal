@@ -534,10 +534,4 @@ object FormTrainCommander: TFormTrainCommander
       BE2FD27E9E17EF48FF71B4FFFE2F1C7989F2
     }
   end
-  object TimerIncomingMessagePump: TTimer
-    Interval = 1
-    OnTimer = TimerIncomingMessagePumpTimer
-    Left = 568
-    Top = 32
-  end
 end

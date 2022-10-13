@@ -58,7 +58,6 @@ type
     SplitterTrains: TSplitter;
     SplitterConnections: TSplitter;
     StatusBarMain: TStatusBar;
-    TimerIncomingMessagePump: TTimer;
     ToggleBoxServerForm: TToggleBox;
     TreeViewTrains: TTreeView;
     procedure ButtonActionObjectCountClick(Sender: TObject);
@@ -73,7 +72,6 @@ type
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure FormShow(Sender: TObject);
-    procedure TimerIncomingMessagePumpTimer(Sender: TObject);
     procedure ToggleBoxServerFormChange(Sender: TObject);
   private
  //   FComPort: TLccComPort;
@@ -814,58 +812,6 @@ begin
       MemoLog.Lines.EndUpdate;
     end;
   end;
-end;
-
-procedure TFormTrainCommander.TimerIncomingMessagePumpTimer(Sender: TObject);
-var
-  List: TStringList;
-  i: Integer;
-  GridConnectStr: string;
-  LocalMsg: TLccMessage;
-begin
-  LocalMsg := nil;
-  List := LccServer.IncomingGridConnect.LockList;
-  try
-    if List.Count > 0 then
-      LocalMsg := TLccMessage.Create;
-
-    for i := 0 to List.Count - 1 do
-    begin
-      GridConnectStr := List[i];
-      LocalMsg.LoadByGridConnectStr(GridConnectStr);
-      NodeManager.ProcessMessage(LocalMsg);
-    end;
-  finally
-
-    GridConnectStr := List.Text;
-
-    List.Clear;
-    LccServer.IncomingGridConnect.UnlockList;
-    FreeAndNil(LocalMsg);
-  end;
-
-  {
-  LocalMsg := nil;
-  List := LccWebsocketServer.IncomingGridConnect.LockList;
-  try
-    if List.Count > 0 then
-      LocalMsg := TLccMessage.Create;
-
-    for i := 0 to List.Count - 1 do
-    begin
-      GridConnectStr := List[i];
-      LocalMsg.LoadByGridConnectStr(GridConnectStr);
-      NodeManager.ProcessMessage(LocalMsg);
-    end;
-  finally
-
-    GridConnectStr := List.Text;
-
-    List.Clear;
-    LccWebsocketServer.IncomingGridConnect.UnlockList;
-    FreeAndNil(LocalMsg);
-  end;
-  }
 end;
 
 procedure TFormTrainCommander.ToggleBoxServerFormChange(Sender: TObject);

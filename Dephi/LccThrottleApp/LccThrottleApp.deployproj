@@ -6,7 +6,7 @@
     <PropertyGroup>
         <DeviceId Condition="'$(Platform)'=='Android'"/>
         <DeviceId Condition="'$(Platform)'=='Android64'"/>
-        <DeviceId Condition="'$(Platform)'=='iOSDevice64'"/>
+        <DeviceId Condition="'$(Platform)'=='iOSDevice64'">b3211ae9f3ed7e4ab9fa04988e9d265cceef4dcd</DeviceId>
         <DeviceId Condition="'$(Platform)'=='iOSSimARM64'">BF86AA35-56C3-4AB6-B6AD-6A699A8201C5</DeviceId>
     </PropertyGroup>
     <ItemGroup Condition="'$(Platform)'=='OSX64'">

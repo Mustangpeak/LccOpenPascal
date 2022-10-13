@@ -62,23 +62,27 @@ type
     destructor Destroy; override;
   end;
 
-  { TLccGridConnectContextsList }
+  { TLccContextsList }
 
-  TLccGridConnectContextsList = class(TThreadList)
+  TLccContextsList = class(TThreadList)
   private
     FOwner: TLccEthernetListener;
+    FWorkerMessage: TLccMessage;
     function GetCount: Integer;
     function GetGridConnectContext(Index: Integer): TLccServerContexts;
+  protected
+    property WorkerMessage: TLccMessage read FWorkerMessage write FWorkerMessage;
   public
     property Count: Integer read GetCount;
     property GridConnectContext[Index: Integer]: TLccServerContexts read GetGridConnectContext;
     property Owner: TLccEthernetListener read FOwner;
 
+    constructor Create;
     destructor Destroy; override;
-    function Add(AContext: TIdContext): TLccServerContexts;
-    function AddStringByContext(AContext: TIdContext; AString: string): Boolean;
+    function AddContext(AContext: TIdContext): TLccServerContexts;
+    function AddGridConnectStringByContext(AContext: TIdContext; AString: string; var OutMessage: TLccMessage): Boolean;
     procedure Clear;
-    function Remove(AContext: TIdContext): Boolean;
+    function RemoveContext(AContext: TIdContext): Boolean;
   end;
 
   { TLccMessageList }
@@ -103,19 +107,18 @@ type
 
   TLccEthernetListener = class(TLccBaseEthernetThread)
   private
-    FGridConnectContextList: TLccGridConnectContextsList;
+    FGridConnectContextList: TLccContextsList;
     FIdTCPServer: TIdTCPServer;
-    FMessageList: TLccMessageList;
-    FNextMessage: TLccMessage;
+    FLccMessageList: TLccMessageList;
+    FNextIncomingLccMessage: TLccMessage;
     function GetIsTerminated: Boolean;
   protected
     property Running: Boolean read FRunning write FRunning;
     property IsTerminated: Boolean read GetIsTerminated;
     property IdTCPServer: TIdTCPServer read FIdTCPServer write FIdTCPServer;
-    property GridConnectContextList: TLccGridConnectContextsList read FGridConnectContextList write FGridConnectContextList;
-    property MessageList: TLccMessageList read FMessageList write FMessageList;
-    property NextMessage: TLccMessage read FNextMessage;
-
+    property GridConnectContextList: TLccContextsList read FGridConnectContextList write FGridConnectContextList;
+    property LccMessageList: TLccMessageList read FLccMessageList write FLccMessageList;
+    property NextIncomingLccMessage: TLccMessage read FNextIncomingLccMessage;
 
     procedure IdTCPServerConnect(AContext: TIdContext);
     procedure IdTCPServerDisconnect(AContext: TIdContext);
@@ -123,8 +126,6 @@ type
     procedure IdTCPServerStatus(ASender: TObject; const AStatus: TIdStatus; const AStatusText: string);
 
     procedure Execute; override;
-    procedure SendMessage(AMessage: TLccMessage); override;
-    procedure ReceiveMessage; override;
   public
   end;
 
@@ -139,6 +140,8 @@ type
     function CreateListenerObject(AConnectionInfo: TLccEthernetConnectionInfo): TLccEthernetListener; virtual;
     function IsLccLink: Boolean; override;
     function GetConnected: Boolean; override;
+    procedure SendMessage(ALccMessage: TLccMessage); override;
+    procedure ReceiveMessage; override;
   public
     { Public declarations }
 
@@ -227,9 +230,9 @@ begin
   end;
 end;
 
-{ TLccGridConnectContextsList }
+{ TLccContextsList }
 
-function TLccGridConnectContextsList.GetGridConnectContext(Index: Integer): TLccServerContexts;
+function TLccContextsList.GetGridConnectContext(Index: Integer): TLccServerContexts;
 var
   List: TList;
 begin
@@ -241,7 +244,13 @@ begin
   end;
 end;
 
-function TLccGridConnectContextsList.GetCount: Integer;
+constructor TLccContextsList.Create;
+begin
+  inherited Create;
+  FWorkerMessage := TLccMessage.Create;
+end;
+
+function TLccContextsList.GetCount: Integer;
 var
   List: TList;
 begin
@@ -253,13 +262,14 @@ begin
   end;
 end;
 
-destructor TLccGridConnectContextsList.Destroy;
+destructor TLccContextsList.Destroy;
 begin
   Clear;
+  FreeAndNil(FWorkerMessage);
   inherited Destroy;
 end;
 
-function TLccGridConnectContextsList.Add(AContext: TIdContext): TLccServerContexts;
+function TLccContextsList.AddContext(AContext: TIdContext): TLccServerContexts;
 var
   List: TList;
   i: Integer;
@@ -288,7 +298,7 @@ begin
   end;
 end;
 
-procedure TLccGridConnectContextsList.Clear;
+procedure TLccContextsList.Clear;
 var
   List: TList;
   i: Integer;
@@ -303,7 +313,7 @@ begin
   end;
 end;
 
-function TLccGridConnectContextsList.Remove(AContext: TIdContext): Boolean;
+function TLccContextsList.RemoveContext(AContext: TIdContext): Boolean;
 var
   List: TList;
   i: Integer;
@@ -325,16 +335,16 @@ begin
   end;
 end;
 
-function TLccGridConnectContextsList.AddStringByContext(AContext: TIdContext; AString: string): Boolean;
+function TLccContextsList.AddGridConnectStringByContext(AContext: TIdContext; AString: string; var OutMessage: TLccMessage): Boolean;
 var
   List: TList;
   i, j: Integer;
   ServerContext: TLccServerContexts;
   GridConnectStrPtr: PGridConnectString;
   MessageStr: String;
-  Message: TLccMessage;
 begin
   Result := False;
+  OutMessage := nil;
   List := LockList;
   try
     for i := 0 to List.Count - 1 do
@@ -344,29 +354,32 @@ begin
       begin
         for j := 1 to Length(AString) do
         begin
+          // Take the incoming characters and try to make a valid gridconnect message
           GridConnectStrPtr := nil;
           if ServerContext.GridConnectHelper.GridConnect_DecodeMachine(Ord(AString[i]), GridConnectStrPtr) then
           begin
+            // Have a valid gridconnect message so create a message to store it
             MessageStr := GridConnectBufferToString(GridConnectStrPtr^);
-            Message := TLccMessage.Create;
-            Message.LoadByGridConnectStr(MessageStr);
+            WorkerMessage.LoadByGridConnectStr(MessageStr);
 
-            case ServerContext.GridConnectMessageAssembler.IncomingMessageGridConnect(Message) of
+            // Message may only be part of a larger string of messages to make up a full LCC message.
+            // This call will concatinate these partial Lcc message and return with a fully qualified
+            // Lcc message.
+            case ServerContext.GridConnectMessageAssembler.IncomingMessageGridConnect(WorkerMessage) of
               imgcr_True :
                 begin
+                  OutMessage := WorkerMessage.Clone;
                   Result := True;
-                  Owner.MessageList.Add(Message);
                 end;
               imgcr_ErrorToSend :
                 begin
-                  Message.Free;
          //         ConnectionInfo.LccMessage.CopyToTarget(WorkerMessage);
          //         Synchronize({$IFDEF FPC}@{$ENDIF}RequestErrorMessageSent);
                 end;
               imgcr_False,
               imgcr_UnknownError :
                 begin
-                  Message.Free;
+
                 end;
             end;
           end;
@@ -407,10 +420,11 @@ end;
 procedure TLccEthernetListener.Execute;
 var
   i: Integer;
+  ContextList: TList;
 begin
   FRunning := True;
-  FGridConnectContextList := TLccGridConnectContextsList.Create;
-  FMessageList := TLccMessageList.Create;
+  FGridConnectContextList := TLccContextsList.Create;
+  FLccMessageList := TLccMessageList.Create;
   IdTCPServer := TIdTCPServer.Create(nil);
   try
     try
@@ -449,9 +463,32 @@ begin
         HandleSendConnectionNotification(lcsConnected);
         while not Terminated do
         begin
-          FNextMessage := MessageList.Pop;
-          if Assigned(NextMessage) then
-            Synchronize({$IFDEF FPC}@{$ENDIF}ReceiveMessage);
+
+          // Push the received messages to the NodeManager
+          FNextIncomingLccMessage := LccMessageList.Pop;
+          if Assigned(NextIncomingLccMessage) then
+          begin
+            Synchronize({$IFDEF FPC}@{$ENDIF}Owner.ReceiveMessage);
+            FreeAndNil(FNextIncomingLccMessage);
+          end;
+
+          // Send out what need to be sent to the connections
+          ContextList := IdTCPServer.Contexts.LockList;
+          try
+            for i := 0 to IdTCPServer.Contexts.Count - 1 do
+            begin
+              if TIdContext( ContextList[i]).Connection.Connected then
+              begin
+                if (ConnectionInfo as TLccEthernetConnectionInfo).GridConnect then
+                  TryTransmitGridConnect(TIdContext( ContextList[i]).Connection.IOHandler)
+                else
+                  TryTransmitTCPProtocol(TIdContext( ContextList[i]).Connection.IOHandler);
+              end;
+            end;
+          finally
+            IdTCPServer.Contexts.UnlockList;
+          end;
+
           IndySleep(200);
         end
       end;
@@ -459,39 +496,23 @@ begin
       HandleSendConnectionNotification(lcsDisconnecting);
       try
         IdTCPServer.Active := False;
-        for i := 0 to 9 do
-          IndySleep(IdTCPServer.TerminateWaitTime div 10);   // Wait for the client threads to end and stop sending data to Execute
       finally
+        // Can I poll the contexts looking for Connected to be false?
+
         HandleSendConnectionNotification(lcsDisconnected);
         IdTCPServer.Free;
         GridConnectContextList.Free;
-        MessageList.Free;
+        LccMessageList.Free;
       end;
     end;
   except  // idTCPServer uses exceptions to throw faults, trap them so the users does not see them
-
+    on E: EIdTCPServerError do
+    begin
+      Synchronize({$IFDEF FPC}@{$ENDIF}ErrorMessage);
+    end;
   //  ConnectionInfo.ErrorCode := Socket.LastError;
   //  ConnectionInfo.MessageStr := Socket.LastErrorDesc;
-    Synchronize({$IFDEF FPC}@{$ENDIF}ErrorMessage);
   end;
-end;
-
-procedure TLccEthernetListener.SendMessage(AMessage: TLccMessage);
-var
-  i: Integer;
-begin
-  for i := 0 to 10 do
-  begin
-    sleep(10);
-  end;
-  AMessage := AMessage;
-  // must override abstract methods
-end;
-
-procedure TLccEthernetListener.ReceiveMessage;
-begin
-  Owner.NodeManager.ReceiveMessage(Owner as IHardwareConnectionManagerLink, NextMessage);
-  FreeAndNil(FNextMessage);
 end;
 
 function TLccEthernetListener.GetIsTerminated: Boolean;
@@ -501,7 +522,7 @@ end;
 
 procedure TLccEthernetListener.IdTCPServerConnect(AContext: TIdContext);
 begin
-  GridConnectContextList.Add(AContext);
+  GridConnectContextList.AddContext(AContext);
   (ConnectionInfo as TLccEthernetConnectionInfo).ClientIP := AContext.Binding.PeerIP;
   (ConnectionInfo as TLccEthernetConnectionInfo).ClientPort := AContext.Binding.PeerPort;
   HandleSendConnectionNotification(lcsClientConnected);
@@ -509,7 +530,7 @@ end;
 
 procedure TLccEthernetListener.IdTCPServerDisconnect(AContext: TIdContext);
 begin
-  GridConnectContextList.Remove(AContext);
+  GridConnectContextList.RemoveContext(AContext);
   (ConnectionInfo as TLccEthernetConnectionInfo).ClientIP := AContext.Binding.PeerIP;
   (ConnectionInfo as TLccEthernetConnectionInfo).ClientPort := AContext.Binding.PeerPort;
   HandleSendConnectionNotification(lcsClientDisconnected);
@@ -519,9 +540,11 @@ procedure TLccEthernetListener.IdTCPServerExecute(AContext: TIdContext);
 var
   Str: string;
   Char: AnsiChar;
+  AMessage: TLccMessage;
 begin
   // Well well this just got more complicated... Need to have a separate buffer for each Context...
   Str := '';
+  AMessage := nil;
   while not AContext.Connection.IOHandler.InputBufferIsEmpty and AContext.Connection.IOHandler.Connected do
   begin
     Char := AnsiChar(AContext.Connection.IOHandler.ReadByte);
@@ -529,7 +552,8 @@ begin
   end;
 
   if Str <> '' then
-    GridConnectContextList.AddStringByContext(AContext, Str);
+    if GridConnectContextList.AddGridConnectStringByContext(AContext, Str, AMessage) then
+      LccMessageList.Add(AMessage);
 
      // https://stackoverflow.com/questions/64593756/delphi-rio-indy-tcpserver-high-cpu-usage
     // There is another way to do this but with this simple program this is fine
@@ -579,6 +603,19 @@ begin
   Result := False;
   if Assigned(ListenerThread) and Assigned(ListenerThread.IdTCPServer) then
     Result := ListenerThread.IdTCPServer.Active;
+end;
+
+procedure TLccEthernetServer.SendMessage(ALccMessage: TLccMessage);
+begin
+  ListenerThread.OutgoingGridConnect.Add(ALccMessage.ConvertToGridConnectStr(#10, False));
+  inherited SendMessage(ALccMessage);
+end;
+
+procedure TLccEthernetServer.ReceiveMessage;
+begin
+   // Now send the message to the NodeManager to fan out to all the nodes and other Hardware Connection Managers it owns
+  NodeManager.ReceiveMessage(ListenerThread.WorkerMessage);
+  DoReceiveMessage(ListenerThread.WorkerMessage);
 end;
 
 function TLccEthernetServer.OpenConnection(AConnectionInfo: TLccHardwareConnectionInfo): TLccConnectionThread;
