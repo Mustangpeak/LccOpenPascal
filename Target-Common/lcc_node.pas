@@ -238,7 +238,6 @@ type
 
 var
   InprocessMessageAllocated: Integer = 0;
-  ActionObjectsAllocated: Integer = 0;
 
 implementation
 

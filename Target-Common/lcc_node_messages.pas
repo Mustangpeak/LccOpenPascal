@@ -221,6 +221,7 @@ public
   function TractionExtractFunctionAddress: LongWord;
   function TractionExtractFunctionValue: Word;
   function TractionExtractControllerAssignResult: Byte;
+  function TractionExtractControllerChangedResult: Byte;
 
   // Traction Search
   class function TractionSearchEncodeSearchString(SearchString: string; TrackProtocolFlags: Byte; var SearchData: DWORD): TSearchEncodeStringError;
@@ -1587,6 +1588,11 @@ begin
 end;
 
 function TLccMessage.TractionExtractControllerAssignResult: Byte;
+begin
+  Result := DataArray[2];
+end;
+
+function TLccMessage.TractionExtractControllerChangedResult: Byte;
 begin
   Result := DataArray[2];
 end;

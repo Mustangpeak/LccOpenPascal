@@ -6,7 +6,10 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ComCtrls, ExtCtrls,
-  StdCtrls, lcc_ethernet_server, lcc_defines, lcc_node,
+  StdCtrls,
+  lcc_ethernet_server,
+  lcc_defines,
+  lcc_node,
   lcc_node_manager,
   lcc_ethernet_client,
   lcc_node_messages,
@@ -29,9 +32,7 @@ type
   { TFormTrainCommander }
 
   TFormTrainCommander = class(TForm)
-    Button1: TButton;
     ButtonHTTPServer: TButton;
-    ButtonActionObjectCount: TButton;
     ButtonWebserverConnect: TButton;
     ButtonManualConnectComPort: TButton;
     ButtonTrainsClear: TButton;
@@ -61,8 +62,6 @@ type
     StatusBarMain: TStatusBar;
     ToggleBoxServerForm: TToggleBox;
     TreeViewTrains: TTreeView;
-    procedure Button1Click(Sender: TObject);
-    procedure ButtonActionObjectCountClick(Sender: TObject);
     procedure ButtonHTTPServerClick(Sender: TObject);
     procedure ButtonWebserverConnectClick(Sender: TObject);
     procedure ButtonManualConnectComPortClick(Sender: TObject);
@@ -153,16 +152,6 @@ implementation
 {$R *.lfm}
 
 { TFormTrainCommander }
-
-procedure TFormTrainCommander.ButtonActionObjectCountClick(Sender: TObject);
-begin
-  ButtonActionObjectCount.Caption := 'Action Objects = ' + IntToStr(ActionObjectsAllocated);
-end;
-
-procedure TFormTrainCommander.Button1Click(Sender: TObject);
-begin
-///  TLccCommandStationNode.Create(NodeManager, '', true);
-end;
 
 procedure TFormTrainCommander.ButtonHTTPServerClick(Sender: TObject);
 begin

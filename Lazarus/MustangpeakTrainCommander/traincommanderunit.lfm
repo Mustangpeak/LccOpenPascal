@@ -118,15 +118,6 @@ object FormTrainCommander: TFormTrainCommander
       OnClick = ButtonManualConnectComPortClick
       TabOrder = 6
     end
-    object ButtonActionObjectCount: TButton
-      Left = 255
-      Height = 25
-      Top = 80
-      Width = 171
-      Caption = 'Action Objects = 0'
-      OnClick = ButtonActionObjectCountClick
-      TabOrder = 7
-    end
     object CheckBoxDetailedLog: TCheckBox
       Left = 443
       Height = 18
@@ -135,7 +126,7 @@ object FormTrainCommander: TFormTrainCommander
       Caption = 'Detailed Log'
       ParentShowHint = False
       ShowHint = True
-      TabOrder = 8
+      TabOrder = 7
     end
     object ButtonWebserverConnect: TButton
       Left = 17
@@ -144,16 +135,16 @@ object FormTrainCommander: TFormTrainCommander
       Width = 152
       Caption = 'Webserver Connect'
       OnClick = ButtonWebserverConnectClick
-      TabOrder = 9
+      TabOrder = 8
     end
     object ButtonHTTPServer: TButton
-      Left = 629
+      Left = 720
       Height = 22
       Top = 7
-      Width = 139
+      Width = 147
       Caption = 'HTTP Connect'
       OnClick = ButtonHTTPServerClick
-      TabOrder = 10
+      TabOrder = 9
     end
     object CheckBox1: TCheckBox
       Left = 384
@@ -164,25 +155,16 @@ object FormTrainCommander: TFormTrainCommander
       Checked = True
       OnChange = CheckBox1Change
       State = cbChecked
-      TabOrder = 11
+      TabOrder = 10
     end
     object ToggleBoxServerForm: TToggleBox
-      Left = 760
+      Left = 720
       Height = 25
-      Top = 87
-      Width = 146
+      Top = 36
+      Width = 147
       Caption = 'Show Server Form'
       OnChange = ToggleBoxServerFormChange
-      TabOrder = 12
-    end
-    object Button1: TButton
-      Left = 907
-      Height = 25
-      Top = 25
-      Width = 75
-      Caption = 'Button1'
-      OnClick = Button1Click
-      TabOrder = 13
+      TabOrder = 11
     end
   end
   object PanelConnections: TPanel

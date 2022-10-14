@@ -21,7 +21,6 @@ type
     ButtonConsistSave1: TButton;
     ButtonConsistAdd1: TButton;
     ButtonConsistRemove1: TButton;
-    ButtonActionObjectCount: TButton;
     ButtonCreateConstist2: TButton;
     ButtonConsistRelease2: TButton;
     ButtonConsistRefresh2: TButton;
@@ -168,7 +167,6 @@ type
     TreeViewConsists2: TTreeView;
     TreeViewConsistWizard2: TTreeView;
     procedure Button1Click(Sender: TObject);
-    procedure ButtonActionObjectCountClick(Sender: TObject);
     procedure ButtonCreateConstist1Click(Sender: TObject);
     procedure ButtonCreateConstist2Click(Sender: TObject);
     procedure ButtonConnect1Click(Sender: TObject);
@@ -264,8 +262,8 @@ type
     procedure OnControllerQueryListenerIndex1(Sender: TLccTrainController; ListenerCount, ListenerIndex: Byte; ListenerFlags: Byte; ListenerNodeID: TNodeID);
     procedure OnControllerQueryListenerIndex2(Sender: TLccTrainController; ListenerCount, ListenerIndex: Byte; ListenerFlags: Byte; ListenerNodeID: TNodeID);
 
- //   procedure ReleaseTrain1;
- //   procedure ReleaseTrain2;
+    procedure ReleaseTrain1;
+    procedure ReleaseTrain2;
 
     procedure OnAliasMappingChange(Sender: TObject; LccSourceNode: TLccNode; AnAliasMapping: TLccAliasMapping; IsMapped: Boolean);
     procedure OnTrainRegisteringChange(Sender: TObject; LccSourceNode: TLccNode; TrainObject: TLccTrainObject; IsRegistered: Boolean);
@@ -318,11 +316,6 @@ begin
   end;   }
 end;
 
-procedure TForm1.ButtonActionObjectCountClick(Sender: TObject);
-begin
-  ButtonActionObjectCount.Caption := 'Action Objects = ' + IntToStr(ActionObjectsAllocated);
-end;
-
 procedure TForm1.Button1Click(Sender: TObject);
 begin
  // ControllerNode1.QueryConfigurationVariables(0, 8);
@@ -362,8 +355,8 @@ var
 begin
   if ClientServer1.Connected then
   begin
-//    if ControllerNode1.IsTrainAssigned then
- //     ReleaseTrain1;
+    if ControllerNode1.IsTrainAssigned then
+      ReleaseTrain1;
     ClientServer1.CloseConnection
   end else
   begin
@@ -574,40 +567,34 @@ procedure TForm1.SpeedButtonThrottleAssign1Click(Sender: TObject);
 var
   DccAddress: LongInt;
 begin
-{  if Assigned(ControllerNode1) then
+  if Assigned(ControllerNode1) then
   begin
     if ControllerNode1.IsTrainAssigned then
-    begin
       ReleaseTrain1;
-    end else
-    begin
-      // We will get a notification callback when the controller is assigned (or refused)
-      if TryStrToInt(EditThrottleAddress1.Text, DccAddress) then
-        ControllerNode1.AssignTrainByDccAddress(DccAddress, CheckBoxThrottleLongAddress1.Checked, IndexToSpeedStep(RadioGroupThrottleSpeedSteps1.ItemIndex))
-      else
-        ShowMessage('Invalid Address');
-    end;
-  end;  }
+    // We will get a notification callback when the controller is assigned (or refused)
+    if TryStrToInt(EditThrottleAddress1.Text, DccAddress) then
+      ControllerNode1.AssignTrainByDccAddress(DccAddress, CheckBoxThrottleLongAddress1.Checked, IndexToSpeedStep(RadioGroupThrottleSpeedSteps1.ItemIndex))
+    else
+      ShowMessage('Invalid Address');
+  end;
 end;
 
 procedure TForm1.SpeedButtonThrottleAssign2Click(Sender: TObject);
 var
   DccAddress: LongInt;
 begin
- { if Assigned(ControllerNode2) then
+  if Assigned(ControllerNode2) then
   begin
     if ControllerNode2.IsTrainAssigned then
-    begin
-      ReleaseTrain2;
-    end else
-    begin
+      ReleaseTrain2
+    else begin
       // We will get a notification callback when the controller is assigned (or refused)
       if TryStrToInt(EditThrottleAddress2.Text, DccAddress) then
         ControllerNode2.AssignTrainByDccAddress(DccAddress, CheckBoxThrottleLongAddress2.Checked, IndexToSpeedStep(RadioGroupThrottleSpeedSteps2.ItemIndex))
       else
         ShowMessage('Invalid Address');
     end;
-  end; }
+  end;
 end;
 
 procedure TForm1.ToggleBoxLoggingChange(Sender: TObject);
@@ -1132,7 +1119,7 @@ procedure TForm1.OnControllerQueryListenerIndex2(Sender: TLccTrainController;
 begin
 
 end;
-    {
+
 procedure TForm1.ReleaseTrain1;
 begin
   if Assigned(ControllerNode1) then
@@ -1144,7 +1131,7 @@ begin
   if Assigned(ControllerNode2) then
     ControllerNode2.ReleaseTrain;
 end;
-       }
+
 procedure TForm1.OnAliasMappingChange(Sender: TObject; LccSourceNode: TLccNode;
   AnAliasMapping: TLccAliasMapping; IsMapped: Boolean);
 begin

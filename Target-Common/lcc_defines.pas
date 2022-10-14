@@ -78,6 +78,11 @@ type
 
   TMultiFrameArray = array[0..MAX_MULTIFRAME_LEN-1] of Byte;
 
+  TNodeIdentification = record
+    NodeID: TNodeID;
+    Alias: Word;
+  end;
+
 const
   MAX_FUNCTIONS = 29;
 
@@ -90,13 +95,6 @@ type
   TLccTrainDirection = (tdForward, tdReverse);
   TLccFunctions = array[0..MAX_FUNCTIONS - 1] of Word;
   TMessageComPort = procedure(Sender: TObject; var GridConnectStyleMessage: string) of object;
-
-  TAttachedController = record
-    NodeID: TNodeID;
-    AliasID: Word;
-    AttatchNotifyNodeID: TNodeID;
-    AttachNotifyAliasID: Word;
-  end;
 
 // Solves circular reference as the parser need to know about lcc_nodemanager and vice versa
 type
@@ -414,7 +412,6 @@ const
   TRACTION_CONTROLLER_CONFIG_REPLY_OK = $00;
   TRACTION_CONTROLLER_CONFIG_ASSIGN_REPLY_REFUSE_ASSIGNED_CONTROLLER = $01;  // Bit 0
   TRACTION_CONTROLLER_CONFIG_ASSIGN_REPLY_REFUSE_TRAIN = $02; // Bit 1
-  TRACTION_CONTROLLER_CONFIG_REPLY_PENDING = $FF;  // This is an internal value used in the statemachine
 
   TRACTION_LISTENER                   = $30;
   TRACTION_LISTENER_ATTACH            = $01;

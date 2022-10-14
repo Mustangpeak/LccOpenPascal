@@ -299,7 +299,6 @@ begin
       end;
     end;
   finally
-    ContextList.Clear;
     UnlockList;
   end;
 end;

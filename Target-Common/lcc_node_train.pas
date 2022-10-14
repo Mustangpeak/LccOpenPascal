@@ -235,11 +235,53 @@ type
     function FindByIndex(Index: Byte): TListenerNode;
   end;
 
+  TAttachedController = record
+    NodeID: TNodeID;
+    AliasID: Word;
+    AttatchNotifyNodeID: TNodeID;
+    AttachNotifyAliasID: Word;
+  end;
+
+  { TControllerState }
+
+  TControllerState = class
+  private
+    FAttachedController: TNodeIdentification;
+    FRequestingController: TNodeIdentification;
+
+  public
+    property AttachedController: TNodeIdentification read FAttachedController write FAttachedController;
+    property RequestingController: TNodeIdentification read FRequestingController write FRequestingController;
+
+    procedure AssignController(ANodeID: TNodeId; AnAlias: Word);
+    procedure AssignRequestingController(ANodeID: TNodeId; AnAlias: Word);
+    procedure AcceptRequestingController;
+    procedure ClearAttachedController;
+    procedure ClearRequestingController;
+    function IsControllerAssigned: Boolean;
+    function IsControllerEqual(ATestNodeID: TNodeID; ATestNodeAlias: Word): Boolean;
+  end;
+
+  { TReservationState }
+
+  TReservationState = class
+  private
+    FReservedNode: TNodeIdentification;
+  public
+    property ReservedNode: TNodeIdentification read FReservedNode write FReservedNode;
+
+    procedure AssignReservedNode(ANodeID: TNodeId; AnAlias: Word);
+    procedure ClearReservedNode;
+    function IsAssigned: Boolean;
+    function IsEqual(ATestNodeID: TNodeID; ATestNodeAlias: Word): Boolean;
+  end;
+
 type
   { TLccTrainDccNode }
 
   TLccTrainDccNode = class(TLccNode)
   private
+    FControllerState: TControllerState;
     // DCC Only fields, should make a common class and derive a DCC specific one from it
     FDccAddress: Word;
     FDccLongAddress: Boolean;
@@ -248,15 +290,11 @@ type
 
     // Lcc Traction fields
     FFunctions: TLccFunctions;
-    FReservationAliasID: Word;
-    FReservationNodeID: TNodeID;
+    FReservedNodeState: TReservationState;
     FSpeed: THalfFloat;
 
     FSearchEvent: TEventID;  // When creating a train node this is the temporary storage for the train node as the node is being created and allocating is NodeID/AliasID
     FListeners: TListenerList;
-    FAttachedController: TAttachedController;
-    FRequestingControllerAliasID: Word;    // When a controller in trying to attach it is stored here in the actions when we have to query other controllers to ask them if it is ok
-    FRequestingControllerNodeID: TNodeID;  // When a controller in trying to attach it is stored here in the actions when we have to query other controllers to ask them if it is ok
 
     function GetDirection: TLccTrainDirection;
     function GetFunctions(Index: Integer): Word;
@@ -269,16 +307,8 @@ type
     procedure SetFunctions(Index: Integer; AValue: Word);
     procedure SetSpeed(AValue: THalfFloat);
   protected
-    property AttachedController: TAttachedController read FAttachedController write FAttachedController;
-
-    property RequestingControllerNodeID: TNodeID read FRequestingControllerNodeID write FRequestingControllerNodeID;
-    property RequestingControllerAliasID: Word read FRequestingControllerAliasID write FRequestingControllerAliasID;
-
-    property ReservationNodeID: TNodeID read FReservationNodeID write FReservationNodeID;
-    property ReservationAliasID: Word read FReservationAliasID write FReservationAliasID;
-
-    procedure ClearAttachedController;
-    procedure ClearReservationNode;
+    property ControllerState: TControllerState read FControllerState write FControllerState;
+    property ReservedNodeState: TReservationState read FReservedNodeState write FReservedNodeState;
 
     function GetCdiFile: string; override;
     procedure BeforeLogin; override;
@@ -290,10 +320,10 @@ type
     function DccSpeedDirHandler(DccAddress: Word; LongAddress: Boolean; SpeedDir: THalfFloat; DccSpeedStep: TLccDccSpeedStep): TDCCPacket;
     procedure DccLoadPacket(var NewMessage: TDCCPacket; Data1, Data2, Data3, Data4, Data5, ValidDataByes: Byte);
 
-  protected
+    procedure HandleTractionControllerAssign(SourceMessage: TLccMessage);
+    procedure HandleTractionControllerChangedNotify(SourceMessage: TLccMessage);
 
   public
-
     property DccAddress: Word read FDccAddress write SetDccAddress;
     property DccLongAddress: Boolean read FDccLongAddress write SetDccLongAddress;
     property DccSpeedStep: TLccDccSpeedStep read FDccSpeedStep write SetDccSpeedStep;
@@ -308,11 +338,6 @@ type
     constructor Create(ANodeManager: {$IFDEF DELPHI}TComponent{$ELSE}TObject{$ENDIF}; CdiXML: String; GridConnectLink: Boolean); override;
     destructor Destroy; override;
 
-    function ControllerEquals(ATestNodeID: TNodeID; ATestNodeAlias: Word): Boolean;
-    function IsReservedBy(SourceMessage: TLccMessage): Boolean;
-    function IsReserved: Boolean;
-    function ReservationEquals(ATestNodeID: TNodeID; ATestAlias: Word): Boolean;
-    function ControllerAssigned: Boolean;
     function ProcessMessageLCC(SourceMessage: TLccMessage): Boolean; override;
   end;
 
@@ -390,6 +415,73 @@ begin
       Result := 'S'
   end
 end;
+
+{ TReservationState }
+
+procedure TReservationState.AssignReservedNode(ANodeID: TNodeId; AnAlias: Word);
+begin
+  FReservedNode.NodeID := ANodeId;
+  FReservedNode.Alias := AnAlias;
+end;
+
+procedure TReservationState.ClearReservedNode;
+begin
+  FReservedNode.NodeID := NULL_NODE_ID;
+  FReservedNode.Alias := 0;
+end;
+
+function TReservationState.IsAssigned: Boolean;
+begin
+  Result := not NullNodeID(ReservedNode.NodeID) or (ReservedNode.Alias <> 0)
+end;
+
+function TReservationState.IsEqual(ATestNodeID: TNodeID; ATestNodeAlias: Word): Boolean;
+begin
+  Result := EqualNodeID(ATestNodeID, ReservedNode.NodeID, False) or (ATestNodeAlias = ReservedNode.Alias);
+end;
+
+{ TControllerState }
+
+procedure TControllerState.AssignController(ANodeID: TNodeId; AnAlias: Word);
+begin
+  FAttachedController.NodeID := ANodeId;
+  FAttachedController.Alias := AnAlias;
+end;
+
+procedure TControllerState.AssignRequestingController(ANodeID: TNodeId; AnAlias: Word);
+begin
+  FRequestingController.NodeID := ANodeId;
+  FRequestingController.Alias := AnAlias;
+end;
+
+procedure TControllerState.AcceptRequestingController;
+begin
+  FAttachedController := RequestingController;
+  ClearRequestingController;
+end;
+
+procedure TControllerState.ClearAttachedController;
+begin
+  FAttachedController.NodeID := NULL_NODE_ID;
+  FAttachedController.Alias := 0;
+end;
+
+procedure TControllerState.ClearRequestingController;
+begin
+  FRequestingController.NodeID := NULL_NODE_ID;
+  FRequestingController.Alias := 0;
+end;
+
+function TControllerState.IsControllerAssigned: Boolean;
+begin
+  Result := not NullNodeID(AttachedController.NodeID) or (AttachedController.Alias <> 0)
+end;
+
+function TControllerState.IsControllerEqual(ATestNodeID: TNodeID; ATestNodeAlias: Word): Boolean;
+begin
+  Result := EqualNodeID(ATestNodeID, AttachedController.NodeID, False) or (ATestNodeAlias = AttachedController.Alias);
+end;
+
 
 { TListenerNode }
 
@@ -518,6 +610,8 @@ constructor TLccTrainDccNode.Create(ANodeManager: {$IFDEF DELPHI}TComponent{$ELS
 begin
   inherited Create(ANodeManager, CdiXML, GridConnectLink);
   FListeners := TListenerList.Create;
+  FControllerState := TControllerState.Create;
+  FReservedNodeState := TReservationState.Create;
 end;
 
 procedure TLccTrainDccNode.BeforeLogin;
@@ -764,6 +858,8 @@ end;
 destructor TLccTrainDccNode.Destroy;
 begin
   FreeAndNil(FListeners);
+  FreeAndNil(FControllerState);
+  FreeAndNil(FReservedNodeState);
   inherited Destroy;
 end;
 
@@ -778,29 +874,47 @@ begin
   NewMessage.Flags := ValidDataByes;
 end;
 
-procedure TLccTrainDccNode.ClearAttachedController;
+procedure TLccTrainDccNode.HandleTractionControllerAssign(SourceMessage: TLccMessage);
 begin
-  FAttachedController.NodeID := NULL_NODE_ID;
-  FAttachedController.AliasID := 0;
-  FAttachedController.NodeID := NULL_NODE_ID;
-  FAttachedController.AttachNotifyAliasID := 0;
+  // First check to see if the train is assigned to a controller.  If it is then if it is already assigned to the calling controller all is good and just reply Ok
+  if ControllerState.IsControllerAssigned and not ControllerState.IsControllerEqual(SourceMessage.SourceID, SourceMessage.CAN.SourceAlias) then
+  begin
+    // There is another controller driving this train, need to ask if it will give the train up
+    // Store the requesting controller that wants the train
+    ControllerState.AssignRequestingController(SourceMessage.SourceID, SourceMessage.CAN.SourceAlias);
+
+    // The train will call the currently attached node and ask for it to be released.
+    WorkerMessage.LoadTractionControllerChangingNotify(NodeID, AliasID, ControllerState.AttachedController.NodeID, ControllerState.AttachedController.Alias, ControllerState.RequestingController.NodeID);
+    SendMessageFunc(Self, WorkerMessage);
+    // Now need to wait for a Changing Notity Reply
+  end else
+  begin
+    ControllerState.AssignController(SourceMessage.SourceID, SourceMessage.CAN.SourceAlias);
+
+    WorkerMessage.LoadTractionControllerAssignReply(SourceMessage.DestID, SourceMessage.CAN.DestAlias, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias, TRACTION_CONTROLLER_CONFIG_REPLY_OK);
+    SendMessageFunc(Self, WorkerMessage);
+  end;
 end;
 
-procedure TLccTrainDccNode.ClearReservationNode;
+procedure TLccTrainDccNode.HandleTractionControllerChangedNotify(SourceMessage: TLccMessage);
+var
+  ChangedResult: Byte;
 begin
-  FReservationNodeID := NULL_NODE_ID;
-  FReservationAliasID := 0;
-end;
+  // What did the existing controller that is attached say about the new controller taking over the train?
+  ChangedResult := SourceMessage.TractionExtractControllerChangedResult;
 
-function TLccTrainDccNode.ControllerAssigned: Boolean;
-begin
-  Result := ((AttachedController.NodeID[0] <> 0) and (AttachedController.NodeID[1] <> 0) or (AttachedController.AliasID <> 0))
-end;
-
-function TLccTrainDccNode.ControllerEquals(ATestNodeID: TNodeID; ATestNodeAlias: Word): Boolean;
-begin
-  Result := ((AttachedController.NodeID[0] = ATestNodeID[0]) and (AttachedController.NodeID[1] = ATestNodeID[1])) or
-            (AttachedController.AliasID = ATestNodeAlias)
+  case ChangedResult of
+    TRACTION_CONTROLLER_CONFIG_REPLY_OK :
+      begin
+        WorkerMessage.LoadTractionControllerAssignReply(NodeID, AliasID, ControllerState.RequestingController.NodeID, ControllerState.RequestingController.Alias, TRACTION_CONTROLLER_CONFIG_REPLY_OK);
+        ControllerState.AcceptRequestingController;
+      end
+  else
+    // Controller won't allow
+    WorkerMessage.LoadTractionControllerAssignReply(NodeID, AliasID, ControllerState.RequestingController.NodeID, ControllerState.RequestingController.Alias, TRACTION_CONTROLLER_CONFIG_ASSIGN_REPLY_REFUSE_ASSIGNED_CONTROLLER);
+    ControllerState.ClearRequestingController;
+  end;
+  SendMessageFunc(Self, WorkerMessage);
 end;
 
 function TLccTrainDccNode.GetCdiFile: string;
@@ -824,16 +938,6 @@ begin
     Result := $FFFF
 end;
 
-function TLccTrainDccNode.IsReserved: Boolean;
-begin
-  Result := (ReservationNodeID[0] <> 0) or (ReservationNodeID[1] <> 0) or (ReservationAliasID <> 0);
-end;
-
-function TLccTrainDccNode.IsReservedBy(SourceMessage: TLccMessage): Boolean;
-begin
-  Result := EqualNode(SourceMessage.SourceID, SourceMessage.CAN.SourceAlias, ReservationNodeID, ReservationAliasID, True);
-end;
-
 function TLccTrainDccNode.ProcessMessageLCC(SourceMessage: TLccMessage
   ): Boolean;
 begin
@@ -846,7 +950,6 @@ begin
   end;
 
   // We only are dealing with messages with destinations for us from here on
-
 
   case SourceMessage.MTI of
     MTI_DATAGRAM :
@@ -867,14 +970,15 @@ begin
           TRACTION_CONTROLLER_CONFIG :
             begin
               case SourceMessage.DataArray[1] of
-                TRACTION_CONTROLLER_CONFIG_ASSIGN  : begin end; // Result := LccActions.RegisterAndKickOffAction(TLccActionTractionControllerAssignReply.Create(Self, SourceMessage.DestID, SourceMessage.CAN.DestAlias, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias, 0), SourceMessage);
+                TRACTION_CONTROLLER_CONFIG_ASSIGN  : HandleTractionControllerAssign(SourceMessage); // Result := LccActions.RegisterAndKickOffAction(TLccActionTractionControllerAssignReply.Create(Self, SourceMessage.DestID, SourceMessage.CAN.DestAlias, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias, 0), SourceMessage);
                 TRACTION_CONTROLLER_CONFIG_RELEASE : begin end; // Result := LccActions.RegisterAndKickOffAction(TLccActionTractionControllerRelease.Create(Self, SourceMessage.DestID, SourceMessage.CAN.DestAlias, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias, 0), nil);
                 TRACTION_CONTROLLER_CONFIG_QUERY   : begin end; // Result := LccActions.RegisterAndKickOffAction(TLccActionTractionQueryController.Create(Self, SourceMessage.DestID, SourceMessage.CAN.DestAlias, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias, 0), nil);
-               end
+                TRACTION_CONTROLLER_CONFIG_CHANGED_NOTIFY : HandleTractionControllerChangedNotify(SourceMessage);
+              end
             end;
           TRACTION_LISTENER :
             begin
-              if IsReservedBy(SourceMessage) then
+              if ReservedNodeState.IsEqual(SourceMessage.SourceID, SourceMessage.CAN.SourceAlias) then
               begin
                 case SourceMessage.DataArray[1] of
                   TRACTION_LISTENER_ATTACH : begin end; // Result := LccActions.RegisterAndKickOffAction(TLccActionTractionListenerAttachAndReply.Create(Self, SourceMessage.DestID, SourceMessage.CAN.DestAlias, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias, 0), SourceMessage);
@@ -893,11 +997,6 @@ begin
         end;
       end;
   end;
-end;
-
-function TLccTrainDccNode.ReservationEquals(ATestNodeID: TNodeID; ATestAlias: Word): Boolean;
-begin
-  Result := ((ReservationNodeID[0] = ATestNodeID[0]) and (ReservationNodeID[1] = ATestNodeID[1])) or (ATestAlias = ReservationAliasID)
 end;
 
 procedure TLccTrainDccNode.SetDccAddress(AValue: Word);
@@ -953,4 +1052,5 @@ begin
 end;
 
 end.
+
 
