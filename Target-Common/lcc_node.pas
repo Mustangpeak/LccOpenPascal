@@ -91,9 +91,9 @@ type
 
     function FindBySourceNode(LccMessage: TLccMessage): Integer;
   public
-    property SendMessageFunc: TOnMessageEvent read FSendMessageFunc;
+    property SendMessageFunc: TOnMessageEvent read FSendMessageFunc write FSendMessageFunc;
 
-    constructor Create(ASendMessageFunc: TOnMessageEvent);
+    constructor Create;
     destructor Destroy; override;
     function Add(LccMessage: TLccMessage): Boolean;
     procedure Clear;
@@ -123,7 +123,7 @@ type
     FProtocolMemoryOptions: TProtocolMemoryOptions;
     FProtocolSimpleNodeInfo: TProtocolSimpleNodeInfo;
     FProtocolSupportedProtocols: TProtocolSupportedProtocols;
-    FTProtocolMemoryConfigurationDefinitionInfo: TProtocolMemoryConfigurationDefinitionInfo;
+    FProtocolMemoryConfigurationDefinitionInfo: TProtocolMemoryConfigurationDefinitionInfo;
     FSeedNodeID: TNodeID;
     FTrainServer: TLccTrainServer;
     FWorkerMessageDatagram: TLccMessage;
@@ -153,6 +153,7 @@ type
     function GetAliasIDStr: String;
     function GetNodeIDStr: String;
     procedure SetEnableTrainDatabase(AValue: Boolean);
+    procedure SetSendMessageFunc(AValue: TOnMessageEvent);
   protected
     FNodeID: TNodeID;
 
@@ -197,7 +198,7 @@ type
     property NodeID: TNodeID read FNodeID;
     property NodeIDStr: String read GetNodeIDStr;
     property Initialized: Boolean read FInitialized;
-    property SendMessageFunc: TOnMessageEvent read FSendMessageFunc;
+    property SendMessageFunc: TOnMessageEvent read FSendMessageFunc write SetSendMessageFunc;
     property EnableTrainDatabase: Boolean read FEnableTrainDatabase write SetEnableTrainDatabase;
 
     property ProtocolSupportedProtocols: TProtocolSupportedProtocols read FProtocolSupportedProtocols write FProtocolSupportedProtocols;
@@ -205,7 +206,7 @@ type
     property ProtocolEventsProduced: TProtocolEvents read FProtocolEventsProduced write FProtocolEventsProduced;
     property ProtocolMemoryInfo: TProtocolMemoryInfo read FProtocolMemoryInfo write FProtocolMemoryInfo;
     property ProtocolMemoryOptions: TProtocolMemoryOptions read FProtocolMemoryOptions write FProtocolMemoryOptions;
-    property ProtocolConfigurationDefinitionInfo: TProtocolMemoryConfigurationDefinitionInfo read FTProtocolMemoryConfigurationDefinitionInfo write FTProtocolMemoryConfigurationDefinitionInfo;
+    property ProtocolMemoryConfigurationDefinitionInfo: TProtocolMemoryConfigurationDefinitionInfo read FProtocolMemoryConfigurationDefinitionInfo write FProtocolMemoryConfigurationDefinitionInfo;
     property ProtocolSimpleNodeInfo: TProtocolSimpleNodeInfo read FProtocolSimpleNodeInfo write FProtocolSimpleNodeInfo;
     property ProtocolMemoryConfiguration: TProtocolMemoryConfiguration read FProtocolMemoryConfiguration write FProtocolMemoryConfiguration;
     property ProtocolACDIMfg: TProtocolACDIMfg read FProtocolACDIMfg write FProtocolACDIMfg;
@@ -216,7 +217,7 @@ type
     property AliasIDStr: String read GetAliasIDStr;
     property Permitted: Boolean read FPermitted;
 
-    constructor Create(ASendMessageFunc: TOnMessageEvent; ANodeManager: {$IFDEF DELPHI}TComponent{$ELSE}TObject{$ENDIF}; CdiXML: string; GridConnectLink: Boolean); virtual;
+    constructor Create(ANodeManager: {$IFDEF DELPHI}TComponent{$ELSE}TObject{$ENDIF}; CdiXML: string; GridConnectLink: Boolean); virtual;
     destructor Destroy; override;
 
     procedure Login(ANodeID: TNodeID); virtual;
@@ -268,10 +269,9 @@ begin
   LccMessage.AbandonTimeout := 0;
 end;
 
-constructor TDatagramQueue.Create(ASendMessageFunc: TOnMessageEvent);
+constructor TDatagramQueue.Create;
 begin
   inherited Create;
-  FSendMessageFunc := ASendMessageFunc;
   {$IFDEF DELPHI}
   Queue := TObjectList<TLccMessage>.Create;
   {$ELSE}
@@ -392,6 +392,21 @@ begin
   TrainServer.Clear;
 end;
 
+procedure TLccNode.SetSendMessageFunc(AValue: TOnMessageEvent);
+begin
+  if FSendMessageFunc=AValue then Exit;
+  FSendMessageFunc:=AValue;
+
+  ProtocolSupportedProtocols.SendMessageFunc := AValue;
+  FProtocolSimpleNodeInfo.SendMessageFunc := AValue;
+  ProtocolMemoryConfigurationDefinitionInfo.SendMessageFunc := AValue;
+  ProtocolMemoryOptions.SendMessageFunc := AValue;
+  ProtocolMemoryInfo.SendMessageFunc := AValue;
+  ProtocolEventConsumed.SendMessageFunc := AValue;
+  ProtocolEventsProduced.SendMessageFunc := AValue;
+  DatagramResendQueue.SendMessageFunc := AValue;
+end;
+
 function TLccNode.GetAliasIDStr: String;
 begin
   Result := NodeAliasToString(AliasID);
@@ -451,32 +466,32 @@ begin
   Result := True;
 end;
 
-constructor TLccNode.Create(ASendMessageFunc: TOnMessageEvent; ANodeManager: {$IFDEF DELPHI}TComponent{$ELSE}TObject{$ENDIF}; CdiXML: string; GridConnectLink: Boolean);
+constructor TLccNode.Create(ANodeManager: TObject; CdiXML: string;
+  GridConnectLink: Boolean);
 var
   i, Counter: Integer;
 begin
   inherited Create;
-  FProtocolSupportedProtocols := TProtocolSupportedProtocols.Create(ASendMessageFunc);
-  FProtocolSimpleNodeInfo := TProtocolSimpleNodeInfo.Create(ASendMessageFunc);
-  FTProtocolMemoryConfigurationDefinitionInfo := TProtocolMemoryConfigurationDefinitionInfo.Create(ASendMessageFunc);
-  FProtocolMemoryOptions := TProtocolMemoryOptions.Create(ASendMessageFunc);
+  FProtocolSupportedProtocols := TProtocolSupportedProtocols.Create;
+  FProtocolSimpleNodeInfo := TProtocolSimpleNodeInfo.Create;
+  FProtocolMemoryConfigurationDefinitionInfo := TProtocolMemoryConfigurationDefinitionInfo.Create;
+  FProtocolMemoryOptions := TProtocolMemoryOptions.Create;
  // FProtocolMemoryConfiguration := TProtocolMemoryConfiguration.Create(SendMessageFunc);
-  FProtocolMemoryInfo := TProtocolMemoryInfo.Create(ASendMessageFunc);
-  FProtocolEventConsumed := TProtocolEvents.Create(ASendMessageFunc);
-  FProtocolEventsProduced := TProtocolEvents.Create(ASendMessageFunc);
+  FProtocolMemoryInfo := TProtocolMemoryInfo.Create;
+  FProtocolEventConsumed := TProtocolEvents.Create;
+  FProtocolEventsProduced := TProtocolEvents.Create;
 
-  FProtocolACDIMfg := TProtocolACDIMfg.Create(ASendMessageFunc);
-  FProtocolACDIUser := TProtocolACDIUser.Create(ASendMessageFunc);
+  FProtocolACDIMfg := TProtocolACDIMfg.Create;
+  FProtocolACDIUser := TProtocolACDIUser.Create;
   FStreamCdi := TMemoryStream.Create;
   FStreamConfig := TMemoryStream.Create;
   FStreamManufacturerData := TMemoryStream.Create;
   FStreamTractionConfig := TMemoryStream.Create;
   FStreamTractionFdi := TMemoryStream.Create;
 
-  FDatagramResendQueue := TDatagramQueue.Create(ASendMessageFunc);
+  FDatagramResendQueue := TDatagramQueue.Create;
   FWorkerMessageDatagram := TLccMessage.Create;
   FWorkerMessage := TLccMessage.Create;
-  FSendMessageFunc := ASendMessageFunc;
   FNodeManager := ANodeManager;
   FGridConnect := GridConnectLink;
   FAliasServer := TLccAliasServer.Create;
@@ -1004,7 +1019,7 @@ begin
                        MSI_CDI :
                          begin
                            WorkerMessage.LoadDatagram(NodeID, FAliasID, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias);
-                           ProtocolConfigurationDefinitionInfo.DatagramReadRequest(SourceMessage, WorkerMessage, StreamCdi);
+                           ProtocolMemoryConfigurationDefinitionInfo.DatagramReadRequest(SourceMessage, WorkerMessage, StreamCdi);
                            SendDatagramRequiredReply(SourceMessage, WorkerMessage);
                            Result := True;
                          end;
@@ -1036,7 +1051,7 @@ begin
                        MSI_TRACTION_FDI :
                          begin
                            WorkerMessage.LoadDatagram(NodeID, FAliasID, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias);
-                           ProtocolConfigurationDefinitionInfo.DatagramReadRequest(SourceMessage, WorkerMessage, StreamTractionFdi);
+                           ProtocolMemoryConfigurationDefinitionInfo.DatagramReadRequest(SourceMessage, WorkerMessage, StreamTractionFdi);
                            SendDatagramRequiredReply(SourceMessage, WorkerMessage);
                            Result := True;
                          end;
@@ -1393,7 +1408,7 @@ begin
   FreeAndNil(FProtocolMemoryInfo);
   FreeAndNil(FProtocolACDIMfg);
   FreeAndNil(FProtocolACDIUser);
-  FreeAndNil(FTProtocolMemoryConfigurationDefinitionInfo);
+  FreeAndNil(FProtocolMemoryConfigurationDefinitionInfo);
   FreeAndNil(FDatagramResendQueue);
   FreeAndNil(FWorkerMessageDatagram);
   FreeAndNil(FWorkerMessage);

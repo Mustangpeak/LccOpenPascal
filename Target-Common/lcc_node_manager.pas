@@ -650,7 +650,8 @@ end;
 
 function TLccNodeManager.AddNode(CdiXML: string; AutoLogin: Boolean): TLccNode;
 begin
-  Result := TLccNode.Create({$IFDEF FPC}@{$ENDIF}SendMessage, Self, CdiXML, GridConnect);
+  Result := TLccNode.Create(Self, CdiXML, GridConnect);
+  Result.SendMessageFunc := {$IFDEF FPC}@{$ENDIF}SendMessage;
   Nodes.Add(Result);
   DoCreateLccNode(Result);
   if AutoLogin then
@@ -662,7 +663,8 @@ begin
   Result := nil;
   if Assigned(NodeClass) then
   begin
-    Result := NodeClass.Create({$IFDEF FPC}@{$ENDIF}SendMessage, Self, CdiXML, GridConnect);
+    Result := NodeClass.Create(Self, CdiXML, GridConnect);
+    Result.SendMessageFunc := {$IFDEF FPC}@{$ENDIF}SendMessage;
     Nodes.Add(Result);
     DoCreateLccNode(Result);
     if AutoLogin then

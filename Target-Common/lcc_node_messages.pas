@@ -68,6 +68,22 @@ type
     property Valid: Boolean read FValid write FValid;
   end;
 
+  { TLccMessageList }
+
+  TLccMessageList = class(TThreadList)
+  private
+    function GetInteger: Integer;
+    function GetLccMessage(Index: Integer): TLccMessage;
+  public
+    property Count: Integer read GetInteger;
+    property LccMessage[Index: Integer]: TLccMessage read GetLccMessage;
+
+    destructor Destroy; override;
+    procedure Push(AMessage: TLccMessage);
+    procedure Clear;
+    function Pop: TLccMessage;
+  end;
+
   { TLccCANMessage }
 
   TLccCANMessage = class
@@ -666,6 +682,83 @@ begin
   end;
 end;
 
+{ TLccMessageList }
+
+function TLccMessageList.GetLccMessage(Index: Integer): TLccMessage;
+var
+  List: TList;
+begin
+  List := LockList;
+  try
+    Result := TLccMessage( List[Index]);
+  finally
+    UnlockList;
+  end;
+end;
+
+function TLccMessageList.GetInteger: Integer;
+var
+  List: TList;
+begin
+  List := LockList;
+  try
+    Result := List.Count
+  finally
+    UnlockList;
+  end;
+end;
+
+destructor TLccMessageList.Destroy;
+begin
+  Clear;
+  inherited Destroy;
+end;
+
+procedure TLccMessageList.Push(AMessage: TLccMessage);
+var
+  List: TList;
+begin
+  List := LockList;
+  try
+    List.Add(AMessage);
+  finally
+    UnlockList;
+  end;
+end;
+
+procedure TLccMessageList.Clear;
+var
+  List: TList;
+  i: Integer;
+begin
+  List := LockList;
+  try
+    for i := 0 to List.Count - 1 do
+      TObject(List[i]).Free;
+  finally
+    List.Clear;
+    UnlockList;
+  end;
+end;
+
+function TLccMessageList.Pop: TLccMessage;
+var
+  List: TList;
+begin
+  Result := nil;
+  List := LockList;
+  try
+    if List.Count > 0 then
+    begin
+      Result := TLccMessage( List[0]);
+      List.Delete(0);
+    end;
+  finally
+    UnlockList;
+  end;
+end;
+
+
 { TLccMessage }
 
 procedure TLccMessage.AppendDataArray(LccMessage: TLccMessage);
@@ -713,6 +806,7 @@ begin
   Result.FSourceID := FSourceID;
   Result.FMTI := FMTI;
   Result.RetryAttempts := 0;
+  Result.AbandonTimeout := 0;
 end;
 
 procedure TLccMessage.InsertNodeID(StartIndex: Integer; var ANodeID: TNodeID);

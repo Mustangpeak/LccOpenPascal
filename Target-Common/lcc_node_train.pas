@@ -305,7 +305,7 @@ type
     property OnSendMessageComPort: TMessageComPort read FOnSendMessageComPort write FOnSendMessageComPort;
     property SearchEvent: TEventID read FSearchEvent write FSearchevent;
 
-    constructor Create(ASendMessageFunc: TOnMessageEvent; ANodeManager: {$IFDEF DELPHI}TComponent{$ELSE}TObject{$ENDIF}; CdiXML: String; GridConnectLink: Boolean); override;
+    constructor Create(ANodeManager: {$IFDEF DELPHI}TComponent{$ELSE}TObject{$ENDIF}; CdiXML: String; GridConnectLink: Boolean); override;
     destructor Destroy; override;
 
     function ControllerEquals(ATestNodeID: TNodeID; ATestNodeAlias: Word): Boolean;
@@ -514,9 +514,9 @@ end;
 
 { TLccTrainDccNode }
 
-constructor TLccTrainDccNode.Create(ASendMessageFunc: TOnMessageEvent; ANodeManager: {$IFDEF DELPHI}TComponent{$ELSE}TObject{$ENDIF}; CdiXML: String; GridConnectLink: Boolean);
+constructor TLccTrainDccNode.Create(ANodeManager: {$IFDEF DELPHI}TComponent{$ELSE}TObject{$ENDIF}; CdiXML: String; GridConnectLink: Boolean);
 begin
-  inherited Create(ASendMessageFunc, ANodeManager, CdiXML, GridConnectLink);
+  inherited Create(ANodeManager, CdiXML, GridConnectLink);
   FListeners := TListenerList.Create;
 end;
 

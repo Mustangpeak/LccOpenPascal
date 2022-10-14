@@ -72,19 +72,19 @@ type
   TLccBaseEthernetThread = class(TLccConnectionThread)
   private
     FGridConnectMessageAssembler: TLccGridConnectMessageAssembler;
+    FTryReceiveWorkerMessage: TLccMessage;
   protected
     property GridConnectMessageAssembler: TLccGridConnectMessageAssembler read FGridConnectMessageAssembler write FGridConnectMessageAssembler;
+    property TryReceiveWorkerMessage: TLccMessage read FTryReceiveWorkerMessage write FTryReceiveWorkerMessage;
 
-    procedure HandleErrorAndDisconnect(SuppressMessage: Boolean); override;
-    procedure HandleSendConnectionNotification(NewConnectionState: TLccConnectionState); override;
     procedure OnConnectionStateChange; virtual;
     procedure OnErrorMessageReceive; virtual;
     procedure RequestErrorMessageSent; override;
 
     procedure TryTransmitGridConnect(IOHandler: TIdIOHandler); virtual;
     procedure TryTransmitTCPProtocol(IOHandler: TIdIOHandler); virtual;
-    procedure TryReceiveGridConnect(RcvByte: Byte; AGridConnectHelper: TGridConnectHelper); virtual;
-    procedure TryReceiveTCPProtocol(RcvByte: Byte); virtual;
+    procedure TryReceiveGridConnect(AString: String; AGridConnectHelper: TGridConnectHelper); virtual;
+    procedure TryReceiveTCPProtocol(AString: String); virtual;
 
   public
     constructor Create(CreateSuspended: Boolean; AnOwner: TLccHardwareConnectionManager; AConnectionInfo: TLccHardwareConnectionInfo); override;
@@ -172,18 +172,6 @@ end;
 
 { TLccBaseEthernetThread }
 
-procedure TLccBaseEthernetThread.HandleErrorAndDisconnect(SuppressMessage: Boolean);
-begin
-//  ConnectionInfo.ErrorCode := Socket.LastError;
-//  ConnectionInfo.MessageStr := Socket.LastErrorDesc;
-  inherited HandleErrorAndDisconnect(SuppressMessage);
-end;
-
-procedure TLccBaseEthernetThread.HandleSendConnectionNotification(NewConnectionState: TLccConnectionState);
-begin
-  inherited HandleSendConnectionNotification(NewConnectionState);
-end;
-
 procedure TLccBaseEthernetThread.OnConnectionStateChange;
 begin
   inherited;
@@ -216,8 +204,7 @@ begin
   end;
 end;
 
-procedure TLccBaseEthernetThread.TryTransmitGridConnect(IOHandler: TIdIOHandler
-  );
+procedure TLccBaseEthernetThread.TryTransmitGridConnect(IOHandler: TIdIOHandler);
 var
   TxStr: string;
   TxList: TStringList;
@@ -240,8 +227,7 @@ begin
   end;
 end;
 
-procedure TLccBaseEthernetThread.TryTransmitTCPProtocol(IOHandler: TIdIOHandler
-  );
+procedure TLccBaseEthernetThread.TryTransmitTCPProtocol(IOHandler: TIdIOHandler);
 var
   DynamicByteArray: TLccDynamicByteArray;
 begin
@@ -261,33 +247,40 @@ begin
   end;
 end;
 
-procedure TLccBaseEthernetThread.TryReceiveGridConnect(RcvByte: Byte; AGridConnectHelper: TGridConnectHelper);
+procedure TLccBaseEthernetThread.TryReceiveGridConnect(AString: String;
+  AGridConnectHelper: TGridConnectHelper);
 var
   GridConnectStrPtr: PGridConnectString;
+  MessageStr: String;
+  i: Integer;
 begin
   GridConnectStrPtr := nil;
- (* if AGridConnectHelper.GridConnect_DecodeMachine(RcvByte, GridConnectStrPtr) then
-  begin
-    ConnectionInfo.MessageStr := GridConnectBufferToString(GridConnectStrPtr^);
-    ConnectionInfo.LccMessage.LoadByGridConnectStr(ConnectionInfo.MessageStr);
 
-    case GridConnectMessageAssembler.IncomingMessageGridConnect(ConnectionInfo.LccMessage) of
-      imgcr_True :
-        begin
-          Synchronize({$IFDEF FPC}@{$ENDIF}ReceiveMessage)
-        end;
-      imgcr_ErrorToSend :
-        begin
-          ConnectionInfo.LccMessage.CopyToTarget(WorkerMessage);
-          Synchronize({$IFDEF FPC}@{$ENDIF}RequestErrorMessageSent);
-        end;
-      imgcr_False,
-      imgcr_UnknownError : begin end;
+  for i := 1 to Length(AString) do
+  begin
+    if AGridConnectHelper.GridConnect_DecodeMachine(Ord( AString[i]), GridConnectStrPtr) then
+    begin
+      MessageStr := GridConnectBufferToString(GridConnectStrPtr^);
+      TryReceiveWorkerMessage.LoadByGridConnectStr(MessageStr);
+
+      case GridConnectMessageAssembler.IncomingMessageGridConnect(TryReceiveWorkerMessage) of
+        imgcr_True :
+          begin
+            Synchronize({$IFDEF FPC}@{$ENDIF}Owner.ReceiveMessage)
+          end;
+        imgcr_ErrorToSend :
+          begin
+        //    ConnectionInfo.LccMessage.CopyToTarget(WorkerMessage);
+        //    Synchronize({$IFDEF FPC}@{$ENDIF}RequestErrorMessageSent);
+          end;
+        imgcr_False,
+        imgcr_UnknownError : begin end;
+      end;
     end;
-  end;   *)
+  end;
 end;
 
-procedure TLccBaseEthernetThread.TryReceiveTCPProtocol(RcvByte: Byte);
+procedure TLccBaseEthernetThread.TryReceiveTCPProtocol(AString: String);
 begin
  // if TcpDecodeStateMachine.OPStackcoreTcp_DecodeMachine(RcvByte, ConnectionInfo.MessageArray) then
 //    Synchronize({$IFDEF FPC}@{$ENDIF}ReceiveMessage)
@@ -297,11 +290,13 @@ constructor TLccBaseEthernetThread.Create(CreateSuspended: Boolean; AnOwner: TLc
 begin
   inherited Create(CreateSuspended, AnOwner, AConnectionInfo);
   GridConnectMessageAssembler := TLccGridConnectMessageAssembler.Create;
+  FTryReceiveWorkerMessage := TLccMessage.Create;
 end;
 
 destructor TLccBaseEthernetThread.Destroy;
 begin
   FreeAndNil(FGridConnectMessageAssembler);
+  FreeAndNil(FTryReceiveWorkerMessage);
   inherited Destroy;
 end;
 

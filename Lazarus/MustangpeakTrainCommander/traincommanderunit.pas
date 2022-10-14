@@ -29,6 +29,7 @@ type
   { TFormTrainCommander }
 
   TFormTrainCommander = class(TForm)
+    Button1: TButton;
     ButtonHTTPServer: TButton;
     ButtonActionObjectCount: TButton;
     ButtonWebserverConnect: TButton;
@@ -60,6 +61,7 @@ type
     StatusBarMain: TStatusBar;
     ToggleBoxServerForm: TToggleBox;
     TreeViewTrains: TTreeView;
+    procedure Button1Click(Sender: TObject);
     procedure ButtonActionObjectCountClick(Sender: TObject);
     procedure ButtonHTTPServerClick(Sender: TObject);
     procedure ButtonWebserverConnectClick(Sender: TObject);
@@ -139,6 +141,8 @@ type
     property NodeManager: TLccNodeManager read FNodeManager write FNodeManager;
  //   property ComPort: TLccComPort read FComPort write FComPort;
 
+
+    procedure JUNK(Sender: TObject; LccMessage: TLccMessage);
   end;
 
 var
@@ -153,6 +157,11 @@ implementation
 procedure TFormTrainCommander.ButtonActionObjectCountClick(Sender: TObject);
 begin
   ButtonActionObjectCount.Caption := 'Action Objects = ' + IntToStr(ActionObjectsAllocated);
+end;
+
+procedure TFormTrainCommander.Button1Click(Sender: TObject);
+begin
+///  TLccCommandStationNode.Create(NodeManager, '', true);
 end;
 
 procedure TFormTrainCommander.ButtonHTTPServerClick(Sender: TObject);
@@ -227,7 +236,6 @@ begin
   Result := False;
   LocalInfo := TLccEthernetConnectionInfo.Create;
   try
-    LocalInfo.ErrorCode := 0;  // Keeps Hints quiet
     LocalInfo.AutoResolveIP := not CheckBoxLoopBackIP.Checked;
     LocalInfo.ListenerIP := '127.0.0.1';
     LocalInfo.ListenerPort := 12021;
@@ -250,7 +258,6 @@ begin
   Result := False;
   LocalInfo := TLccEthernetConnectionInfo.Create;
   try
-    LocalInfo.ErrorCode := 0;  // Keeps hint quiet
     LocalInfo.AutoResolveIP := not CheckBoxLoopBackIP.Checked;
     LocalInfo.ListenerIP := '127.0.0.1';
     LocalInfo.ListenerPort := 12022;
@@ -273,7 +280,6 @@ begin
   Result := False;
   LocalInfo := TLccEthernetConnectionInfo.Create;
   try
-    LocalInfo.ErrorCode := 0;  // Keeps hint quiet
     LocalInfo.AutoResolveIP := not CheckBoxLoopBackIP.Checked;
     LocalInfo.ListenerIP := '127.0.0.1';
     LocalInfo.ListenerPort := 12020;
@@ -314,7 +320,6 @@ end;
 procedure TFormTrainCommander.FormCloseQuery(Sender: TObject; var CanClose: boolean);
 begin
   CanClose := CanClose; // Keep Hints quiet
-  NodeManager.Clear;
  // ComPort.CloseConnection;
   LccServer.CloseConnection;
  // LccWebsocketServer.CloseConnection;
@@ -396,7 +401,7 @@ begin
         ButtonEthernetConnect.Caption := 'Disconnect Ethernet';
         StatusBarMain.Panels[0].Text := 'Ethernet: Command Station Connected at: ' + (Info as TLccEthernetConnectionInfo).ListenerIP + ':' + IntToStr((Info as TLccEthernetConnectionInfo).ListenerPort);
         if NodeManager.Nodes.Count = 0 then
-          NodeManager.AddNodeByClass('', TLccCommandStationNode, True, NULL_NODE_ID);
+          NodeManager.AddNodeByClass('', TLccCommandStationNode , True, NULL_NODE_ID);
       end;
     lcsDisconnecting :
       begin
@@ -709,6 +714,11 @@ begin
     end;
   end;
   TreeViewTrains.Items.Clear;
+end;
+
+procedure TFormTrainCommander.JUNK(Sender: TObject; LccMessage: TLccMessage);
+begin
+
 end;
 
 procedure TFormTrainCommander.OnComPortConnectionStateChange(Sender: TObject; Info: TLccHardwareConnectionInfo);

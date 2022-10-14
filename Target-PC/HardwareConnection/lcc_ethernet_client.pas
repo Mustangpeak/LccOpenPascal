@@ -26,6 +26,7 @@ uses
   IdTCPClient,
   IdThreadComponent,
   IdGlobal,
+  IdException,
   lcc_node_messages_can_assembler_disassembler,
   lcc_gridconnect,
   lcc_defines,
@@ -69,6 +70,7 @@ type
   public
     { Public declarations }
     property ClientThread: TLccEthernetClientThread read FClientThread write FClientThread;
+
     function OpenConnection(ConnectionInfo: TLccHardwareConnectionInfo): TLccConnectionThread; override;
     procedure CloseConnection; override;
     procedure SendMessage(ALccMessage: TLccMessage); override;
@@ -95,13 +97,17 @@ end;
 procedure TLccEthernetClient.SendMessage(ALccMessage: TLccMessage);
 begin
   inherited SendMessage(ALccMessage);
-  ClientThread.OutgoingGridConnect.Add(ALccMessage.ConvertToGridConnectStr(#10, False));
+  if Assigned(ClientThread) then
+    ClientThread.OutgoingGridConnect.Add(ALccMessage.ConvertToGridConnectStr(#10, False));
 end;
 
 procedure TLccEthernetClient.ReceiveMessage;
 begin
-  NodeManager.ReceiveMessage(ClientThread.WorkerMessage);
-  DoReceiveMessage(ClientThread.WorkerMessage);
+  if Assigned(ClientThread) then
+  begin
+    NodeManager.ReceiveMessage(ClientThread.TryReceiveWorkerMessage);
+    DoReceiveMessage(ClientThread.TryReceiveWorkerMessage);
+  end;
 end;
 
 function TLccEthernetClient.OpenConnection(ConnectionInfo: TLccHardwareConnectionInfo): TLccConnectionThread;
@@ -200,10 +206,11 @@ begin
       FRunning := False;
     end;
   except   // Indy uses exceptions to trigger problems
-     // Handle Error message here?
-     if not DisconnectedCalled then
-       HandleSendConnectionNotification(lcsDisconnected);
-     Synchronize({$IFDEF FPC}@{$ENDIF}ErrorMessage);
+    on E: EIdException do
+    begin
+      ConnectionInfo.ErrorMessage := E.Message;
+      Synchronize({$IFDEF FPC}@{$ENDIF}ErrorMessage);
+    end;
   end;
 end;
 
@@ -220,17 +227,27 @@ begin
 end;
 
 procedure TLccEthernetClientThread.OnThreadComponentRun(Sender: TIdThreadComponent);
+var
+  AString: String;
+  AChar: Char;
 begin
+  AString := '';
   while not IdTCPClient.IOHandler.InputBufferIsEmpty and IdTCPClient.IOHandler.Connected do
   begin
-    if ConnectionInfo.Gridconnect then   // Handle the Client using GridConnect
-      TryReceiveGridConnect(IdTCPClient.IOHandler.ReadByte, GridConnectHelper)
+    AChar := AnsiChar(idTCPClient.IOHandler.ReadByte);
+    AString := AString + string(AChar);
+  end;
+
+  if AString <> '' then
+  begin
+    if ConnectionInfo.Gridconnect then
+      TryReceiveGridConnect(AString, GridConnectHelper)
     else
-      TryReceiveTCPProtocol(IdTCPClient.IOHandler.ReadByte)
+      TryReceiveTCPProtocol(AString)
   end;
     // https://stackoverflow.com/questions/64593756/delphi-rio-indy-tcpserver-high-cpu-usage
     // There is another way to do this but with this simple program this is fine
-   IndySleep(200);
+  IndySleep(200);
 end;
 
 end.

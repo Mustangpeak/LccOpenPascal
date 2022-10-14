@@ -12,7 +12,6 @@ uses
   SysUtils,
   Classes,
   {$IFDEF FPC}
-    contnrs,
     {$IFNDEF FPC_CONSOLE_APP}
       ExtCtrls,
     {$ENDIF}
@@ -65,7 +64,7 @@ type
     procedure BeforeLogin; override;
 
   public
-    constructor Create(ASendMessageFunc: TOnMessageEvent; ANodeManager: {$IFDEF DELPHI}TComponent{$ELSE}TObject{$ENDIF}; CdiXML: string; GridConnectLink: Boolean); override;
+    constructor Create(ANodeManager: {$IFDEF DELPHI}TComponent{$ELSE}TObject{$ENDIF}; CdiXML: string; GridConnectLink: Boolean); override;
     function AddTrain(ADccAddress: Word; ALongAddress: Boolean; ASpeedStep: TLccDccSpeedStep): TLccTrainDccNode;
     procedure ClearTrains;
     function FindTrainByLccNodeID(ANodeID: TNodeID): TLccTrainDccNode;
@@ -125,9 +124,9 @@ begin
   ProtocolMemoryOptions.LowSpace := MSI_TRACTION_FUNCTION_CONFIG;
 end;
 
-constructor TLccCommandStationNode.Create(ASendMessageFunc: TOnMessageEvent; ANodeManager: {$IFDEF DELPHI}TComponent{$ELSE}TObject{$ENDIF}; CdiXML: string; GridConnectLink: Boolean);
+constructor TLccCommandStationNode.Create(ANodeManager: {$IFDEF DELPHI}TComponent{$ELSE}TObject{$ENDIF}; CdiXML: string; GridConnectLink: Boolean);
 begin
-  inherited Create(ASendMessageFunc, ANodeManager, CdiXML, GridConnectLink);
+  inherited Create(ANodeManager, CdiXML, GridConnectLink);
   EnableTrainDatabase := True;
 end;
 

@@ -40,11 +40,11 @@ type
     property CreateTime: DWord read FCreateTime write FCreateTime;
     property WorkerMessage: TLccMessage read FWorkerMessage write FWorkerMessage;
   public
-    property SendMessageFunc: TOnMessageEvent read FSendMessageFunc;
+    property SendMessageFunc: TOnMessageEvent read FSendMessageFunc write FSendMessageFunc;
     property ErrorCode: Word read FErrorCode write FErrorCode;
     property Valid: Boolean read FValid write SetValid;
 
-    constructor Create(ASendMessageFunc: TOnMessageEvent); virtual;
+    constructor Create; virtual;
     destructor Destroy; override;
 
     function ReadAsString(Address: DWord; AStream: TStream): String;
@@ -155,7 +155,7 @@ type
     property EventList: TObjectList read FEventList write FEventList;
     {$ENDIF}
   public
-    constructor Create(ASendMessageFunc: TOnMessageEvent); override;
+    constructor Create; override;
     destructor Destroy; override;
 
     procedure Add(Event: TEventID; State: TEventState);
@@ -209,7 +209,7 @@ type
     property AddressSpace[Index: Integer]: TConfigMemAddressSpaceInfoObject read GetAddressSpace; default;
     property Count: Integer read GetCount;
 
-    constructor Create(ASendMessageFunc: TOnMessageEvent); override;
+    constructor Create; override;
     destructor Destroy; override;
     procedure Add(_Space: Byte; _IsPresent, _IsReadOnly, _ImpliedZeroLowAddress: Boolean; _LowAddress, _HighAddress: DWord);
     procedure Clear;
@@ -299,7 +299,7 @@ private
 
 protected
 public
-  constructor Create(ASendMessageFunc: TOnMessageEvent); override;
+  constructor Create; override;
   destructor Destroy; override;
 
   procedure DatagramWriteRequest(LccMessage: TLccMessage; AStream: TStream); override;
@@ -353,15 +353,14 @@ begin
     StreamWriteByte(AStream, LccMessage.DataArrayIndexer[i]);
 end;
 
-constructor TNodeProtocolBase.Create(ASendMessageFunc: TOnMessageEvent);
+constructor TNodeProtocolBase.Create;
 begin
   inherited Create;
   {$IFDEF FPC}
-  FCreateTime := GetTickCount64;
+ // FCreateTime := GetTickCount;  This kills OSX.....
   {$ELSE}
   FCreateTime := TThread.GetTickCount;
   {$ENDIF}
-  FSendMessageFunc := ASendMessageFunc;
   FWorkerMessage := TLccMessage.Create;
 end;
 
@@ -560,9 +559,9 @@ end;
 
 { TProtocolEvents }
 
-constructor TProtocolEvents.Create(ASendMessageFunc: TOnMessageEvent);
+constructor TProtocolEvents.Create;
 begin
-  inherited Create(ASendMessageFunc);
+  inherited Create;
   {$IFDEF DELPHI}
   FEventList := TObjectList<TLccEvent>.Create;
   {$ELSE}
@@ -668,17 +667,17 @@ begin
  end;
 end;
 
-constructor TProtocolMemoryInfo.Create(ASendMessageFunc: TOnMessageEvent);
+constructor TProtocolMemoryInfo.Create;
 begin
- inherited Create(ASendMessageFunc);
- {$IFDEF DELPHI}
- List := TObjectList<TConfigMemAddressSpaceInfoObject>.Create;
- {$ELSE}
- List := TObjectList.Create;
- {$ENDIF}
- {$IFNDEF DWSCRIPT}
- List.OwnsObjects := False;
- {$ENDIF}
+  inherited Create;
+  {$IFDEF DELPHI}
+  List := TObjectList<TConfigMemAddressSpaceInfoObject>.Create;
+  {$ELSE}
+  List := TObjectList.Create;
+  {$ENDIF}
+  {$IFNDEF DWSCRIPT}
+  List.OwnsObjects := False;
+  {$ENDIF}
 end;
 
 destructor TProtocolMemoryInfo.Destroy;
@@ -712,7 +711,8 @@ begin
  Result := List.Count
 end;
 
-procedure TProtocolMemoryInfo.LoadReply(LccMessage, OutMessage: TLccMessage);
+procedure TProtocolMemoryInfo.LoadReply(LccMessage: TLccMessage;
+  OutMessage: TLccMessage);
 var
  Info: TConfigMemAddressSpaceInfoObject;
 begin
@@ -911,9 +911,9 @@ end;
 
 { TProtocolMemoryConfiguration }
 
-constructor TProtocolMemoryConfiguration.Create(ASendMessageFunc: TOnMessageEvent );
+constructor TProtocolMemoryConfiguration.Create;
 begin
- inherited Create(ASendMessageFunc );
+ inherited Create;
 end;
 
 

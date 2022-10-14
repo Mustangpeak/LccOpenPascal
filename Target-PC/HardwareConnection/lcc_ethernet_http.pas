@@ -24,9 +24,9 @@ uses
     Types,
     System.Generics.Collections,
   {$ENDIF}
-  blcksock,
-  synsock,
-  Synautil,
+//  blcksock,
+ // synsock,
+ // Synautil,
   lcc_defines,
   lcc_node_messages,
   lcc_app_common_settings,

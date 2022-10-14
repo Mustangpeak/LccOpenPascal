@@ -44,7 +44,7 @@ type
   TLccHardwareConnectionInfo = class
   private
     FConnectionState: TLccConnectionState;
-    FErrorCode: Integer;
+    FErrorMessage: String;
     FGridConnect: Boolean;
     FHub: Boolean;
     FLccMessage: TLccMessage;
@@ -52,8 +52,6 @@ type
     FSleepCofunt: Integer;
     FSleepCount: Integer;
     FSuppressErrorMessages: Boolean;
-    FThread: TLccConnectionThread;
-    FUseSyncronize: Boolean;
   public
     MessageArray: TLccDynamicByteArray;                                         // Contains the TCP Protocol message bytes of not using GridConnect
 
@@ -63,11 +61,10 @@ type
     function Clone: TLccHardwareConnectionInfo; virtual;
 
     property ConnectionState: TLccConnectionState read FConnectionState write FConnectionState;  // Current State of the connection
+    property ErrorMessage: String read FErrorMessage write FErrorMessage;
     property GridConnect: Boolean read FGridConnect write FGridConnect;
-    property Thread: TLccConnectionThread read FThread write FThread;
     property Hub: Boolean read FHub write FHub;
     property LccMessage: TLccMessage read FLccMessage write FLccMessage;
-    property ErrorCode: Integer read FErrorCode write FErrorCode;
     property MessageStr: String read FMessageStr write FMessageStr;             // Contains the string for the resulting message from the thread
     property SleepCount: Integer read FSleepCount write FSleepCofunt;
     property SuppressErrorMessages: Boolean read FSuppressErrorMessages write FSuppressErrorMessages;
@@ -186,17 +183,15 @@ begin
   inherited;
   FLccMessage := TLccMessage.Create;
   FConnectionState := lcsDisconnected;
-  FUseSyncronize := True;
 end;
 
 function TLccHardwareConnectionInfo.Clone: TLccHardwareConnectionInfo;
 begin
   Result := Self.ClassType.Create as TLccHardwareConnectionInfo;
   Result.ConnectionState := ConnectionState;
+  Result.ErrorMessage := ErrorMessage;
   Result.GridConnect := GridConnect;;
-  Result.Thread := Thread;
   Result.Hub := Hub;
-  Result.ErrorCode := ErrorCode;
   Result.MessageStr := MessageStr;
   Result.MessageArray := MessageArray;
   Result.SleepCount := SleepCount;
@@ -297,9 +292,7 @@ begin
   inherited Create(CreateSuspended);
   FOwner := AnOwner;
   FConnectionInfo := AConnectionInfo.Clone;
-  FConnectionInfo.Thread := Self;
   FConnectionInfo.ConnectionState := lcsDisconnected;
-  FConnectionInfo.ErrorCode := 0;
   FConnectionInfo.FMessageStr := '';
   FWorkerMessage := TLccMessage.Create;
   FOutgoingCircularArray := TThreadedCircularArray.Create;
@@ -324,7 +317,7 @@ end;
 
 procedure TLccConnectionThread.HandleErrorAndDisconnect(SuppressMessage: Boolean);
 begin
-  if not SuppressMessage and (ConnectionInfo.ErrorCode <> 0) then
+  if not SuppressMessage then
     Synchronize({$IFDEF FPC}@{$ENDIF}ErrorMessage);
   HandleSendConnectionNotification(lcsDisconnected);
   Terminate;

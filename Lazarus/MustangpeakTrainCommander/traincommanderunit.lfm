@@ -1,7 +1,7 @@
 object FormTrainCommander: TFormTrainCommander
-  Left = 557
+  Left = 263
   Height = 565
-  Top = 141
+  Top = 182
   Width = 1241
   Align = alBottom
   Caption = 'Train Commander [LccOpenPascal]'
@@ -11,7 +11,7 @@ object FormTrainCommander: TFormTrainCommander
   OnCreate = FormCreate
   OnDestroy = FormDestroy
   OnShow = FormShow
-  LCLVersion = '2.2.2.0'
+  LCLVersion = '2.2.4.0'
   object PanelDetails: TPanel
     Left = 0
     Height = 120
@@ -174,6 +174,15 @@ object FormTrainCommander: TFormTrainCommander
       Caption = 'Show Server Form'
       OnChange = ToggleBoxServerFormChange
       TabOrder = 12
+    end
+    object Button1: TButton
+      Left = 907
+      Height = 25
+      Top = 25
+      Width = 75
+      Caption = 'Button1'
+      OnClick = Button1Click
+      TabOrder = 13
     end
   end
   object PanelConnections: TPanel

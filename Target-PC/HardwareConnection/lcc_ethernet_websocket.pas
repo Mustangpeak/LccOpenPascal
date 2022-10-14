@@ -32,9 +32,9 @@ uses
     lcc_detailed_logging,
   {$ENDIF}
 
-  blcksock,
-  synsock,
-  Synautil,
+ // blcksock,
+ // synsock,
+//  Synautil,
   lcc_threaded_stringlist,
   lcc_gridconnect,
   lcc_defines,

@@ -73,7 +73,7 @@ type
     procedure BeforeLogin; override;
   public
 
-    constructor Create(ASendMessageFunc: TOnMessageEvent; ANodeManager: {$IFDEF DELPHI}TComponent{$ELSE}TObject{$ENDIF}; CdiXML: string; GridConnectLink: Boolean); override;
+    constructor Create(ANodeManager: {$IFDEF DELPHI}TComponent{$ELSE}TObject{$ENDIF}; CdiXML: string; GridConnectLink: Boolean); override;
 
     // NEW STARTING OCT 8 2022... above may get deleted eventually
 
@@ -186,9 +186,9 @@ begin
    SendMessageFunc(Self, WorkerMessage);
 end;
 
-constructor TLccTrainController.Create(ASendMessageFunc: TOnMessageEvent; ANodeManager: {$IFDEF DELPHI}TComponent{$ELSE}TObject{$ENDIF}; CdiXML: string; GridConnectLink: Boolean);
+constructor TLccTrainController.Create(ANodeManager: {$IFDEF DELPHI}TComponent{$ELSE}TObject{$ENDIF}; CdiXML: string; GridConnectLink: Boolean);
 begin
-  inherited Create(ASendMessageFunc, ANodeManager, CdiXML, GridConnectLink);
+  inherited Create(ANodeManager, CdiXML, GridConnectLink);
   EnableTrainDatabase := True;
 end;
 
