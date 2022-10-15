@@ -225,7 +225,7 @@ end;
 procedure TLccEthernetClientThread.OnThreadComponentRun(Sender: TIdThreadComponent);
 var
   AString: String;
-  AChar: Char;
+  AChar: AnsiChar;
 begin
   AString := '';
   while not IdTCPClient.IOHandler.InputBufferIsEmpty and IdTCPClient.IOHandler.Connected do

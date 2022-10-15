@@ -94,7 +94,7 @@ type
   private
     {$IFDEF DELPHI}
     FMappingList: TObjectList<TLccAliasMapping>;      // List of TLccAliasMapping Objects
-    FDelayedMessageList: TObjectList<TLccDelayedMessage>;  // List of TLccMessages that are in waiting for a valid AliasMapping before processing
+    FDelayedMessageList: TObjectList<TLccDelayedMessageContext>;  // List of TLccMessages that are in waiting for a valid AliasMapping before processing
     {$ELSE}
     FMappingList: TObjectList;
     FDelayedMessageList: TObjectList;
@@ -104,7 +104,7 @@ type
   protected
     {$IFDEF DELPHI}
     property MappingList: TObjectList<TLccAliasMapping> read FMappingList write FMappingList;
-    property DelayedMessageList: TObjectList<TLccDelayedMessage> read FDelayedMessageList write FDelayedMessageList;
+    property DelayedMessageList: TObjectList<TLccDelayedMessageContext> read FDelayedMessageList write FDelayedMessageList;
     {$ELSE}
     property MappingList: TObjectList read FMappingList write FMappingList;
     property DelayedMessageList: TObjectList read FDelayedMessageList write FDelayedMessageList;
@@ -134,7 +134,12 @@ implementation
 
 constructor TLccAliasMessageContext.Create;
 begin
-  MessageContext := TObjectList.Create;
+
+  {$IFDEF DELPHI}
+   MessageContext := TObjectList<TLccDelayedMessageContext>.Create;
+  {$ELSE}
+   MessageContext := TObjectList.Create;
+  {$ENDIF}
 end;
 
 destructor TLccAliasMessageContext.Destroy;
@@ -152,6 +157,7 @@ function TLccAliasMessageContext.FindContext(AMessage: TLccMessage): TLccDelayed
 var
   i: Integer;
 begin
+  Result := nil;
   for i := 0 to MessageContext.Count - 1 do
   begin
  //   if AMessage.CAN.SourceAlias = TLccDelayedMessageContext(MessageContext[i]).SourceAlias;
@@ -190,7 +196,7 @@ begin
   inherited Create;
   {$IFDEF DELPHI}
   FMappingList := TObjectList<TLccAliasMapping>.Create(True);
-  FDelayedMessageList := TObjectList<TLccDelayedMessage>.Create(False);
+  FDelayedMessageList := TObjectList<TLccDelayedMessageContext>.Create(False);
   {$ELSE}
   FMappingList := TObjectList.Create(True);
   FDelayedMessageList := TObjectList.Create(False);

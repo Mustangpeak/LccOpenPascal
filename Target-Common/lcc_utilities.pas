@@ -79,6 +79,7 @@ uses
     var
       IdIpWatch: TIdIpWatch;
     begin
+      IdIpWatch := nil;
       try
         Result := '';
         IdIpWatch := TIdIpWatch.Create(nil);

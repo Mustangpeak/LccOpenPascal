@@ -395,9 +395,7 @@ end;
 
 procedure TLccNode.SetSendMessageFunc(AValue: TOnMessageEvent);
 begin
-  if FSendMessageFunc=AValue then Exit;
-  FSendMessageFunc:=AValue;
-
+  FSendMessageFunc := AValue;
   ProtocolSupportedProtocols.SendMessageFunc := AValue;
   FProtocolSimpleNodeInfo.SendMessageFunc := AValue;
   ProtocolMemoryConfigurationDefinitionInfo.SendMessageFunc := AValue;
@@ -467,8 +465,7 @@ begin
   Result := True;
 end;
 
-constructor TLccNode.Create(ANodeManager: TObject; CdiXML: string;
-  GridConnectLink: Boolean);
+constructor TLccNode.Create(ANodeManager: {$IFDEF DELPHI}TComponent{$ELSE}TObject{$ENDIF}; CdiXML: string; GridConnectLink: Boolean);
 var
   i, Counter: Integer;
 begin
