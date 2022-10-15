@@ -13,7 +13,8 @@ uses
   SysUtils,
   lcc_math_float16,
   lcc_defines,
-  lcc_utilities;
+  lcc_utilities,
+  lcc_alias_server;
 
 type
   TLccMessage = class; // forward
@@ -89,16 +90,24 @@ type
 
   TLccDestinationObject = class
   private
+    FActive: Boolean;
     FAlias: Word;
     FNodeID: TNodeID;
   public
     property NodeID: TNodeID read FNodeID write FNodeID;
     property Alias: Word read FAlias write FAlias;
+    property Active: Boolean read FActive write FActive;
+
+    procedure AssignID(ANodeID: TNodeID; AnAlias: Word);
+    function Compare(TestObject: TLccDestinationObject): Boolean; overload;
+    function Compare(TestMapping: TLccAliasMapping): Boolean overload;
+    function CompareEitherOr(TestObject: TLccDestinationObject): Boolean; overload;
+    function CompareEitherOr(TestMapping: TLccAliasMapping): Boolean; overload;
   end;
 
-    { LccIdentificationObjectList }
+    { TLccDestinationObjectList }
 
-  LccIdentificationObjectList = class(TList)
+  TLccDestinationObjectList = class(TList)
   private
     function GetIdentification(Index: Integer): TLccDestinationObject;
     procedure SetIdentification(Index: Integer; AValue: TLccDestinationObject);
@@ -107,52 +116,58 @@ type
 
     destructor Destroy; override;
     procedure Clear; override;
+
+    function IsDuplicate(DestinationObject: TLccDestinationObject): Boolean;
+    procedure RemoveDestination(AliasMapping: TLccAliasMapping);
+  end;
+
+    { TLccMessageDestinationsObject }
+
+  TLccMessageDestinationsObject = class
+  private
+    FDestination: TLccDestinationObject;
+    FPayload: TLccDestinationObjectList;
+    FSource: TLccDestinationObject;
+  public
+    property Destination: TLccDestinationObject read FDestination write FDestination;
+    property Source: TLccDestinationObject read FSource write FSource;
+    property Payload: TLccDestinationObjectList read FPayload write FPayload;
+
+    function ProcessNewMapping(NewMapping: TLccAliasMapping): Boolean;
   end;
 
    { TLccMessageIdentification }
 
   TLccMessageIdentification = class
   private
-    FDestination: TLccDestinationObject;
-    FPayload: LccIdentificationObjectList;
-    FSource: TLccDestinationObject;
-    FTLccMessage: TLccMessage;
-  public
-    property LccMessage: TLccMessage read FTLccMessage write FTLccMessage;
-    property Destination: TLccDestinationObject read FDestination write FDestination;
-    property Source: TLccDestinationObject read FSource write FSource;
-    property Payload: LccIdentificationObjectList read FPayload write FPayload;
-
-    constructor Create;
-    destructor Destroy; override;
-  end;
-
-  { TLccMessageAliasContext }
-
-  TLccMessageAliasContext = class
-  private
     FContextAlias: Word;
-    FMessageIdentification: TLccMessageIdentification;
+    FLccMessageDestinations: TLccMessageDestinationsObject;
+    FLccMessage: TLccMessage;
   public
-    property MessageIdentification: TLccMessageIdentification read FMessageIdentification write FMessageIdentification;
+    property LccMessage: TLccMessage read FLccMessage write FLccMessage;
+    property LccMessageDestinations: TLccMessageDestinationsObject read FLccMessageDestinations write FLccMessageDestinations;
     property ContextAlias: Word read FContextAlias write FContextAlias;
 
     constructor Create(AnAliasContext: Word);
     destructor Destroy; override;
+    function ExtractAndCreateIdentificationObjects(AMessage: TLccMessage): TLccMessageDestinationsObject;
+    procedure NewPayloadItem(ANodeID: TNodeID);
   end;
 
   { TLccMessageAliasContextList }
 
   TLccMessageAliasContextList = class(TList)
   private
-    function GetLccMessageAliasContext(Index: Integer): TLccMessageAliasContext;
-    procedure SetLccMessageAliasContext(Index: Integer; AValue: TLccMessageAliasContext);
+    function GetLccMessageAliasContext(Index: Integer): TLccMessageIdentification;
+    procedure SetLccMessageAliasContext(Index: Integer; AValue: TLccMessageIdentification);
   public
-    property LccMessageAliasContext[Index: Integer]: TLccMessageAliasContext read GetLccMessageAliasContext write SetLccMessageAliasContext; default;
+    property LccMessageIdentification[Index: Integer]: TLccMessageIdentification read GetLccMessageAliasContext write SetLccMessageAliasContext; default;
 
     procedure Add(AMessage: TLccMessage);
-    function FindByContext(AnAliasContext: Word): TLccMessageAliasContext;
-    procedure Process(AMessage: TLccMessage);
+    procedure Clear; override;
+    function FindByAliasContext(AnAliasContext: Word): TLccMessageIdentification;
+    function Process(AMessage: TLccMessage): TLccMessageDestinationsObject;
+    procedure ProcessNewMapping(AliasMapping: TLccAliasMapping);
   end;
 
 
@@ -764,33 +779,166 @@ begin
   end;
 end;
 
+{ TLccMessageDestinationsObject }
+
+function TLccMessageDestinationsObject.ProcessNewMapping(NewMapping: TLccAliasMapping): Boolean;
+var
+  i: Integer;
+begin
+  if Source.CompareEitherOr(NewMapping) then
+    Source.AssignID(NewMapping.NodeID, NewMapping.NodeAlias);
+  if Destination.Active then
+    if Destination.CompareEitherOr(NewMapping) then
+      Source.AssignID(NewMapping.NodeID, NewMapping.NodeAlias);
+
+
+  Result := Source.CompareEitherOr(NewMapping) and (not Destination.Active or Destination.CompareEitherOr(NewMapping));
+  for i := 0 to Payload.Count - 1 do
+  begin
+    if Payload.Identification[i].Active and Payload.Identification[i].CompareEitherOr(NewMapping) then
+      Payload.Identification[i].AssignID(NewMapping.NodeID, NewMapping.NodeAlias);
+  end;
+end;
+
+{ TLccDestinationObject }
+
+procedure TLccDestinationObject.AssignID(ANodeID: TNodeID; AnAlias: Word);
+begin
+  Alias := AnAlias;
+  NodeID := ANodeID;
+  FActive := True;
+end;
+
+function TLccDestinationObject.Compare(TestObject: TLccDestinationObject): Boolean;
+begin
+  Result := (TestObject.Alias = Alias) and (TestObject.NodeID[0] = NodeID[0]) and (TestObject.NodeID[0] = NodeID[0])
+end;
+
+function TLccDestinationObject.Compare(TestMapping: TLccAliasMapping): Boolean;
+begin
+  Result := (TestMapping.NodeAlias = Alias) and (TestMapping.NodeID[0] = NodeID[0]) and (TestMapping.NodeID[0] = NodeID[0])
+end;
+
+function TLccDestinationObject.CompareEitherOr(TestObject: TLccDestinationObject): Boolean;
+begin
+  Result := (TestObject.Alias = Alias) or ((TestObject.NodeID[0] = NodeID[0]) and (TestObject.NodeID[0] = NodeID[0]))
+end;
+
+function TLccDestinationObject.CompareEitherOr(TestMapping: TLccAliasMapping): Boolean;
+begin
+  Result := (TestMapping.NodeAlias = Alias) or ((TestMapping.NodeID[0] = NodeID[0]) and (TestMapping.NodeID[0] = NodeID[0]))
+end;
+
 { TLccMessageIdentification }
 
-constructor TLccMessageIdentification.Create;
+constructor TLccMessageIdentification.Create(AnAliasContext: Word);
 begin
-  FPayload := LccIdentificationObjectList.Create;
-  FSource := TLccDestinationObject.Create;
-  FDestination := TLccDestinationObject.Create;
+  FLccMessageDestinations := TLccMessageDestinationsObject.Create;
+  FContextAlias := AnAliasContext;
 end;
 
 destructor TLccMessageIdentification.Destroy;
 begin
-  FreeAndNil(FPayload);
-  FreeAndNil(FSource);
-  FreeAndNil(FDestination);
+  FreeAndNil(FLccMessageDestinations);
+  FreeAndNil(FLccMessage);
   inherited Destroy;
 end;
 
-{ LccIdentificationObjectList }
+function TLccMessageIdentification.ExtractAndCreateIdentificationObjects(AMessage: TLccMessage): TLccMessageDestinationsObject;
+var
+  ANodeID: TNodeID;
+begin
+  Result := LccMessageDestinations;
+  LccMessageDestinations.Source.AssignID(AMessage.SourceID, AMessage.CAN.SourceAlias);
+  if AMessage.HasDestination then
+    LccMessageDestinations.Destination.AssignID(AMessage.DestID, AMessage.CAN.DestAlias);
+  LccMessage := AMessage.Clone;
 
-function LccIdentificationObjectList.GetIdentification(Index: Integer): TLccDestinationObject;
+  LccMessageDestinations.Payload.Clear;
+  case AMessage.MTI of
+    MTI_TRACTION_REPLY :
+      begin
+        case AMessage.DataArray[0] of
+          TRACTION_CONTROLLER_CONFIG :
+            begin
+              case AMessage.DataArray[1] of
+                TRACTION_CONTROLLER_CONFIG_QUERY :
+                  begin
+                   ANodeID := NULL_NODE_ID;
+                   AMessage.ExtractDataBytesAsNodeID(3, ANodeID);
+                   if not NullNodeID(ANodeID) then    // NULL is valid for no controller assigned
+                     NewPayloadItem(ANodeID);
+                  end;
+                end
+            end;
+
+           TRACTION_LISTENER :
+             case AMessage.DataArray[1] of
+                TRACTION_LISTENER_ATTACH,
+                TRACTION_LISTENER_DETACH :
+                  begin
+                    ANodeID := NULL_NODE_ID;
+                    AMessage.ExtractDataBytesAsNodeID(2, ANodeID);
+                    NewPayloadItem(ANodeID);
+                  end;
+              end;
+        end;
+      end;
+    MTI_TRACTION_REQUEST :
+      begin
+        case AMessage.DataArray[0] of
+          TRACTION_CONTROLLER_CONFIG :
+            begin
+              case AMessage.DataArray[1] of
+                TRACTION_CONTROLLER_CONFIG_ASSIGN,
+                TRACTION_CONTROLLER_CONFIG_RELEASE,
+                TRACTION_CONTROLLER_CONFIG_CHANGING_NOTIFY :
+                begin
+                  ANodeID := NULL_NODE_ID;
+                  AMessage.ExtractDataBytesAsNodeID(3, ANodeID);
+                  NewPayloadItem(ANodeID);
+                end;
+              end
+            end;
+          TRACTION_LISTENER :
+            begin
+              case AMessage.DataArray[1] of
+                TRACTION_LISTENER_ATTACH,
+                TRACTION_LISTENER_DETACH :
+                  begin
+                    ANodeID := NULL_NODE_ID;
+                    AMessage.ExtractDataBytesAsNodeID(3, ANodeID);
+                    NewPayloadItem(ANodeID);
+                  end;
+              end;
+            end
+        end
+      end;
+  end;
+end;
+
+procedure TLccMessageIdentification.NewPayloadItem(ANodeID: TNodeID);
+var
+  ADestinationObject: TLccDestinationObject;
+begin
+  if not NullNodeID(ANodeID) then
+  begin
+    ADestinationObject := TLccDestinationObject.Create;
+    ADestinationObject.AssignID(ANodeID, 0);
+    LccMessageDestinations.Payload.Add(ADestinationObject);
+  end;
+end;
+
+{ TLccDestinationObjectList }
+
+function TLccDestinationObjectList.GetIdentification(Index: Integer): TLccDestinationObject;
 begin
   Result := nil;
   if Index < Count then
     Result := TLccDestinationObject(Items[Index]);
 end;
 
-procedure LccIdentificationObjectList.SetIdentification(Index: Integer; AValue: TLccDestinationObject);
+procedure TLccDestinationObjectList.SetIdentification(Index: Integer; AValue: TLccDestinationObject);
 begin
   if Index < Count then
   begin
@@ -799,13 +947,13 @@ begin
   end;
 end;
 
-destructor LccIdentificationObjectList.Destroy;
+destructor TLccDestinationObjectList.Destroy;
 begin
   Clear;
   inherited Destroy;
 end;
 
-procedure LccIdentificationObjectList.Clear;
+procedure TLccDestinationObjectList.Clear;
 var
   i: Integer;
 begin
@@ -819,14 +967,44 @@ begin
   end;
 end;
 
-{ TLccMessageAliasContextList }
-
-function TLccMessageAliasContextList.GetLccMessageAliasContext(Index: Integer): TLccMessageAliasContext;
+function TLccDestinationObjectList.IsDuplicate(DestinationObject: TLccDestinationObject): Boolean;
+var
+  i: Integer;
 begin
-  Result := TLccMessageAliasContext(Items[Index])
+  Result := False;
+  for i := 0 to Count - 1 do
+  begin
+    if DestinationObject.CompareEitherOr(Identification[i]) then
+    begin
+      Result := True;
+      Break
+    end;
+  end;
 end;
 
-procedure TLccMessageAliasContextList.SetLccMessageAliasContext(Index: Integer; AValue: TLccMessageAliasContext);
+procedure TLccDestinationObjectList.RemoveDestination(AliasMapping: TLccAliasMapping);
+var
+  i: Integer;
+begin
+  for i := 0 to Count - 1 do
+  begin
+    if Identification[i].Compare(AliasMapping) then
+    begin
+      Identification[i].Free;
+      Delete(i);
+      Break
+    end;
+  end;
+end;
+
+{ TLccMessageAliasContextList }
+
+function TLccMessageAliasContextList.GetLccMessageAliasContext(Index: Integer): TLccMessageIdentification;
+begin
+  Result := TLccMessageIdentification(Items[Index])
+end;
+
+procedure TLccMessageAliasContextList.SetLccMessageAliasContext(Index: Integer; AValue: TLccMessageIdentification);
 begin
   if Index < Count then
   begin
@@ -837,47 +1015,65 @@ end;
 
 procedure TLccMessageAliasContextList.Add(AMessage: TLccMessage);
 var
-  Context: TLccMessageAliasContext;
+  Context: TLccMessageIdentification;
 begin
-  Context := FindByContext(AMessage.CAN.SourceAlias);
+  Context := FindByAliasContext(AMessage.CAN.SourceAlias);
   if not Assigned(Context) then
-    Context := TLccMessageAliasContext.Create(AMessage.CAN.SourceAlias);
+    Context := TLccMessageIdentification.Create(AMessage.CAN.SourceAlias);
 //  Context.MessageIdentification.Push(AMessage);
 end;
 
-function TLccMessageAliasContextList.FindByContext(AnAliasContext: Word): TLccMessageAliasContext;
+procedure TLccMessageAliasContextList.Clear;
+var
+  i: Integer;
+begin
+  try
+    for i := 0 to Count - 1 do
+      TObject(Items[i]).Free;
+  finally
+    inherited Clear;
+  end;
+end;
+
+function TLccMessageAliasContextList.FindByAliasContext(AnAliasContext: Word): TLccMessageIdentification;
 var
   i: Integer;
 begin
   Result := nil;
   for i := 0 to Count - 1 do
   begin
-    if LccMessageAliasContext[i].ContextAlias = AnAliasContext then
+    if LccMessageIdentification[i].ContextAlias = AnAliasContext then
     begin
-      Result := LccMessageAliasContext[i];
+      Result := LccMessageIdentification[i];
       Break
     end;
   end;
 end;
 
-procedure TLccMessageAliasContextList.Process(AMessage: TLccMessage);
+function TLccMessageAliasContextList.Process(AMessage: TLccMessage
+  ): TLccMessageDestinationsObject;
+var
+  MessageAliasContext: TLccMessageIdentification;
 begin
-
+  MessageAliasContext := FindByAliasContext(AMessage.CAN.SourceAlias);
+  if not Assigned(MessageAliasContext) then
+    MessageAliasContext := TLccMessageIdentification.Create(AMessage.CAN.SourceAlias);
+  Result := MessageAliasContext.ExtractAndCreateIdentificationObjects(AMessage);
 end;
 
-{ TLccMessageAliasContext }
-
-constructor TLccMessageAliasContext.Create(AnAliasContext: Word);
+procedure TLccMessageAliasContextList.ProcessNewMapping(AliasMapping: TLccAliasMapping);
+var
+  i: Integer;
 begin
-  FMessageIdentification := TLccMessageIdentification.Create;
-  FContextAlias := AnAliasContext;
+  for i := 0 to Count - 1 do
+  begin
+    LccMessageIdentification[i].LccMessageDestinations.ProcessNewMapping(AliasMapping);
+    begin
+
+    end;
+  end;
 end;
 
-destructor TLccMessageAliasContext.Destroy;
-begin
-  FreeAndNil(FMessageIdentification);
-  inherited Destroy;
-end;
 
 { TLccTheadMessageList }
 
