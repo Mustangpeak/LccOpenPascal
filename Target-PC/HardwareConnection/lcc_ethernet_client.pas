@@ -149,11 +149,8 @@ begin
 end;
 
 procedure TLccEthernetClientThread.Execute;
-var
-  DisconnectedCalled: Boolean;
 begin
   FRunning := True;
-  DisconnectedCalled := False;
   HandleSendConnectionNotification(lcsConnecting);
   GridConnectHelper := TGridConnectHelper.Create;
   idTCPClient := TIdTCPClient.Create();
@@ -199,7 +196,6 @@ begin
       idThreadComponent.Active := False;
       idTCPClient.Disconnect;
       HandleSendConnectionNotification(lcsDisconnected);
-      DisconnectedCalled := True;
       idTCPClient.Free;
       idThreadComponent.Free;
       GridConnectHelper.Free;

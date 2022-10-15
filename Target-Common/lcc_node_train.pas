@@ -27,6 +27,7 @@ uses
   lcc_utilities,
   lcc_defines,
   lcc_node_messages,
+  lcc_alias_server,
   lcc_math_float16,
   lcc_node;
 
@@ -193,12 +194,14 @@ type
 
   TListenerNode = class
   private
+    FAliasID: Word;
     FHidden: Boolean;
     FLinkF0: Boolean;
     FLinkFn: Boolean;
     FNodeID: TNodeID;
     FReverseDirection: Boolean;
   public
+    property AliasID: Word read FAliasID write FAliasID;
     property NodeID: TNodeID read FNodeID write FNodeID;
     property ReverseDirection: Boolean read FReverseDirection write FReverseDirection;
     property LinkF0: Boolean read FLinkF0 write FLinkF0;
@@ -229,7 +232,7 @@ type
 
     constructor Create;
     destructor Destroy; override;
-    function Add(NodeID: TNodeID; Flags: Byte; AliasID: Word = 0): TListenerNode;
+    function Add(NodeID: TNodeID; Flags: Byte; AnAliasID: Word): TListenerNode;
     function Delete(NodeID: TNodeID): Boolean;
     function FindNode(NodeID: TNodeID): TListenerNode;
     function FindByIndex(Index: Byte): TListenerNode;
@@ -256,6 +259,7 @@ type
     procedure AssignController(ANodeID: TNodeId; AnAlias: Word);
     procedure AssignRequestingController(ANodeID: TNodeId; AnAlias: Word);
     procedure AcceptRequestingController;
+    procedure Clear;
     procedure ClearAttachedController;
     procedure ClearRequestingController;
     function IsControllerAssigned: Boolean;
@@ -321,7 +325,16 @@ type
     procedure DccLoadPacket(var NewMessage: TDCCPacket; Data1, Data2, Data3, Data4, Data5, ValidDataByes: Byte);
 
     procedure HandleTractionControllerAssign(SourceMessage: TLccMessage);
+    procedure HandleTractionControllerRelease(SourceMessage: TLccMessage);
+    procedure HandleTractionControllerQuery(SourceMessage: TLccMessage);
     procedure HandleTractionControllerChangedNotify(SourceMessage: TLccMessage);
+    procedure HandleTractionManageReserve(SourceMessage: TLccMessage);
+    procedure HandleTractionManageRelease(SourceMessage: TLccMessage);
+    procedure HandleTractionListenerAttach(SourceMessage: TLccMessage);
+    procedure HandleTractionListenerDetach(SourceMessage: TLccMessage);
+    procedure HandleTractionListenerQuery(SourceMessage: TLccMessage);
+    procedure HandleConfigurationRead(SourceMessage: TLccMessage);
+    procedure HandleConfigurationWrite(SourceMessage: TLccMessage);
 
   public
     property DccAddress: Word read FDccAddress write SetDccAddress;
@@ -460,6 +473,12 @@ begin
   ClearRequestingController;
 end;
 
+procedure TControllerState.Clear;
+begin
+  ClearAttachedController;
+  ClearRequestingController;
+end;
+
 procedure TControllerState.ClearAttachedController;
 begin
   FAttachedController.NodeID := NULL_NODE_ID;
@@ -517,11 +536,11 @@ begin
   {$ENDIF}
 end;
 
-function TListenerList.Add(NodeID: TNodeID; Flags: Byte; AliasID: Word): TListenerNode;
+function TListenerList.Add(NodeID: TNodeID; Flags: Byte; AnAliasID: Word): TListenerNode;
 begin
- // AliasID := AliasID;
   Result := TListenerNode.Create;
   Result.NodeID := NodeID;
+  Result.AliasID := AnAliasID;
   Result.DecodeFlags(Flags);
   FListenerList.Add(Result);
 end;
@@ -891,9 +910,26 @@ begin
   begin
     ControllerState.AssignController(SourceMessage.SourceID, SourceMessage.CAN.SourceAlias);
 
-    WorkerMessage.LoadTractionControllerAssignReply(SourceMessage.DestID, SourceMessage.CAN.DestAlias, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias, TRACTION_CONTROLLER_CONFIG_REPLY_OK);
+    WorkerMessage.LoadTractionControllerAssignReply(NodeID, AliasID, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias, TRACTION_CONTROLLER_CONFIG_REPLY_OK);
     SendMessageFunc(Self, WorkerMessage);
   end;
+end;
+
+procedure TLccTrainDccNode.HandleTractionControllerRelease(SourceMessage: TLccMessage);
+begin
+  if ControllerState.IsControllerAssigned and ControllerState.IsControllerEqual(SourceMessage.SourceID, SourceMessage.CAN.SourceAlias) then
+    ControllerState.Clear
+end;
+
+procedure TLccTrainDccNode.HandleTractionControllerQuery(SourceMessage: TLccMessage);
+begin
+  // I could just return ControllerState.AttachedController.NodeID as if not assigned it will be NULL anyway
+  if ControllerState.IsControllerAssigned then
+  begin
+    WorkerMessage.LoadTractionControllerQueryReply(NodeID, AliasID, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias, ControllerState.AttachedController.NodeID);
+  end else
+    WorkerMessage.LoadTractionControllerQueryReply(NodeID, AliasID, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias, NULL_NODE_ID);
+  SendMessageFunc(Self, WorkerMessage);
 end;
 
 procedure TLccTrainDccNode.HandleTractionControllerChangedNotify(SourceMessage: TLccMessage);
@@ -917,6 +953,112 @@ begin
   SendMessageFunc(Self, WorkerMessage);
 end;
 
+procedure TLccTrainDccNode.HandleTractionManageReserve(SourceMessage: TLccMessage);
+begin
+  // If we are reserved and not reserved by the node calling then fail
+  if ReservedNodeState.IsAssigned and not ReservedNodeState.IsEqual(SourceMessage.SourceID, SourceMessage.CAN.SourceAlias) then
+    WorkerMessage.LoadTractionManageReply(SourceMessage.DestID, SourceMessage.CAN.DestAlias, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias, False)
+  else begin
+    ReservedNodeState.AssignReservedNode(SourceMessage.DestID, SourceMessage.CAN.DestAlias);
+    WorkerMessage.LoadTractionManageReply(SourceMessage.DestID, SourceMessage.CAN.DestAlias, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias, True)
+  end;
+  SendMessageFunc(Self, WorkerMessage);
+end;
+
+procedure TLccTrainDccNode.HandleTractionManageRelease(SourceMessage: TLccMessage);
+begin
+  // If we are reserved and reserved by the node then release it
+  if ReservedNodeState.IsAssigned and ReservedNodeState.IsEqual(SourceMessage.SourceID, SourceMessage.CAN.SourceAlias) then
+    ReservedNodeState.ClearReservedNode;
+end;
+
+procedure TLccTrainDccNode.HandleTractionListenerAttach(SourceMessage: TLccMessage);
+var
+  NewListenerNode: TListenerNode;
+  ListenerAttachFlags: Byte;
+  ListenerNodeID: TNodeID;
+  ListenerNodeAlias: Word;
+  AliasMapping: TLccAliasMapping;
+begin
+  // Things to concider:
+  //   1) Can't add a Node as its own Listener
+  //   2) Listener could already be in the list, don't add duplicates but may just want to update flags
+  //   3) Only the connected Controller can Attach a Listener : Balazs does not agree
+  //   4) The Train must be Reserved by the connected controller
+  //   5) Not enough memory to allocate another Listener
+  ListenerNodeID := SourceMessage.TractionExtractListenerID;
+  ListenerAttachFlags := SourceMessage.TractionExtractListenerFlags;
+
+  ListenerNodeAlias := 0;
+  if GridConnect then
+  begin
+    AliasMapping := AliasServer.FindMapping(ListenerNodeID);
+    Assert(Assigned(AliasMapping), 'TLccTrainDccNode.HandleTractionListenerAttach: Alias Mapping Failed');
+    ListenerNodeAlias := AliasMapping.NodeAlias;
+  end;
+
+  if EqualNodeID(NodeID, ListenerNodeID, False) then  // Trying to create a Listener that is the nodes itself.... will cause infinte loops
+    WorkerMessage.LoadTractionListenerAttachReply(NodeID, AliasID, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias, ListenerNodeID, ERROR_PERMANENT_INVALID_ARGUMENTS)
+  else begin
+    NewListenerNode := Listeners.FindNode(ListenerNodeID);
+    if Assigned(NewListenerNode) then
+    begin  // Simple update of flags
+      NewListenerNode.DecodeFlags(ListenerAttachFlags);
+      WorkerMessage.LoadTractionListenerAttachReply(NodeID, AliasID, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias, ListenerNodeID, S_OK)
+    end else
+    begin  // Add The listener to the list
+      NewListenerNode := Listeners.Add(ListenerNodeID, ListenerNodeAlias, ListenerAttachFlags);
+      if Assigned(NewListenerNode) then
+        WorkerMessage.LoadTractionListenerAttachReply(NodeID, AliasID, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias, ListenerNodeID, S_OK)
+      else
+        WorkerMessage.LoadTractionListenerAttachReply(NodeID, AliasID, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias, ListenerNodeID, ERROR_TEMPORARY_BUFFER_UNAVAILABLE)
+    end;
+  end;
+  SendMessageFunc(Self, WorkerMessage);
+end;
+
+procedure TLccTrainDccNode.HandleTractionListenerDetach(SourceMessage: TLccMessage);
+var
+  ListenerNodeID: TNodeID;
+begin
+  ListenerNodeID := SourceMessage.TractionExtractListenerID;
+
+  if Listeners.Delete(ListenerNodeID) then
+    WorkerMessage.LoadTractionListenerDetachReply(NodeID, AliasID, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias, ListenerNodeID, S_OK)
+  else
+    WorkerMessage.LoadTractionListenerDetachReply(NodeID, AliasID, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias, ListenerNodeID, ERROR_PERMANENT_INVALID_ARGUMENTS);
+  SendMessageFunc(Self, WorkerMessage);
+end;
+
+procedure TLccTrainDccNode.HandleTractionListenerQuery(SourceMessage: TLccMessage);
+var
+  Listener: TListenerNode;
+  RequestedIndex: Integer;
+begin
+  if (SourceMessage.DataCount = 2) then // no query data, just wants the total number of listeners retured
+    WorkerMessage.LoadTractionListenerQueryReply(NodeID, AliasID, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias, Listeners.Count, 0, NULL_NODE_ID, 0)
+  else begin
+    RequestedIndex := SourceMessage.TractionExtractListenerIndex;
+    if RequestedIndex < Listeners.Count then
+    begin
+      Listener := Listeners.FindByIndex(RequestedIndex);
+      WorkerMessage.LoadTractionListenerQueryReply(NodeID, AliasID, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias, Listeners.Count, RequestedIndex, Listener.NodeID, Listener.EncodeFlags);
+    end else
+      WorkerMessage.LoadTractionListenerQueryReply(NodeID, AliasID, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias, Listeners.Count, 0, NULL_NODE_ID, 0);   // Outside of range, bad index
+  end;
+  SendMessageFunc(Self, WorkerMessage);
+end;
+
+procedure TLccTrainDccNode.HandleConfigurationRead(SourceMessage: TLccMessage);
+begin
+//  ProtocolMemoryConfigurationDefinitionInfo.DatagramReadRequest();
+end;
+
+procedure TLccTrainDccNode.HandleConfigurationWrite(SourceMessage: TLccMessage);
+begin
+
+end;
+
 function TLccTrainDccNode.GetCdiFile: string;
 begin
   Result := CDI_XML_TRAIN_NODE
@@ -938,8 +1080,7 @@ begin
     Result := $FFFF
 end;
 
-function TLccTrainDccNode.ProcessMessageLCC(SourceMessage: TLccMessage
-  ): Boolean;
+function TLccTrainDccNode.ProcessMessageLCC(SourceMessage: TLccMessage): Boolean;
 begin
   Result := inherited ProcessMessageLcc(SourceMessage);
 
@@ -952,13 +1093,6 @@ begin
   // We only are dealing with messages with destinations for us from here on
 
   case SourceMessage.MTI of
-    MTI_DATAGRAM :
-      begin
-        case SourceMessage.DataArray[DATAGRAM_PROTOCOL_CONFIGURATION] of
-          MCP_READ : begin end; // Result := LccActions.RegisterAndKickOffAction(TLccActionMemoryConfigurationRead.Create(Self, SourceMessage.DestID, SourceMessage.CAN.DestAlias, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias, 0), SourceMessage);
-          MCP_WRITE : begin end; //  Result := LccActions.RegisterAndKickOffAction(TLccActionTractionSetSpeed.Create(Self, SourceMessage.DestID, SourceMessage.CAN.DestAlias, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias, 0), SourceMessage);
-        end
-      end;
     MTI_TRACTION_REQUEST :
       begin
         case SourceMessage.DataArray[0] of
@@ -970,9 +1104,9 @@ begin
           TRACTION_CONTROLLER_CONFIG :
             begin
               case SourceMessage.DataArray[1] of
-                TRACTION_CONTROLLER_CONFIG_ASSIGN  : HandleTractionControllerAssign(SourceMessage); // Result := LccActions.RegisterAndKickOffAction(TLccActionTractionControllerAssignReply.Create(Self, SourceMessage.DestID, SourceMessage.CAN.DestAlias, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias, 0), SourceMessage);
-                TRACTION_CONTROLLER_CONFIG_RELEASE : begin end; // Result := LccActions.RegisterAndKickOffAction(TLccActionTractionControllerRelease.Create(Self, SourceMessage.DestID, SourceMessage.CAN.DestAlias, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias, 0), nil);
-                TRACTION_CONTROLLER_CONFIG_QUERY   : begin end; // Result := LccActions.RegisterAndKickOffAction(TLccActionTractionQueryController.Create(Self, SourceMessage.DestID, SourceMessage.CAN.DestAlias, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias, 0), nil);
+                TRACTION_CONTROLLER_CONFIG_ASSIGN  : HandleTractionControllerAssign(SourceMessage);
+                TRACTION_CONTROLLER_CONFIG_RELEASE : HandleTractionControllerRelease(SourceMessage);
+                TRACTION_CONTROLLER_CONFIG_QUERY   : HandleTractionControllerQuery(SourceMessage);
                 TRACTION_CONTROLLER_CONFIG_CHANGED_NOTIFY : HandleTractionControllerChangedNotify(SourceMessage);
               end
             end;
@@ -981,17 +1115,17 @@ begin
               if ReservedNodeState.IsEqual(SourceMessage.SourceID, SourceMessage.CAN.SourceAlias) then
               begin
                 case SourceMessage.DataArray[1] of
-                  TRACTION_LISTENER_ATTACH : begin end; // Result := LccActions.RegisterAndKickOffAction(TLccActionTractionListenerAttachAndReply.Create(Self, SourceMessage.DestID, SourceMessage.CAN.DestAlias, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias, 0), SourceMessage);
-                  TRACTION_LISTENER_DETACH : begin end; // Result := LccActions.RegisterAndKickOffAction(TLccActionTractionListenerDetachAndReply.Create(Self, SourceMessage.DestID, SourceMessage.CAN.DestAlias, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias, 0), SourceMessage);
-                  TRACTION_LISTENER_QUERY  : begin end; // Result := LccActions.RegisterAndKickOffAction(TLccActionTractionQueryListenerAndReply.Create(Self, SourceMessage.DestID, SourceMessage.CAN.DestAlias, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias, 0), SourceMessage);
+                  TRACTION_LISTENER_ATTACH : HandleTractionListenerAttach(SourceMessage);
+                  TRACTION_LISTENER_DETACH : HandleTractionListenerDetach(SourceMessage);
+                  TRACTION_LISTENER_QUERY  : HandleTractionListenerQuery(SourceMessage);
                 end;
               end
             end;
           TRACTION_MANAGE :
             begin
               case SourceMessage.DataArray[1] of
-                TRACTION_MANAGE_RESERVE : begin end; // begin LccActions.RegisterAndKickOffAction(TLccActionTractionManageReserve.Create(Self, SourceMessage.DestID, SourceMessage.CAN.DestAlias, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias, 0), SourceMessage); end;
-                TRACTION_MANAGE_RELEASE : begin end; // begin LccActions.RegisterAndKickOffAction(TLccActionTractionManageRelease.Create(Self, SourceMessage.DestID, SourceMessage.CAN.DestAlias, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias, 0), SourceMessage); end;
+                TRACTION_MANAGE_RESERVE : HandleTractionManageReserve(SourceMessage);
+                TRACTION_MANAGE_RELEASE : HandleTractionManageRelease(SourceMessage);
               end
             end;
         end;

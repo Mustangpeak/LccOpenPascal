@@ -81,7 +81,7 @@ type
     constructor Create;
     destructor Destroy; override;
     function AddContext(AContext: TIdContext): TLccServerContexts;
-    function AddGridConnectStringByContext(AContext: TIdContext; AString: string; ALccMessageList: TLccMessageList): Boolean;
+    function AddGridConnectStringByContext(AContext: TIdContext; AString: string; ALccMessageList: TLccTheadMessageList): Boolean;
     procedure Clear;
     function RemoveContext(AContext: TIdContext): Boolean;
   end;
@@ -92,7 +92,7 @@ type
   private
     FGridConnectContextList: TLccContextsList;
     FIdTCPServer: TIdTCPServer;
-    FLccMessageList: TLccMessageList;
+    FLccMessageList: TLccTheadMessageList;
     FNextIncomingLccMessage: TLccMessage;
   protected
     property Running: Boolean read FRunning;
@@ -101,7 +101,7 @@ type
     // Allows us to keep the data coming in/going out associated with each context
     property GridConnectContextList: TLccContextsList read FGridConnectContextList write FGridConnectContextList;
     // Messages that need to passed down to the applications from the contexts (connections)
-    property LccMessageList: TLccMessageList read FLccMessageList write FLccMessageList;
+    property LccMessageList: TLccTheadMessageList read FLccMessageList write FLccMessageList;
     // Used to hold the message that is being passed from the thread context down to the main thread through Syncronize( ReceiveMessage)
     property NextIncomingLccMessage: TLccMessage read FNextIncomingLccMessage;
 
@@ -245,7 +245,7 @@ begin
   end;
 end;
 
-function TLccContextsList.AddGridConnectStringByContext(AContext: TIdContext; AString: string; ALccMessageList: TLccMessageList): Boolean;
+function TLccContextsList.AddGridConnectStringByContext(AContext: TIdContext; AString: string; ALccMessageList: TLccTheadMessageList): Boolean;
 var
   ContextList: TList;
   i, j: Integer;
@@ -329,7 +329,6 @@ procedure TLccEthernetListener.Execute;
 var
   i: Integer;
   ContextList: TList;
-  s: string;
 begin
   FRunning := True;
   try
@@ -373,7 +372,6 @@ begin
           FNextIncomingLccMessage := LccMessageList.Pop;
           if Assigned(NextIncomingLccMessage) then
           begin
-            s := NextIncomingLccMessage.ConvertToGridConnectStr(#10, False);
             Synchronize({$IFDEF FPC}@{$ENDIF}Owner.ReceiveMessage);
             FreeAndNil(FNextIncomingLccMessage);
           end;
@@ -423,7 +421,7 @@ begin
   inherited Create(CreateSuspended, AnOwner, AConnectionInfo);
   IdTCPServer := TIdTCPServer.Create(nil);
   FGridConnectContextList := TLccContextsList.Create;
-  FLccMessageList := TLccMessageList.Create;
+  FLccMessageList := TLccTheadMessageList.Create;
   FreeOnTerminate := False;
 end;
 
@@ -470,7 +468,7 @@ begin
 
      // https://stackoverflow.com/questions/64593756/delphi-rio-indy-tcpserver-high-cpu-usage
     // There is another way to do this but with this simple program this is fine
-  IndySleep(500);
+  IndySleep(200);
 end;
 
 procedure TLccEthernetListener.IdTCPServerStatus(ASender: TObject; const AStatus: TIdStatus; const AStatusText: string);

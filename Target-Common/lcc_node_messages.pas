@@ -68,9 +68,9 @@ type
     property Valid: Boolean read FValid write FValid;
   end;
 
-  { TLccMessageList }
+  { TLccTheadMessageList }
 
-  TLccMessageList = class(TThreadList)
+  TLccTheadMessageList = class(TThreadList)
   private
     function GetInteger: Integer;
     function GetLccMessage(Index: Integer): TLccMessage;
@@ -83,6 +83,78 @@ type
     procedure Clear;
     function Pop: TLccMessage;
   end;
+
+
+  { TLccDestinationObject }
+
+  TLccDestinationObject = class
+  private
+    FAlias: Word;
+    FNodeID: TNodeID;
+  public
+    property NodeID: TNodeID read FNodeID write FNodeID;
+    property Alias: Word read FAlias write FAlias;
+  end;
+
+    { LccIdentificationObjectList }
+
+  LccIdentificationObjectList = class(TList)
+  private
+    function GetIdentification(Index: Integer): TLccDestinationObject;
+    procedure SetIdentification(Index: Integer; AValue: TLccDestinationObject);
+  public
+    property Identification[Index: Integer]: TLccDestinationObject read GetIdentification write SetIdentification;
+
+    destructor Destroy; override;
+    procedure Clear; override;
+  end;
+
+   { TLccMessageIdentification }
+
+  TLccMessageIdentification = class
+  private
+    FDestination: TLccDestinationObject;
+    FPayload: LccIdentificationObjectList;
+    FSource: TLccDestinationObject;
+    FTLccMessage: TLccMessage;
+  public
+    property LccMessage: TLccMessage read FTLccMessage write FTLccMessage;
+    property Destination: TLccDestinationObject read FDestination write FDestination;
+    property Source: TLccDestinationObject read FSource write FSource;
+    property Payload: LccIdentificationObjectList read FPayload write FPayload;
+
+    constructor Create;
+    destructor Destroy; override;
+  end;
+
+  { TLccMessageAliasContext }
+
+  TLccMessageAliasContext = class
+  private
+    FContextAlias: Word;
+    FMessageIdentification: TLccMessageIdentification;
+  public
+    property MessageIdentification: TLccMessageIdentification read FMessageIdentification write FMessageIdentification;
+    property ContextAlias: Word read FContextAlias write FContextAlias;
+
+    constructor Create(AnAliasContext: Word);
+    destructor Destroy; override;
+  end;
+
+  { TLccMessageAliasContextList }
+
+  TLccMessageAliasContextList = class(TList)
+  private
+    function GetLccMessageAliasContext(Index: Integer): TLccMessageAliasContext;
+    procedure SetLccMessageAliasContext(Index: Integer; AValue: TLccMessageAliasContext);
+  public
+    property LccMessageAliasContext[Index: Integer]: TLccMessageAliasContext read GetLccMessageAliasContext write SetLccMessageAliasContext; default;
+
+    procedure Add(AMessage: TLccMessage);
+    function FindByContext(AnAliasContext: Word): TLccMessageAliasContext;
+    procedure Process(AMessage: TLccMessage);
+  end;
+
 
   { TLccCANMessage }
 
@@ -222,6 +294,16 @@ public
   function TractionExtractFunctionValue: Word;
   function TractionExtractControllerAssignResult: Byte;
   function TractionExtractControllerChangedResult: Byte;
+  function TractionExtractListenerID: TNodeID;
+  function TractionExtractListenerFlags: Byte;
+  function TractionExtractListenerIndex: Byte;
+  function TractionExtractListenerQueryNodeCountReply: Byte;
+  function TractionExtractListenerQueryNodeIndexReply: Byte;
+  function TractionExtractListenerQueryNodeFlagsReply: Byte;
+  function TractionExtractListenerQueryNodeIDReply: TNodeID;
+  function TractionExtractListenerIDReply: TNodeID;
+  function TractionExtractListenerCodeReply: Byte;
+
 
   // Traction Search
   class function TractionSearchEncodeSearchString(SearchString: string; TrackProtocolFlags: Byte; var SearchData: DWORD): TSearchEncodeStringError;
@@ -284,7 +366,6 @@ implementation
 
 var
   CaptureTime: Longword;
-
 
 
 function IsPrintableChar(C: Char): Boolean;
@@ -683,9 +764,124 @@ begin
   end;
 end;
 
-{ TLccMessageList }
+{ TLccMessageIdentification }
 
-function TLccMessageList.GetLccMessage(Index: Integer): TLccMessage;
+constructor TLccMessageIdentification.Create;
+begin
+  FPayload := LccIdentificationObjectList.Create;
+  FSource := TLccDestinationObject.Create;
+  FDestination := TLccDestinationObject.Create;
+end;
+
+destructor TLccMessageIdentification.Destroy;
+begin
+  FreeAndNil(FPayload);
+  FreeAndNil(FSource);
+  FreeAndNil(FDestination);
+  inherited Destroy;
+end;
+
+{ LccIdentificationObjectList }
+
+function LccIdentificationObjectList.GetIdentification(Index: Integer): TLccDestinationObject;
+begin
+  Result := nil;
+  if Index < Count then
+    Result := TLccDestinationObject(Items[Index]);
+end;
+
+procedure LccIdentificationObjectList.SetIdentification(Index: Integer; AValue: TLccDestinationObject);
+begin
+  if Index < Count then
+  begin
+    TObject(Items[Index]).Free;
+    Items[Index] := AValue;
+  end;
+end;
+
+destructor LccIdentificationObjectList.Destroy;
+begin
+  Clear;
+  inherited Destroy;
+end;
+
+procedure LccIdentificationObjectList.Clear;
+var
+  i: Integer;
+begin
+  try
+    for i := 0 to Count - 1 do
+    begin
+      TObject(Items[i]).Free
+    end;
+  finally
+    inherited Clear;
+  end;
+end;
+
+{ TLccMessageAliasContextList }
+
+function TLccMessageAliasContextList.GetLccMessageAliasContext(Index: Integer): TLccMessageAliasContext;
+begin
+  Result := TLccMessageAliasContext(Items[Index])
+end;
+
+procedure TLccMessageAliasContextList.SetLccMessageAliasContext(Index: Integer; AValue: TLccMessageAliasContext);
+begin
+  if Index < Count then
+  begin
+    TObject(Items[Index]).Free;
+    Items[Index] := AValue;
+  end;
+end;
+
+procedure TLccMessageAliasContextList.Add(AMessage: TLccMessage);
+var
+  Context: TLccMessageAliasContext;
+begin
+  Context := FindByContext(AMessage.CAN.SourceAlias);
+  if not Assigned(Context) then
+    Context := TLccMessageAliasContext.Create(AMessage.CAN.SourceAlias);
+//  Context.MessageIdentification.Push(AMessage);
+end;
+
+function TLccMessageAliasContextList.FindByContext(AnAliasContext: Word): TLccMessageAliasContext;
+var
+  i: Integer;
+begin
+  Result := nil;
+  for i := 0 to Count - 1 do
+  begin
+    if LccMessageAliasContext[i].ContextAlias = AnAliasContext then
+    begin
+      Result := LccMessageAliasContext[i];
+      Break
+    end;
+  end;
+end;
+
+procedure TLccMessageAliasContextList.Process(AMessage: TLccMessage);
+begin
+
+end;
+
+{ TLccMessageAliasContext }
+
+constructor TLccMessageAliasContext.Create(AnAliasContext: Word);
+begin
+  FMessageIdentification := TLccMessageIdentification.Create;
+  FContextAlias := AnAliasContext;
+end;
+
+destructor TLccMessageAliasContext.Destroy;
+begin
+  FreeAndNil(FMessageIdentification);
+  inherited Destroy;
+end;
+
+{ TLccTheadMessageList }
+
+function TLccTheadMessageList.GetLccMessage(Index: Integer): TLccMessage;
 var
   List: TList;
 begin
@@ -697,7 +893,7 @@ begin
   end;
 end;
 
-function TLccMessageList.GetInteger: Integer;
+function TLccTheadMessageList.GetInteger: Integer;
 var
   List: TList;
 begin
@@ -709,13 +905,13 @@ begin
   end;
 end;
 
-destructor TLccMessageList.Destroy;
+destructor TLccTheadMessageList.Destroy;
 begin
   Clear;
   inherited Destroy;
 end;
 
-procedure TLccMessageList.Push(AMessage: TLccMessage);
+procedure TLccTheadMessageList.Push(AMessage: TLccMessage);
 var
   List: TList;
 begin
@@ -727,7 +923,7 @@ begin
   end;
 end;
 
-procedure TLccMessageList.Clear;
+procedure TLccTheadMessageList.Clear;
 var
   List: TList;
   i: Integer;
@@ -742,7 +938,7 @@ begin
   end;
 end;
 
-function TLccMessageList.Pop: TLccMessage;
+function TLccTheadMessageList.Pop: TLccMessage;
 var
   List: TList;
 begin
@@ -1593,6 +1789,54 @@ begin
 end;
 
 function TLccMessage.TractionExtractControllerChangedResult: Byte;
+begin
+  Result := DataArray[2];
+end;
+
+function TLccMessage.TractionExtractListenerID: TNodeID;
+begin
+  Result  := NULL_NODE_ID;
+  ExtractDataBytesAsNodeID(3, Result);
+end;
+
+function TLccMessage.TractionExtractListenerFlags: Byte;
+begin
+  Result := DataArray[2];
+end;
+
+function TLccMessage.TractionExtractListenerIndex: Byte;
+begin
+  Result := DataArray[2];  // Optional
+end;
+
+function TLccMessage.TractionExtractListenerQueryNodeCountReply: Byte;
+begin
+  Result := DataArray[2];
+end;
+
+function TLccMessage.TractionExtractListenerQueryNodeIndexReply: Byte;
+begin
+  Result := DataArray[3];  // Optional
+end;
+
+function TLccMessage.TractionExtractListenerQueryNodeFlagsReply: Byte;
+begin
+  Result := DataArray[3]; // Optional
+end;
+
+function TLccMessage.TractionExtractListenerQueryNodeIDReply: TNodeID;
+begin
+  Result := NULL_NODE_ID;
+  ExtractDataBytesAsNodeID(5, Result);
+end;
+
+function TLccMessage.TractionExtractListenerIDReply: TNodeID;
+begin
+  Result := NULL_NODE_ID;
+  ExtractDataBytesAsNodeID(2, Result);
+end;
+
+function TLccMessage.TractionExtractListenerCodeReply: Byte;
 begin
   Result := DataArray[2];
 end;

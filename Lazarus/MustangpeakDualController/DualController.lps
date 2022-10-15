@@ -17,7 +17,6 @@
         <ComponentName Value="Form1"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
-        <IsVisibleTab Value="True"/>
         <TopLine Value="560"/>
         <CursorPos X="21" Y="573"/>
         <UsageCount Value="206"/>
@@ -103,7 +102,7 @@
         <EditorIndex Value="2"/>
         <TopLine Value="174"/>
         <CursorPos X="16" Y="178"/>
-        <UsageCount Value="94"/>
+        <UsageCount Value="96"/>
         <Loaded Value="True"/>
       </Unit10>
       <Unit11>
@@ -116,6 +115,7 @@
       </Unit11>
       <Unit12>
         <Filename Value="../../Target-Common/lcc_node_train.pas"/>
+        <IsVisibleTab Value="True"/>
         <EditorIndex Value="1"/>
         <TopLine Value="377"/>
         <CursorPos Y="400"/>
@@ -170,7 +170,7 @@
         <Filename Value="../../Target-PC/HardwareConnection/lcc_ethernet_client.pas"/>
         <EditorIndex Value="5"/>
         <TopLine Value="173"/>
-        <CursorPos X="25" Y="181"/>
+        <CursorPos X="19" Y="181"/>
         <UsageCount Value="101"/>
         <Loaded Value="True"/>
       </Unit19>
@@ -199,7 +199,7 @@
         <EditorIndex Value="7"/>
         <TopLine Value="140"/>
         <CursorPos X="15" Y="153"/>
-        <UsageCount Value="41"/>
+        <UsageCount Value="43"/>
         <Loaded Value="True"/>
       </Unit23>
       <Unit24>
@@ -235,7 +235,7 @@
         <EditorIndex Value="6"/>
         <TopLine Value="207"/>
         <CursorPos X="35" Y="220"/>
-        <UsageCount Value="35"/>
+        <UsageCount Value="37"/>
         <Loaded Value="True"/>
       </Unit28>
       <Unit29>
@@ -285,7 +285,7 @@
         <EditorIndex Value="11"/>
         <TopLine Value="345"/>
         <CursorPos X="32" Y="360"/>
-        <UsageCount Value="17"/>
+        <UsageCount Value="19"/>
         <Loaded Value="True"/>
       </Unit35>
       <Unit36>
@@ -343,7 +343,7 @@
         <EditorIndex Value="4"/>
         <TopLine Value="1227"/>
         <CursorPos X="64" Y="1237"/>
-        <UsageCount Value="11"/>
+        <UsageCount Value="13"/>
         <Loaded Value="True"/>
       </Unit43>
       <Unit44>

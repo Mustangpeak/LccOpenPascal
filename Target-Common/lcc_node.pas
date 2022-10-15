@@ -113,6 +113,7 @@ type
     FEnableTrainDatabase: Boolean;
     FGridConnect: Boolean;
     FLoginTimoutCounter: Integer;
+    FMessageAliasContextList: TLccMessageAliasContextList;
     FPermitted: Boolean;
     FProtocolACDIMfg: TProtocolACDIMfg;
     FProtocolACDIUser: TProtocolACDIUser;
@@ -200,6 +201,7 @@ type
     property Initialized: Boolean read FInitialized;
     property SendMessageFunc: TOnMessageEvent read FSendMessageFunc write SetSendMessageFunc;
     property EnableTrainDatabase: Boolean read FEnableTrainDatabase write SetEnableTrainDatabase;
+    property MessageAliasContextList: TLccMessageAliasContextList read FMessageAliasContextList write FMessageAliasContextList;
 
     property ProtocolSupportedProtocols: TProtocolSupportedProtocols read FProtocolSupportedProtocols write FProtocolSupportedProtocols;
     property ProtocolEventConsumed: TProtocolEvents read FProtocolEventConsumed write FProtocolEventConsumed;
@@ -495,6 +497,7 @@ begin
   FGridConnect := GridConnectLink;
   FAliasServer := TLccAliasServer.Create;
   FTrainServer := TLccTrainServer.Create;
+  FMessageAliasContextList := TLccMessageAliasContextList.Create;
 
   _100msTimer := TLccTimer.Create(nil);
   _100msTimer.Enabled := False;
@@ -1133,7 +1136,7 @@ function TLccNode.ProcessMessageGridConnect(SourceMessage: TLccMessage): Boolean
   var
     LocalTestNodeID: TNodeID;
     LocalAMapping: TLccAliasMapping;
-    LocalDelayedMessage: TLccDelayedMessage;
+    LocalDelayedMessage: TLccDelayedMessageContext;
   begin
     LocalTestNodeID := NULL_NODE_ID;
     SourceMessage.ExtractDataBytesAsNodeID(0, LocalTestNodeID);
@@ -1188,7 +1191,7 @@ function TLccNode.ProcessMessageGridConnect(SourceMessage: TLccMessage): Boolean
 var
   TestNodeID: TNodeID;
   SourceMapping, DestMapping: TLccAliasMapping;
-  ADelayedMessage: TLccDelayedMessage;
+  ADelayedMessage: TLccDelayedMessageContext;
   ANodeID: TNodeID;
 begin
   Result := False;
@@ -1241,6 +1244,10 @@ begin
     // Do this after the updates to the Alias Maps above
     if not SourceMessage.IsCAN then // Don't interfer with CAN log in messages...
     begin
+
+      MessageAliasContextList.Process(SourceMessage);
+
+
       SourceMapping := AliasServer.FindMapping(SourceMessage.CAN.SourceAlias);
       if SourceMessage.HasDestination then
         DestMapping := AliasServer.FindMapping(SourceMessage.CAN.DestAlias)
@@ -1418,8 +1425,7 @@ begin
   FreeAndNil(FStreamTractionFdi);
   FreeAndNil(FAliasServer);
   FreeAndNil(FTrainServer);
-//  FreeAndNil();
- // FreeAndNil();
+  FreeAndNil(FMessageAliasContextList);
 
 //  FProtocolMemoryConfiguration.Free;
   inherited;
