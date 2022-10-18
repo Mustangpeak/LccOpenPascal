@@ -85,10 +85,12 @@ type
     function Pop: TLccMessage;
   end;
 
+  // Base struture that contains the two types of LCC node identifiers, the long
+  // globally unique ID or NodeID and the local Alias (if running CAN/Gridconnect)
 
-  { TLccDestinationObject }
+  { TLccNodeIdentificationObject }
 
-  TLccDestinationObject = class
+  TLccNodeIdentificationObject = class
   private
     FActive: Boolean;
     FAlias: Word;
@@ -99,75 +101,102 @@ type
     property Active: Boolean read FActive write FActive;
 
     procedure AssignID(ANodeID: TNodeID; AnAlias: Word);
-    function Compare(TestObject: TLccDestinationObject): Boolean; overload;
+    function Compare(TestObject: TLccNodeIdentificationObject): Boolean; overload;
     function Compare(TestMapping: TLccAliasMapping): Boolean overload;
-    function CompareEitherOr(TestObject: TLccDestinationObject): Boolean; overload;
+    function CompareEitherOr(TestObject: TLccNodeIdentificationObject): Boolean; overload;
     function CompareEitherOr(TestMapping: TLccAliasMapping): Boolean; overload;
+    function Valid: Boolean;
   end;
 
-    { TLccDestinationObjectList }
 
-  TLccDestinationObjectList = class(TList)
+
+  // List that manages multiple Node Identification IDs
+
+    { TLccNodeIdentificationObjectList }
+
+  TLccNodeIdentificationObjectList = class(TList)
   private
-    function GetIdentification(Index: Integer): TLccDestinationObject;
-    procedure SetIdentification(Index: Integer; AValue: TLccDestinationObject);
+    function GetDestination: TLccNodeIdentificationObject;
+    function GetIdentification(Index: Integer): TLccNodeIdentificationObject;
+    function GetSource: TLccNodeIdentificationObject;
+    procedure SetIdentification(Index: Integer; AValue: TLccNodeIdentificationObject);
   public
-    property Identification[Index: Integer]: TLccDestinationObject read GetIdentification write SetIdentification;
+    property NodeIdentification[Index: Integer]: TLccNodeIdentificationObject read GetIdentification write SetIdentification;
+    property Source: TLccNodeIdentificationObject read GetSource;
+    property Destination: TLccNodeIdentificationObject read GetDestination;
 
+    constructor Create(AutoCreateSourceDestination: Boolean = True);
     destructor Destroy; override;
     procedure Clear; override;
 
-    function IsDuplicate(DestinationObject: TLccDestinationObject): Boolean;
-    procedure RemoveDestination(AliasMapping: TLccAliasMapping);
-  end;
-
-    { TLccMessageDestinationsObject }
-
-  TLccMessageDestinationsObject = class
-  private
-    FDestination: TLccDestinationObject;
-    FPayload: TLccDestinationObjectList;
-    FSource: TLccDestinationObject;
-  public
-    property Destination: TLccDestinationObject read FDestination write FDestination;
-    property Source: TLccDestinationObject read FSource write FSource;
-    property Payload: TLccDestinationObjectList read FPayload write FPayload;
-
+    // Returns true if all the Identifications have been filled in or are not active anyway
+    function IdentificationsValid: Boolean;
+    // Tests if the passed Identification is already in the list
+    function IsDuplicate(DestinationObject: TLccNodeIdentificationObject): Boolean;
+    // Updates the list with the new mapping that is passed
     function ProcessNewMapping(NewMapping: TLccAliasMapping): Boolean;
+    // Removes any Identification objects that match the mapping
+    procedure RemoveIdentification(AliasMapping: TLccAliasMapping);
+    // Clears the list other than the first 2 (source/destination) which it just zeros and sets to defaults
+    procedure ClearIdentifications(AutoCreateSourceDestination: Boolean = True);
+    // Returns True if the mapping that is going away is associated with any alias in this list
+    function LogOut(AnAlias: Word): Boolean;
+    // Adds and sets the properities of a TLccNodeIdentificationObject
+    function AddNodeIdentificationObject(ANodeID: TNodeID; AnAlias: Word): TLccNodeIdentificationObject;
   end;
 
-   { TLccMessageIdentification }
 
-  TLccMessageIdentification = class
+  // Structure storing the Message with all the Node Identification for the nodes that this message references
+
+   { TLccMessageWithNodeIdentification }
+
+  TLccMessageWithNodeIdentification = class
   private
-    FContextAlias: Word;
-    FLccMessageDestinations: TLccMessageDestinationsObject;
-    FLccMessage: TLccMessage;
+    FLccMessageNodeIdentifications: TLccNodeIdentificationObjectList; // All the different Identification structures for the Nodes that this message requires to complete
+    FLccMessage: TLccMessage;                                        // Message stored
   public
     property LccMessage: TLccMessage read FLccMessage write FLccMessage;
-    property LccMessageDestinations: TLccMessageDestinationsObject read FLccMessageDestinations write FLccMessageDestinations;
-    property ContextAlias: Word read FContextAlias write FContextAlias;
+    property MessageNodeIdentifications: TLccNodeIdentificationObjectList read FLccMessageNodeIdentifications write FLccMessageNodeIdentifications;
 
-    constructor Create(AnAliasContext: Word);
+    constructor Create;
     destructor Destroy; override;
-    function ExtractAndCreateIdentificationObjects(AMessage: TLccMessage): TLccMessageDestinationsObject;
-    procedure NewPayloadItem(ANodeID: TNodeID);
+    procedure CloneMessageAndCreateIdentificationObjects(AMessage: TLccMessage);
+    procedure NewIdentificationItem(ANodeID: TNodeID);
+    function LogOut(AnAlias: Word): Boolean;
   end;
 
-  { TLccMessageAliasContextList }
 
-  TLccMessageAliasContextList = class(TList)
+  // Structure with a list of objects that define the message and the Node Identification for the nodes that this message references
+  { TLccMessageWithNodeIdentificationList }
+
+  TLccMessageWithNodeIdentificationList = class(TList)
   private
-    function GetLccMessageAliasContext(Index: Integer): TLccMessageIdentification;
-    procedure SetLccMessageAliasContext(Index: Integer; AValue: TLccMessageIdentification);
+    FSourceAlias: Word;
+    function GetLccMessageIdentification(Index: Integer): TLccMessageWithNodeIdentification;
+    procedure SetLccMessageIdentification(Index: Integer; AValue: TLccMessageWithNodeIdentification);
   public
-    property LccMessageIdentification[Index: Integer]: TLccMessageIdentification read GetLccMessageAliasContext write SetLccMessageAliasContext; default;
+    property LccMessageIdentification[Index: Integer]: TLccMessageWithNodeIdentification read GetLccMessageIdentification write SetLccMessageIdentification; default;
+    property SourceAlias: Word read FSourceAlias write FSourceAlias;
 
-    procedure Add(AMessage: TLccMessage);
     procedure Clear; override;
-    function FindByAliasContext(AnAliasContext: Word): TLccMessageIdentification;
-    function Process(AMessage: TLccMessage): TLccMessageDestinationsObject;
+    function Pop: TLccMessage;
+    function Push(AMessage: TLccMessage): TLccNodeIdentificationObjectList;
     procedure ProcessNewMapping(AliasMapping: TLccAliasMapping);
+    procedure LogOut(AnAlias: Word);
+  end;
+
+  { TLccMessageStack }
+
+  TLccMessageStack = class(TList)
+  private
+    function GetMessageStack(Index: Integer): TLccMessageWithNodeIdentificationList;
+    procedure SetMessageStack(Index: Integer; AValue: TLccMessageWithNodeIdentificationList);
+  public
+    property MessageStack[Index: Integer]: TLccMessageWithNodeIdentificationList read GetMessageStack write SetMessageStack; default;
+    function Push(AMessage: TLccMessage): TLccNodeIdentificationObjectList;
+    function Pop: TLccMessage;
+    procedure ProcessNewMapping(AliasMapping: TLccAliasMapping);
+    procedure LogOut(AnAlias: Word);
   end;
 
 
@@ -779,82 +808,136 @@ begin
   end;
 end;
 
-{ TLccMessageDestinationsObject }
+{ TLccMessageStack }
 
-function TLccMessageDestinationsObject.ProcessNewMapping(NewMapping: TLccAliasMapping): Boolean;
-var
-  i: Integer;
+function TLccMessageStack.GetMessageStack(Index: Integer): TLccMessageWithNodeIdentificationList;
 begin
-  if Source.CompareEitherOr(NewMapping) then
-    Source.AssignID(NewMapping.NodeID, NewMapping.NodeAlias);
-  if Destination.Active then
-    if Destination.CompareEitherOr(NewMapping) then
-      Source.AssignID(NewMapping.NodeID, NewMapping.NodeAlias);
+  Result := TLccMessageWithNodeIdentificationList(Items[Index])
+end;
 
-
-  Result := Source.CompareEitherOr(NewMapping) and (not Destination.Active or Destination.CompareEitherOr(NewMapping));
-  for i := 0 to Payload.Count - 1 do
+procedure TLccMessageStack.SetMessageStack(Index: Integer; AValue: TLccMessageWithNodeIdentificationList);
+begin
+  if Index < Count then
   begin
-    if Payload.Identification[i].Active and Payload.Identification[i].CompareEitherOr(NewMapping) then
-      Payload.Identification[i].AssignID(NewMapping.NodeID, NewMapping.NodeAlias);
+    TObject(Items[Index]).Free;
+    Items[Index] := AValue
   end;
 end;
 
-{ TLccDestinationObject }
+function TLccMessageStack.Push(AMessage: TLccMessage): TLccNodeIdentificationObjectList;
+var
+  i: Integer;
+  NewMessageWithNodeIdentificationList: TLccMessageWithNodeIdentificationList;
+begin
+  Result := nil;
+  for i := 0 to Count - 1 do
+  begin
+    if TLccMessageWithNodeIdentificationList(Items[i]).SourceAlias = AMessage.CAN.SourceAlias then
+    begin
+      Result := TLccMessageWithNodeIdentificationList(Items[i]).Push(AMessage);
+      Break;
+    end;
+  end;
 
-procedure TLccDestinationObject.AssignID(ANodeID: TNodeID; AnAlias: Word);
+  if not Assigned(Result) then
+  begin
+    NewMessageWithNodeIdentificationList := TLccMessageWithNodeIdentificationList.Create;
+    NewMessageWithNodeIdentificationList.SourceAlias := AMessage.CAN.SourceAlias;
+    Add(NewMessageWithNodeIdentificationList);
+    Result := NewMessageWithNodeIdentificationList.Push(AMessage);
+  end;
+end;
+
+function TLccMessageStack.Pop: TLccMessage;
+var
+  i: Integer;
+
+begin
+  Result := nil;
+  for i := 0 to Count - 1 do
+  begin
+    Result := TLccMessageWithNodeIdentificationList(Items[i]).Pop;
+    if Assigned(Result) then
+      Break
+  end;
+end;
+
+procedure TLccMessageStack.ProcessNewMapping(AliasMapping: TLccAliasMapping);
+var
+  i: Integer;
+begin
+  for i := 0 to Count - 1 do
+    TLccMessageWithNodeIdentificationList(Items[i]).ProcessNewMapping(AliasMapping);
+end;
+
+procedure TLccMessageStack.LogOut(AnAlias: Word);
+var
+  i: Integer;
+begin
+  for i := 0 to Count - 1 do
+    TLccMessageWithNodeIdentificationList(Items[i]).LogOut(AnAlias);
+end;
+
+{ TLccNodeIdentificationObject }
+
+procedure TLccNodeIdentificationObject.AssignID(ANodeID: TNodeID; AnAlias: Word);
 begin
   Alias := AnAlias;
   NodeID := ANodeID;
   FActive := True;
 end;
 
-function TLccDestinationObject.Compare(TestObject: TLccDestinationObject): Boolean;
+function TLccNodeIdentificationObject.Compare(TestObject: TLccNodeIdentificationObject): Boolean;
 begin
   Result := (TestObject.Alias = Alias) and (TestObject.NodeID[0] = NodeID[0]) and (TestObject.NodeID[0] = NodeID[0])
 end;
 
-function TLccDestinationObject.Compare(TestMapping: TLccAliasMapping): Boolean;
+function TLccNodeIdentificationObject.Compare(TestMapping: TLccAliasMapping): Boolean;
 begin
   Result := (TestMapping.NodeAlias = Alias) and (TestMapping.NodeID[0] = NodeID[0]) and (TestMapping.NodeID[0] = NodeID[0])
 end;
 
-function TLccDestinationObject.CompareEitherOr(TestObject: TLccDestinationObject): Boolean;
+function TLccNodeIdentificationObject.CompareEitherOr(TestObject: TLccNodeIdentificationObject): Boolean;
 begin
   Result := (TestObject.Alias = Alias) or ((TestObject.NodeID[0] = NodeID[0]) and (TestObject.NodeID[0] = NodeID[0]))
 end;
 
-function TLccDestinationObject.CompareEitherOr(TestMapping: TLccAliasMapping): Boolean;
+function TLccNodeIdentificationObject.CompareEitherOr(TestMapping: TLccAliasMapping): Boolean;
 begin
   Result := (TestMapping.NodeAlias = Alias) or ((TestMapping.NodeID[0] = NodeID[0]) and (TestMapping.NodeID[0] = NodeID[0]))
 end;
 
-{ TLccMessageIdentification }
-
-constructor TLccMessageIdentification.Create(AnAliasContext: Word);
+function TLccNodeIdentificationObject.Valid: Boolean;
 begin
-  FLccMessageDestinations := TLccMessageDestinationsObject.Create;
-  FContextAlias := AnAliasContext;
+  Result := (Alias <> 0) and ((NodeID[0] <> 0) or (NodeID[1] <> 0))
 end;
 
-destructor TLccMessageIdentification.Destroy;
+{ TLccMessageWithNodeIdentification }
+
+constructor TLccMessageWithNodeIdentification.Create;
 begin
-  FreeAndNil(FLccMessageDestinations);
+  FLccMessageNodeIdentifications := TLccNodeIdentificationObjectList.Create;
+end;
+
+destructor TLccMessageWithNodeIdentification.Destroy;
+begin
+  FreeAndNil(FLccMessageNodeIdentifications);
   FreeAndNil(FLccMessage);
   inherited Destroy;
 end;
 
-function TLccMessageIdentification.ExtractAndCreateIdentificationObjects(AMessage: TLccMessage): TLccMessageDestinationsObject;
+procedure TLccMessageWithNodeIdentification.CloneMessageAndCreateIdentificationObjects
+  (AMessage: TLccMessage);
 var
   ANodeID: TNodeID;
 begin
-  Result := LccMessageDestinations;
-  LccMessageDestinations.Source.AssignID(AMessage.SourceID, AMessage.CAN.SourceAlias);
-  if AMessage.HasDestination then
-    LccMessageDestinations.Destination.AssignID(AMessage.DestID, AMessage.CAN.DestAlias);
   LccMessage := AMessage.Clone;
 
-  LccMessageDestinations.Payload.Clear;
+  MessageNodeIdentifications.ClearIdentifications;
+  MessageNodeIdentifications.Source.AssignID(AMessage.SourceID, AMessage.CAN.SourceAlias);
+  if AMessage.HasDestination then
+    MessageNodeIdentifications.Destination.AssignID(AMessage.DestID, AMessage.CAN.DestAlias);
+
   case AMessage.MTI of
     MTI_TRACTION_REPLY :
       begin
@@ -867,7 +950,7 @@ begin
                    ANodeID := NULL_NODE_ID;
                    AMessage.ExtractDataBytesAsNodeID(3, ANodeID);
                    if not NullNodeID(ANodeID) then    // NULL is valid for no controller assigned
-                     NewPayloadItem(ANodeID);
+                     NewIdentificationItem(ANodeID);
                   end;
                 end
             end;
@@ -879,7 +962,7 @@ begin
                   begin
                     ANodeID := NULL_NODE_ID;
                     AMessage.ExtractDataBytesAsNodeID(2, ANodeID);
-                    NewPayloadItem(ANodeID);
+                    NewIdentificationItem(ANodeID);
                   end;
               end;
         end;
@@ -896,7 +979,7 @@ begin
                 begin
                   ANodeID := NULL_NODE_ID;
                   AMessage.ExtractDataBytesAsNodeID(3, ANodeID);
-                  NewPayloadItem(ANodeID);
+                  NewIdentificationItem(ANodeID);
                 end;
               end
             end;
@@ -908,7 +991,7 @@ begin
                   begin
                     ANodeID := NULL_NODE_ID;
                     AMessage.ExtractDataBytesAsNodeID(3, ANodeID);
-                    NewPayloadItem(ANodeID);
+                    NewIdentificationItem(ANodeID);
                   end;
               end;
             end
@@ -917,28 +1000,43 @@ begin
   end;
 end;
 
-procedure TLccMessageIdentification.NewPayloadItem(ANodeID: TNodeID);
+procedure TLccMessageWithNodeIdentification.NewIdentificationItem(ANodeID: TNodeID);
 var
-  ADestinationObject: TLccDestinationObject;
+  ADestinationObject: TLccNodeIdentificationObject;
 begin
   if not NullNodeID(ANodeID) then
   begin
-    ADestinationObject := TLccDestinationObject.Create;
+    ADestinationObject := TLccNodeIdentificationObject.Create;
     ADestinationObject.AssignID(ANodeID, 0);
-    LccMessageDestinations.Payload.Add(ADestinationObject);
+    MessageNodeIdentifications.Add(ADestinationObject);
   end;
 end;
 
-{ TLccDestinationObjectList }
+function TLccMessageWithNodeIdentification.LogOut(AnAlias: Word): Boolean;
+begin
+  Result := MessageNodeIdentifications.LogOut(AnAlias);
+end;
 
-function TLccDestinationObjectList.GetIdentification(Index: Integer): TLccDestinationObject;
+{ TLccNodeIdentificationObjectList }
+
+function TLccNodeIdentificationObjectList.GetDestination: TLccNodeIdentificationObject;
+begin
+  Result := TLccNodeIdentificationObject(Items[1]);
+end;
+
+function TLccNodeIdentificationObjectList.GetIdentification(Index: Integer): TLccNodeIdentificationObject;
 begin
   Result := nil;
   if Index < Count then
-    Result := TLccDestinationObject(Items[Index]);
+    Result := TLccNodeIdentificationObject(Items[Index]);
 end;
 
-procedure TLccDestinationObjectList.SetIdentification(Index: Integer; AValue: TLccDestinationObject);
+function TLccNodeIdentificationObjectList.GetSource: TLccNodeIdentificationObject;
+begin
+  Result := TLccNodeIdentificationObject(Items[0]);
+end;
+
+procedure TLccNodeIdentificationObjectList.SetIdentification(Index: Integer; AValue: TLccNodeIdentificationObject);
 begin
   if Index < Count then
   begin
@@ -947,13 +1045,23 @@ begin
   end;
 end;
 
-destructor TLccDestinationObjectList.Destroy;
+constructor TLccNodeIdentificationObjectList.Create(AutoCreateSourceDestination: Boolean);
+begin
+  inherited Create;
+  if AutoCreateSourceDestination then
+  begin
+    Add(TLccNodeIdentificationObject.Create);  // Create the Source
+    Add(TLccNodeIdentificationObject.Create);  // Create the Destination
+  end
+end;
+
+destructor TLccNodeIdentificationObjectList.Destroy;
 begin
   Clear;
   inherited Destroy;
 end;
 
-procedure TLccDestinationObjectList.Clear;
+procedure TLccNodeIdentificationObjectList.Clear;
 var
   i: Integer;
 begin
@@ -967,14 +1075,33 @@ begin
   end;
 end;
 
-function TLccDestinationObjectList.IsDuplicate(DestinationObject: TLccDestinationObject): Boolean;
+function TLccNodeIdentificationObjectList.IdentificationsValid: Boolean;
+var
+  i: Integer;
+  TempValid: Boolean;
+begin
+  Result := False;
+  for i := 0 to Count - 1 do
+  begin
+    TempValid := True;
+    if NodeIdentification[i].Active then
+      if not NodeIdentification[i].Valid then
+      begin
+        TempValid := False;
+        Break
+      end;
+    Result := TempValid;
+  end;
+end;
+
+function TLccNodeIdentificationObjectList.IsDuplicate(DestinationObject: TLccNodeIdentificationObject): Boolean;
 var
   i: Integer;
 begin
   Result := False;
   for i := 0 to Count - 1 do
   begin
-    if DestinationObject.CompareEitherOr(Identification[i]) then
+    if DestinationObject.CompareEitherOr(NodeIdentification[i]) then
     begin
       Result := True;
       Break
@@ -982,29 +1109,75 @@ begin
   end;
 end;
 
-procedure TLccDestinationObjectList.RemoveDestination(AliasMapping: TLccAliasMapping);
+function TLccNodeIdentificationObjectList.ProcessNewMapping(NewMapping: TLccAliasMapping): Boolean;
+var
+  i: Integer;
+begin
+  Result := False;
+  if Assigned(NewMapping) then
+    begin
+    for i := 0 to Count - 1 do
+    begin
+      if NodeIdentification[i].Active and NodeIdentification[i].CompareEitherOr(NewMapping) then
+        NodeIdentification[i].AssignID(NewMapping.NodeID, NewMapping.NodeAlias);
+    end;
+    Result := IdentificationsValid;  // This is the cheap and easy way... may update
+  end;
+end;
+
+procedure TLccNodeIdentificationObjectList.RemoveIdentification(
+  AliasMapping: TLccAliasMapping);
 var
   i: Integer;
 begin
   for i := 0 to Count - 1 do
   begin
-    if Identification[i].Compare(AliasMapping) then
+    if NodeIdentification[i].Compare(AliasMapping) then
     begin
-      Identification[i].Free;
+      NodeIdentification[i].Free;
       Delete(i);
       Break
     end;
   end;
 end;
 
-{ TLccMessageAliasContextList }
-
-function TLccMessageAliasContextList.GetLccMessageAliasContext(Index: Integer): TLccMessageIdentification;
+procedure TLccNodeIdentificationObjectList.ClearIdentifications(AutoCreateSourceDestination: Boolean);
 begin
-  Result := TLccMessageIdentification(Items[Index])
+  Clear;
+  if AutoCreateSourceDestination then
+  begin
+    Add(TLccNodeIdentificationObject.Create);  // Create the Source
+    Add(TLccNodeIdentificationObject.Create);  // Create the Destination
+  end;
 end;
 
-procedure TLccMessageAliasContextList.SetLccMessageAliasContext(Index: Integer; AValue: TLccMessageIdentification);
+function TLccNodeIdentificationObjectList.LogOut(AnAlias: Word): Boolean;
+var
+  i: Integer;
+begin
+  Result := False;
+  for i := 0 to Count - 1 do
+  begin
+    Result := TLccNodeIdentificationObject(Items[i]).Alias = AnAlias;
+    if Result then
+      Break
+  end;
+end;
+
+function TLccNodeIdentificationObjectList.AddNodeIdentificationObject(ANodeID: TNodeID; AnAlias: Word): TLccNodeIdentificationObject;
+begin
+  Result := TLccNodeIdentificationObject.Create;
+  Result.AssignID(ANodeID, AnAlias);
+end;
+
+{ TLccMessageWithNodeIdentificationList }
+
+function TLccMessageWithNodeIdentificationList.GetLccMessageIdentification(Index: Integer): TLccMessageWithNodeIdentification;
+begin
+  Result := TLccMessageWithNodeIdentification(Items[Index])
+end;
+
+procedure TLccMessageWithNodeIdentificationList.SetLccMessageIdentification(Index: Integer; AValue: TLccMessageWithNodeIdentification);
 begin
   if Index < Count then
   begin
@@ -1013,17 +1186,7 @@ begin
   end;
 end;
 
-procedure TLccMessageAliasContextList.Add(AMessage: TLccMessage);
-var
-  Context: TLccMessageIdentification;
-begin
-  Context := FindByAliasContext(AMessage.CAN.SourceAlias);
-  if not Assigned(Context) then
-    Context := TLccMessageIdentification.Create(AMessage.CAN.SourceAlias);
-//  Context.MessageIdentification.Push(AMessage);
-end;
-
-procedure TLccMessageAliasContextList.Clear;
+procedure TLccMessageWithNodeIdentificationList.Clear;
 var
   i: Integer;
 begin
@@ -1035,41 +1198,58 @@ begin
   end;
 end;
 
-function TLccMessageAliasContextList.FindByAliasContext(AnAliasContext: Word): TLccMessageIdentification;
+function TLccMessageWithNodeIdentificationList.Pop: TLccMessage;
 var
-  i: Integer;
+  MessageWithNodeIdentification:  TLccMessageWithNodeIdentification;
 begin
+  // We can only pop off the bottom
   Result := nil;
-  for i := 0 to Count - 1 do
+  if Count > 0 then
   begin
-    if LccMessageIdentification[i].ContextAlias = AnAliasContext then
+    MessageWithNodeIdentification := LccMessageIdentification[0];
+
+    Result := MessageWithNodeIdentification.LccMessage;
+
+    if MessageWithNodeIdentification.MessageNodeIdentifications.IdentificationsValid then
     begin
-      Result := LccMessageIdentification[i];
-      Break
+
+      MessageWithNodeIdentification.FLccMessage := nil;
+      MessageWithNodeIdentification.Free;
+      Delete(0);
     end;
   end;
 end;
 
-function TLccMessageAliasContextList.Process(AMessage: TLccMessage
-  ): TLccMessageDestinationsObject;
+function TLccMessageWithNodeIdentificationList.Push(AMessage: TLccMessage): TLccNodeIdentificationObjectList;
 var
-  MessageAliasContext: TLccMessageIdentification;
+  MessageWithNodeIdentification: TLccMessageWithNodeIdentification;
 begin
-  MessageAliasContext := FindByAliasContext(AMessage.CAN.SourceAlias);
-  if not Assigned(MessageAliasContext) then
-    MessageAliasContext := TLccMessageIdentification.Create(AMessage.CAN.SourceAlias);
-  Result := MessageAliasContext.ExtractAndCreateIdentificationObjects(AMessage);
+  MessageWithNodeIdentification := TLccMessageWithNodeIdentification.Create;
+  MessageWithNodeIdentification.CloneMessageAndCreateIdentificationObjects(AMessage);
+  Add(MessageWithNodeIdentification);
+  Result := MessageWithNodeIdentification.MessageNodeIdentifications;
 end;
 
-procedure TLccMessageAliasContextList.ProcessNewMapping(AliasMapping: TLccAliasMapping);
+procedure TLccMessageWithNodeIdentificationList.ProcessNewMapping(AliasMapping: TLccAliasMapping);
 var
   i: Integer;
 begin
   for i := 0 to Count - 1 do
-  begin
-    LccMessageIdentification[i].LccMessageDestinations.ProcessNewMapping(AliasMapping);
-    begin
+    LccMessageIdentification[i].MessageNodeIdentifications.ProcessNewMapping(AliasMapping);
+end;
 
+procedure TLccMessageWithNodeIdentificationList.LogOut(AnAlias: Word);
+var
+  i: Integer;
+  NodeIdentification: TLccMessageWithNodeIdentification;
+begin
+  for i := Count - 1 downto 0 do
+  begin
+    NodeIdentification := TLccMessageWithNodeIdentification(Items[i]);
+    if NodeIdentification.LogOut(AnAlias) then
+    begin
+      NodeIdentification.Free;
+      Delete(i);
     end;
   end;
 end;

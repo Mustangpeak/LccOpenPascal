@@ -32,6 +32,7 @@ type
   { TFormTrainCommander }
 
   TFormTrainCommander = class(TForm)
+    Button1: TButton;
     ButtonHTTPServer: TButton;
     ButtonWebserverConnect: TButton;
     ButtonManualConnectComPort: TButton;
@@ -62,6 +63,7 @@ type
     StatusBarMain: TStatusBar;
     ToggleBoxServerForm: TToggleBox;
     TreeViewTrains: TTreeView;
+    procedure Button1Click(Sender: TObject);
     procedure ButtonHTTPServerClick(Sender: TObject);
     procedure ButtonWebserverConnectClick(Sender: TObject);
     procedure ButtonManualConnectComPortClick(Sender: TObject);
@@ -159,6 +161,11 @@ begin
  //   DisconnectHTTPServer
  // else
  //   ConnectHTTPServer;
+end;
+
+procedure TFormTrainCommander.Button1Click(Sender: TObject);
+begin
+  NodeManager[0].ProcessPopMessages;
 end;
 
 procedure TFormTrainCommander.ButtonWebserverConnectClick(Sender: TObject);

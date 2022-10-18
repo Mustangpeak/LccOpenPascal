@@ -29,6 +29,7 @@ uses
   IdException,
   lcc_node_messages_can_assembler_disassembler,
   lcc_gridconnect,
+
   lcc_defines,
   lcc_node_manager,
   lcc_node_messages,
@@ -190,9 +191,9 @@ begin
     finally
       while not idTCPClient.IOHandler.InputBufferIsEmpty do
       begin
-        IndySleep(500); // empty the buffer in the call back
+        IndySleep(50); // empty the buffer in the call back
       end;
-      IndySleep(2000);
+   //   IndySleep(2000);
       idThreadComponent.Active := False;
       idTCPClient.Disconnect;
       HandleSendConnectionNotification(lcsDisconnected);
@@ -243,7 +244,7 @@ begin
   end;
     // https://stackoverflow.com/questions/64593756/delphi-rio-indy-tcpserver-high-cpu-usage
     // There is another way to do this but with this simple program this is fine
-  IndySleep(200);
+  IndySleep(50);
 end;
 
 end.

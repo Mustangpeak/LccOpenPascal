@@ -393,7 +393,7 @@ begin
             IdTCPServer.Contexts.UnlockList;
           end;
 
-          IndySleep(200);
+          IndySleep(50);
         end
       end;
     finally
@@ -468,7 +468,7 @@ begin
 
      // https://stackoverflow.com/questions/64593756/delphi-rio-indy-tcpserver-high-cpu-usage
     // There is another way to do this but with this simple program this is fine
-  IndySleep(200);
+  IndySleep(50);
 end;
 
 procedure TLccEthernetListener.IdTCPServerStatus(ASender: TObject; const AStatus: TIdStatus; const AStatusText: string);

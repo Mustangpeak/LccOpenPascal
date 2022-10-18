@@ -351,7 +351,11 @@ type
     constructor Create(ANodeManager: {$IFDEF DELPHI}TComponent{$ELSE}TObject{$ENDIF}; CdiXML: String; GridConnectLink: Boolean); override;
     destructor Destroy; override;
 
+    procedure MappingNewDiscovered(AMessage: TLccMessage); override;
+    procedure MappingReset(AMessage: TLccMessage); override;
+    procedure MessageStackPush(AMessage: TLccMessage); override;
     function ProcessMessageLCC(SourceMessage: TLccMessage): Boolean; override;
+    procedure ProcessPopMessages; override;
   end;
 
   TLccTrainCanNodeClass = class of TLccTrainDccNode;
@@ -882,6 +886,21 @@ begin
   inherited Destroy;
 end;
 
+procedure TLccTrainDccNode.MappingNewDiscovered(AMessage: TLccMessage);
+begin
+  inherited MappingNewDiscovered(AMessage);    // For debugging
+end;
+
+procedure TLccTrainDccNode.MappingReset(AMessage: TLccMessage);
+begin
+  inherited MappingReset(AMessage);   // For debugging
+end;
+
+procedure TLccTrainDccNode.MessageStackPush(AMessage: TLccMessage);
+begin
+  inherited MessageStackPush(AMessage);  // For debugging
+end;
+
 procedure TLccTrainDccNode.DccLoadPacket(var NewMessage: TDCCPacket; Data1,
   Data2, Data3, Data4, Data5, ValidDataByes: Byte);
 begin
@@ -1131,6 +1150,11 @@ begin
         end;
       end;
   end;
+end;
+
+procedure TLccTrainDccNode.ProcessPopMessages;
+begin
+  inherited ProcessPopMessages;  // For debugging
 end;
 
 procedure TLccTrainDccNode.SetDccAddress(AValue: Word);

@@ -242,7 +242,7 @@ type
     {$ELSE}
     property Nodes: TObjectList read FNodes write FNodes;
     {$ENDIF}
-    property Node[Index: Integer]: TLccNode read GetNode;
+    property Node[Index: Integer]: TLccNode read GetNode; default;
     property WorkerMessage: TLccMessage read FWorkerMessage write FWorkerMessage;
     // May have many places a message needs to go such at TCP, WebSocket, UART, etc
     // Automatically updated through the TLccHardwareConnectionManager when it is created/destroyed

@@ -106,7 +106,7 @@ type
 
   TLccNode = class(TObject)
   private
-    FActiveMessageDestinations: TLccDestinationObjectList;
+    FMessageDestinationsWaitingForReply: TLccNodeIdentificationObjectList;
     FAliasID: Word;
     FAliasServer: TLccAliasServer;
     FDatagramResendQueue: TDatagramQueue;
@@ -114,7 +114,8 @@ type
     FEnableTrainDatabase: Boolean;
     FGridConnect: Boolean;
     FLoginTimoutCounter: Integer;
-    FMessageAliasContextList: TLccMessageAliasContextList;
+    FMessageStack: TLccMessageStack;
+//    FMessageIdentificationList: TLccMessageWithNodeIdentificationList;
     FPermitted: Boolean;
     FProtocolACDIMfg: TProtocolACDIMfg;
     FProtocolACDIUser: TProtocolACDIUser;
@@ -202,8 +203,9 @@ type
     property Initialized: Boolean read FInitialized;
     property SendMessageFunc: TOnMessageEvent read FSendMessageFunc write SetSendMessageFunc;
     property EnableTrainDatabase: Boolean read FEnableTrainDatabase write SetEnableTrainDatabase;
-    property MessageAliasContextList: TLccMessageAliasContextList read FMessageAliasContextList write FMessageAliasContextList;
-    property ActiveMessageDestinations: TLccDestinationObjectList read FActiveMessageDestinations write FActiveMessageDestinations;
+    property MessageStack: TLccMessageStack read FMessageStack write FMessageStack;
+ //   property MessageIdentificationList: TLccMessageWithNodeIdentificationList read FMessageIdentificationList write FMessageIdentificationList;
+    property MessageDestinationsWaitingForReply: TLccNodeIdentificationObjectList read FMessageDestinationsWaitingForReply write FMessageDestinationsWaitingForReply;
 
     property ProtocolSupportedProtocols: TProtocolSupportedProtocols read FProtocolSupportedProtocols write FProtocolSupportedProtocols;
     property ProtocolEventConsumed: TProtocolEvents read FProtocolEventConsumed write FProtocolEventConsumed;
@@ -226,9 +228,13 @@ type
 
     procedure Login(ANodeID: TNodeID); virtual;
     procedure Logout; virtual;
+    procedure MappingNewDiscovered(AMessage: TLccMessage); virtual;
+    procedure MappingReset(AMessage: TLccMessage); virtual;
+    procedure MessageStackPush(AMessage: TLccMessage); virtual;
     function ProcessMessage(SourceMessage: TLccMessage): Boolean; // Do not override this override the next 2
     function ProcessMessageLCC(SourceMessage: TLccMessage): Boolean; virtual;
     function ProcessMessageGridConnect(SourceMessage: TLccMessage): Boolean; virtual;
+    procedure ProcessPopMessages; virtual;
     procedure SendEvents;
     procedure SendConsumedEvents;
     procedure SendConsumerIdentify(var Event: TEventID);
@@ -496,8 +502,9 @@ begin
   FGridConnect := GridConnectLink;
   FAliasServer := TLccAliasServer.Create;
   FTrainServer := TLccTrainServer.Create;
-  FMessageAliasContextList := TLccMessageAliasContextList.Create;
-  FActiveMessageDestinations := TLccDestinationObjectList.Create;
+ // FMessageIdentificationList := TLccMessageWithNodeIdentificationList.Create;
+  FMessageDestinationsWaitingForReply := TLccNodeIdentificationObjectList.Create(False);
+  FMessageStack := TLccMessageStack.Create;
 
   _100msTimer := TLccTimer.Create(nil);
   _100msTimer.Enabled := False;
@@ -1132,70 +1139,25 @@ end;
 
 function TLccNode.ProcessMessageGridConnect(SourceMessage: TLccMessage): Boolean;
 
-  procedure NewMappingDiscovered;
-  var
-    LocalTestNodeID: TNodeID;
-    LocalAMapping: TLccAliasMapping;
-  begin
-    LocalTestNodeID := NULL_NODE_ID;
-    SourceMessage.ExtractDataBytesAsNodeID(0, LocalTestNodeID);
-    LocalAMapping := AliasServer.AddMapping(SourceMessage.CAN.SourceAlias, LocalTestNodeID);
-    MessageAliasContextList.ProcessNewMapping(LocalAMapping);
-    ActiveMessageDestinations.RemoveDestination(LocalAMapping);
-    Assert(Assigned(LocalAMapping), 'Could not create an AliasMapping in TLccNode.ProcessMessageGridConnect');
-    if Assigned(LocalAMapping) then
-      (NodeManager as INodeManagerCallbacks).DoAliasMappingChange(Self, LocalAMapping, True);
-  end;
-
-  procedure MappingReset;
-  var
-    LocalMapping: TLccAliasMapping;
-    LocalTrainObject: TLccTrainObject;
-  begin
-    // Remove any Mappings that are associated with this Alias that is going away
-    LocalMapping := AliasServer.RemoveMappingByAlias(SourceMessage.CAN.SourceAlias, False);
-    if Assigned(LocalMapping) then
-    begin
-      try
-        (NodeManager as INodeManagerCallbacks).DoAliasMappingChange(Self, LocalMapping, False);
-      finally
-        LocalMapping.Free;
-      end;
-    end;
-    // Remove any Trains that are associated with this Alias that is going away
-    if EnableTrainDatabase then
-    begin
-      LocalTrainObject := TrainServer.RemoveTrainObjectByAlias(SourceMessage.CAN.SourceAlias);
-      if Assigned(LocalTrainObject) then
-      begin
-        try
-          (NodeManager as INodeManagerCallbacks).DoTrainRegisteringChange(Self, LocalTrainObject, False);
-        finally
-          LocalTrainObject.Free;
-        end;
-      end;
-    end
-  end;
-
 var
-  i: Integer;
   TestNodeID: TNodeID;
-  AMapping: TLccAliasMapping;
-  MessageDestinations: TLccMessageDestinationsObject;
 begin
   Result := False;
+  TestNodeID[0] := 0;
+  TestNodeID[1] := 0;
+
   // Alias Mapping Updates ******************************************************
   // Keep the Alias Maps up to date regardless of our state
 
   // Special case to handle a non CAN message here, we sent an alias (below) the receive the full Node ID here
   case SourceMessage.MTI of
-    MTI_VERIFIED_NODE_ID_NUMBER : NewMappingDiscovered
+    MTI_VERIFIED_NODE_ID_NUMBER : MappingNewDiscovered(SourceMessage);
   end;
 
   // Now handle CAN messages that will effect our mapping database
   case SourceMessage.CAN.MTI of
-    MTI_CAN_AMR : MappingReset; // Alias Mapping Reset
-    MTI_CAN_AMD : NewMappingDiscovered;  // Alias Mapping Definition
+    MTI_CAN_AMR : MappingReset(SourceMessage);  // Alias Mapping Reset
+    MTI_CAN_AMD : MappingNewDiscovered(SourceMessage);   // Alias Mapping Definition
   end;
   // END: Alias Mapping Updates ************************************************
 
@@ -1227,53 +1189,7 @@ begin
     if SourceMessage.CAN.SourceAlias = AliasID then
       DuplicateAliasDetected := True;
   end else
-  begin
-    // Normal message loop once successfully allocating an Alias
-
-    // Do this after the updates to the Alias Maps above
-    if not SourceMessage.IsCAN then // Don't interfer with CAN log in messages...
-    begin
-
-      MessageDestinations := MessageAliasContextList.Process(SourceMessage);
-
-      // See if the Source is already in the list to be Mapped
-      if MessageDestinations.Source.Active and not ActiveMessageDestinations.IsDuplicate(MessageDestinations.Source) then
-      begin
-        AMapping := AliasServer.FindMapping(MessageDestinations.Source.Alias);
-        if not Assigned(AMapping) then
-        begin
-          WorkerMessage.LoadVerifyNodeIDAddressed(NodeID, AliasID, MessageDestinations.Source.NodeID, MessageDestinations.Source.Alias, NULL_NODE_ID);
-          SendMessageFunc(Self, WorkerMessage);
-        end;
-      end;
-      // See if the Destination is already in the list to be Mapped
-      if MessageDestinations.Destination.Active and not ActiveMessageDestinations.IsDuplicate(MessageDestinations.Destination) then
-      begin
-        AMapping := AliasServer.FindMapping(MessageDestinations.Destination.Alias);
-        if not Assigned(AMapping) then
-        begin
-          WorkerMessage.LoadVerifyNodeIDAddressed(NodeID, AliasID, MessageDestinations.Destination.NodeID, MessageDestinations.Destination.Alias, NULL_NODE_ID);
-          SendMessageFunc(Self, WorkerMessage);
-        end;
-      end;
-      // See if the payload(s) of the message is already in the list to be Mapped
-      for i := 0 to MessageDestinations.Payload.Count - 1 do
-      begin
-        if MessageDestinations.Payload.Identification[i].Active and not ActiveMessageDestinations.IsDuplicate(MessageDestinations.Payload.Identification[i]) then
-        begin
-          AMapping := AliasServer.FindMapping(MessageDestinations.Payload.Identification[i].Alias);
-          if not Assigned(AMapping) then
-          begin
-            WorkerMessage.LoadVerifyNodeIDAddressed(NodeID, AliasID, MessageDestinations.Payload.Identification[i].NodeID, MessageDestinations.Payload.Identification[i].Alias, NULL_NODE_ID);
-            SendMessageFunc(Self, WorkerMessage);
-          end;
-        end;
-      end;
-    end;
-
-
-    TestNodeID[0] := 0;
-    TestNodeID[1] := 0;
+  begin  // Normal message loop once successfully allocating an Alias
     if SourceMessage.IsCAN then
     begin
       case SourceMessage.CAN.MTI of
@@ -1295,9 +1211,26 @@ begin
           end;
       end;
       Result := True;
+    end else
+    begin
+      // Push the message on the stack
+      MessageStackPush(SourceMessage);
+      // Process any message that are now ready to go
+      ProcessPopMessages;
     end;
-    if not Result then
-      Result := ProcessMessageLCC(SourceMessage);
+  end;
+end;
+
+procedure TLccNode.ProcessPopMessages;
+var
+  PoppedMessage: TLccMessage;
+begin
+  PoppedMessage := MessageStack.Pop;
+  while Assigned(PoppedMessage) do
+  begin
+    ProcessMessageLCC(PoppedMessage);
+    PoppedMessage.Free;
+    PoppedMessage := MessageStack.Pop;
   end;
 end;
 
@@ -1383,8 +1316,9 @@ begin
   FreeAndNil(FStreamTractionFdi);
   FreeAndNil(FAliasServer);
   FreeAndNil(FTrainServer);
-  FreeAndNil(FMessageAliasContextList);
-  FreeAndNil(FActiveMessageDestinations);
+//  FreeAndNil(FMessageIdentificationList);
+  FreeAndNil(FMessageDestinationsWaitingForReply);
+  FreeAndNil(FMessageStack);
 
 //  FProtocolMemoryConfiguration.Free;
   inherited;
@@ -1468,7 +1402,7 @@ begin
   DatagramResendQueue.Clear;
   if GridConnect then
   begin
-    MessageAliasContextList.Clear;
+    MessageStack.Clear;
     LocaMapping := AliasServer.RemoveMappingByAlias(AliasID, False);
     try
       if Assigned(LocaMapping) then
@@ -1521,7 +1455,9 @@ begin
     end else
     begin
       DatagramResendQueue.TickTimeout;
-    end
+    end;
+    // Look for messages that need to be dispatched
+    ProcessPopMessages;                        // EASIER TO DEBUG WITH THIS NOT ENABLED
   end else
   begin
     DatagramResendQueue.TickTimeout;
@@ -1601,6 +1537,97 @@ begin
   WorkerMessage.LoadInitializationComplete(NodeID, FAliasID);
   SendMessageFunc(Self, WorkerMessage);
   (NodeManager as INodeManagerCallbacks).DoInitializationComplete(Self);
+end;
+
+procedure TLccNode.MappingNewDiscovered(AMessage: TLccMessage);
+var
+  LocalTestNodeID: TNodeID;
+  LocalMapping: TLccAliasMapping;
+begin
+  // Expects that the full NodeID is in the Data at index 0
+  LocalTestNodeID := NULL_NODE_ID;
+  AMessage.ExtractDataBytesAsNodeID(0, LocalTestNodeID);
+  LocalMapping := AliasServer.AddMapping(AMessage.CAN.SourceAlias, LocalTestNodeID);
+  MessageStack.ProcessNewMapping(LocalMapping);
+  MessageDestinationsWaitingForReply.RemoveIdentification(LocalMapping);
+  ProcessPopMessages;
+  Assert(Assigned(LocalMapping), 'Could not create an AliasMapping in TLccNode.ProcessMessageGridConnect');
+  if Assigned(LocalMapping) then
+    (NodeManager as INodeManagerCallbacks).DoAliasMappingChange(Self, LocalMapping, True);
+end;
+
+procedure TLccNode.MappingReset(AMessage: TLccMessage);
+var
+  LocalMapping: TLccAliasMapping;
+  LocalTrainObject: TLccTrainObject;
+begin
+  // Remove any messages waiting that use this alias
+  MessageStack.LogOut(AMessage.CAN.SourceAlias);
+  // Remove any Mappings that are associated with this Alias that is going away
+  LocalMapping := AliasServer.RemoveMappingByAlias(AMessage.CAN.SourceAlias, False);
+  if Assigned(LocalMapping) then
+  begin
+    try
+      // No longer in the list waiting for a result to create a mapping
+       MessageDestinationsWaitingForReply.RemoveIdentification(LocalMapping);
+      (NodeManager as INodeManagerCallbacks).DoAliasMappingChange(Self, LocalMapping, False);
+    finally
+      LocalMapping.Free;
+    end;
+  end;
+  // Remove any Trains that are associated with this Alias that is going away
+  if EnableTrainDatabase then
+  begin
+    LocalTrainObject := TrainServer.RemoveTrainObjectByAlias(AMessage.CAN.SourceAlias);
+    if Assigned(LocalTrainObject) then
+    begin
+      try
+        (NodeManager as INodeManagerCallbacks).DoTrainRegisteringChange(Self, LocalTrainObject, False);
+      finally
+        LocalTrainObject.Free;
+      end;
+    end;
+  end
+end;
+
+procedure TLccNode.MessageStackPush(AMessage: TLccMessage);
+var
+  i: Integer;
+  AMapping: TLccAliasMapping;
+  MessageIdentifications: TLccNodeIdentificationObjectList;
+  MessageIdentification: TLccNodeIdentificationObject;
+begin
+  // Push all LCC messages get pushed to the stack
+  MessageIdentifications := MessageStack.Push(AMessage);
+
+  // The push returned all the Identifications (NodeID/Alias pairs) that were in the message pushed
+  // Now run them and see if we have a Verify Message in flight already
+  for i := 0 to MessageIdentifications.Count - 1 do
+  begin
+    MessageIdentification := MessageIdentifications.NodeIdentification[i];
+
+    if MessageIdentification.Active then
+    begin
+
+      // if the Identification is Active and it is not already in flight (is in the MessageDestinationsWaitingForReply list if in flight) then
+      // 1) See if that one is already in our Database
+      // 2) If not then send the VerifyNodeID to that node
+      // 3) Add that message to the MessageDestinationsWaitingForReply (any subsequent will cause the IsDuplicate to be true and no more VerifyNodes will be sent)
+
+      // Update the mapping with current information
+      AMapping := AliasServer.FindMapping(MessageIdentifications.NodeIdentification[i].Alias);
+      if Assigned(AMapping) then
+        MessageIdentifications.ProcessNewMapping( AMapping);
+
+      // If the MessageIdentification is not valid and a ValidateNode message has not been sent then send one
+      if not MessageDestinationsWaitingForReply.IsDuplicate(MessageIdentification) and not MessageIdentification.Valid then
+      begin
+        WorkerMessage.LoadVerifyNodeIDAddressed(NodeID, AliasID, MessageIdentifications.NodeIdentification[i].NodeID, MessageIdentifications.NodeIdentification[i].Alias, NULL_NODE_ID);
+        SendMessageFunc(Self, WorkerMessage);
+        MessageDestinationsWaitingForReply.AddNodeIdentificationObject(MessageIdentifications.NodeIdentification[i].NodeID, MessageIdentifications.NodeIdentification[i].Alias);
+      end;
+    end;
+  end;
 end;
 
 procedure TLccNode.SendProducedEvents;
