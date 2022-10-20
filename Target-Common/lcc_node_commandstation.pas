@@ -69,11 +69,7 @@ type
     procedure ClearTrains;
     function FindTrainByLccNodeID(ANodeID: TNodeID): TLccTrainDccNode;
     function FindTrainByDccAddress(DccAddress: Word; IsLongAddress: Boolean): TLccTrainDccNode;
-    procedure MappingNewDiscovered(AMessage: TLccMessage); override;
-    procedure MappingReset(AMessage: TLccMessage); override;
-    procedure MessageStackPush(AMessage: TLccMessage); override;
     function ProcessMessageLCC(SourceMessage: TLccMessage): Boolean; override;
-    procedure ProcessPopMessages; override;
   end;
 
   TLccCommandStationNodeClass = class of TLccCommandStationNode;
@@ -173,21 +169,6 @@ begin
    end;
 end;
 
-procedure TLccCommandStationNode.MappingNewDiscovered(AMessage: TLccMessage);
-begin
-  inherited MappingNewDiscovered(AMessage);   // For debugging
-end;
-
-procedure TLccCommandStationNode.MappingReset(AMessage: TLccMessage);
-begin
-  inherited MappingReset(AMessage);  // For debugging
-end;
-
-procedure TLccCommandStationNode.MessageStackPush(AMessage: TLccMessage);
-begin
-  inherited MessageStackPush(AMessage); // For debugging
-end;
-
 function TLccCommandStationNode.FindTrainByLccNodeID(ANodeID: TNodeID): TLccTrainDccNode;
 var
   i: Integer;
@@ -285,11 +266,6 @@ begin
         end;
       end;
   end;
-end;
-
-procedure TLccCommandStationNode.ProcessPopMessages;
-begin
-  inherited ProcessPopMessages; // for debugging
 end;
 
 end.

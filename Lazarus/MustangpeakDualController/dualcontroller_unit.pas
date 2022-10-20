@@ -433,11 +433,11 @@ begin
   NodeManager2.OnLccNodeAliasIDChanged := @OnNodeManager2AliasChange;
   NodeManager2.OnLccNodeIDChanged := @OnNodeManager2IDChange;
 
-  NodeManager1.OnLccMessageReceive := @OnNodeManagerReceiveMessage1;
-  NodeManager1.OnLccMessageSend := @OnNodeManagerSendMessage1;
+  ClientServer1.OnLccMessageReceive := @OnNodeManagerReceiveMessage1;
+  ClientServer1.OnLccMessageSend := @OnNodeManagerSendMessage1;
 
-  NodeManager2.OnLccMessageReceive := @OnNodeManagerReceiveMessage2;
-  NodeManager2.OnLccMessageSend := @OnNodeManagerSendMessage2;
+  ClientServer2.OnLccMessageReceive := @OnNodeManagerReceiveMessage2;
+  ClientServer2.OnLccMessageSend := @OnNodeManagerSendMessage2;
 
   ClientServer2.OnConnectionStateChange := @OnClientServer2ConnectionChange;
   ClientServer2.OnErrorMessage := @OnClientServer2ErrorMessage;

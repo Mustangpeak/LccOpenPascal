@@ -165,7 +165,7 @@ end;
 
 procedure TFormTrainCommander.Button1Click(Sender: TObject);
 begin
-  NodeManager[0].ProcessPopMessages;
+ // NodeManager[0].ProcessPopMessages;
 end;
 
 procedure TFormTrainCommander.ButtonWebserverConnectClick(Sender: TObject);
@@ -327,8 +327,6 @@ begin
   NodeManager := TLccNodeManager.Create(nil, True);
   NodeManager.OnLccNodeAliasIDChanged := @OnNodeManagerAliasIDChanged;
   NodeManager.OnLccNodeIDChanged := @OnNodeManagerIDChanged;
-  NodeManager.OnLccMessageReceive := @OnNodeManagerReceiveMessage;
-  NodeManager.OnLccMessageSend := @OnNodeManagerSendMessage;
   NodeManager.OnLccNodeLogin := @OnNodeManagerNodeLogin;
   NodeManager.OnLccNodeLogout := @OnNodeManagerNodeLogout;
   NodeManager.OnLccNodeTractionListenerAttach := @OnLccNodeTractionListenerAttach;
@@ -341,7 +339,9 @@ begin
   FLccServer := TLccEthernetServer.Create(nil, NodeManager);
   LccServer.OnConnectionStateChange := @OnCommandStationServerConnectionState;
   LccServer.OnErrorMessage := @OnCommandStationServerErrorMessage;
-//  LccServer.Hub := True;
+  LccServer.OnLccMessageReceive := @OnNodeManagerReceiveMessage;
+  LccServer.OnLccMessageSend := @OnNodeManagerSendMessage;
+  LccServer.Hub := True;
 
 //  FLccWebsocketServer := TLccWebsocketServer.Create(nil, NodeManager);
  // LccWebsocketServer.OnConnectionStateChange := @OnCommandStationWebsocketConnectionState;
@@ -396,7 +396,7 @@ begin
         ButtonEthernetConnect.Enabled := True;
         ButtonEthernetConnect.Caption := 'Disconnect Ethernet';
         StatusBarMain.Panels[0].Text := 'Ethernet: Command Station Connected at: ' + (Info as TLccEthernetConnectionInfo).ListenerIP + ':' + IntToStr((Info as TLccEthernetConnectionInfo).ListenerPort);
-        if NodeManager.Nodes.Count = 0 then
+        if NodeManager.NodeCount = 0 then
           NodeManager.AddNodeByClass('', TLccCommandStationNode , True, NULL_NODE_ID);
       end;
     lcsDisconnecting :
@@ -450,7 +450,7 @@ begin
           ButtonWebserverConnect.Enabled := True;
           ButtonWebserverConnect.Caption := 'Disconnect Websocket';
           StatusBarMain.Panels[1].Text := 'Websocket: Command Station Connected at: ' + (Info as TLccEthernetConnectionInfo).ListenerIP + ':' + IntToStr((Info as TLccEthernetConnectionInfo).ListenerPort);
-          if NodeManager.Nodes.Count = 0 then
+          if NodeManager.NodeCount = 0 then
             NodeManager.AddNodeByClass('', TLccCommandStationNode, True, NULL_NODE_ID);
           end;
       lcsDisconnecting :
@@ -665,51 +665,62 @@ var
   ListenerTrainNode, ParentTrainNode: TLccTrainDccNode;
   ParentTreeNode, ChildTreeNode: TTreeNode;
   i, j: Integer;
+  List: TList;
 begin
 
   TreeViewTrains.Items.Clear;
 
-  for i := 0 to NodeManager.Nodes.Count - 1 do
-  begin
-    if NodeManager.Node[i] is TLccTrainDccNode then
+  List := NodeManager.Nodes.LockList;
+  try
+    for i := 0 to List.Count - 1 do
     begin
-      ParentTrainNode := NodeManager.Node[i] as TLccTrainDccNode;
-      ParentTreeNode := TreeViewTrains.Items.Add(nil, TrainNodeToCaption(ParentTrainNode));
-      ParentTreeNode.ImageIndex := 18;
-      for j := 0 to ParentTrainNode.Listeners.Count - 1 do
+      if TLccNode( List[i]) is TLccTrainDccNode then
       begin
-        ListenerTrainNode := NodeManager.FindNodeByNodeID(ParentTrainNode.Listeners.Listener[j].NodeID) as TLccTrainDccNode;
-        if Assigned(ListenerTrainNode) then
+        ParentTrainNode := TLccNode( List[i]) as TLccTrainDccNode;
+        ParentTreeNode := TreeViewTrains.Items.Add(nil, TrainNodeToCaption(ParentTrainNode));
+        ParentTreeNode.ImageIndex := 18;
+        for j := 0 to ParentTrainNode.Listeners.Count - 1 do
         begin
-           ChildTreeNode := TreeViewTrains.Items.AddChild(ParentTreeNode, TrainNodeToCaption(ListenerTrainNode));
-           ChildTreeNode.ImageIndex := 7;
-        end else
-        begin
-           ChildTreeNode := TreeViewTrains.Items.AddChild(ParentTreeNode, '[Unknown]');
-           ChildTreeNode.ImageIndex := 7;
+          ListenerTrainNode := NodeManager.FindNodeByNodeID(ParentTrainNode.Listeners.Listener[j].NodeID) as TLccTrainDccNode;
+          if Assigned(ListenerTrainNode) then
+          begin
+             ChildTreeNode := TreeViewTrains.Items.AddChild(ParentTreeNode, TrainNodeToCaption(ListenerTrainNode));
+             ChildTreeNode.ImageIndex := 7;
+          end else
+          begin
+             ChildTreeNode := TreeViewTrains.Items.AddChild(ParentTreeNode, '[Unknown]');
+             ChildTreeNode.ImageIndex := 7;
+          end;
         end;
       end;
     end;
+  finally
+    NodeManager.Nodes.UnlockList;
   end;
-
 end;
 
 procedure TFormTrainCommander.FlushTrains;
 var
   i: Integer;
   TrainNode: TLccTrainDccNode;
+  List: TList;
 begin
-  for i := NodeManager.GetNodeCount - 1 downto 0  do
-  begin
-    if NodeManager.Node[i] is TLccTrainDccNode then
+  List := NodeManager.Nodes.LockList;
+  try
+    for i := List.Count - 1 downto 0  do
     begin
-      TrainNode := NodeManager.Node[i] as TLccTrainDccNode;
-      TrainNode.Logout;      // Node will be deleted from Treeview when it logs out
-      NodeManager.Nodes.Delete(i);
-      TrainNode.Free;
+      if TLccNode(List.Items[i]) is TLccTrainDccNode then
+      begin
+        TrainNode := TLccNode(List.Items[i]) as TLccTrainDccNode;
+        TrainNode.Logout;      // Node will be deleted from Treeview when it logs out
+        List.Delete(i);
+        TrainNode.Free;
+      end;
     end;
+  finally
+    NodeManager.Nodes.UnlockList;
+    TreeViewTrains.Items.Clear;
   end;
-  TreeViewTrains.Items.Clear;
 end;
 
 procedure TFormTrainCommander.JUNK(Sender: TObject; LccMessage: TLccMessage);

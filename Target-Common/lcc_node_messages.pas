@@ -69,9 +69,9 @@ type
     property Valid: Boolean read FValid write FValid;
   end;
 
-  { TLccTheadMessageList }
+  { TLccTheadedMessageList }
 
-  TLccTheadMessageList = class(TThreadList)
+  TLccTheadedMessageList = class(TThreadList)
   private
     function GetInteger: Integer;
     function GetLccMessage(Index: Integer): TLccMessage;
@@ -121,7 +121,7 @@ type
     function GetSource: TLccNodeIdentificationObject;
     procedure SetIdentification(Index: Integer; AValue: TLccNodeIdentificationObject);
   public
-    property NodeIdentification[Index: Integer]: TLccNodeIdentificationObject read GetIdentification write SetIdentification;
+    property NodeIdentification[Index: Integer]: TLccNodeIdentificationObject read GetIdentification write SetIdentification; default;
     property Source: TLccNodeIdentificationObject read GetSource;
     property Destination: TLccNodeIdentificationObject read GetDestination;
 
@@ -161,6 +161,7 @@ type
     constructor Create;
     destructor Destroy; override;
     procedure CloneMessageAndCreateIdentificationObjects(AMessage: TLccMessage);
+    function ExtractIdentificationObjects(AMessage: TLccMessage): TLccNodeIdentificationObjectList;
     procedure NewIdentificationItem(ANodeID: TNodeID);
     function LogOut(AnAlias: Word): Boolean;
   end;
@@ -926,13 +927,18 @@ begin
   inherited Destroy;
 end;
 
-procedure TLccMessageWithNodeIdentification.CloneMessageAndCreateIdentificationObjects
-  (AMessage: TLccMessage);
+procedure TLccMessageWithNodeIdentification.CloneMessageAndCreateIdentificationObjects(AMessage: TLccMessage);
+begin
+  LccMessage := AMessage.Clone;
+  ExtractIdentificationObjects(LccMessage)
+end;
+
+function TLccMessageWithNodeIdentification.ExtractIdentificationObjects(
+  AMessage: TLccMessage): TLccNodeIdentificationObjectList;
 var
   ANodeID: TNodeID;
 begin
-  LccMessage := AMessage.Clone;
-
+  Result := MessageNodeIdentifications;
   MessageNodeIdentifications.ClearIdentifications;
   MessageNodeIdentifications.Source.AssignID(AMessage.SourceID, AMessage.CAN.SourceAlias);
   if AMessage.HasDestination then
@@ -1208,11 +1214,9 @@ begin
   begin
     MessageWithNodeIdentification := LccMessageIdentification[0];
 
-    Result := MessageWithNodeIdentification.LccMessage;
-
     if MessageWithNodeIdentification.MessageNodeIdentifications.IdentificationsValid then
     begin
-
+      Result := MessageWithNodeIdentification.LccMessage;
       MessageWithNodeIdentification.FLccMessage := nil;
       MessageWithNodeIdentification.Free;
       Delete(0);
@@ -1255,9 +1259,9 @@ begin
 end;
 
 
-{ TLccTheadMessageList }
+{ TLccTheadedMessageList }
 
-function TLccTheadMessageList.GetLccMessage(Index: Integer): TLccMessage;
+function TLccTheadedMessageList.GetLccMessage(Index: Integer): TLccMessage;
 var
   List: TList;
 begin
@@ -1269,7 +1273,7 @@ begin
   end;
 end;
 
-function TLccTheadMessageList.GetInteger: Integer;
+function TLccTheadedMessageList.GetInteger: Integer;
 var
   List: TList;
 begin
@@ -1281,13 +1285,13 @@ begin
   end;
 end;
 
-destructor TLccTheadMessageList.Destroy;
+destructor TLccTheadedMessageList.Destroy;
 begin
   Clear;
   inherited Destroy;
 end;
 
-procedure TLccTheadMessageList.Push(AMessage: TLccMessage);
+procedure TLccTheadedMessageList.Push(AMessage: TLccMessage);
 var
   List: TList;
 begin
@@ -1299,7 +1303,7 @@ begin
   end;
 end;
 
-procedure TLccTheadMessageList.Clear;
+procedure TLccTheadedMessageList.Clear;
 var
   List: TList;
   i: Integer;
@@ -1314,7 +1318,7 @@ begin
   end;
 end;
 
-function TLccTheadMessageList.Pop: TLccMessage;
+function TLccTheadedMessageList.Pop: TLccMessage;
 var
   List: TList;
 begin

@@ -29,6 +29,7 @@ uses
   lcc_ethernet_tcp,
   lcc_threaded_stringlist,
   lcc_defines,
+  lcc_gridconnect,
   lcc_node_messages_can_assembler_disassembler;
 
 type
@@ -75,6 +76,8 @@ type
   TLccConnectionThread = class(TThread)
   private
     FConnectionInfo: TLccHardwareConnectionInfo;
+    FGridConnectHelper: TGridConnectHelper;
+    FGridConnectMessageAssembler: TLccGridConnectMessageAssembler;
     FOutgoingCircularArray: TThreadedCircularArray;
     FOutgoingGridConnect: TThreadStringList;
     FOwner: TLccHardwareConnectionManager;
@@ -85,7 +88,6 @@ type
     FRunning: Boolean;
 
     // Link back to the ConnectionManager that owns the thread
-    property Owner: TLccHardwareConnectionManager read FOwner write FOwner;
     property TcpDecodeStateMachine: TOPStackcoreTcpDecodeStateMachine read FTcpDecodeStateMachine write FTcpDecodeStateMachine;
 
     procedure HandleErrorAndDisconnect(SuppressMessage: Boolean); virtual;
@@ -100,8 +102,11 @@ type
     destructor Destroy; override;
 
     property ConnectionInfo: TLccHardwareConnectionInfo read FConnectionInfo;
+    property GridConnectHelper: TGridConnectHelper read FGridConnectHelper;
+    property GridConnectMessageAssembler: TLccGridConnectMessageAssembler read FGridConnectMessageAssembler write FGridConnectMessageAssembler;
     property OutgoingGridConnect: TThreadStringList read FOutgoingGridConnect write FOutgoingGridConnect;
     property OutgoingCircularArray: TThreadedCircularArray read FOutgoingCircularArray write FOutgoingCircularArray;
+    property Owner: TLccHardwareConnectionManager read FOwner;
     property Running: Boolean read FRunning write FRunning;
     property IsTerminated: Boolean read GetIsTerminated;
     // Holds the next message received in a thread is Syncronize is called so the main thread can
@@ -116,8 +121,8 @@ type
     FNodeManager: TLccNodeManager;
     FOnConnectionStateChange: TOnHardwareConnectionStateChangeEvent;
     FOnErrorMessage: TOnHardwareConnectionErrorEvent;
-    FOnReceiveMessage: TOnMessageEvent;
-    FOnSendMessage: TOnMessageEvent;
+    FOnLccMessageReceive: TOnMessageEvent;
+    FOnLccMessageSend: TOnMessageEvent;
     FWorkerMessage: TLccMessage;
   protected
     // useful in decendants, GetConnected could just return this with the object setting FConnected correctly
@@ -125,8 +130,6 @@ type
 
     // Decendents only know what connected means to them
     function GetConnected: Boolean; virtual; abstract;
-
-    property Hub: Boolean read FHub write FHub;         // <<<<<<<<< Should the Hub be in the NodeManager or is this just to make this connection not part of the hub system... to block it
 
     // Event call methods
     procedure DoReceiveMessage(LccMessage: TLccMessage); virtual;
@@ -140,6 +143,8 @@ type
   public
     // True if the Manager is capabable of receiveing/sending messages on the wire... getter must be overridden
     property Connected: Boolean read GetConnected;
+    //
+    property Hub: Boolean read FHub write FHub;
     // The Connection Mangaer is assigned to this Connection Manager and it uses it to pass messages
     property NodeManager: TLccNodeManager read FNodeManager;
 
@@ -148,9 +153,6 @@ type
 
     // When a thread owned by the manager receives a message it will call these centraized methods
     // ----------------------
-    // Decendant must override this.  The Connection Threads call when a message come in on the "wire".
-    // This is what is called from the threads Syncronize method
-    procedure ReceiveMessage; virtual; abstract;
     // Decendant must override this.  The Node Manager calls this when its nodes needs to send a message to the "wire".
     procedure SendMessage(ALccMessage: TLccMessage); virtual;
     // Puts a GridConnect string in the buffer to be sent without needing to deal with a TLccMessage as not all links are LCC, using custom GridConnect for the UART to the Command Station
@@ -168,8 +170,8 @@ type
   published
     property OnConnectionStateChange: TOnHardwareConnectionStateChangeEvent read FOnConnectionStateChange write FOnConnectionStateChange;
     property OnErrorMessage: TOnHardwareConnectionErrorEvent read FOnErrorMessage write FOnErrorMessage;
-    property OnReceiveMessage: TOnMessageEvent read FOnReceiveMessage write FOnReceiveMessage;
-    property OnSendMessage: TOnMessageEvent read FOnSendMessage write FOnSendMessage;
+    property OnLccMessageReceive: TOnMessageEvent read FOnLccMessageReceive write FOnLccMessageReceive;
+    property OnLccMessageSend: TOnMessageEvent read FOnLccMessageSend write FOnLccMessageSend;
     property WorkerMessage: TLccMessage read FWorkerMessage write FWorkerMessage;
   end;
 
@@ -210,14 +212,14 @@ end;
 
 procedure TLccHardwareConnectionManager.DoReceiveMessage(LccMessage: TLccMessage);
 begin
-  if Assigned(OnReceiveMessage) then
-    OnReceiveMessage(Self, LccMessage);
+  if Assigned(OnLccMessageReceive) then
+    OnLccMessageReceive(Self, LccMessage);
 end;
 
 procedure TLccHardwareConnectionManager.DoSendMessage(ALccMessage: TLccMessage);
 begin
-  if Assigned(OnSendMessage) then
-    OnSendMessage(Self, ALccMessage);
+  if Assigned(OnLccMessageSend) then
+    OnLccMessageSend(Self, ALccMessage);
 end;
 
 procedure TLccHardwareConnectionManager.DoConnectionStateChange(Thread: TLccConnectionThread; ConnectionInfo: TLccHardwareConnectionInfo);
@@ -299,6 +301,8 @@ begin
   FOutgoingGridConnect := TThreadStringList.Create;
   OutgoingGridConnect.Delimiter := #10;
   FTcpDecodeStateMachine := TOPStackcoreTcpDecodeStateMachine.Create;
+  FGridConnectHelper := TGridConnectHelper.Create;
+  FGridConnectMessageAssembler := TLccGridConnectMessageAssembler.Create;
 end;
 
 destructor TLccConnectionThread.Destroy;
@@ -307,6 +311,8 @@ begin
   FreeAndNil(FOutgoingCircularArray);
   FreeAndNil(FOutgoingGridConnect);
   FreeAndNil(FTcpDecodeStateMachine);
+  FreeAndNil(FGridConnectHelper);
+  FreeAndNil(FGridConnectMessageAssembler);
   inherited Destroy;
 end;
 

@@ -55,6 +55,9 @@ if TargetOS = &apos;linux&apos; then
               <OverflowChecks Value="True"/>
               <StackChecks Value="True"/>
             </Checks>
+            <Optimizations>
+              <OptimizationLevel Value="0"/>
+            </Optimizations>
           </CodeGeneration>
           <Linking>
             <Debugging>

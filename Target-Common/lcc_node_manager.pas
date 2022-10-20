@@ -127,6 +127,12 @@ type
   TOnTrainRegisteringChange = procedure(Sender: TObject; LccSourceNode: TLccNode; TrainObject: TLccTrainObject; IsRegistered: Boolean) of object;
   TOnTrainInformationChange = procedure(Sender: TObject; LccSourceNode: TLccNode; TrainObject: TLccTrainObject) of object;
 
+  { TLccThreadedNodeList }
+
+  TLccThreadedNodeList = class(TThreadList)
+
+  end;
+
   { TLccNodeManager }
 
   TLccNodeManager = class(TComponent, INodeManagerCallbacks, INodeManager)
@@ -135,7 +141,6 @@ type
     FHardwarewareConnectionList: TInterfaceList;
     FOnAliasMappingChange: TOnAliasMappingChange;
     FOnLccNodeAliasIDChanged: TOnLccNodeMessage;
-    FOnLccMessageReceive: TOnMessageEvent;
     FOnLccNodeConfigMemAddressSpaceInfoReply: TOnLccNodeConfigMemAddressSpace;
     FOnLccNodeConfigMemOptionsReply: TOnLccNodeConfigMem;
     FOnLccNodeConsumerIdentify: TOnLccNodeEventIdentify;
@@ -170,17 +175,12 @@ type
     FOnLccNodeTractionQueryFunction: TOnLccNodeMessageWithTrainObject;
     FOnLccNodeTractionQuerySpeed: TOnLccNodeMessageWithTrainObject;
     FOnLccNodeVerifiedNodeID: TOnLccNodeMessage;
-    FOnLccMessageSend: TOnMessageEvent;
     FOnLccTractionUpdateListenerCount: TOnLccTractionUpdateListenerCount;
     FOnLccTractionUpdateSNIP: TOnLccTractionUpdateSNIP;
     FOnLccTractionUpdateTrainSNIP: TOnLccTractionUpdateTrainSNIP;
     FOnTrainInformationChange: TOnTrainInformationChange;
     FOnTrainRegisteringChange: TOnTrainRegisteringChange;
-    {$IFDEF DELPHI}
-    FNodes: TObjectList<TLccNode>;
-    {$ELSE}
-    FNodes: TObjectList;
-    {$ENDIF}
+    FNodes: TLccThreadedNodeList;
     FWorkerMessage: TLccMessage;
     function GetNode(Index: Integer): TLccNode;
   protected
@@ -230,18 +230,13 @@ type
     procedure DoTrainRegisteringChange(LccNode: TLccNode; TrainObject: TLccTrainObject; IsRegistered: Boolean); virtual;
     procedure DoTrainInformationChange(LccNode: TLccNode; TrainObject: TLccTrainObject); virtual;
 
-    procedure DoLccMessageSend(Sender: TObject; Message: TLccMessage); virtual;
-    procedure DoLccMessageReceive(Message: TLccMessage); virtual;
-
    public
     // Connection Manager
 
     property GridConnect: Boolean read FGridConnect;
-    {$IFDEF DELPHI}
-    property Nodes: TObjectList<TLccNode> read FNodes write FNodes;
-    {$ELSE}
-    property Nodes: TObjectList read FNodes write FNodes;
-    {$ENDIF}
+
+    property Nodes: TLccThreadedNodeList read FNodes write FNodes;
+
     property Node[Index: Integer]: TLccNode read GetNode; default;
     property WorkerMessage: TLccMessage read FWorkerMessage write FWorkerMessage;
     // May have many places a message needs to go such at TCP, WebSocket, UART, etc
@@ -261,11 +256,12 @@ type
 
     procedure LogoutAll;
 
-    procedure ProcessMessage(LccMessage: TLccMessage);  // Takes incoming messages and dispatches them to the nodes
     procedure SendMessage(Sender: TObject; LccMessage: TLccMessage); // Outgoing messages are passed through this method, its address is given to Nodes and other objects that need to send messages
-    procedure ReceiveMessage(LccMessage: TLccMessage);  // Takes all incoming messages from all TLccHardwareConnectionManager objects and dispatches them to the nodes and dispaches them to other Connections that are registered
+
 
   published
+
+    property NodeCount: Integer read GetNodeCount;
 
     // Node Management
     property OnLccNodeCreate: TOnLccNodeMessage read FOnLccNodeCreate write FOnLccNodeCreate;
@@ -325,10 +321,6 @@ type
     // Other stuff that may not be useful
     property OnLccNodeOptionalInteractionRejected: TOnLccNodeMessageWithDest read FOnLccNodeOptionalInteractionRejected write FOnLccNodeOptionalInteractionRejected;
     property OnLccNodeRemoteButtonReply: TOnLccNodeMessageWithDest read FOnLccNodeRemoteButtonReply write FOnLccNodeRemoteButtonReply;
-
-    // Message Management
-    property OnLccMessageReceive: TOnMessageEvent read FOnLccMessageReceive write FOnLccMessageReceive;
-    property OnLccMessageSend: TOnMessageEvent read FOnLccMessageSend write FOnLccMessageSend;
 
     // Other interesting stuff
     property OnAliasMappingChange: TOnAliasMappingChange read FOnAliasMappingChange write FOnAliasMappingChange;
@@ -432,18 +424,6 @@ procedure TLccNodeManager.DoInitializationComplete(LccNode: TLccNode);
 begin
   if Assigned(OnLccNodeInitializationComplete) then
     OnLccNodeInitializationComplete(Self, LccNode);
-end;
-
-procedure TLccNodeManager.DoLccMessageReceive(Message: TLccMessage);
-begin
-  if Assigned(OnLccMessageReceive) then
-    OnLccMessageReceive(Self, Message);
-end;
-
-procedure TLccNodeManager.DoLccMessageSend(Sender: TObject; Message: TLccMessage);
-begin
-  if Assigned(OnLccMessageSend) then
-    OnLccMessageSend(Sender, Message);
 end;
 
 procedure TLccNodeManager.DoLogInNode(LccNode: TLccNode);
@@ -609,39 +589,47 @@ begin
 end;
 
 function TLccNodeManager.ExtractNode(Index: Integer): TLccNode;
+var
+  List: TList;
 begin
   Result := nil;
-  if Index < Nodes.Count then
-  begin
-    Result := Nodes[Index] as TLccNode;
-    Nodes.Delete(Index);
+  List := Nodes.LockList;
+  try
+    if Index < List.Count then
+    begin
+      Result := TLccNode(List.Items[Index]);
+      List.Delete(Index);
+    end;
+  finally
+    Nodes.UnlockList;
   end;
 end;
 
 function TLccNodeManager.FindNodeByNodeID(NodeID: TNodeID): TLccNode;
 var
+  List: TList;
   i: Integer;
 begin
   Result := nil;
-  for i := 0 to Nodes.Count - 1 do
-  begin
-    if EqualNodeID(NodeID, Node[i].NodeID, False) then
+  List := Nodes.LockList;
+  try
+    for i := 0 to List.Count - 1 do
     begin
-      Result := Node[i];
-      Break
+      if EqualNodeID(NodeID, TLccNode(List.Items[i]).NodeID, False) then
+      begin
+        Result := Node[i];
+        Break
+      end;
     end;
+  finally
+    Nodes.UnlockList;
   end;
 end;
 
 constructor TLccNodeManager.Create(AnOwner: TComponent; GridConnectLink: Boolean);
 begin
   inherited Create(AnOwner);
-  {$IFDEF DELPHI}
-    FNodes := TObjectList<TLccNode>.Create;
-  {$ELSE}
-    FNodes := TObjectList.Create;
-  {$ENDIF}
-  FNodes.OwnsObjects := False;
+  FNodes := TLccThreadedNodeList.Create;
 
   FGridConnect := GridConnectLink;
   FHardwarewareConnectionList := TInterfaceList.Create;
@@ -685,83 +673,95 @@ end;
 procedure TLccNodeManager.Clear;
 var
   i: Integer;
+  List: TList;
 begin
+  List := Nodes.LockList;
   try
-    LogoutAll;
-    for i := 0 to FNodes.Count - 1 do
-      TObject( FNodes[i]).Free;
+    for i := 0 to List.Count - 1 do
+    begin
+      TLccNode(List.Items[i]).Logout;
+      TLccNode(List.Items[i]).Free;
+    end;
   finally
-    Nodes.Clear;
+    List.Clear;
+    Nodes.UnlockList
   end;
 end;
 
 function TLccNodeManager.GetNode(Index: Integer): TLccNode;
+var
+  List: TList;
 begin
-  if Index < Nodes.Count then
-    Result := Nodes[Index] as TLccNode
-  else
-    Result := nil;
+  Result := nil;
+  List := Nodes.LockList;
+  try
+    if Index < List.Count then
+      Result := TLccNode(List.Items[Index]);
+  finally
+    Nodes.UnlockList;
+  end;
 end;
 
 function TLccNodeManager.GetNodeCount: Integer;
+var
+  List: TList;
 begin
-  Result := Nodes.Count;
+  Result := 0;
+  List := Nodes.LockList;
+  try
+    Result := List.Count;
+  finally
+    Nodes.UnlockList;
+  end;
 end;
 
 procedure TLccNodeManager.LogoutAll;
 var
+  List: TList;
   i: Integer;
 begin
-  for i := 0 to Nodes.Count - 1 do
-  begin
-    // Maybe an OnLogout property?
-    TLccNode( Nodes[i]).Logout;
+  List := Nodes.LockList;
+  try
+    for i := 0 to List.Count - 1 do
+    begin
+      // Maybe an OnLogout property?
+      TLccNode(List.Items[i]).Logout;
+    end;
+  finally
+    Nodes.UnlockList;
   end;
-end;
-
-procedure TLccNodeManager.ProcessMessage(LccMessage: TLccMessage);
-var
-  i: Integer;
-begin
-  DoLccMessageReceive(LccMessage);
-  for i := 0 to Nodes.Count - 1 do
-    ( Nodes[i] as TLccNode).ProcessMessage(LccMessage);
 end;
 
 procedure TLccNodeManager.SendMessage(Sender: TObject; LccMessage: TLccMessage);
 var
   i: Integer;
+  List: TList;
 begin
-  // Send the message to the interfaces (Ethernet, WebSocket, UART, ect)
-  for i := 0 to HardwarewareConnectionList.Count -1 do
-    (HardwarewareConnectionList[i] as IHardwareConnectionManagerLink).SendMessage(LccMessage);
+  List := Nodes.LockList;
+  try
+    // Send the message to the interfaces (Ethernet, WebSocket, UART, ect)
+    for i := 0 to HardwarewareConnectionList.Count -1 do
+      (HardwarewareConnectionList[i] as IHardwareConnectionManagerLink).SendMessage(LccMessage);
 
 
-  // Send the messages to all the other virtual nodes.
-  if Sender is TLccNode then
-  begin
-    for i := 0 to Nodes.Count - 1 do
+    // Send the messages to all the other virtual nodes.
+    if Sender is TLccNode then
     begin
+      for i := 0 to List.Count - 1 do
+      begin
 
- //     Assert(not NullNodeID( (Node[i] as TLccNode).NodeID ));
- //     Assert(not NullNodeID( LccMessage.SourceID ));
+   //     Assert(not NullNodeID( (Node[i] as TLccNode).NodeID ));
+   //     Assert(not NullNodeID( LccMessage.SourceID ));
 
-      // don't sent it back to itself but deliver it to all the other virtual owned nodes
-      if not EqualNode(Node[i].NodeID, Node[i].AliasID, LccMessage.SourceID, LccMessage.CAN.SourceAlias, True) then
-        Node[i].ProcessMessage(LccMessage);
+        // don't sent it back to itself but deliver it to all the other virtual owned nodes
+        if not EqualNode(Node[i].NodeID, Node[i].AliasID, LccMessage.SourceID, LccMessage.CAN.SourceAlias, True) then
+          Node[i].ProcessMessage(LccMessage);
+      end;
     end;
+  finally
+    Nodes.UnlockList;
   end;
 
-  // Allow app to see it
-  DoLccMessageSend(Sender, LccMessage);
-end;
-
-procedure TLccNodeManager.ReceiveMessage(LccMessage: TLccMessage);
-begin
-  // Do I need to dispatch to other HardwareConnection (like a Hub?)
-  // Should the node manager be the hub?  It may make more sense as there should only be
-  // one Node Manager per application.
-  ProcessMessage(LccMessage);
 end;
 
 end.

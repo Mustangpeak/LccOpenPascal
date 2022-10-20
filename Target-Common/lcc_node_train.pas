@@ -335,6 +335,12 @@ type
     procedure HandleTractionListenerQuery(SourceMessage: TLccMessage);
     procedure HandleConfigurationRead(SourceMessage: TLccMessage);
     procedure HandleConfigurationWrite(SourceMessage: TLccMessage);
+    procedure HandleTractionSetSpeed(SourceMessage: TLccMessage);
+    procedure HandleTractionSetFunction(SourceMessage: TLccMessage);
+    procedure HandleTractionEStop(SourceMessage: TLccMessage);
+    procedure HandleTractionQuerySpeed(SourceMessage: TLccMessage);
+    procedure HandleTractionQueryFunction(SourceMessage: TLccMessage);
+
 
   public
     property DccAddress: Word read FDccAddress write SetDccAddress;
@@ -351,11 +357,7 @@ type
     constructor Create(ANodeManager: {$IFDEF DELPHI}TComponent{$ELSE}TObject{$ENDIF}; CdiXML: String; GridConnectLink: Boolean); override;
     destructor Destroy; override;
 
-    procedure MappingNewDiscovered(AMessage: TLccMessage); override;
-    procedure MappingReset(AMessage: TLccMessage); override;
-    procedure MessageStackPush(AMessage: TLccMessage); override;
     function ProcessMessageLCC(SourceMessage: TLccMessage): Boolean; override;
-    procedure ProcessPopMessages; override;
   end;
 
   TLccTrainCanNodeClass = class of TLccTrainDccNode;
@@ -886,21 +888,6 @@ begin
   inherited Destroy;
 end;
 
-procedure TLccTrainDccNode.MappingNewDiscovered(AMessage: TLccMessage);
-begin
-  inherited MappingNewDiscovered(AMessage);    // For debugging
-end;
-
-procedure TLccTrainDccNode.MappingReset(AMessage: TLccMessage);
-begin
-  inherited MappingReset(AMessage);   // For debugging
-end;
-
-procedure TLccTrainDccNode.MessageStackPush(AMessage: TLccMessage);
-begin
-  inherited MessageStackPush(AMessage);  // For debugging
-end;
-
 procedure TLccTrainDccNode.DccLoadPacket(var NewMessage: TDCCPacket; Data1,
   Data2, Data3, Data4, Data5, ValidDataByes: Byte);
 begin
@@ -1078,6 +1065,41 @@ begin
 
 end;
 
+procedure TLccTrainDccNode.HandleTractionSetSpeed(SourceMessage: TLccMessage);
+begin
+  // Should be from assigned controller only but.....
+  Speed := SourceMessage.TractionExtractSetSpeed;
+end;
+
+procedure TLccTrainDccNode.HandleTractionSetFunction(SourceMessage: TLccMessage);
+var
+  FunctionAddress: DWORD;
+begin
+  // Should be from assigned controller only but.....
+  FunctionAddress := SourceMessage.TractionExtractFunctionAddress;
+  Functions[FunctionAddress] := SourceMessage.TractionExtractFunctionValue;
+end;
+
+procedure TLccTrainDccNode.HandleTractionEStop(SourceMessage: TLccMessage);
+begin
+  Speed := 0;
+end;
+
+procedure TLccTrainDccNode.HandleTractionQuerySpeed(SourceMessage: TLccMessage);
+begin
+  WorkerMessage.LoadTractionQuerySpeedReply(NodeId, AliasID, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias, Speed, 0, HalfNaN, HalfNaN);
+  SendMessageFunc(Self, WorkerMessage);
+end;
+
+procedure TLccTrainDccNode.HandleTractionQueryFunction(SourceMessage: TLccMessage);
+var
+  FunctionAddress: DWORD;
+begin
+  FunctionAddress := SourceMessage.TractionExtractFunctionAddress;
+  WorkerMessage.LoadTractionQueryFunctionReply(NodeId, AliasID, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias, FunctionAddress, Functions[FunctionAddress]);
+  SendMessageFunc(Self, WorkerMessage);
+end;
+
 function TLccTrainDccNode.GetCdiFile: string;
 begin
   Result := CDI_XML_TRAIN_NODE
@@ -1115,11 +1137,11 @@ begin
     MTI_TRACTION_REQUEST :
       begin
         case SourceMessage.DataArray[0] of
-          TRACTION_SET_SPEED_DIR       : begin end; // Result := LccActions.RegisterAndKickOffAction(TLccActionTractionSetSpeed.Create(Self, SourceMessage.DestID, SourceMessage.CAN.DestAlias, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias, 0), SourceMessage);
-          TRACTION_SET_FUNCTION        : begin end; // Result := LccActions.RegisterAndKickOffAction(TLccActionTractionSetFunction.Create(Self, SourceMessage.DestID, SourceMessage.CAN.DestAlias, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias, 0), SourceMessage);
-          TRACTION_SET_E_STOP          : begin end; // Result := LccActions.RegisterAndKickOffAction(TLccActionTractionEmergencyStop.Create(Self, SourceMessage.DestID, SourceMessage.CAN.DestAlias, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias, 0), nil);
-          TRACTION_QUERY_SPEED     : begin end; // Result := LccActions.RegisterAndKickOffAction(TLccActionTractionQuerySpeedReply.Create(Self, SourceMessage.DestID, SourceMessage.CAN.DestAlias, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias, 0), nil);
-          TRACTION_QUERY_FUNCTION  : begin end; // Result := LccActions.RegisterAndKickOffAction(TLccActionTractionQueryFunctionReply.Create(Self, SourceMessage.DestID, SourceMessage.CAN.DestAlias, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias, 0), SourceMessage);
+          TRACTION_SET_SPEED_DIR       : HandleTractionSetSpeed(SourceMessage);
+          TRACTION_SET_FUNCTION        : HandleTractionSetFunction(SourceMessage);
+          TRACTION_SET_E_STOP          : HandleTractionEStop(SourceMessage);
+          TRACTION_QUERY_SPEED         : HandleTractionQuerySpeed(SourceMessage);
+          TRACTION_QUERY_FUNCTION      : HandleTractionQueryFunction(SourceMessage);
           TRACTION_CONTROLLER_CONFIG :
             begin
               case SourceMessage.DataArray[1] of
@@ -1131,7 +1153,7 @@ begin
             end;
           TRACTION_LISTENER :
             begin
-              if ReservedNodeState.IsEqual(SourceMessage.SourceID, SourceMessage.CAN.SourceAlias) then
+     //         if ReservedNodeState.IsEqual(SourceMessage.SourceID, SourceMessage.CAN.SourceAlias) then
               begin
                 case SourceMessage.DataArray[1] of
                   TRACTION_LISTENER_ATTACH : HandleTractionListenerAttach(SourceMessage);
@@ -1150,11 +1172,6 @@ begin
         end;
       end;
   end;
-end;
-
-procedure TLccTrainDccNode.ProcessPopMessages;
-begin
-  inherited ProcessPopMessages;  // For debugging
 end;
 
 procedure TLccTrainDccNode.SetDccAddress(AValue: Word);

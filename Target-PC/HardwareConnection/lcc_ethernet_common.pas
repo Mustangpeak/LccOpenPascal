@@ -83,8 +83,6 @@ type
 
     procedure TryTransmitGridConnect(IOHandler: TIdIOHandler); virtual;
     procedure TryTransmitTCPProtocol(IOHandler: TIdIOHandler); virtual;
-    procedure TryReceiveGridConnect(AString: String; AGridConnectHelper: TGridConnectHelper); virtual;
-    procedure TryReceiveTCPProtocol(AString: String); virtual;
 
   public
     constructor Create(CreateSuspended: Boolean; AnOwner: TLccHardwareConnectionManager; AConnectionInfo: TLccHardwareConnectionInfo); override;
@@ -187,20 +185,26 @@ end;
 procedure TLccBaseEthernetThread.RequestErrorMessageSent;
 var
   i: Integer;
+  List: TList;
 begin
   inherited RequestErrorMessageSent;
 
   // WE DONT KNOW IF THIS WAS ADDRESSED US SO WE CANT JUST BLINDLY SEND THE ERROR RESULT.....
 
-  i := 0;
-  while i < Owner.NodeManager.Nodes.Count do
-  begin
-    if EqualNode(Owner.NodeManager.Node[i].NodeID, Owner.NodeManager.Node[i].AliasID, WorkerMessage.SourceID, WorkerMessage.CAN.SourceAlias, True) then
+  List := Owner.NodeManager.Nodes.LockList;
+  try
+    i := 0;
+    while i < List.Count do
     begin
-      Owner.NodeManager.SendMessage(Self, WorkerMessage);
-      Break;
+      if EqualNode(Owner.NodeManager.Node[i].NodeID, Owner.NodeManager.Node[i].AliasID, WorkerMessage.SourceID, WorkerMessage.CAN.SourceAlias, True) then
+      begin
+        Owner.NodeManager.SendMessage(Self, WorkerMessage);
+        Break;
+      end;
+      Inc(i);
     end;
-    Inc(i);
+  finally
+    Owner.NodeManager.Nodes.UnlockList;
   end;
 end;
 
@@ -247,44 +251,6 @@ begin
   end;
 end;
 
-procedure TLccBaseEthernetThread.TryReceiveGridConnect(AString: String;
-  AGridConnectHelper: TGridConnectHelper);
-var
-  GridConnectStrPtr: PGridConnectString;
-  MessageStr: String;
-  i: Integer;
-begin
-  GridConnectStrPtr := nil;
-
-  for i := 1 to Length(AString) do
-  begin
-    if AGridConnectHelper.GridConnect_DecodeMachine(Ord( AString[i]), GridConnectStrPtr) then
-    begin
-      MessageStr := GridConnectBufferToString(GridConnectStrPtr^);
-      TryReceiveWorkerMessage.LoadByGridConnectStr(MessageStr);
-
-      case GridConnectMessageAssembler.IncomingMessageGridConnect(TryReceiveWorkerMessage) of
-        imgcr_True :
-          begin
-            Synchronize({$IFDEF FPC}@{$ENDIF}Owner.ReceiveMessage)
-          end;
-        imgcr_ErrorToSend :
-          begin
-        //    ConnectionInfo.LccMessage.CopyToTarget(WorkerMessage);
-        //    Synchronize({$IFDEF FPC}@{$ENDIF}RequestErrorMessageSent);
-          end;
-        imgcr_False,
-        imgcr_UnknownError : begin end;
-      end;
-    end;
-  end;
-end;
-
-procedure TLccBaseEthernetThread.TryReceiveTCPProtocol(AString: String);
-begin
- // if TcpDecodeStateMachine.OPStackcoreTcp_DecodeMachine(RcvByte, ConnectionInfo.MessageArray) then
-//    Synchronize({$IFDEF FPC}@{$ENDIF}ReceiveMessage)
-end;
 
 constructor TLccBaseEthernetThread.Create(CreateSuspended: Boolean; AnOwner: TLccHardwareConnectionManager; AConnectionInfo: TLccHardwareConnectionInfo);
 begin
