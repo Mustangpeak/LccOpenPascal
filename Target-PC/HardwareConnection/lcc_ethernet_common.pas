@@ -84,6 +84,8 @@ type
     procedure TryTransmitGridConnect(IOHandler: TIdIOHandler); virtual;
     procedure TryTransmitTCPProtocol(IOHandler: TIdIOHandler); virtual;
 
+    procedure AddToOutgoingBuffer(AMessage: TLccMessage);
+
   public
     constructor Create(CreateSuspended: Boolean; AnOwner: TLccHardwareConnectionManager; AConnectionInfo: TLccHardwareConnectionInfo); override;
     destructor Destroy; override;
@@ -248,6 +250,19 @@ begin
   begin
 
 
+  end;
+end;
+
+procedure TLccBaseEthernetThread.AddToOutgoingBuffer(AMessage: TLccMessage);
+var
+  LocalChunk: TLccDynamicByteArray;
+begin
+  if (ConnectionInfo as TLccEthernetConnectionInfo).GridConnect then
+    OutgoingGridConnect.Add(AMessage.ConvertToGridConnectStr(#10, False))
+  else begin
+    LocalChunk := nil;
+    if AMessage.ConvertToLccTcp(LocalChunk) then
+      OutgoingCircularArray.AddChunk(LocalChunk);
   end;
 end;
 

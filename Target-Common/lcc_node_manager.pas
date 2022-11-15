@@ -734,28 +734,40 @@ end;
 
 procedure TLccNodeManager.SendMessage(Sender: TObject; LccMessage: TLccMessage);
 var
-  i: Integer;
-  List: TList;
+  iNode, iHardwareConnection: Integer;
+  NodeList, MessageStackList : TList;
+  ThreadedNode: TLccNode;
 begin
-  List := Nodes.LockList;
+  NodeList := Nodes.LockList;
   try
     // Send the message to the interfaces (Ethernet, WebSocket, UART, ect)
-    for i := 0 to HardwarewareConnectionList.Count -1 do
-      (HardwarewareConnectionList[i] as IHardwareConnectionManagerLink).SendMessage(LccMessage);
+    for iHardwareConnection := 0 to HardwarewareConnectionList.Count - 1 do
+      (HardwarewareConnectionList[iHardwareConnection] as IHardwareConnectionManagerLink).SendMessage(LccMessage);
 
 
     // Send the messages to all the other virtual nodes.
     if Sender is TLccNode then
     begin
-      for i := 0 to List.Count - 1 do
+      for iNode := 0 to NodeList.Count - 1 do
       begin
+        // We don't have to short circuit the Alias Mapping messages to the virtual
+        // nodes.  They update other virtual nodes AliasMapping properties from the
+        // backdoor
 
    //     Assert(not NullNodeID( (Node[i] as TLccNode).NodeID ));
    //     Assert(not NullNodeID( LccMessage.SourceID ));
 
-        // don't sent it back to itself but deliver it to all the other virtual owned nodes
-        if not EqualNode(Node[i].NodeID, Node[i].AliasID, LccMessage.SourceID, LccMessage.CAN.SourceAlias, True) then
-          Node[i].ProcessMessage(LccMessage);
+        ThreadedNode := TLccNode(NodeList[iNode]);
+        // Don't send the message back to ourselves
+        if not EqualNode(ThreadedNode.NodeID, ThreadedNode.AliasID, LccMessage.SourceID, LccMessage.CAN.SourceAlias, True) then
+        begin
+          MessageStackList := ThreadedNode.MessageStack.LockList;
+          try
+            MessageStackList.Add( LccMessage.Clone)
+          finally
+            ThreadedNode.MessageStack.UnlockList;
+          end;
+        end;
       end;
     end;
   finally

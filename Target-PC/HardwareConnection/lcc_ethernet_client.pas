@@ -31,13 +31,14 @@ uses
   lcc_gridconnect,
 
   lcc_defines,
-  lcc_node_manager,
   lcc_node,
   lcc_node_messages,
   lcc_utilities,
   lcc_app_common_settings,
   lcc_common_classes,
-  lcc_ethernet_common;
+  lcc_ethernet_common,
+  lcc_alias_server;
+
 type
   TLccEthernetClient = class;   // Forward
 
@@ -100,7 +101,7 @@ procedure TLccEthernetClient.SendMessage(ALccMessage: TLccMessage);
 begin
   inherited SendMessage(ALccMessage);
   if Assigned(ClientThread) then
-    ClientThread.OutgoingGridConnect.Add(ALccMessage.ConvertToGridConnectStr(#10, False));
+    ClientThread.AddToOutgoingBuffer(ALccMessage);
 end;
 
 function TLccEthernetClient.OpenConnection(ConnectionInfo: TLccHardwareConnectionInfo): TLccConnectionThread;
@@ -225,11 +226,12 @@ procedure TLccEthernetClientThread.OnThreadComponentRun(Sender: TIdThreadCompone
 var
   AString: String;
   AChar: AnsiChar;
-  NodeList, MessageStackList, MessageStackMappingList: TList;
+  MessageStackList, NodeList: TList;
   ThreadedNode: TLccNode;
   iString, iNode: Integer;
   GridConnectStrPtr: PGridConnectString;
   MessageStr: String;
+  ANodeID: TNodeID;
 begin
   AString := '';
   while not IdTCPClient.IOHandler.InputBufferIsEmpty and IdTCPClient.IOHandler.Connected do
@@ -256,33 +258,41 @@ begin
         case GridConnectMessageAssembler.IncomingMessageGridConnect(WorkerMessage) of
           imgcr_True :
             begin
+              case WorkerMessage.CAN.MTI of
+                MTI_CAN_AMR :
+                  begin
+                    AliasServer.MarkForRemovalByAlias(WorkerMessage.CAN.SourceAlias);
+                  end;
+                MTI_CAN_AMD :
+                  begin
+                    ANodeID := NULL_NODE_ID;
+                    AliasServer.AddMapping(WorkerMessage.CAN.SourceAlias, WorkerMessage.ExtractDataBytesAsNodeID(0, ANodeID));
+                  end;
+              end;
+
+              case WorkerMessage.MTI of
+                MTI_VERIFIED_NODE_ID_NUMBER,
+                MTI_INITIALIZATION_COMPLETE :
+                  begin
+                    ANodeID := NULL_NODE_ID;
+                    AliasServer.AddMapping(WorkerMessage.CAN.SourceAlias, WorkerMessage.ExtractDataBytesAsNodeID(0, ANodeID));
+                  end;
+              end;
+
               NodeList := Owner.NodeManager.Nodes.LockList;
               try
                 for iNode := 0 to NodeList.Count - 1 do
                 begin
-                  ThreadedNode := TLccNode(NodeList.Items[iNode]);
+                  ThreadedNode := TLccNode(NodeList[iNode]);
                   MessageStackList := ThreadedNode.MessageStack.LockList;
-                  MessageStackMappingList := ThreadedNode.MessageStackMapping.LockList;
                   try
-                    case WorkerMessage.CAN.MTI of
-                      MTI_CAN_AMR : MessageStackMappingList.Add( WorkerMessage.Clone);
-                      MTI_CAN_AMD : MessageStackMappingList.Add( WorkerMessage.Clone)
-                    else
-                      case WorkerMessage.MTI of
-                        MTI_VERIFIED_NODE_ID_NUMBER,
-                        MTI_INITIALIZATION_COMPLETE : MessageStackMappingList.Add( WorkerMessage.Clone)
-                      else
-                        MessageStackList.Add( WorkerMessage.Clone)
-                      end;
-                    end;
+                    MessageStackList.Add( WorkerMessage.Clone)
                   finally
                     ThreadedNode.MessageStack.UnlockList;
-                    ThreadedNode.MessageStackMapping.UnlockList;
                   end;
                 end;
-
               finally
-                Owner.NodeManager.Nodes.UnlockList;
+                Owner.NodeManager.Nodes.UnLockList
               end;
 
               try

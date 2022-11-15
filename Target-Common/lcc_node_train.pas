@@ -616,7 +616,6 @@ begin
       Result := i;
     Inc(i);
   end;
-
 end;
 
 function TListenerList.GetCount: Integer;

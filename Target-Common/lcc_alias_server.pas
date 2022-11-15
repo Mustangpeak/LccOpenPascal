@@ -28,13 +28,20 @@ uses
   lcc_utilities;
 
 type
+
+  { TLccAliasMapping }
+
   TLccAliasMapping = class(TObject)
   private
+    FMarkedForDeletion: Boolean;   // These are for the Event notification system.  It is called through a timer
+    FMarkedForInsertion: Boolean;  // to call the main threads event handlers to notify the app of insertion or deletion
     FNodeAlias: Word;
     FNodeID: TNodeID;
   public
     property NodeID: TNodeID read FNodeID write FNodeID;
     property NodeAlias: Word read FNodeAlias write FNodeAlias;
+    property MarkedForDeletion: Boolean read FMarkedForDeletion write FMarkedForDeletion;
+    property MarkedForInsertion: Boolean read FMarkedForInsertion write FMarkedForInsertion;
   end;
 
 
@@ -43,28 +50,25 @@ type
   TLccAliasServer = class(TObject)
 
   private
-    {$IFDEF DELPHI}
-    FMappingList: TObjectList<TLccAliasMapping>;      // List of TLccAliasMapping Objects
-    {$ELSE}
-    FMappingList: TObjectList;
-    {$ENDIF}
-
-  protected
-    {$IFDEF DELPHI}
-    property MappingList: TObjectList<TLccAliasMapping> read FMappingList write FMappingList;
-    {$ELSE}
-    property MappingList: TObjectList read FMappingList write FMappingList;
-     {$ENDIF}
+    FMappingList: TThreadList;
 
   public
+    property MappingList: TThreadList read FMappingList write FMappingList;
+
+
     constructor Create;
     destructor Destroy; override;
 
+    procedure Clear;
+    function Count: Integer;
     function FindMapping(AnAliasID: Word): TLccAliasMapping; overload;
     function FindMapping(ANodeID: TNodeID): TLccAliasMapping; overload;
     function AddMapping(AnAlias: Word; AnID: TNodeID): TLccAliasMapping;
-    function RemoveMappingByAlias(AnAlias: Word; FreeMapping: Boolean): TLccAliasMapping;
+    function MarkForRemovalByAlias(AnAlias: Word): TLccAliasMapping;
   end;
+
+var
+  AliasServer: TLccAliasServer;
 
 implementation
 
@@ -73,33 +77,64 @@ implementation
 constructor TLccAliasServer.Create;
 begin
   inherited Create;
-  {$IFDEF DELPHI}
-  FMappingList := TObjectList<TLccAliasMapping>.Create(True);
-  {$ELSE}
-  FMappingList := TObjectList.Create(True);
-  {$ENDIF}
+  FMappingList := TThreadList.Create;
 end;
 
 destructor TLccAliasServer.Destroy;
 begin
+  Clear;
   FreeAndNil(FMappingList);
   inherited Destroy;
+end;
+
+procedure TLccAliasServer.Clear;
+var
+  i: Integer;
+  List: TList;
+begin
+  List := MappingList.LockList;
+  try
+  for i := 0 to List.Count - 1 do
+    TObject(List[i]).Free
+  finally
+    List.Clear;
+    MappingList.UnlockList;
+  end;
+end;
+
+function TLccAliasServer.Count: Integer;
+var
+  List: TList;
+begin
+  Result := 0;
+  List := MappingList.LockList;
+  try
+    Result := List.Count;
+  finally
+     MappingList.UnlockList;
+  end;
 end;
 
 function TLccAliasServer.FindMapping(AnAliasID: Word): TLccAliasMapping;
 var
   i: Integer;
   TestMapping: TLccAliasMapping;
+  List: TList;
 begin
   Result := nil;                      // Needs to Sort then do a binary search here eventually
-  for i := 0 to MappingList.Count - 1 do
-  begin
-    TestMapping := MappingList.Items[i] as TLccAliasMapping;
-    if TestMapping.NodeAlias = AnAliasID then
+  List := MappingList.LockList;
+  try
+    for i := 0 to List.Count - 1 do
     begin
-      Result := TestMapping;
-      Break;
+      TestMapping := TLccAliasMapping(List.Items[i]);
+      if TestMapping.NodeAlias = AnAliasID then
+      begin
+        Result := TestMapping;
+        Break;
+      end;
     end;
+  finally
+     MappingList.UnlockList;
   end;
 end;
 
@@ -107,49 +142,68 @@ function TLccAliasServer.FindMapping(ANodeID: TNodeID): TLccAliasMapping;
 var
   i: Integer;
   TestMapping: TLccAliasMapping;
+  List: TList;
 begin
   Result := nil;                      // Needs to Sort then do a binary search here eventually
-  for i := 0 to MappingList.Count - 1 do
-  begin
-    TestMapping := MappingList.Items[i] as TLccAliasMapping;
-    if (TestMapping.NodeID[0] = ANodeID[0]) and (TestMapping.NodeID[1] = ANodeID[1]) then
+  List := MappingList.LockList;
+  try
+    for i := 0 to List.Count - 1 do
     begin
-      Result := TestMapping;
-      Break;
+      TestMapping := TLccAliasMapping(List.Items[i]);
+      if (TestMapping.NodeID[0] = ANodeID[0]) and (TestMapping.NodeID[1] = ANodeID[1]) then
+      begin
+        Result := TestMapping;
+        Break;
+      end;
     end;
+  finally
+     MappingList.UnlockList;
   end;
 end;
 
 function TLccAliasServer.AddMapping(AnAlias: Word; AnID: TNodeID): TLccAliasMapping;
+var
+  List: TList;
 begin
-  Result := FindMapping(AnAlias);
-  if not Assigned(Result) then
-  begin
-    Result := TLccAliasMapping.Create;
-    Result.NodeID := AnID;
-    Result.NodeAlias := AnAlias;
-    MappingList.Add(Result);
+  Result := nil;
+  List := MappingList.LockList;
+  try
+    Result := FindMapping(AnAlias);
+    if not Assigned(Result) then
+    begin
+      Result := TLccAliasMapping.Create;
+      Result.NodeID := AnID;
+      Result.NodeAlias := AnAlias;
+      Result.MarkedForInsertion := True;
+      MappingList.Add(Result);
+    end;
+  finally
+    MappingList.UnlockList;
   end;
 end;
 
-function TLccAliasServer.RemoveMappingByAlias(AnAlias: Word;
-  FreeMapping: Boolean): TLccAliasMapping;
+function TLccAliasServer.MarkForRemovalByAlias(AnAlias: Word): TLccAliasMapping;
 var
-  TestMapping: TLccAliasMapping;
-  WasOwnsObject: Boolean;
+  List: TList;
 begin
-  Result := nil;
-  TestMapping := FindMapping(AnAlias);
-  if Assigned(TestMapping) then
-  begin
-    WasOwnsObject := MappingList.OwnsObjects;
-    if not FreeMapping then
-      MappingList.OwnsObjects := False;
-    MappingList.Remove(TestMapping);
-    MappingList.OwnsObjects := WasOwnsObject;
-    Result := TestMapping;
+  List := MappingList.LockList;
+  try
+    Result := FindMapping(AnAlias);
+    if Assigned(Result) then
+    begin
+      Result.MarkedForDeletion := True;
+    end;
+  finally
+    MappingList.UnlockList;
   end;
 end;
+
+initialization
+  AliasServer := TLccAliasServer.Create;
+
+finalization;
+  AliasServer.Clear;
+  FreeAndNil(AliasServer);
 
 end.
 
