@@ -279,21 +279,7 @@ begin
                   end;
               end;
 
-              NodeList := Owner.NodeManager.Nodes.LockList;
-              try
-                for iNode := 0 to NodeList.Count - 1 do
-                begin
-                  ThreadedNode := TLccNode(NodeList[iNode]);
-                  MessageStackList := ThreadedNode.MessageStack.LockList;
-                  try
-                    MessageStackList.Add( WorkerMessage.Clone)
-                  finally
-                    ThreadedNode.MessageStack.UnlockList;
-                  end;
-                end;
-              finally
-                Owner.NodeManager.Nodes.UnLockList
-              end;
+              Owner.NodeManager.MessageServerThread.AddMessage(WorkerMessage);
 
               try
                 Synchronize({$IFDEF FPC}@{$ENDIF}ReceiveMessage);  // WorkerMessage contains the message

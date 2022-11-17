@@ -47,18 +47,6 @@ type
 //    if the node manager has no more active threads in its links then it should free all nodes and alias maps since it is no longer connected to any LCC networks and everythinbg is stale.
   end;
 
-  INodeManager = interface
-    ['{0FE72011-CBDB-9EDC-0C36-C5031A63F27F}']
-    procedure Clear;
-    function AddNode(CdiXML: string; AutoLogin: Boolean): TLccNode;
-    function AddNodeByClass(CdiXML: string; NodeClass: TLccNodeClass; AutoLogin: Boolean; NodeID: TNodeID): TLccNode;
-    procedure LogoutAll;
-    function GetNode(Index: Integer): TLccNode;
-    function GetNodeCount: Integer;
-    function ExtractNode(Index: Integer): TLccNode;
-  end;
-
-
   { INodeManagerCallbacks }
 
   INodeManagerCallbacks = interface
@@ -127,15 +115,29 @@ type
   TOnTrainRegisteringChange = procedure(Sender: TObject; LccSourceNode: TLccNode; TrainObject: TLccTrainObject; IsRegistered: Boolean) of object;
   TOnTrainInformationChange = procedure(Sender: TObject; LccSourceNode: TLccNode; TrainObject: TLccTrainObject) of object;
 
-  { TLccThreadedNodeList }
+  TLccNodeManager = class;  // forward
 
-  TLccThreadedNodeList = class(TThreadList)
+  { TMessageServerThread }
 
+  TMessageServerThread = class(TThread)
+  private
+    FMessages: TThreadList;
+    FOwner: TLccNodeManager;
+    FReceivedMessage: TLccMessage;
+  protected
+    property ReceivedMessage: TLccMessage read FReceivedMessage write FReceivedMessage;
+    procedure Execute; override;
+    procedure ReceiveMessage;
+  public
+    property Messages: TThreadList read FMessages write FMessages;
+    property Owner: TLccNodeManager read FOwner write FOwner;
+
+    procedure AddMessage(AMessage: TLccMessage);
   end;
 
   { TLccNodeManager }
 
-  TLccNodeManager = class(TComponent, INodeManagerCallbacks, INodeManager)
+  TLccNodeManager = class(TComponent, INodeManagerCallbacks)
   private
     FGridConnect: Boolean;
     FHardwarewareConnectionList: TInterfaceList;
@@ -180,7 +182,8 @@ type
     FOnLccTractionUpdateTrainSNIP: TOnLccTractionUpdateTrainSNIP;
     FOnTrainInformationChange: TOnTrainInformationChange;
     FOnTrainRegisteringChange: TOnTrainRegisteringChange;
-    FNodes: TLccThreadedNodeList;
+    FNodes: TList;
+    FMessageServerThread: TMessageServerThread;
     FWorkerMessage: TLccMessage;
     function GetNode(Index: Integer): TLccNode;
   protected
@@ -235,13 +238,14 @@ type
 
     property GridConnect: Boolean read FGridConnect;
 
-    property Nodes: TLccThreadedNodeList read FNodes write FNodes;
+    property Nodes: TList read FNodes write FNodes;
 
     property Node[Index: Integer]: TLccNode read GetNode; default;
     property WorkerMessage: TLccMessage read FWorkerMessage write FWorkerMessage;
     // May have many places a message needs to go such at TCP, WebSocket, UART, etc
     // Automatically updated through the TLccHardwareConnectionManager when it is created/destroyed
     property HardwarewareConnectionList: TInterfaceList read FHardwarewareConnectionList write FHardwarewareConnectionList;
+    property MessageServerThread: TMessageServerThread read FMessageServerThread write FMessageServerThread;
 
     constructor Create(AnOwner: TComponent; GridConnectLink: Boolean); reintroduce; virtual;
     destructor Destroy; override;
@@ -330,6 +334,90 @@ type
 
 
 implementation
+
+{ TMessageServerThread }
+
+procedure TMessageServerThread.Execute;
+var
+  LocalList, SideList: TList;
+  i: Integer;
+begin
+  Messages := TThreadList.Create;
+  SideList := TList.Create;
+  try
+    while not Terminated do
+    begin
+      LocalList := Messages.LockList;
+      try
+        for i := 0 to LocalList.Count - 1 do
+          SideList.Add(LocalList[i]);
+      finally
+        LocalList.Clear;
+        Messages.UnlockList;
+      end;
+
+      try
+        for i := 0 to SideList.Count - 1 do
+        begin
+          if not Terminated then
+          try
+            ReceivedMessage := TLccMessage(SideList[i]);
+            Synchronize({$IFDEF FPC}@{$ENDIF}ReceiveMessage);
+          except
+          end;
+        end;
+      finally
+        try
+          for i := 0 to SideList.Count - 1 do
+            TObject(SideList[i]).Free;
+        finally
+          SideList.Clear
+        end;
+      end;
+      Sleep(10);
+    end;
+  finally
+    LocalList := Messages.LockList;
+    try
+      for i := 0 to LocalList.Count - 1 do
+        TObject(LocalList[i]).Free
+    finally
+      LocalList.Clear;
+      Messages.UnlockList;
+      Messages.Free
+    end;
+    try
+      for i := 0 to SideList.Count - 1 do
+        TObject(SideList[i]).Free
+    finally
+      SideList.Free;
+    end;
+  end;
+end;
+
+procedure TMessageServerThread.ReceiveMessage;
+var
+  i: Integer;
+begin
+  for i := 0 to Owner.Nodes.Count - 1 do
+  begin
+    // Don't send the message back to the node that created it
+    if ReceivedMessage.SourceObject <> TLccNode(Owner.Nodes[i]) then
+      TLccNode(Owner.Nodes[i]).ProcessMessage(ReceivedMessage)
+  end;
+end;
+
+procedure TMessageServerThread.AddMessage(AMessage: TLccMessage);
+var
+  LocalList: TList;
+begin
+  LocalList := Messages.LockList;
+  try
+    LocalList.Add(AMessage.Clone);
+  finally
+    Messages.UnlockList;
+  end;
+end;
 
 { TLccNodeManager }
 
@@ -589,51 +677,41 @@ begin
 end;
 
 function TLccNodeManager.ExtractNode(Index: Integer): TLccNode;
-var
-  List: TList;
 begin
   Result := nil;
-  List := Nodes.LockList;
-  try
-    if Index < List.Count then
-    begin
-      Result := TLccNode(List.Items[Index]);
-      List.Delete(Index);
-    end;
-  finally
-    Nodes.UnlockList;
+  if Index < Nodes.Count then
+  begin
+    Result := TLccNode(Nodes.Items[Index]);
+    Nodes.Delete(Index);
   end;
 end;
 
 function TLccNodeManager.FindNodeByNodeID(NodeID: TNodeID): TLccNode;
 var
-  List: TList;
   i: Integer;
 begin
   Result := nil;
-  List := Nodes.LockList;
-  try
-    for i := 0 to List.Count - 1 do
+  for i := 0 to Nodes.Count - 1 do
+  begin
+    if EqualNodeID(NodeID, TLccNode(Nodes.Items[i]).NodeID, False) then
     begin
-      if EqualNodeID(NodeID, TLccNode(List.Items[i]).NodeID, False) then
-      begin
-        Result := Node[i];
-        Break
-      end;
+      Result := TLccNode(Node[i]);
+      Break
     end;
-  finally
-    Nodes.UnlockList;
   end;
 end;
 
 constructor TLccNodeManager.Create(AnOwner: TComponent; GridConnectLink: Boolean);
 begin
   inherited Create(AnOwner);
-  FNodes := TLccThreadedNodeList.Create;
+  FNodes := TList.Create;
 
   FGridConnect := GridConnectLink;
   FHardwarewareConnectionList := TInterfaceList.Create;
   FWorkerMessage := TLccMessage.Create;
+  FMessageServerThread := TMessageServerThread.Create(True);
+  FMessageServerThread.Owner := Self;
+  FMessageServerThread.FreeOnTerminate := True;
 end;
 
 function TLccNodeManager.AddNode(CdiXML: string; AutoLogin: Boolean): TLccNode;
@@ -667,79 +745,52 @@ begin
   FNodes.Free;
   FreeAndNil(FWorkerMessage);
   FreeAndNil(FHardwarewareConnectionList);
+  MessageServerThread.Terminate;
   inherited Destroy;
 end;
 
 procedure TLccNodeManager.Clear;
 var
   i: Integer;
-  List: TList;
 begin
-  List := Nodes.LockList;
   try
-    for i := 0 to List.Count - 1 do
+    for i := 0 to Nodes.Count - 1 do
     begin
-      TLccNode(List.Items[i]).Logout;
-      TLccNode(List.Items[i]).Free;
+      TLccNode(Nodes.Items[i]).Logout;
+      TLccNode(Nodes.Items[i]).Free;
     end;
   finally
-    List.Clear;
-    Nodes.UnlockList
+    Nodes.Clear;
   end;
 end;
 
 function TLccNodeManager.GetNode(Index: Integer): TLccNode;
-var
-  List: TList;
 begin
   Result := nil;
-  List := Nodes.LockList;
-  try
-    if Index < List.Count then
-      Result := TLccNode(List.Items[Index]);
-  finally
-    Nodes.UnlockList;
-  end;
+  if Index < Nodes.Count then
+    Result := TLccNode(Nodes.Items[Index]);
 end;
 
 function TLccNodeManager.GetNodeCount: Integer;
-var
-  List: TList;
 begin
-  Result := 0;
-  List := Nodes.LockList;
-  try
-    Result := List.Count;
-  finally
-    Nodes.UnlockList;
-  end;
+  Result := Nodes.Count;
 end;
 
 procedure TLccNodeManager.LogoutAll;
 var
-  List: TList;
   i: Integer;
 begin
-  List := Nodes.LockList;
-  try
-    for i := 0 to List.Count - 1 do
-    begin
-      // Maybe an OnLogout property?
-      TLccNode(List.Items[i]).Logout;
-    end;
-  finally
-    Nodes.UnlockList;
+  for i := 0 to Nodes.Count - 1 do
+  begin
+    // Maybe an OnLogout property?
+    TLccNode(Nodes.Items[i]).Logout;
   end;
 end;
 
 procedure TLccNodeManager.SendMessage(Sender: TObject; LccMessage: TLccMessage);
 var
   iNode, iHardwareConnection: Integer;
-  NodeList, MessageStackList : TList;
-  ThreadedNode: TLccNode;
 begin
-  NodeList := Nodes.LockList;
-  try
     // Send the message to the interfaces (Ethernet, WebSocket, UART, ect)
     for iHardwareConnection := 0 to HardwarewareConnectionList.Count - 1 do
       (HardwarewareConnectionList[iHardwareConnection] as IHardwareConnectionManagerLink).SendMessage(LccMessage);
@@ -748,7 +799,12 @@ begin
     // Send the messages to all the other virtual nodes.
     if Sender is TLccNode then
     begin
-      for iNode := 0 to NodeList.Count - 1 do
+      LccMessage.SourceObject := Sender;
+      MessageServerThread.AddMessage(LccMessage);  // I think this works....
+
+
+    {
+      for iNode := 0 to Nodes.Count - 1 do
       begin
         // We don't have to short circuit the Alias Mapping messages to the virtual
         // nodes.  They update other virtual nodes AliasMapping properties from the
@@ -757,23 +813,12 @@ begin
    //     Assert(not NullNodeID( (Node[i] as TLccNode).NodeID ));
    //     Assert(not NullNodeID( LccMessage.SourceID ));
 
-        ThreadedNode := TLccNode(NodeList[iNode]);
         // Don't send the message back to ourselves
-        if not EqualNode(ThreadedNode.NodeID, ThreadedNode.AliasID, LccMessage.SourceID, LccMessage.CAN.SourceAlias, True) then
-        begin
-          MessageStackList := ThreadedNode.MessageStack.LockList;
-          try
-            MessageStackList.Add( LccMessage.Clone)
-          finally
-            ThreadedNode.MessageStack.UnlockList;
-          end;
-        end;
-      end;
-    end;
-  finally
-    Nodes.UnlockList;
-  end;
+        if not EqualNode(TLccNode(Nodes[iNode]).NodeID, TLccNode(Nodes[iNode]).AliasID, LccMessage.SourceID, LccMessage.CAN.SourceAlias, True) then
+          TLccNode(Nodes[iNode]).ProcessMessage(LccMessage);
 
+      end;    }
+    end;
 end;
 
 end.

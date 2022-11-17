@@ -214,7 +214,7 @@ type
 
   { TListenerList }
 
-  TListenerList = class
+  TListenerList = class(TPersistent)
   private
     function GetCount: Integer;
     function GetListener(Index: Integer): TListenerNode;
@@ -232,7 +232,8 @@ type
 
     constructor Create;
     destructor Destroy; override;
-    function Add(NodeID: TNodeID; Flags: Byte; AnAliasID: Word): TListenerNode;
+    function AddListener(NodeID: TNodeID; Flags: Byte; AnAliasID: Word): TListenerNode;
+    function Add: TListenerNode;
     function Delete(NodeID: TNodeID): Boolean;
     function FindNode(NodeID: TNodeID): TListenerNode;
     function FindByIndex(Index: Byte): TListenerNode;
@@ -341,6 +342,8 @@ type
     procedure HandleTractionQuerySpeed(SourceMessage: TLccMessage);
     procedure HandleTractionQueryFunction(SourceMessage: TLccMessage);
 
+    procedure LccLogIn(ANodeID: TNodeID); override;
+
 
   public
     property DccAddress: Word read FDccAddress write SetDccAddress;
@@ -352,7 +355,7 @@ type
     property Direction: TLccTrainDirection read GetDirection write SetDirection;
     property Functions[Index: Integer]: Word read GetFunctions write SetFunctions;
     property OnSendMessageComPort: TMessageComPort read FOnSendMessageComPort write FOnSendMessageComPort;
-    property SearchEvent: TEventID read FSearchEvent write FSearchevent;
+    property SearchEvent: TEventID read FSearchEvent write FSearchevent;  // The TractionSearch Event associated with this train
 
     constructor Create(ANodeManager: {$IFDEF DELPHI}TComponent{$ELSE}TObject{$ENDIF}; CdiXML: String; GridConnectLink: Boolean); override;
     destructor Destroy; override;
@@ -533,22 +536,25 @@ constructor TListenerList.Create;
 begin
   inherited Create;
   {$IFDEF DELPHI}
-  FListenerList := TObjectList<TListenerNode>.Create(False);
+  FListenerList := TObjectList<TListenerNode>.Create(True);
   {$ELSE}
     FListenerList := TObjectList.Create;
-    {$IFNDEF DWSCRIPT}
     FListenerList.OwnsObjects := True;
-    {$ENDIF}
   {$ENDIF}
 end;
 
-function TListenerList.Add(NodeID: TNodeID; Flags: Byte; AnAliasID: Word): TListenerNode;
+function TListenerList.AddListener(NodeID: TNodeID; Flags: Byte; AnAliasID: Word): TListenerNode;
 begin
   Result := TListenerNode.Create;
   Result.NodeID := NodeID;
   Result.AliasID := AnAliasID;
   Result.DecodeFlags(Flags);
   FListenerList.Add(Result);
+end;
+
+function TListenerList.Add: TListenerNode;
+begin
+  Result := nil;
 end;
 
 function TListenerList.Delete(NodeID: TNodeID): Boolean;
@@ -559,22 +565,14 @@ begin
   Index := FindNodeIndex(NodeID);
   if Index >= 0 then
   begin
-    {$IFDEF DWSCRIPT}
-    FListenerList.Remove(Index);
-    {$ELSE}
     FListenerList.Delete(Index);
-    {$ENDIF}
     Result := True;
   end;
 end;
 
 destructor TListenerList.Destroy;
 begin
-  {$IFNDEF DWSCRIPT}
   FreeAndNil(FListenerList);
-  {$ELSE}
-  FListenerList.Free;
-  {$ENDIF}
   inherited Destroy;
 end;
 
@@ -1012,7 +1010,10 @@ begin
       WorkerMessage.LoadTractionListenerAttachReply(NodeID, AliasID, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias, ListenerNodeID, S_OK)
     end else
     begin  // Add The listener to the list
-      NewListenerNode := Listeners.Add(ListenerNodeID, ListenerNodeAlias, ListenerAttachFlags);
+
+      NewListenerNode := Listeners.Add;
+
+      NewListenerNode := Listeners.AddListener(ListenerNodeID, ListenerNodeAlias, ListenerAttachFlags);
       if Assigned(NewListenerNode) then
         WorkerMessage.LoadTractionListenerAttachReply(NodeID, AliasID, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias, ListenerNodeID, S_OK)
       else
@@ -1097,6 +1098,14 @@ begin
   FunctionAddress := SourceMessage.TractionExtractFunctionAddress;
   WorkerMessage.LoadTractionQueryFunctionReply(NodeId, AliasID, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias, FunctionAddress, Functions[FunctionAddress]);
   SendMessageFunc(Self, WorkerMessage);
+end;
+
+procedure TLccTrainDccNode.LccLogIn(ANodeID: TNodeID);
+begin
+  // This is now a defined Event for this node.
+  if not EqualEventID(SearchEvent, NULL_EVENT_ID) then
+    ProtocolEventsProduced.Add(SearchEvent, evs_Valid);
+  inherited LccLogIn(ANodeID);
 end;
 
 function TLccTrainDccNode.GetCdiFile: string;

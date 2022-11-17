@@ -113,7 +113,6 @@ type
     FGridConnect: Boolean;
     FLocalMessageStack: TList;
     FLoginTimoutCounter: Integer;
-    FMessageStack: TLccTheadedMessageList;
     FPermitted: Boolean;
     FProtocolACDIMfg: TProtocolACDIMfg;
     FProtocolACDIUser: TProtocolACDIUser;
@@ -187,7 +186,7 @@ type
     procedure On_100msTimer(Sender: TObject);  virtual;
     function GetCdiFile: string; virtual;
     procedure BeforeLogin; virtual;
-    procedure LogInInternal(ANodeID: TNodeID); virtual;
+    procedure LccLogIn(ANodeID: TNodeID); virtual;
 
     // GridConnect Helpers
     function GenerateID_Alias_From_Seed(var Seed: TNodeID): Word;
@@ -204,7 +203,6 @@ type
     property Initialized: Boolean read FInitialized;
     property SendMessageFunc: TOnMessageEvent read FSendMessageFunc write SetSendMessageFunc;
     property EnableTrainDatabase: Boolean read FEnableTrainDatabase write SetEnableTrainDatabase;
-    property MessageStack: TLccTheadedMessageList read FMessageStack write FMessageStack;
 
     property ProtocolSupportedProtocols: TProtocolSupportedProtocols read FProtocolSupportedProtocols write FProtocolSupportedProtocols;
     property ProtocolEventConsumed: TProtocolEvents read FProtocolEventConsumed write FProtocolEventConsumed;
@@ -230,7 +228,6 @@ type
     function ProcessMessage(SourceMessage: TLccMessage): Boolean; // Do not override this override the next 2
     function ProcessMessageLCC(SourceMessage: TLccMessage): Boolean; virtual;
     function ProcessMessageGridConnect(SourceMessage: TLccMessage): Boolean; virtual;
-    procedure ProcessIncomingMessageStack;
     procedure SendEvents;
     procedure SendConsumedEvents;
     procedure SendConsumerIdentify(var Event: TEventID);
@@ -259,11 +256,7 @@ var
 begin
   iLocalMessage := FindBySourceNode(LccMessage);
   if iLocalMessage > -1 then
-    {$IFDEF DWSCRIPT}
-    Queue.Remove(Queue.IndexOf(LccMessage));
-    {$ELSE}
     Queue. Delete(iLocalMessage);
-    {$ENDIF}
 end;
 
 function TDatagramQueue.Add(LccMessage: TLccMessage): Boolean;
@@ -282,9 +275,7 @@ begin
   {$ELSE}
   Queue := TObjectList.Create;
   {$ENDIF}
-  {$IFNDEF DWSCRIPT}
   Queue.OwnsObjects := True;
-  {$ENDIF}
 end;
 
 destructor TDatagramQueue.Destroy;
@@ -292,11 +283,7 @@ begin
   {$IFDEF FPC}
   FreeAndNil(FQueue);
   {$ELSE}
-    {$IFDEF DWSCRIPT}
-    FQueue.Free;
-    {$ELSE}
     Queue.DisposeOf;
-    {$ENDIF}
   {$ENDIF}
   inherited Destroy;
 end;
@@ -372,11 +359,7 @@ begin
     if LocalMessage.AbandonTimeout < 6 then   // 800ms * 6
       LocalMessage.AbandonTimeout := LocalMessage.AbandonTimeout + 1
     else
-      {$IFDEF DWSCRIPT}
-      Queue.Remove(Queue.IndexOf(LocalMessage));
-      {$ELSE}
       Queue.Delete(i);
-      {$ENDIF}
   end;
 end;
 
@@ -496,7 +479,6 @@ begin
   FTrainServer := TLccTrainServer.Create;
  // FMessageIdentificationList := TLccMessageWithNodeIdentificationList.Create;
  // FMessageDestinationsWaitingForReply := TLccNodeIdentificationObjectList.Create(False);
-  FMessageStack := TLccTheadedMessageList.Create;
   FLocalMessageStack := TList.Create;
   WorkerNodeIdentification := TLccMessageWithNodeIdentification.Create;
 
@@ -602,7 +584,7 @@ begin
   ProtocolEventsProduced.AutoGenerate.StartIndex := 0;
 end;
 
-procedure TLccNode.LogInInternal(ANodeID: TNodeID);
+procedure TLccNode.LccLogIn(ANodeID: TNodeID);
 begin
   BeforeLogin;
   if NullNodeID(ANodeID) then
@@ -610,8 +592,6 @@ begin
   FNodeID := ANodeID;
   (NodeManager as INodeManagerCallbacks).DoNodeIDChanged(Self);
   FInitialized := True;
-  if GridConnect then
-    AliasServer.AddMapping(AliasID, NodeID);  // Events get fired in the Timer when processing it
   SendInitializeComplete;
   AutoGenerateEvents;
   SendEvents;
@@ -625,6 +605,10 @@ function TLccNode.ProcessMessageLCC(SourceMessage: TLccMessage): Boolean;
     LocalAliasMapping: TLccAliasMapping;
     LocalTrainObject: TLccTrainObject;
   begin
+
+    Exit;
+
+
     if SourceMessage.IsEqualEventID(EVENT_IS_TRAIN) then
     begin
       // Guarenteed to have Mappings before I ever get here
@@ -1132,9 +1116,6 @@ var
   LocalNodeIdentificationObject: TLccNodeIdentificationObject;
   i: Integer;
   AliasMapping: TLccAliasMapping;
-
-  s: string;
-  x: Integer;
 begin
   Result := False;
   TestNodeID[0] := 0;
@@ -1212,12 +1193,12 @@ begin
 
                 if not Assigned(AliasMapping) then
                 begin
-
-                   s := MessageToDetailedMessage(SourceMessage);
-                   x := AliasServer.Count;
-
-                  AliasMapping := AliasServer.FindMapping(LocalNodeIdentificationObject.Alias);
-
+                  AliasServer.WriteMapping('Cound not find Mapping at Message Position: ' +
+                    IntToStr(i) +
+                    ' - Alias' +
+                    IntToHex(LocalNodeIdentificationObject.Alias, 4) + ' ID: ' +
+                    NodeIDToString(LocalNodeIdentificationObject.NodeID, True),
+                    nil);
 
 
                   if LocalNodeIdentificationObject.Alias > 0 then
@@ -1232,13 +1213,11 @@ begin
                   end;
 
                   // wait for it to return and complete the mapping
-           {       while not Assigned(AliasMapping) do
+                  while not Assigned(AliasMapping) do
                   begin
                     AliasMapping := AliasServer.FindMapping(LocalNodeIdentificationObject.Alias);
-                    if not Assigned(AliasMapping) then
-                      AliasMapping := AliasServer.FindMapping(LocalNodeIdentificationObject.NodeID);
                     Sleep(5);
-                  end;  }
+                  end;
                 end;
               end;
             end;
@@ -1248,38 +1227,6 @@ begin
         end
       end
     end;
-  end;
-end;
-
-procedure TLccNode.ProcessIncomingMessageStack;
-var
-  MessageList: TList;
-  i: Integer;
-  AMessage: TLccMessage;
-begin
-  MessageList := MessageStack.LockList;
-  try
-    if MessageList.Count > 0 then
-    begin
-      LocalMessageStack := TList.Create;
-        for i := 0 to MessageList.Count - 1 do
-          LocalMessageStack.Add( MessageList[i]);
-    end;
-  finally
-    MessageList.Clear;
-    MessageStack.UnlockList;
-  end;
-
-  try
-    // Run ProcessMessage outside of the StackLock
-    for i := 0 to LocalMessageStack.Count - 1 do
-    begin
-      AMessage := TLccMessage(LocalMessageStack[i]);
-      ProcessMessage(AMessage);
-      AMessage.Free;
-    end;
-  finally
-    LocalMessageStack.Clear
   end;
 end;
 
@@ -1397,7 +1344,6 @@ begin
   FreeAndNil(FStreamTractionConfig);
   FreeAndNil(FStreamTractionFdi);
   FreeAndNil(FTrainServer);
-  FreeAndNil(FMessageStack);
   FreeAndNil(FWorkerNodeIdentification);
   FreeAndNil(FLocalMessageStack);
 
@@ -1462,7 +1408,7 @@ begin
     LoginTimoutCounter := 0;
     _100msTimer.Enabled := True;  //  Next state is in the event handler to see if anyone objects tor our Alias
   end else
-    LogInInternal(ANodeID);
+    LccLogIn(ANodeID);
 end;
 
 procedure TLccNode.Logout;
@@ -1479,7 +1425,6 @@ begin
   FInitialized := False;
   _100msTimer.Enabled := False;
   DatagramResendQueue.Clear;
-  MessageStack.Clear;
   if GridConnect then
     AliasServer.MarkForRemovalByAlias(AliasID);
 end;
@@ -1487,6 +1432,7 @@ end;
 procedure TLccNode.On_100msTimer(Sender: TObject);
 var
   Temp: TNodeID;
+  LocalMapping: TLccAliasMapping;
 begin
   if GridConnect then
   begin
@@ -1515,19 +1461,22 @@ begin
         if LoginTimoutCounter > 7 then
         begin
           FPermitted := True;
+          Assert(AliasID <> 0, 'Alias = 0');
+          Assert(not NullNodeID(NodeID), 'NodeID = NULL_ID');
+          LocalMapping := AliasServer.AddMapping(AliasID, NodeID);
+          Assert(Assigned(LocalMapping), 'Could not Assign Node AliasMapping');
           WorkerMessage.LoadRID(NodeID, AliasID);
           SendMessageFunc(Self, WorkerMessage);
           WorkerMessage.LoadAMD(NodeID, AliasID);
           SendMessageFunc(Self, WorkerMessage);
           (NodeManager as INodeManagerCallbacks).DoAliasIDChanged(Self);
-          LogInInternal(NodeID);
+          LccLogIn(NodeID);
         end;
       end
     end else  // Is Permitted
     begin
       DatagramResendQueue.TickTimeout;
       NotifyAndUpdateMappingChanges;
-      ProcessIncomingMessageStack;
     end;
   end else  // Is not GridConnect
   begin

@@ -191,7 +191,7 @@ var
 begin
   inherited RequestErrorMessageSent;
 
-  // WE DONT KNOW IF THIS WAS ADDRESSED US SO WE CANT JUST BLINDLY SEND THE ERROR RESULT.....
+ { // WE DONT KNOW IF THIS WAS ADDRESSED US SO WE CANT JUST BLINDLY SEND THE ERROR RESULT.....
 
   List := Owner.NodeManager.Nodes.LockList;
   try
@@ -207,7 +207,7 @@ begin
     end;
   finally
     Owner.NodeManager.Nodes.UnlockList;
-  end;
+  end;   }
 end;
 
 procedure TLccBaseEthernetThread.TryTransmitGridConnect(IOHandler: TIdIOHandler);

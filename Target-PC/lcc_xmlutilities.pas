@@ -308,11 +308,11 @@ var
   XMLDoc: LccXmlDocument;
 begin
   // Does not Force the FilePath and and a new XML file
-  XMLDoc := XmlLoadFromFile(FilePath);
+  XMLDoc := XmlLoadFromFile(string( FilePath));
   if Assigned(XMLDoc) then
   begin
     XmlNodeSetFirstLevelTextContent(XMLDoc, RootElement, ChildElement, Content, Force);
-    XmlWriteToFile(FilePath, XMLDoc)
+    XmlWriteToFile(string(FilePath), XMLDoc)
   end;
 end;
 procedure XmlNodeSetFirstLevelTextContent(XMLDoc: LccXmlDocument; RootElement, ChildElement, Content: domString; Force: Boolean);

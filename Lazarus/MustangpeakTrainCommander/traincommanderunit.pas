@@ -404,7 +404,7 @@ begin
         ButtonEthernetConnect.Enabled := False;
         ButtonEthernetConnect.Caption := 'Command Station Disconnecting from Ethernet';
    //     if not LccWebsocketServer.Connected then
-  //        NodeManager.Clear;
+          NodeManager.Clear;
       end;
     lcsDisconnected :
       begin
@@ -665,37 +665,30 @@ var
   ListenerTrainNode, ParentTrainNode: TLccTrainDccNode;
   ParentTreeNode, ChildTreeNode: TTreeNode;
   i, j: Integer;
-  List: TList;
 begin
-
   TreeViewTrains.Items.Clear;
 
-  List := NodeManager.Nodes.LockList;
-  try
-    for i := 0 to List.Count - 1 do
+  for i := 0 to NodeManager.Nodes.Count - 1 do
+  begin
+    if TLccNode( NodeManager.Nodes[i]) is TLccTrainDccNode then
     begin
-      if TLccNode( List[i]) is TLccTrainDccNode then
+      ParentTrainNode := TLccNode( NodeManager.Nodes[i]) as TLccTrainDccNode;
+      ParentTreeNode := TreeViewTrains.Items.Add(nil, TrainNodeToCaption(ParentTrainNode));
+      ParentTreeNode.ImageIndex := 18;
+      for j := 0 to ParentTrainNode.Listeners.Count - 1 do
       begin
-        ParentTrainNode := TLccNode( List[i]) as TLccTrainDccNode;
-        ParentTreeNode := TreeViewTrains.Items.Add(nil, TrainNodeToCaption(ParentTrainNode));
-        ParentTreeNode.ImageIndex := 18;
-        for j := 0 to ParentTrainNode.Listeners.Count - 1 do
+        ListenerTrainNode := NodeManager.FindNodeByNodeID(ParentTrainNode.Listeners.Listener[j].NodeID) as TLccTrainDccNode;
+        if Assigned(ListenerTrainNode) then
         begin
-          ListenerTrainNode := NodeManager.FindNodeByNodeID(ParentTrainNode.Listeners.Listener[j].NodeID) as TLccTrainDccNode;
-          if Assigned(ListenerTrainNode) then
-          begin
-             ChildTreeNode := TreeViewTrains.Items.AddChild(ParentTreeNode, TrainNodeToCaption(ListenerTrainNode));
-             ChildTreeNode.ImageIndex := 7;
-          end else
-          begin
-             ChildTreeNode := TreeViewTrains.Items.AddChild(ParentTreeNode, '[Unknown]');
-             ChildTreeNode.ImageIndex := 7;
-          end;
+           ChildTreeNode := TreeViewTrains.Items.AddChild(ParentTreeNode, TrainNodeToCaption(ListenerTrainNode));
+           ChildTreeNode.ImageIndex := 7;
+        end else
+        begin
+           ChildTreeNode := TreeViewTrains.Items.AddChild(ParentTreeNode, '[Unknown]');
+           ChildTreeNode.ImageIndex := 7;
         end;
       end;
     end;
-  finally
-    NodeManager.Nodes.UnlockList;
   end;
 end;
 
@@ -703,22 +696,19 @@ procedure TFormTrainCommander.FlushTrains;
 var
   i: Integer;
   TrainNode: TLccTrainDccNode;
-  List: TList;
 begin
-  List := NodeManager.Nodes.LockList;
   try
-    for i := List.Count - 1 downto 0  do
+    for i := NodeManager.Nodes.Count - 1 downto 0  do
     begin
-      if TLccNode(List.Items[i]) is TLccTrainDccNode then
+      if TLccNode(NodeManager.Nodes.Items[i]) is TLccTrainDccNode then
       begin
-        TrainNode := TLccNode(List.Items[i]) as TLccTrainDccNode;
+        TrainNode := TLccNode(NodeManager.Nodes.Items[i]) as TLccTrainDccNode;
         TrainNode.Logout;      // Node will be deleted from Treeview when it logs out
-        List.Delete(i);
+        NodeManager.Nodes.Delete(i);
         TrainNode.Free;
       end;
     end;
   finally
-    NodeManager.Nodes.UnlockList;
     TreeViewTrains.Items.Clear;
   end;
 end;

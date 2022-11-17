@@ -300,21 +300,7 @@ begin
                       end;
                   end;
 
-                  NodeList := NodeManager.Nodes.LockList;
-                  try
-                    for iNode := 0 to NodeList.Count - 1 do
-                    begin
-                      ThreadedNode := TLccNode(NodeList[iNode]);
-                      MessageStackList := ThreadedNode.MessageStack.LockList;
-                      try
-                        MessageStackList.Add( WorkerMessage.Clone)
-                      finally
-                        ThreadedNode.MessageStack.UnlockList;
-                      end;
-                    end;
-                  finally
-                    NodeManager.Nodes.UnLockList
-                  end;
+                  NodeManager.MessageServerThread.AddMessage(WorkerMessage);
 
                   try
                     Owner.Synchronize({$IFDEF FPC}@{$ENDIF}Owner.ReceiveMessage);  // WorkerMessage contains the message
@@ -373,80 +359,84 @@ begin
   FRunning := True;
   try
     try
-      IdTCPServer.Active          := False;
-      IdTCPServer.MaxConnections  := 255;
-        // ... assign a new context class (if you need)
-     // IdTCPServer.ContextClass    := TYourContext;
-
-      // add some callback functions
-      IdTCPServer.OnConnect := {$IFDEF FPC}@{$ENDIF}IdTCPServerConnect;
-      IdTCPServer.OnDisconnect := {$IFDEF FPC}@{$ENDIF}IdTCPServerDisconnect;
-      IdTCPServer.OnExecute := {$IFDEF FPC}@{$ENDIF}IdTCPServerExecute;
-      IdTCPServer.OnStatus := {$IFDEF FPC}@{$ENDIF}IdTCPServerStatus;
-      IdTCPServer.TerminateWaitTime := 2;
-
-      HandleSendConnectionNotification(lcsConnecting);
-
-      if (ConnectionInfo as TLccEthernetConnectionInfo).AutoResolveIP then
-      begin
-        {$IFDEF LCC_WINDOWS}
-        (ConnectionInfo as TLccEthernetConnectionInfo).ListenerIP := ResolveWindowsIp
-        {$ELSE}
-        (ConnectionInfo as TLccEthernetConnectionInfo).ListenerIP := ResolveUnixIp;
-        {$ENDIF}
-      end;
-
-      IdTCPServer.Bindings.Clear;
-      IdTCPServer.Bindings.Add.Port := 12021;
-      IdTCPServer.Bindings.Add.IP := (ConnectionInfo as TLccEthernetConnectionInfo).ListenerIP;
-
-      IdTCPServer.Active := True;
-
-      if IdTCPServer.Active then
-      begin
-        HandleSendConnectionNotification(lcsConnected);
-        while not Terminated do
-        begin
-
-          // Receiving messages are handled IdTCPServerExecute handler and dispatched
-          // directly to each LccNode
-
-          // Sending out what need to be sent to the connections
-          ContextList := IdTCPServer.Contexts.LockList;
-          try
-            for i := 0 to IdTCPServer.Contexts.Count - 1 do
-            begin
-              if TIdContext( ContextList[i]).Connection.Connected then
-              begin
-                if (ConnectionInfo as TLccEthernetConnectionInfo).GridConnect then
-                  TryTransmitGridConnect(TIdContext( ContextList[i]).Connection.IOHandler)
-                else
-                  TryTransmitTCPProtocol(TIdContext( ContextList[i]).Connection.IOHandler);
-              end;
-            end;
-          finally
-            IdTCPServer.Contexts.UnlockList;
-          end;
-
-          IndySleep(50);
-        end
-      end;
-    finally
-      HandleSendConnectionNotification(lcsDisconnecting);
       try
-        IdTCPServer.Active := False;
-      finally
-        // Can I poll the contexts looking for Connected to be false?
+        IdTCPServer.Active          := False;
+        IdTCPServer.MaxConnections  := 255;
+          // ... assign a new context class (if you need)
+       // IdTCPServer.ContextClass    := TYourContext;
 
-        HandleSendConnectionNotification(lcsDisconnected);
+        // add some callback functions
+        IdTCPServer.OnConnect := {$IFDEF FPC}@{$ENDIF}IdTCPServerConnect;
+        IdTCPServer.OnDisconnect := {$IFDEF FPC}@{$ENDIF}IdTCPServerDisconnect;
+        IdTCPServer.OnExecute := {$IFDEF FPC}@{$ENDIF}IdTCPServerExecute;
+        IdTCPServer.OnStatus := {$IFDEF FPC}@{$ENDIF}IdTCPServerStatus;
+        IdTCPServer.TerminateWaitTime := 2;
+
+        HandleSendConnectionNotification(lcsConnecting);
+
+        if (ConnectionInfo as TLccEthernetConnectionInfo).AutoResolveIP then
+        begin
+          {$IFDEF LCC_WINDOWS}
+          (ConnectionInfo as TLccEthernetConnectionInfo).ListenerIP := ResolveWindowsIp
+          {$ELSE}
+          (ConnectionInfo as TLccEthernetConnectionInfo).ListenerIP := ResolveUnixIp;
+          {$ENDIF}
+        end;
+
+        IdTCPServer.Bindings.Clear;
+        IdTCPServer.Bindings.Add.Port := 12021;
+        IdTCPServer.Bindings.Add.IP := (ConnectionInfo as TLccEthernetConnectionInfo).ListenerIP;
+
+        IdTCPServer.Active := True;
+
+        if IdTCPServer.Active then
+        begin
+          HandleSendConnectionNotification(lcsConnected);
+          while not Terminated do
+          begin
+
+            // Receiving messages are handled IdTCPServerExecute handler and dispatched
+            // directly to each LccNode
+
+            // Sending out what need to be sent to the connections
+            ContextList := IdTCPServer.Contexts.LockList;
+            try
+              for i := 0 to IdTCPServer.Contexts.Count - 1 do
+              begin
+                if TIdContext( ContextList[i]).Connection.Connected then
+                begin
+                  if (ConnectionInfo as TLccEthernetConnectionInfo).GridConnect then
+                    TryTransmitGridConnect(TIdContext( ContextList[i]).Connection.IOHandler)
+                  else
+                    TryTransmitTCPProtocol(TIdContext( ContextList[i]).Connection.IOHandler);
+                end;
+              end;
+            finally
+              IdTCPServer.Contexts.UnlockList;
+            end;
+
+            IndySleep(50);
+          end
+        end;
+      finally
+        HandleSendConnectionNotification(lcsDisconnecting);
+        try
+          IdTCPServer.Active := False;
+        finally
+          // Can I poll the contexts looking for Connected to be false?
+
+          HandleSendConnectionNotification(lcsDisconnected);
+        end;
+      end;
+    except  // idTCPServer uses exceptions to throw faults, trap them so the users does not see them
+      on E: EIdException do
+      begin
+        ConnectionInfo.ErrorMessage := E.Message;
+        Synchronize({$IFDEF FPC}@{$ENDIF}ErrorMessage);
       end;
     end;
-  except  // idTCPServer uses exceptions to throw faults, trap them so the users does not see them
-    on E: EIdException do
-    begin
-      ConnectionInfo.ErrorMessage := E.Message;
-      Synchronize({$IFDEF FPC}@{$ENDIF}ErrorMessage);
-    end;
+  finally
+    FRunning := False;
   end;
 end;
 
@@ -460,6 +450,7 @@ end;
 
 destructor TLccEthernetListener.Destroy;
 begin
+
   IdTCPServer.Free;
   GridConnectContextList.Free;
   inherited Destroy;
@@ -569,7 +560,7 @@ begin
     begin
       {$IFNDEF FPC_CONSOLE_APP}Application.ProcessMessages;{$ELSE}CheckSynchronize();{$ENDIF}  // Pump the timers
       Inc(TimeCount);
-      Sleep(100);
+      Sleep(500);
       if TimeCount = 10 then Break // Something went really wrong
     end;
     FreeAndNil(FListenerThread);
@@ -605,6 +596,7 @@ begin
   inherited OpenConnection(AConnectionInfo);
   Result := CreateListenerObject(AConnectionInfo.Clone as TLccEthernetConnectionInfo);
   ListenerThread := Result as TLccEthernetListener;
+  ListenerThread.FreeOnTerminate := False;
   ListenerThread.Suspended := False;
 end;
 

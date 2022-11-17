@@ -65,6 +65,7 @@ type
     function FindMapping(ANodeID: TNodeID): TLccAliasMapping; overload;
     function AddMapping(AnAlias: Word; AnID: TNodeID): TLccAliasMapping;
     function MarkForRemovalByAlias(AnAlias: Word): TLccAliasMapping;
+    procedure WriteMapping(AComment: string; AMapping: TLccAliasMapping);
   end;
 
 var
@@ -176,6 +177,7 @@ begin
       Result.NodeAlias := AnAlias;
       Result.MarkedForInsertion := True;
       MappingList.Add(Result);
+      WriteMapping('New Mapping', Result);
     end;
   finally
     MappingList.UnlockList;
@@ -192,10 +194,19 @@ begin
     if Assigned(Result) then
     begin
       Result.MarkedForDeletion := True;
+      WriteMapping('Marked for Deletion Mapping', Result);
     end;
   finally
     MappingList.UnlockList;
   end;
+end;
+
+procedure TLccAliasServer.WriteMapping(AComment: string; AMapping: TLccAliasMapping);
+begin
+  if Assigned(AMapping) then
+    WriteLn(AComment + '- Alias 0x' + IntToHex(AMapping.NodeAlias, 4) + ' ID: ' + NodeIDToString(AMapping.NodeID, True))
+  else
+    WriteLn(AComment + ' Nill Mapping')
 end;
 
 initialization

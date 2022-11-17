@@ -568,7 +568,7 @@ begin
   FEventList := TObjectList.Create;
   {$ENDIF}
   FAutoGenerate := TLccEventAutoGenerate.Create;
-  {$IFNDEF DWSCRIPT}EventList.OwnsObjects := False;{$ENDIF}
+  EventList.OwnsObjects := False;
 end;
 
 destructor TProtocolEvents.Destroy;
@@ -675,9 +675,7 @@ begin
   {$ELSE}
   List := TObjectList.Create;
   {$ENDIF}
-  {$IFNDEF DWSCRIPT}
   List.OwnsObjects := False;
-  {$ENDIF}
 end;
 
 destructor TProtocolMemoryInfo.Destroy;
@@ -828,13 +826,7 @@ begin
    Inc(Len);
   Inc(Len, 6);  // six NULLs for 6 strings
 
-  {$IFDEF DWSCRIPT}
-  var BinaryData: TBinaryData;
-  BinaryData := TBinaryData.Create(Len);
-  Result := BinaryData.ToBytes;
-  {$ELSE}
   SetLength(Result, Len);
-  {$ENDIF}
 
   i := 0;
   Result[i] := 1; // Version number

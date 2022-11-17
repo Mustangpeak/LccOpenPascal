@@ -69,22 +69,6 @@ type
     property Valid: Boolean read FValid write FValid;
   end;
 
-  { TLccTheadedMessageList }
-
-  TLccTheadedMessageList = class(TThreadList)
-  private
-    function GetInteger: Integer;
-    function GetLccMessage(Index: Integer): TLccMessage;
-  public
-    property Count: Integer read GetInteger;
-    property LccMessage[Index: Integer]: TLccMessage read GetLccMessage;
-
-    destructor Destroy; override;
-    procedure Push(AMessage: TLccMessage);
-    procedure Clear;
-    function Pop: TLccMessage;
-  end;
-
   // Base struture that contains the two types of LCC node identifiers, the long
   // globally unique ID or NodeID and the local Alias (if running CAN/Gridconnect)
 
@@ -232,6 +216,7 @@ private
   FSourceID: TNodeID;                       // NodeID of the Source of a message
   FMTI: Word;                               // The Actual MTI of the message IF it is not a CAN frame message
   FRetryAttempts: Integer;                  // If a message returned "Temporary" (like no buffers) this holds how many time it has been retried and defines a give up time to stop resending
+  FSourceObject: TObject;
   function GetHasDestination: Boolean;
   function GetHasDestNodeID: Boolean;
   function GetHasSourceNodeID: Boolean;
@@ -254,6 +239,7 @@ public
   property MTI: Word read FMTI write FMTI;
   property RetryAttempts: Integer read FRetryAttempts write FRetryAttempts;
   property SourceID: TNodeID read FSourceID write FSourceID;
+  property SourceObject: TObject read FSourceObject write FSourceObject;
 
   constructor Create;
   destructor Destroy; override;
@@ -945,34 +931,6 @@ begin
     MessageNodeIdentifications.Destination.AssignID(AMessage.DestID, AMessage.CAN.DestAlias);
 
   case AMessage.MTI of
-    MTI_TRACTION_REPLY :
-      begin
-        case AMessage.DataArray[0] of
-          TRACTION_CONTROLLER_CONFIG :
-            begin
-              case AMessage.DataArray[1] of
-                TRACTION_CONTROLLER_CONFIG_QUERY :
-                  begin
-                   ANodeID := NULL_NODE_ID;
-                   AMessage.ExtractDataBytesAsNodeID(3, ANodeID);
-                   if not NullNodeID(ANodeID) then    // NULL is valid for no controller assigned
-                     NewIdentificationItem(ANodeID);
-                  end;
-                end
-            end;
-
-           TRACTION_LISTENER :
-             case AMessage.DataArray[1] of
-                TRACTION_LISTENER_ATTACH,
-                TRACTION_LISTENER_DETACH :
-                  begin
-                    ANodeID := NULL_NODE_ID;
-                    AMessage.ExtractDataBytesAsNodeID(2, ANodeID);
-                    NewIdentificationItem(ANodeID);
-                  end;
-              end;
-        end;
-      end;
     MTI_TRACTION_REQUEST :
       begin
         case AMessage.DataArray[0] of
@@ -1002,6 +960,34 @@ begin
               end;
             end
         end
+      end;
+        MTI_TRACTION_REPLY :
+      begin
+        case AMessage.DataArray[0] of
+          TRACTION_CONTROLLER_CONFIG :
+            begin
+              case AMessage.DataArray[1] of
+                TRACTION_CONTROLLER_CONFIG_QUERY :
+                  begin
+                   ANodeID := NULL_NODE_ID;
+                   AMessage.ExtractDataBytesAsNodeID(3, ANodeID);
+                   if not NullNodeID(ANodeID) then    // NULL is valid for no controller assigned
+                     NewIdentificationItem(ANodeID);
+                  end;
+                end
+            end;
+
+           TRACTION_LISTENER :
+             case AMessage.DataArray[1] of
+                TRACTION_LISTENER_ATTACH,
+                TRACTION_LISTENER_DETACH :
+                  begin
+                    ANodeID := NULL_NODE_ID;
+                    AMessage.ExtractDataBytesAsNodeID(2, ANodeID);
+                    NewIdentificationItem(ANodeID);
+                  end;
+              end;
+        end;
       end;
   end;
 end;
@@ -1258,84 +1244,6 @@ begin
   end;
 end;
 
-
-{ TLccTheadedMessageList }
-
-function TLccTheadedMessageList.GetLccMessage(Index: Integer): TLccMessage;
-var
-  List: TList;
-begin
-  List := LockList;
-  try
-    Result := TLccMessage( List[Index]);
-  finally
-    UnlockList;
-  end;
-end;
-
-function TLccTheadedMessageList.GetInteger: Integer;
-var
-  List: TList;
-begin
-  List := LockList;
-  try
-    Result := List.Count
-  finally
-    UnlockList;
-  end;
-end;
-
-destructor TLccTheadedMessageList.Destroy;
-begin
-  Clear;
-  inherited Destroy;
-end;
-
-procedure TLccTheadedMessageList.Push(AMessage: TLccMessage);
-var
-  List: TList;
-begin
-  List := LockList;
-  try
-    List.Add(AMessage);
-  finally
-    UnlockList;
-  end;
-end;
-
-procedure TLccTheadedMessageList.Clear;
-var
-  List: TList;
-  i: Integer;
-begin
-  List := LockList;
-  try
-    for i := 0 to List.Count - 1 do
-      TObject(List[i]).Free;
-  finally
-    List.Clear;
-    UnlockList;
-  end;
-end;
-
-function TLccTheadedMessageList.Pop: TLccMessage;
-var
-  List: TList;
-begin
-  Result := nil;
-  List := LockList;
-  try
-    if List.Count > 0 then
-    begin
-      Result := TLccMessage( List[0]);
-      List.Delete(0);
-    end;
-  finally
-    UnlockList;
-  end;
-end;
-
-
 { TLccMessage }
 
 procedure TLccMessage.AppendDataArray(LccMessage: TLccMessage);
@@ -1384,6 +1292,7 @@ begin
   Result.FMTI := FMTI;
   Result.RetryAttempts := 0;
   Result.AbandonTimeout := 0;
+  Result.SourceObject := SourceObject;
 end;
 
 procedure TLccMessage.InsertNodeID(StartIndex: Integer; var ANodeID: TNodeID);
@@ -1974,6 +1883,7 @@ begin
   FDataCount := 0;
   FDestID := NULL_NODE_ID;
   FSourceID := NULL_NODE_ID;
+  FSourceObject := nil;
   CAN.FSourceAlias := 0;
   CAN.FDestAlias := 0;
   CAN.FFramingBits := 0;
@@ -2915,8 +2825,7 @@ begin
   DataCount := 10;
   FDataArray[0] := TRACTION_LISTENER;
   FDataArray[1] := TRACTION_LISTENER_ATTACH;
-  FDataArray[2] := 0;
-  InsertNodeID(3, AListenerNodeID);
+  InsertNodeID(2, AListenerNodeID);
   FDataArray[8] := Hi(ReplyCode);
   FDataArray[9] := Lo(ReplyCode);
   MTI := MTI_TRACTION_REPLY;
@@ -2951,8 +2860,7 @@ begin
   DataCount := 10;
   FDataArray[0] := TRACTION_LISTENER;
   FDataArray[1] := TRACTION_LISTENER_DETACH;
-  FDataArray[2] := 0;
-  InsertNodeID(3, AListenerNodeID);
+  InsertNodeID(2, AListenerNodeID);
   FDataArray[8] := Hi(ReplyCode);
   FDataArray[9] := Lo(ReplyCode);
   MTI := MTI_TRACTION_REPLY;
