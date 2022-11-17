@@ -712,6 +712,7 @@ begin
   FMessageServerThread := TMessageServerThread.Create(True);
   FMessageServerThread.Owner := Self;
   FMessageServerThread.FreeOnTerminate := True;
+  FMessageServerThread.Suspended := False;
 end;
 
 function TLccNodeManager.AddNode(CdiXML: string; AutoLogin: Boolean): TLccNode;

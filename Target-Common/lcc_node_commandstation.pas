@@ -148,7 +148,8 @@ begin
    end;
 end;
 
-function TLccCommandStationNode.FindTrainByDccAddress(DccAddress: Word; IsLongAddress: Boolean): TLccTrainDccNode;
+function TLccCommandStationNode.FindTrainByDccAddress(DccAddress: Word;
+  IsLongAddress: Boolean): TLccTrainDccNode;
 var
   i: Integer;
   LocalTrainNode: TLccTrainDccNode;
@@ -243,8 +244,11 @@ begin
 
               if Assigned(ATrain) then
               begin
-                WorkerMessage.LoadProducerIdentified(ATrain.NodeID, ATrain.AliasID, ReturnEvent, evs_Valid);
-                SendMessageFunc(ATrain, WorkerMessage);      // Need to send the train for this one
+                if ATrain.Permitted then  // Once it logs inand becomes permitted it will send this message
+                begin
+                  WorkerMessage.LoadProducerIdentified(ATrain.NodeID, ATrain.AliasID, ReturnEvent, evs_Valid);
+                  SendMessageFunc(ATrain, WorkerMessage);      // Need to send the train for this one
+                end;
               end else
               if SourceMessage.TractionSearchIsForceAllocate then
               begin

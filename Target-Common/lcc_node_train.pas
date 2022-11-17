@@ -630,6 +630,7 @@ end;
 
 constructor TLccTrainDccNode.Create(ANodeManager: {$IFDEF DELPHI}TComponent{$ELSE}TObject{$ENDIF}; CdiXML: String; GridConnectLink: Boolean);
 begin
+  {$IFDEF WriteLnDebug} WriteLn('Train Node Create'); {$ENDIF}
   inherited Create(ANodeManager, CdiXML, GridConnectLink);
   FListeners := TListenerList.Create;
   FControllerState := TControllerState.Create;

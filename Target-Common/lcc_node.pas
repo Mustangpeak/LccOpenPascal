@@ -1193,13 +1193,14 @@ begin
 
                 if not Assigned(AliasMapping) then
                 begin
+                  {$IFDEF WriteLnDebug}
                   AliasServer.WriteMapping('Cound not find Mapping at Message Position: ' +
                     IntToStr(i) +
                     ' - Alias' +
                     IntToHex(LocalNodeIdentificationObject.Alias, 4) + ' ID: ' +
                     NodeIDToString(LocalNodeIdentificationObject.NodeID, True),
                     nil);
-
+                  {$ENDIF}
 
                   if LocalNodeIdentificationObject.Alias > 0 then
                   begin
@@ -1387,6 +1388,7 @@ var
 begin
   if GridConnect then
   begin
+    {$IFDEF WriteLnDebug} WriteLn('Node Logging In'); {$ENDIF}
     BeforeLogin;
     if NullNodeID(ANodeID) then
       CreateNodeID(ANodeID);
@@ -1442,6 +1444,7 @@ begin
        // Did any node object to this Alias through ProcessMessage?
       if DuplicateAliasDetected then
       begin
+        {$IFDEF WriteLnDebug} WriteLn('Node Duplicate ID'); {$ENDIF}
         DuplicateAliasDetected := False;  // Reset
         Temp := FSeedNodeID;
         GenerateNewSeed(Temp);
@@ -1460,6 +1463,7 @@ begin
       begin
         if LoginTimoutCounter > 7 then
         begin
+          {$IFDEF WriteLnDebug} WriteLn('Node Logged In'); {$ENDIF}
           FPermitted := True;
           Assert(AliasID <> 0, 'Alias = 0');
           Assert(not NullNodeID(NodeID), 'NodeID = NULL_ID');
