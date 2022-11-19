@@ -760,7 +760,8 @@ begin
       begin
         ButtonConnect1.Caption := 'Disconnect';
         StatusBarThrottle1.Panels[0].Text := 'IP Address: ' + (Info as TLccEthernetConnectionInfo).ClientIP + ':' + IntToStr((Info as TLccEthernetConnectionInfo).ClientPort);
-        ControllerNode1 := NodeManager1.AddNodeByClass('', TLccTrainController, True, NULL_NODE_ID) as TLccTrainController;
+        if NodeManager1.Nodes.Count = 0 then
+          ControllerNode1 := NodeManager1.AddNodeByClass('', TLccTrainController, True, NULL_NODE_ID) as TLccTrainController;
    {     ControllerNode1.OnTrainAssigned := @ControllerTrainAssigned1;
         ControllerNode1.OnTrainReleased := @ControllerTrainReleased1;
         ControllerNode1.OnControllerRequestTakeover := @OnControllerReqestTakeover1;
@@ -778,10 +779,8 @@ begin
     lcsDisconnecting :
       begin
         StatusBarThrottle1.Panels[0].Text := 'Disconnecting';
-        NodeManager1.Clear;
         FormServerInfo.TreeViewAliasMaps.Items.Clear;
         FormServerInfo.TreeViewTrains.Items.Clear;
-        ControllerNode1 := nil;
       end;
     lcsDisconnected :
       begin
@@ -812,7 +811,8 @@ begin
         begin
           ButtonConnect2.Caption := 'Disconnect';
           StatusBarThrottle2.Panels[0].Text := 'IP Address: ' + (Info as TLccEthernetConnectionInfo).ClientIP + ':' + IntToStr((Info as TLccEthernetConnectionInfo).ClientPort);
-          ControllerNode2 := NodeManager2.AddNodeByClass('', TLccTrainController, True, NULL_NODE_ID) as TLccTrainController;
+          if NodeManager2.Nodes.Count = 0 then
+            ControllerNode2 := NodeManager2.AddNodeByClass('', TLccTrainController, True, NULL_NODE_ID) as TLccTrainController;
    {       ControllerNode2.OnTrainAssigned := @ControllerTrainAssigned2;
           ControllerNode2.OnTrainReleased := @ControllerTrainReleased2;
           ControllerNode2.OnControllerRequestTakeover := @OnControllerReqestTakeover2;
@@ -830,8 +830,6 @@ begin
       lcsDisconnecting :
         begin
           StatusBarThrottle2.Panels[0].Text := 'Disconnecting';
-          NodeManager2.Clear;
-          ControllerNode2 := nil;
         end;
       lcsDisconnected :
         begin

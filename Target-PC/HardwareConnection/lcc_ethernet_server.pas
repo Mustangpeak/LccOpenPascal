@@ -253,7 +253,6 @@ var
   ServerContext: TLccServerContexts;
   GridConnectStrPtr: PGridConnectString;
   MessageStr: String;
-  ANodeID: TNodeID;
 begin
   ContextList := LockList;
   try
@@ -279,29 +278,7 @@ begin
             case ServerContext.GridConnectMessageAssembler.IncomingMessageGridConnect(WorkerMessage) of
               imgcr_True :
                 begin
-                  case WorkerMessage.CAN.MTI of
-                    MTI_CAN_AMR :
-                      begin
-                        AliasServer.MarkForRemovalByAlias(WorkerMessage.CAN.SourceAlias);
-                      end;
-                    MTI_CAN_AMD :
-                      begin
-                        ANodeID := NULL_NODE_ID;
-                        AliasServer.AddMapping(WorkerMessage.CAN.SourceAlias, WorkerMessage.ExtractDataBytesAsNodeID(0, ANodeID));
-                      end;
-                  end;
-
-                  case WorkerMessage.MTI of
-                    MTI_VERIFIED_NODE_ID_NUMBER,
-                    MTI_INITIALIZATION_COMPLETE :
-                      begin
-                        ANodeID := NULL_NODE_ID;
-                        AliasServer.AddMapping(WorkerMessage.CAN.SourceAlias, WorkerMessage.ExtractDataBytesAsNodeID(0, ANodeID));
-                      end;
-                  end;
-
-                  NodeManager.MessageServerThread.AddMessage(WorkerMessage);
-
+                  NodeManager.ReceiveMessageServerThread.AddMessage(WorkerMessage);
                   try
                     Owner.Synchronize({$IFDEF FPC}@{$ENDIF}Owner.ReceiveMessage);  // WorkerMessage contains the message
                   except
@@ -355,6 +332,9 @@ procedure TLccEthernetListener.Execute;
 var
   i: Integer;
   ContextList: TList;
+  TxStr: string;
+  TxList: TStringList;
+  DynamicByteArray: TLccDynamicByteArray;
 begin
   FRunning := True;
   try
@@ -401,21 +381,51 @@ begin
             // Sending out what need to be sent to the connections
             ContextList := IdTCPServer.Contexts.LockList;
             try
-              for i := 0 to IdTCPServer.Contexts.Count - 1 do
+              if (ConnectionInfo as TLccEthernetConnectionInfo).GridConnect then
               begin
-                if TIdContext( ContextList[i]).Connection.Connected then
+                TxStr := '';
+                TxList := OutgoingGridConnect.LockList;
+                try
+                  for i := 0 to TxList.Count - 1 do
+                    TxStr := TxStr + TxList[i] + #10;
+                  TxList.Clear;
+                finally
+                  OutgoingGridConnect.UnlockList;
+                end;
+
+                if TxStr <> '' then
                 begin
-                  if (ConnectionInfo as TLccEthernetConnectionInfo).GridConnect then
-                    TryTransmitGridConnect(TIdContext( ContextList[i]).Connection.IOHandler)
-                  else
-                    TryTransmitTCPProtocol(TIdContext( ContextList[i]).Connection.IOHandler);
+                  for i := 0 to IdTCPServer.Contexts.Count - 1 do
+                  begin
+                    if TIdContext( ContextList[i]).Connection.Connected then
+                      TIdContext( ContextList[i]).Connection.IOHandler.WriteLn(TxStr);
+                  end;
+                end;
+              end else
+              begin
+                DynamicByteArray := nil;
+                OutgoingCircularArray.LockArray;
+                try
+                  if OutgoingCircularArray.Count > 0 then
+                    OutgoingCircularArray.PullArray(DynamicByteArray);
+                finally
+                  OutgoingCircularArray.UnLockArray;
+                end;
+
+                if Length(DynamicByteArray) > 0 then
+                begin
+                  for i := 0 to IdTCPServer.Contexts.Count - 1 do
+                  begin
+                    if TIdContext( ContextList[i]).Connection.Connected then
+                      TIdContext( ContextList[i]).Connection.IOHandler.Write(DynamicByteArray, Length(DynamicByteArray));
+                  end;
                 end;
               end;
             finally
               IdTCPServer.Contexts.UnlockList;
             end;
 
-            IndySleep(50);
+            IndySleep(10);
           end
         end;
       finally
@@ -497,6 +507,9 @@ begin
   // to another...
   if AString <> '' then
   begin
+
+    {$IFDEF WriteLnDebug} WriteLn('R:' + AString); {$ENDIF}
+
     if Owner.NodeManager.GridConnect then
       GridConnectContextList.AddGridConnectStringByContext(AContext, AString, Owner.NodeManager)
     else begin
@@ -558,6 +571,7 @@ begin
     ListenerThread.Terminate;
     while ListenerThread.Running do
     begin
+      // Needed to make Syncronize function if it is called during the thread shut down for notifications
       {$IFNDEF FPC_CONSOLE_APP}Application.ProcessMessages;{$ELSE}CheckSynchronize();{$ENDIF}  // Pump the timers
       Inc(TimeCount);
       Sleep(500);

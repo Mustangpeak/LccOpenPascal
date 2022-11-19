@@ -81,9 +81,6 @@ type
     procedure OnErrorMessageReceive; virtual;
     procedure RequestErrorMessageSent; override;
 
-    procedure TryTransmitGridConnect(IOHandler: TIdIOHandler); virtual;
-    procedure TryTransmitTCPProtocol(IOHandler: TIdIOHandler); virtual;
-
     procedure AddToOutgoingBuffer(AMessage: TLccMessage);
 
   public
@@ -208,49 +205,6 @@ begin
   finally
     Owner.NodeManager.Nodes.UnlockList;
   end;   }
-end;
-
-procedure TLccBaseEthernetThread.TryTransmitGridConnect(IOHandler: TIdIOHandler);
-var
-  TxStr: string;
-  TxList: TStringList;
-  i: Integer;
-begin
-  if Assigned(IOHandler) then
-  begin
-    TxStr := '';
-    TxList := OutgoingGridConnect.LockList;
-    try
-      for i := 0 to TxList.Count - 1 do
-        TxStr := TxStr + TxList[i] + #10;
-      TxList.Clear;
-    finally
-      OutgoingGridConnect.UnlockList;
-    end;
-
-    if TxStr <> '' then
-      IOHandler.WriteLn(TxStr);  // I think an exception is fired and we drop out in the main thread if we fail here
-  end;
-end;
-
-procedure TLccBaseEthernetThread.TryTransmitTCPProtocol(IOHandler: TIdIOHandler);
-var
-  DynamicByteArray: TLccDynamicByteArray;
-begin
-  DynamicByteArray := nil;
-  OutgoingCircularArray.LockArray;
-  try
-    if OutgoingCircularArray.Count > 0 then
-      OutgoingCircularArray.PullArray(DynamicByteArray);
-  finally
-    OutgoingCircularArray.UnLockArray;
-  end;
-
-  if Length(DynamicByteArray) > 0 then
-  begin
-
-
-  end;
 end;
 
 procedure TLccBaseEthernetThread.AddToOutgoingBuffer(AMessage: TLccMessage);

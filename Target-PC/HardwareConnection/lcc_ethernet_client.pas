@@ -120,6 +120,7 @@ begin
   ClientThread.Terminate;
   while ClientThread.Running do
   begin
+    // Needed to make Syncronize function if it is called during the thread shut down for notifications
     {$IFNDEF FPC_CONSOLE_APP}Application.ProcessMessages;{$ELSE}CheckSynchronize();{$ENDIF}  // Pump the timers
     Inc(TimeCount);
     Sleep(100);
@@ -143,6 +144,11 @@ begin
 end;
 
 procedure TLccEthernetClientThread.Execute;
+var
+  i: Integer;
+  TxStr: string;
+  TxList: TStringList;
+  DynamicByteArray: TLccDynamicByteArray;
 begin
   FRunning := True;
   HandleSendConnectionNotification(lcsConnecting);
@@ -164,30 +170,45 @@ begin
       {$ENDIF}
     end;
     idTCPClient.Connect((ConnectionInfo as TLccEthernetConnectionInfo).ListenerIP, (ConnectionInfo as TLccEthernetConnectionInfo).ListenerPort);
+    try
       try
-        try
-          while not IsTerminated and idTCPClient.Connected do
-          begin
-            if ConnectionInfo.Gridconnect then   // Handle the Client using GridConnect
-              TryTransmitGridConnect(idTCPClient.IOHandler)
-            else
-              TryTransmitTCPProtocol(idTCPClient.IOHandler);
-            Sleep(1);
-          end;
-        finally
-          HandleSendConnectionNotification(lcsDisconnecting);
-          if ConnectionInfo.Gridconnect then
-            TryTransmitGridConnect(idTCPClient.IOHandler) // Flush last message it
-          else
-            TryTransmitTCPProtocol(idTCPClient.IOHandler);;
-        end
-      finally
-        while not idTCPClient.IOHandler.InputBufferIsEmpty do
+        while not IsTerminated and idTCPClient.Connected do
         begin
-          IndySleep(50); // empty the buffer in the call back
-        end;
+          if ConnectionInfo.Gridconnect then
+          begin
+            TxStr := '';
+            TxList := OutgoingGridConnect.LockList;
+            try
+              for i := 0 to TxList.Count - 1 do
+                TxStr := TxStr + TxList[i] + #10;
+              TxList.Clear;
+            finally
+              OutgoingGridConnect.UnlockList;
+            end;
 
-   //   IndySleep(2000);
+            if (TxStr <> '') and idTCPClient.IOHandler.Connected then
+              idTCPClient.IOHandler.WriteLn(TxStr);
+          end else
+          begin
+            DynamicByteArray := nil;
+            OutgoingCircularArray.LockArray;
+            try
+              if OutgoingCircularArray.Count > 0 then
+                OutgoingCircularArray.PullArray(DynamicByteArray);
+            finally
+              OutgoingCircularArray.UnLockArray;
+            end;
+
+            if (Length(DynamicByteArray) > 0) and idTCPClient.IOHandler.Connected then
+              idTCPClient.IOHandler.Write(DynamicByteArray, Length(DynamicByteArray));
+          end;
+
+          Sleep(10);
+        end;
+      finally
+        HandleSendConnectionNotification(lcsDisconnecting);
+      end
+    finally
       idThreadComponent.Active := False;
       idTCPClient.Disconnect;
       HandleSendConnectionNotification(lcsDisconnected);
@@ -226,12 +247,9 @@ procedure TLccEthernetClientThread.OnThreadComponentRun(Sender: TIdThreadCompone
 var
   AString: String;
   AChar: AnsiChar;
-  MessageStackList, NodeList: TList;
-  ThreadedNode: TLccNode;
-  iString, iNode: Integer;
+  iString: Integer;
   GridConnectStrPtr: PGridConnectString;
   MessageStr: String;
-  ANodeID: TNodeID;
 begin
   AString := '';
   while not IdTCPClient.IOHandler.InputBufferIsEmpty and IdTCPClient.IOHandler.Connected do
@@ -258,29 +276,7 @@ begin
         case GridConnectMessageAssembler.IncomingMessageGridConnect(WorkerMessage) of
           imgcr_True :
             begin
-              case WorkerMessage.CAN.MTI of
-                MTI_CAN_AMR :
-                  begin
-                    AliasServer.MarkForRemovalByAlias(WorkerMessage.CAN.SourceAlias);
-                  end;
-                MTI_CAN_AMD :
-                  begin
-                    ANodeID := NULL_NODE_ID;
-                    AliasServer.AddMapping(WorkerMessage.CAN.SourceAlias, WorkerMessage.ExtractDataBytesAsNodeID(0, ANodeID));
-                  end;
-              end;
-
-              case WorkerMessage.MTI of
-                MTI_VERIFIED_NODE_ID_NUMBER,
-                MTI_INITIALIZATION_COMPLETE :
-                  begin
-                    ANodeID := NULL_NODE_ID;
-                    AliasServer.AddMapping(WorkerMessage.CAN.SourceAlias, WorkerMessage.ExtractDataBytesAsNodeID(0, ANodeID));
-                  end;
-              end;
-
-              Owner.NodeManager.MessageServerThread.AddMessage(WorkerMessage);
-
+              Owner.NodeManager.ReceiveMessageServerThread.AddMessage(WorkerMessage);
               try
                 Synchronize({$IFDEF FPC}@{$ENDIF}ReceiveMessage);  // WorkerMessage contains the message
               except

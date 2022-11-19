@@ -328,7 +328,6 @@ begin
   NodeManager.OnLccNodeAliasIDChanged := @OnNodeManagerAliasIDChanged;
   NodeManager.OnLccNodeIDChanged := @OnNodeManagerIDChanged;
   NodeManager.OnLccNodeLogin := @OnNodeManagerNodeLogin;
-  NodeManager.OnLccNodeLogout := @OnNodeManagerNodeLogout;
   NodeManager.OnLccNodeTractionListenerAttach := @OnLccNodeTractionListenerAttach;
   NodeManager.OnLccNodeTractionListenerDetach := @OnLccNodeTractionListenerDetach;
   NodeManager.OnLccNodeTractionListenerQuery := @OnLccNodeTractionListenerQuery;
@@ -396,15 +395,16 @@ begin
         ButtonEthernetConnect.Enabled := True;
         ButtonEthernetConnect.Caption := 'Disconnect Ethernet';
         StatusBarMain.Panels[0].Text := 'Ethernet: Command Station Connected at: ' + (Info as TLccEthernetConnectionInfo).ListenerIP + ':' + IntToStr((Info as TLccEthernetConnectionInfo).ListenerPort);
-        if NodeManager.NodeCount = 0 then
+        if NodeManager.Nodes.Count = 0 then
           NodeManager.AddNodeByClass('', TLccCommandStationNode , True, NULL_NODE_ID);
       end;
     lcsDisconnecting :
       begin
         ButtonEthernetConnect.Enabled := False;
         ButtonEthernetConnect.Caption := 'Command Station Disconnecting from Ethernet';
-   //     if not LccWebsocketServer.Connected then
-          NodeManager.Clear;
+        // We are not clearing the nodes, only disconnecting the connection.  There is no such thing
+        // as taking a node offline in OpenLCB, only reallocating an Alias if a duplicate is found (handled
+        // automatically in the library) or totally off line if the NodeID is found to be a duplicate
       end;
     lcsDisconnected :
       begin
@@ -450,7 +450,7 @@ begin
           ButtonWebserverConnect.Enabled := True;
           ButtonWebserverConnect.Caption := 'Disconnect Websocket';
           StatusBarMain.Panels[1].Text := 'Websocket: Command Station Connected at: ' + (Info as TLccEthernetConnectionInfo).ListenerIP + ':' + IntToStr((Info as TLccEthernetConnectionInfo).ListenerPort);
-          if NodeManager.NodeCount = 0 then
+          if NodeManager.Nodes.Count = 0 then
             NodeManager.AddNodeByClass('', TLccCommandStationNode, True, NULL_NODE_ID);
           end;
       lcsDisconnecting :
@@ -677,7 +677,7 @@ begin
       ParentTreeNode.ImageIndex := 18;
       for j := 0 to ParentTrainNode.Listeners.Count - 1 do
       begin
-        ListenerTrainNode := NodeManager.FindNodeByNodeID(ParentTrainNode.Listeners.Listener[j].NodeID) as TLccTrainDccNode;
+        ListenerTrainNode := NodeManager.FindNode(ParentTrainNode.Listeners.Listener[j].NodeID) as TLccTrainDccNode;
         if Assigned(ListenerTrainNode) then
         begin
            ChildTreeNode := TreeViewTrains.Items.AddChild(ParentTreeNode, TrainNodeToCaption(ListenerTrainNode));
@@ -703,7 +703,6 @@ begin
       if TLccNode(NodeManager.Nodes.Items[i]) is TLccTrainDccNode then
       begin
         TrainNode := TLccNode(NodeManager.Nodes.Items[i]) as TLccTrainDccNode;
-        TrainNode.Logout;      // Node will be deleted from Treeview when it logs out
         NodeManager.Nodes.Delete(i);
         TrainNode.Free;
       end;
@@ -770,11 +769,11 @@ begin
 end;
 
 procedure TFormTrainCommander.OnNodeManagerNodeLogout(Sender: TObject; LccSourceNode: TLccNode);
-var
+{var
   TreeNode: TTreeNode;
-  TrainNode: TLccTrainDccNode;
+  TrainNode: TLccTrainDccNode;      }
 begin
-  if LccSourceNode is TLccTrainDccNode then
+{  if LccSourceNode is TLccTrainDccNode then
   begin
     TrainNode := LccSourceNode as TLccTrainDccNode;
     TreeNode := TreeViewTrains.Items.FindNodeWithData(TrainNode);
@@ -784,7 +783,7 @@ begin
         TreeViewTrains.Items.Delete(TreeNode);
       TreeNode := TreeViewTrains.Items.FindNodeWithData(LccSourceNode);
     end;
-  end;
+  end;     }
 end;
 
 procedure TFormTrainCommander.OnNodeManagerReceiveMessage(Sender: TObject; LccMessage: TLccMessage);

@@ -104,7 +104,7 @@ type
 
   { TLccNode }
 
-  TLccNode = class(TObject)
+  TLccNode = class(TInterfacedObject)
   private
     FAliasID: Word;
     FDatagramResendQueue: TDatagramQueue;
@@ -148,7 +148,6 @@ type
     FStreamTractionConfig: TMemoryStream;          // Stream containing the writable configuration memory for a Traction node where the Address = Offset in the stream
     FStreamTractionFdi: TMemoryStream;             // Stream containing the XML string for the FDI (Function Definition Info)
     FWorkerMessage: TLccMessage;
-    FWorkerNodeIdentification: TLccMessageWithNodeIdentification;
     F_100msTimer: TLccTimer;
 
     function GetAliasIDStr: String;
@@ -169,7 +168,6 @@ type
     property WorkerMessage: TLccMessage read FWorkerMessage write FWorkerMessage;
     property WorkerMessageDatagram: TLccMessage read FWorkerMessageDatagram write FWorkerMessageDatagram;
     property _100msTimer: TLccTimer read F_100msTimer write F_100msTimer;
-    property WorkerNodeIdentification: TLccMessageWithNodeIdentification read FWorkerNodeIdentification write FWorkerNodeIdentification;
 
     // GridConnect Helpers
     property DuplicateAliasDetected: Boolean read FDuplicateAliasDetected write FDuplicateAliasDetected;
@@ -224,7 +222,7 @@ type
     destructor Destroy; override;
 
     procedure Login(ANodeID: TNodeID); virtual;
-    procedure Logout; virtual;
+    procedure ReleaseAlias(DelayTime_ms: Word); virtual;
     function ProcessMessage(SourceMessage: TLccMessage): Boolean; // Do not override this override the next 2
     function ProcessMessageLCC(SourceMessage: TLccMessage): Boolean; virtual;
     function ProcessMessageGridConnect(SourceMessage: TLccMessage): Boolean; virtual;
@@ -480,7 +478,6 @@ begin
  // FMessageIdentificationList := TLccMessageWithNodeIdentificationList.Create;
  // FMessageDestinationsWaitingForReply := TLccNodeIdentificationObjectList.Create(False);
   FLocalMessageStack := TList.Create;
-  WorkerNodeIdentification := TLccMessageWithNodeIdentification.Create;
 
   _100msTimer := TLccTimer.Create(nil);
   _100msTimer.Enabled := False;
@@ -649,6 +646,9 @@ begin
 
   Result := False;
 
+  if not Initialized then
+    Exit;
+
   TestNodeID[0] := 0;
   TestNodeID[1] := 0;
 
@@ -658,7 +658,8 @@ begin
   // First look for a duplicate NodeID
   if EqualNodeID(NodeID, SourceMessage.SourceID, False) then
   begin
-    Logout;
+    // Think I am suppose to send a duplicate Node ID PCER or something here....
+    FInitialized := False;
     Exit;
   end;
 
@@ -1134,8 +1135,8 @@ begin
     end else
     if Permitted then
     begin
-      // Another node used out Alias, stop using this Alias, log out and allocate a new node and relog in
-      Logout;
+      // Another node used our Alias, stop using this Alias, log out and allocate a new node and relog in
+      ReleaseAlias(100);
       Relogin;
       Result := True;   // Logout covers any LccNode logoffs, so don't call ancester Process Message
     end
@@ -1177,7 +1178,7 @@ begin
       begin
         if not Result then
         begin
-          ANodeIdentificationObjectList := WorkerNodeIdentification.ExtractIdentificationObjects(SourceMessage);
+          ANodeIdentificationObjectList := SourceMessage.ExtractNodeIdentifications(False);
           for i := 0 to ANodeIdentificationObjectList.Count - 1 do
           begin
             LocalNodeIdentificationObject := ANodeIdentificationObjectList[i];
@@ -1316,9 +1317,12 @@ begin
 
   NotifyAndUpdateMappingChanges; // fire any eventfor Mapping changes are are marked for deletion in the Logout method
 
-  // No reason to check for GridConnect, just do it anyway
-  FAliasID := 0;
-  (NodeManager as INodeManagerCallbacks).DoAliasIDChanged(Self);
+  if GridConnect then
+  begin
+    if AliasID <> 0 then
+      ReleaseAlias(100);
+    (NodeManager as INodeManagerCallbacks).DoAliasIDChanged(Self);
+  end;
 
   FNodeID[0] := 0;
   FNodeID[1] := 0;
@@ -1345,7 +1349,6 @@ begin
   FreeAndNil(FStreamTractionConfig);
   FreeAndNil(FStreamTractionFdi);
   FreeAndNil(FTrainServer);
-  FreeAndNil(FWorkerNodeIdentification);
   FreeAndNil(FLocalMessageStack);
 
 //  FProtocolMemoryConfiguration.Free;
@@ -1413,22 +1416,23 @@ begin
     LccLogIn(ANodeID);
 end;
 
-procedure TLccNode.Logout;
+procedure TLccNode.ReleaseAlias(DelayTime_ms: Word);
 begin
-  (NodeManager as INodeManagerCallbacks).DoLogOutNode(Self);
   if GridConnect then
   begin
-    FPermitted := False;
     WorkerMessage.LoadAMR(NodeID, AliasID);
     SendMessageFunc(Self, WorkerMessage);
-    (NodeManager as INodeManagerCallbacks).DoCANAliasMapReset(Self);
+    // Wait for the message to get sent on the hardware layers.  Testing this happens is complicated
+    // This assumes they are all running in separate thread and they keep running
+    Sleep(DelayTime_ms);
+    FPermitted := False;
+    (NodeManager as INodeManagerCallbacks).DoCANAliasReset(Self);
+    AliasServer.MarkForRemovalByAlias(AliasID);
+    FAliasID := 0;
   end;
-  // TODO Is there a message to take a non CAN node off line??????
+  DatagramResendQueue.Clear;
   FInitialized := False;
   _100msTimer.Enabled := False;
-  DatagramResendQueue.Clear;
-  if GridConnect then
-    AliasServer.MarkForRemovalByAlias(AliasID);
 end;
 
 procedure TLccNode.On_100msTimer(Sender: TObject);
