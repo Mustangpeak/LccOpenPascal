@@ -121,8 +121,8 @@ type
     procedure OnNodeManagerNodeLogin(Sender: TObject; LccSourceNode: TLccNode);
 
 
-    procedure OnNodeTractionListenerAttach(Sender: TObject; LccSourceNode: TLccNode; ListenerID: TNodeID; Flags: Byte);
-    procedure OnNodeTractionListenerDetach(Sender: TObject; LccSourceNode: TLccNode; ListenerID: TNodeID; Flags: Byte);
+    procedure OnNodeTractionListenerAttach(Sender: TObject; LccNode: TLccNode; ListenerNode: TNodeID; Flags: Byte);
+    procedure OnNodeTractionListenerDetach(Sender: TObject; LccNode: TLccNode; ListenerNode: TNodeID; Flags: Byte);
     procedure OnNodeTractionListenerQuery(Sender: TObject; LccSourceNode: TLccNode; Index: Integer);
 
     // Other
@@ -589,19 +589,18 @@ begin
 end;
 
 procedure TFormTrainCommander.OnNodeTractionListenerAttach(Sender: TObject;
-  LccSourceNode: TLccNode; ListenerID: TNodeID; Flags: Byte);
+  LccNode: TLccNode; ListenerNode: TNodeID; Flags: Byte);
 begin
   RebuildTrainListview;
 end;
 
 procedure TFormTrainCommander.OnNodeTractionListenerDetach(Sender: TObject;
-  LccSourceNode: TLccNode; ListenerID: TNodeID; Flags: Byte);
+  LccNode: TLccNode; ListenerNode: TNodeID; Flags: Byte);
 begin
   RebuildTrainListview ;
 end;
 
-procedure TFormTrainCommander.OnNodeTractionListenerQuery(Sender: TObject;
-  LccSourceNode: TLccNode; Index: Integer);
+procedure TFormTrainCommander.OnNodeTractionListenerQuery(Sender: TObject; LccSourceNode: TLccNode; Index: Integer);
 begin
 
 end;

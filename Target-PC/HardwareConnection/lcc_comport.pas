@@ -182,6 +182,9 @@ end;
 function TLccComPort.OpenConnection(ConnectionInfo: TLccHardwareConnectionInfo): TLccConnectionThread;
 begin
   Result := nil;
+  (*
+
+  // All done by the new LazSynaSer component
   {$IFDEF MSWINDOWS}
 
   {$ELSE}
@@ -190,7 +193,7 @@ begin
     {$ELSE}
     (ConnectionInfo as TLccComPortConnectionInfo).ComPort := PATH_LINUX_DEV + (ConnectionInfo as TLccComPortConnectionInfo).ComPort;
     {$ENDIF}
-  {$ENDIF}
+  {$ENDIF}      *)
   ComPortThread := TLccComPortThread.Create(True, Self, ConnectionInfo);
   ComPortThread.RawData := RawData;
   ComPortThread.Suspended := False;
@@ -268,9 +271,11 @@ begin
   Serial := TBlockSerial.Create;                                                // Create the Serial object in the context of the thread
   Serial.LinuxLock:=False;
   Serial.RaiseExcept:=False;
+  Serial.NonBlock := True;
   Serial.Connect((ConnectionInfo as TLccComPortConnectionInfo).ComPort);
   if Serial.LastError <> 0 then
   begin
+    ConnectionInfo.MessageStr := Serial.LastErrorDesc;
     HandleErrorAndDisconnect(ConnectionInfo.SuppressErrorMessages);
     Running := False;
   end
@@ -279,6 +284,7 @@ begin
       Serial.Config(Baud, Bits, Parity, StopBits, SoftwareHandshake, HardwareHandShake);
     if Serial.LastError <> 0 then
     begin
+      ConnectionInfo.MessageStr := Serial.LastErrorDesc;
       HandleErrorAndDisconnect(ConnectionInfo.SuppressErrorMessages);
       Serial.CloseSocket;
       Serial.Free;

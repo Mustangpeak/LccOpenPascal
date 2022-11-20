@@ -175,10 +175,11 @@ begin
              case SourceMessage.DataArray[1] of
                TRACTION_LISTENER_ATTACH :
                  begin
-
+                   (NodeManager as INodeManagerTractionCallbacks).DoTractionListenerAttach(Self, SourceMessage.TractionExtractListenerID, SourceMessage.TractionExtractListenerFlags);
                  end;
                TRACTION_LISTENER_DETACH :
                  begin
+                   (NodeManager as INodeManagerTractionCallbacks).DoTractionListenerDetach(Self, SourceMessage.TractionExtractListenerID, SourceMessage.TractionExtractListenerFlags);
                   end;
                TRACTION_LISTENER_QUERY :
                  begin

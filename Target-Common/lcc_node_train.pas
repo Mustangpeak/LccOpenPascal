@@ -1203,6 +1203,9 @@ var
 begin
   if (Index >= 0) and (Index < Length(FFunctions)) then
   begin
+    if FFunctions[Index] = AValue then
+      Exit;
+
     FFunctions[Index] := AValue;
     DccPacket := DccFunctionHandler(DccAddress, DccLongAddress, Index, EncodeFunctionValuesDccStyle);
     DccGridConnect := EncodeToDccGridConnect( DccPacket);
@@ -1212,9 +1215,15 @@ begin
     begin
       ListenerNode := TListenerNode(Listeners[i]);
       if ListenerNode.LinkF0 and (Index = 0 ) then
+      begin
         WorkerMessage.LoadTractionSetFunction(NodeID, AliasID, ListenerNode.NodeID, ListenerNode.AliasID, Index, AValue);
+        SendMessageFunc(Self, WorkerMessage);
+      end else
       if ListenerNode.LinkFn and (Index > 0) then
-        WorkerMessage.LoadTractionSetFunction(NodeID, AliasID, ListenerNode.NodeID, ListenerNode.AliasID, Index, AValue)
+      begin
+        WorkerMessage.LoadTractionSetFunction(NodeID, AliasID, ListenerNode.NodeID, ListenerNode.AliasID, Index, AValue);
+        SendMessageFunc(Self, WorkerMessage);
+      end;
     end;
   end;
 end;
@@ -1226,7 +1235,8 @@ var
   i: Integer;
   ListenerNode: TListenerNode;
 begin
-  if AValue = Speed then Exit;
+  if AValue = FSpeed then Exit;
+
   FSpeed := AValue;
   DccPacket := DccSpeedDirHandler(DccAddress, DccLongAddress, Speed, DccSpeedStep);
   DccGridConnect := EncodeToDccGridConnect( DccPacket);

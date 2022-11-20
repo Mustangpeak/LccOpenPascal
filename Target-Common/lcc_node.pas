@@ -110,7 +110,6 @@ type
     FDatagramResendQueue: TDatagramQueue;
     FDuplicateAliasDetected: Boolean;
     FGridConnect: Boolean;
-    FLocalMessageStack: TList;
     FLoginTimoutCounter: Integer;
     FPermitted: Boolean;
     FProtocolACDIMfg: TProtocolACDIMfg;
@@ -154,7 +153,6 @@ type
   protected
     FNodeID: TNodeID;
 
-    property LocalMessageStack: TList read FLocalMessageStack write FLocalMessageStack;
     property NodeManager:{$IFDEF DELPHI}TComponent{$ELSE}TObject{$ENDIF} read FNodeManager write FNodeManager;
     property StreamCdi: TMemoryStream read FStreamCdi write FStreamCdi;
     property StreamConfig: TMemoryStream read FStreamConfig write FStreamConfig;
@@ -463,7 +461,6 @@ begin
   FGridConnect := GridConnectLink;
  // FMessageIdentificationList := TLccMessageWithNodeIdentificationList.Create;
  // FMessageDestinationsWaitingForReply := TLccNodeIdentificationObjectList.Create(False);
-  FLocalMessageStack := TList.Create;
 
   _100msTimer := TLccTimer.Create(nil);
   _100msTimer.Enabled := False;
@@ -751,6 +748,14 @@ begin
           Temp := SourceMessage.ExtractDataBytesAsEventID(0);
           (NodeManager as INodeManagerCallbacks).DoProducerIdentified(Self, SourceMessage, Temp, evs_Unknown);
         end;
+
+     // *************************************************************************
+     // Traction (just so we say we handle them somewere and don't send a Optional Interaction Rejected below
+     // *************************************************************************
+     MTI_TRACTION_SIMPLE_TRAIN_INFO_REPLY,
+     MTI_TRACTION_REQUEST,
+     MTI_TRACTION_REPLY: begin end;
+
 
     // *************************************************************************
     // Datagram Messages
@@ -1151,7 +1156,6 @@ begin
   FreeAndNil(FStreamManufacturerData);
   FreeAndNil(FStreamTractionConfig);
   FreeAndNil(FStreamTractionFdi);
-  FreeAndNil(FLocalMessageStack);
   FProtocolMemoryConfiguration.Free;
   inherited;
 end;

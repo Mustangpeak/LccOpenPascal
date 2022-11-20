@@ -266,7 +266,7 @@ type
     procedure ReleaseTrain2;
 
     procedure OnAliasMappingChange(Sender: TObject; LccSourceNode: TLccNode; AnAliasMapping: TLccAliasMapping; IsMapped: Boolean);
-    procedure OnTrainRegisteringChange(Sender: TObject; LccSourceNode: TLccNode; TrainObject: TLccTrainObject; IsRegistered: Boolean);
+    procedure OnTrainRegisteringChange(Sender: TObject; LccSourceNode: TLccNode; TrainObject: TLccTractionObject; IsRegistered: Boolean);
 
     procedure OnLccTractionUpdateSNIP1(Sender: TObject; LccSourceNode: TLccNode; Index: Integer);
     procedure OnLccTractionUpdateTrainSNIP1(Sender: TObject; LccSourceNode: TLccNode; Index: Integer);
@@ -421,8 +421,8 @@ begin
   NodeManager1 := TLccNodeManager.Create(nil, True);
   ClientServer1 := TLccEthernetClient.Create(nil, NodeManager1);
 
-  NodeManager1.OnLccNodeAliasIDChanged := @OnNodeManager1AliasChange;
-  NodeManager1.OnLccNodeIDChanged := @OnNodeManager1IDChange;
+  NodeManager1.OnNodeAliasIDChanged := @OnNodeManager1AliasChange;
+  NodeManager1.OnNodeIDChanged := @OnNodeManager1IDChange;
 
   ClientServer1.OnConnectionStateChange := @OnClientServer1ConnectionChange;
   ClientServer1.OnErrorMessage := @OnClientServer1ErrorMessage;
@@ -430,8 +430,8 @@ begin
   NodeManager2 := TLccNodeManager.Create(nil, True);
   ClientServer2 := TLccEthernetClient.Create(nil, NodeManager2);
 
-  NodeManager2.OnLccNodeAliasIDChanged := @OnNodeManager2AliasChange;
-  NodeManager2.OnLccNodeIDChanged := @OnNodeManager2IDChange;
+  NodeManager2.OnNodeAliasIDChanged := @OnNodeManager2AliasChange;
+  NodeManager2.OnNodeIDChanged := @OnNodeManager2IDChange;
 
   ClientServer1.OnLccMessageReceive := @OnNodeManagerReceiveMessage1;
   ClientServer1.OnLccMessageSend := @OnNodeManagerSendMessage1;
@@ -1140,7 +1140,7 @@ begin
 end;
 
 procedure TForm1.OnTrainRegisteringChange(Sender: TObject;
-  LccSourceNode: TLccNode; TrainObject: TLccTrainObject; IsRegistered: Boolean);
+  LccSourceNode: TLccNode; TrainObject: TLccTractionObject; IsRegistered: Boolean);
 begin
   if IsRegistered then
     FormServerInfo.AddTrainObject(TrainObject)

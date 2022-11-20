@@ -6,7 +6,7 @@ object FormServerInfo: TFormServerInfo
   Caption = 'Server Information'
   ClientHeight = 433
   ClientWidth = 670
-  LCLVersion = '2.2.2.0'
+  LCLVersion = '2.2.4.0'
   object PanelAliasMappingMain: TPanel
     Left = 0
     Height = 433

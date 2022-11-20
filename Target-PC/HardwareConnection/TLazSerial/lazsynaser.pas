@@ -2373,7 +2373,11 @@ var
         begin
           data := sr.Name;
           index := length(data);
-          theDevice := '/dev/' + data;
+          {$IFDEF DARWIN}
+            theDevice := 'dev/' + data;
+          {$ELSE}
+            theDevice := '/dev/' + data;
+          {$ENDIF}
 // try to open the device
        FD := fpopen(thedevice,O_RdWr or O_NonBlock or O_NoCtty);
        if FD > 0 then
@@ -2406,12 +2410,12 @@ begin
   try
     TmpPorts := '';
     flags := faAnyFile AND (NOT faDirectory);
+
     ScanForPorts( '/dev/rfcomm*',true);
     ScanForPorts( '/dev/ttyUSB*',true);
     ScanForPorts( '/dev/ttyS*',false);
     ScanForPorts('/dev/ttyACM*',true);
-    ScanForPorts('/dev/tty.*',true);
-    ScanForPorts('/dev/cu.*',true);
+    ScanForPorts('/dev/cu.*', true); // JDK
    {$IFDEF DARWIN}
     ScanForPorts( '/dev/tty.usbserial*',false); // RPH 14May2016, for FTDI driver
     ScanForPorts( '/dev/tty.UC-232*',false);    // RPH 15May2016, for Prolific driver

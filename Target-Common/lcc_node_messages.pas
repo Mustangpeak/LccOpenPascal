@@ -241,7 +241,8 @@ public
   procedure LoadIdentifyEvents(ASourceID: TNodeID; ASourceAlias: Word);
   procedure LoadPCER(ASourceID: TNodeID; ASourceAlias: Word; AnEvent: TEventID);
   // Traction Control
-  procedure LoadTractionSetSpeed(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; ASpeed: single);
+  procedure LoadTractionSetSpeed(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; ASpeed: single); overload;
+  procedure LoadTractionSetSpeed(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; ASpeed: THalfFloat); overload;
   procedure LoadTractionSetFunction(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; AnAddress: DWord; AValue: Word);
   procedure LoadTractionEStop(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word);
   procedure LoadTractionQuerySpeed(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word);
@@ -2309,6 +2310,21 @@ begin
   FDataArray[0] := TRACTION_SET_SPEED_DIR;
   FDataArray[1] := Hi( HalfFloatSpeed);
   FDataArray[2] := Lo( HalfFloatSpeed);
+  MTI := MTI_TRACTION_REQUEST;
+end;
+
+procedure TLccMessage.LoadTractionSetSpeed(ASourceID: TNodeID;
+  ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; ASpeed: THalfFloat);
+begin
+  ZeroFields;
+  SourceID := ASourceID;
+  DestID := ADestID;
+  CAN.SourceAlias := ASourceAlias;
+  CAN.DestAlias := ADestAlias;
+  DataCount := 3;
+  FDataArray[0] := TRACTION_SET_SPEED_DIR;
+  FDataArray[1] := Hi( ASpeed);
+  FDataArray[2] := Lo( ASpeed);
   MTI := MTI_TRACTION_REQUEST;
 end;
 
