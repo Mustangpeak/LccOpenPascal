@@ -30,9 +30,9 @@ type
 
   TLccTrainControllerResult = (tcr_Ok, tcr_ControllerRefused, tcr_TrainRefused);
 
-  { TLccTrainControllerObject }
+  { TLccTractionControllerObject }
 
-  TLccTrainControllerObject = class
+  TLccTractionControllerObject = class
   private
     FRequestingNodeID: TNodeID;
     FRequestResult: TLccTrainControllerResult;
@@ -41,11 +41,11 @@ type
     property RequestResult: TLccTrainControllerResult read FRequestResult write FRequestResult;
   end;
 
-  { TLccTrainObject }
+  { TLccTractionObject }
 
-  TLccTrainObject = class
+  TLccTractionObject = class
   private
-    FController: TLccTrainControllerObject;
+    FController: TLccTractionControllerObject;
     FNodeAlias: Word;
     FNodeID: TNodeID;
     FSNIP: TLccSNIPObject;
@@ -67,51 +67,49 @@ type
     property SpeedStatusEmergencyStop: Boolean read FSpeedStatusEmergencyStop;
     property SNIP: TLccSNIPObject read FSNIP;
     property TrainSNIP: TLccTrainSNIPObject read FTrainSNIP;
-    property Controller: TLccTrainControllerObject read FController write FController;
+    property Controller: TLccTractionControllerObject read FController write FController;
 
     constructor Create;
     destructor Destroy; override;
   end;
 
-  { TLccTrainServer }
+  { TLccTractionServer }
 
-  TLccTrainServer = class
+  TLccTractionServer = class
   private
     {$IFDEF DELPHI}
-    FTrainList: TObjectList<TLccTrainObject>;
+    FTractionList: TObjectList<TLccTractionObject>;
     {$ELSE}
-    FTrainList: TObjectList;
+    FTractionList: TObjectList;
     {$ENDIF}
   public
     constructor Create;
     destructor Destroy; override;
-    function AddTrainObject(NewNodeID: TNodeID; NewAlias: Word): TLccTrainObject;
-    function RemoveTrainObjectByAlias(TestAlias: Word): TLccTrainObject;
-    function RemoveTrainObjectByNodeID(TestNodeID: TNodeID): TLccTrainObject;
-    function FindTrainObjectByAlias(TestAlias: Word): TLccTrainObject;
-    function FindTrainObjectByNodeID(TestNodeID: TNodeID): TLccTrainObject;
-    function UpdateSNIP(AMessage: TLccMessage): TLccTrainObject;
-    function UpdateTrainSNIP(AMessage: TLccMessage): TLccTrainObject;
-    function UpdateListenerCount(AMessage: TLccMessage): TLccTrainObject;
-    function UpdateSpeed(AMessage: TLccMessage): TLccTrainObject;
-    function UpdateFunction(AMessage: TLccMessage): TLccTrainObject;
-    function UpdateControllerAssign(AMessage: TLccMessage): TLccTrainObject;
-    function UpdateControllerQuery(AMessage: TLccMessage): TLccTrainObject;
+    function Add(NewNodeID: TNodeID; NewAlias: Word): TLccTractionObject;
+    function Remove(TestNodeID: TNodeID): TLccTractionObject;
+    function Find(TestNodeID: TNodeID): TLccTractionObject;
+    function UpdateSNIP(AMessage: TLccMessage): TLccTractionObject;
+    function UpdateTrainSNIP(AMessage: TLccMessage): TLccTractionObject;
+    function UpdateListenerCount(AMessage: TLccMessage): TLccTractionObject;
+    function UpdateSpeed(AMessage: TLccMessage): TLccTractionObject;
+    function UpdateFunction(AMessage: TLccMessage): TLccTractionObject;
+    function UpdateControllerAssign(AMessage: TLccMessage): TLccTractionObject;
+    function UpdateControllerQuery(AMessage: TLccMessage): TLccTractionObject;
 
     procedure Clear;
 
     {$IFDEF DELPHI}
-    property TrainList: TObjectList<TLccTrainObject> read FTrainList write FTrainList;
+    property TractionList: TObjectList<TLccTractionObject> read FTractionList write FTractionList;
     {$ELSE}
-    property TrainList: TObjectList read FTrainList write FTrainList;
+    property TractionList: TObjectList read FTractionList write FTractionList;
     {$ENDIF}
   end;
 
 implementation
 
-{ TLccTrainObject }
+{ TLccTractionObjectTLccTractionObject }
 
-function TLccTrainObject.GetFunctions(Index: Integer): Word;
+function TLccTractionObject.GetFunctions(Index: Integer): Word;
 begin
   if (Index > -1) and (Index < MAX_FUNCTIONS) then
     Result := FFunctions[Index]
@@ -119,20 +117,20 @@ begin
     Result := 0
 end;
 
-procedure TLccTrainObject.SetFunctions(Index: Integer; AValue: Word);
+procedure TLccTractionObject.SetFunctions(Index: Integer; AValue: Word);
 begin
    if (Index > -1) and (Index < MAX_FUNCTIONS) then
      FFunctions[Index] := AValue
 end;
 
-constructor TLccTrainObject.Create;
+constructor TLccTractionObject.Create;
 begin
   FSNIP := TLccSNIPObject.Create;
   FTrainSNIP := TLccTrainSNIPObject.Create;
-  FController := TLccTrainControllerObject.Create;
+  FController := TLccTractionControllerObject.Create;
 end;
 
-destructor TLccTrainObject.Destroy;
+destructor TLccTractionObject.Destroy;
 begin
   FreeAndNil(FSNIP);
   FreeAndNil(FTrainSNIP);
@@ -140,92 +138,62 @@ begin
   inherited Destroy;
 end;
 
-{ TLccTrainServer }
+{ TLccTractionServer }
 
-constructor TLccTrainServer.Create;
+constructor TLccTractionServer.Create;
 begin
   {$IFDEF DELPHI}
-  FTrainList := TObjectList<TLccTrainObject>.Create(False);
+  FTractionList := TObjectList<TLccTractionObject>.Create(False);
   {$ELSE}
-  FTrainList := TObjectList.Create(False);
+  FTractionList := TObjectList.Create(False);
   {$ENDIF}
 end;
 
-destructor TLccTrainServer.Destroy;
+destructor TLccTractionServer.Destroy;
 begin
-  FreeAndNil(FTrainList);
+  FreeAndNil(FTractionList);
   inherited Destroy;
 end;
 
-function TLccTrainServer.AddTrainObject(NewNodeID: TNodeID; NewAlias: Word): TLccTrainObject;
+function TLccTractionServer.Add(NewNodeID: TNodeID; NewAlias: Word): TLccTractionObject;
 begin
-  Result := TLccTrainObject.Create;
-  TrainList.Add(Result);
+  Result := TLccTractionObject.Create;
+  TractionList.Add(Result);
   Result.NodeAlias := NewAlias;
   Result.NodeID := NewNodeID;
 end;
 
-function TLccTrainServer.RemoveTrainObjectByAlias(TestAlias: Word): TLccTrainObject;
+function TLccTractionServer.Remove(TestNodeID: TNodeID): TLccTractionObject;
 var
-  TrainObject: TLccTrainObject;
+  TractionObject: TLccTractionObject;
 begin
   Result := nil;
-  TrainObject := FindTrainObjectByAlias(TestAlias);
-  if Assigned(TrainObject) then
+  TractionObject := Find(TestNodeID);
+  if Assigned(TractionObject) then
   begin
-    TrainList.Remove(TrainObject);
-    Result := TrainObject;
+    TractionList.Remove(TractionObject);
+    Result := TractionObject;
   end;
 end;
 
-function TLccTrainServer.RemoveTrainObjectByNodeID(TestNodeID: TNodeID): TLccTrainObject;
-var
-  TrainObject: TLccTrainObject;
-begin
-  Result := nil;
-  TrainObject := FindTrainObjectByNodeID(TestNodeID);
-  if Assigned(TrainObject) then
-  begin
-    TrainList.Remove(TrainObject);
-    Result := TrainObject;
-  end;
-end;
-
-function TLccTrainServer.FindTrainObjectByAlias(TestAlias: Word): TLccTrainObject;
+function TLccTractionServer.Find(TestNodeID: TNodeID): TLccTractionObject;
 var
   i: Integer;
-  TrainObject: TLccTrainObject;
+  TractionObject: TLccTractionObject;
 begin
   Result := nil;
-  for i := 0 to TrainList.Count - 1 do
+  for i := 0 to TractionList.Count - 1 do
   begin
-    TrainObject := TrainList.Items[i] as TLccTrainObject;
-    if TestAlias = TrainObject.NodeAlias then
+    TractionObject := TractionList.Items[i] as TLccTractionObject;
+    if EqualNodeID(TestNodeID, TractionObject.NodeID, False) then
     begin
-      Result := TrainObject;
+      Result := TractionObject;
       Break
     end;
   end;
 end;
 
-function TLccTrainServer.FindTrainObjectByNodeID(TestNodeID: TNodeID): TLccTrainObject;
-var
-  i: Integer;
-  TrainObject: TLccTrainObject;
-begin
-  Result := nil;
-  for i := 0 to TrainList.Count - 1 do
-  begin
-    TrainObject := TrainList.Items[i] as TLccTrainObject;
-    if EqualNodeID(TestNodeID, TrainObject.NodeID, False) then
-    begin
-      Result := TrainObject;
-      Break
-    end;
-  end;
-end;
-
-function TLccTrainServer.UpdateSNIP(AMessage: TLccMessage): TLccTrainObject;
+function TLccTractionServer.UpdateSNIP(AMessage: TLccMessage): TLccTractionObject;
 var
   Version,
   UserVersion: byte;
@@ -236,7 +204,7 @@ var
   UserName,
   UserDescription: string;
 begin
-  Result := FindTrainObjectByNodeID(AMessage.SourceID);
+  Result := Find(AMessage.SourceID);
   if Assigned(Result) then
   begin
     Version := 0;
@@ -260,7 +228,7 @@ begin
   end;
 end;
 
-function TLccTrainServer.UpdateTrainSNIP(AMessage: TLccMessage): TLccTrainObject;
+function TLccTractionServer.UpdateTrainSNIP(AMessage: TLccMessage): TLccTractionObject;
 var
   TrainVersion: Byte;
   TrainRoadName,
@@ -270,7 +238,7 @@ var
   TrainManufacturer,
   TrainOwner: string;
 begin
-  Result := FindTrainObjectByNodeID(AMessage.SourceID);
+  Result := Find(AMessage.SourceID);
   if Assigned(Result) then
   begin
     TrainVersion := 0;
@@ -292,18 +260,18 @@ begin
   end;
 end;
 
-function TLccTrainServer.UpdateListenerCount(AMessage: TLccMessage): TLccTrainObject;
+function TLccTractionServer.UpdateListenerCount(AMessage: TLccMessage): TLccTractionObject;
 begin
-  Result := FindTrainObjectByNodeID(AMessage.SourceID);
+  Result := Find(AMessage.SourceID);
   if Assigned(Result) then
   begin
 
   end;
 end;
 
-function TLccTrainServer.UpdateSpeed(AMessage: TLccMessage): TLccTrainObject;
+function TLccTractionServer.UpdateSpeed(AMessage: TLccMessage): TLccTractionObject;
 begin
-  Result := FindTrainObjectByNodeID(AMessage.SourceID);
+  Result := Find(AMessage.SourceID);
   if Assigned(Result) then
   begin
     Result.FSpeedSet := AMessage.TractionExtractSetSpeed;
@@ -313,16 +281,16 @@ begin
   end;
 end;
 
-function TLccTrainServer.UpdateFunction(AMessage: TLccMessage): TLccTrainObject;
+function TLccTractionServer.UpdateFunction(AMessage: TLccMessage): TLccTractionObject;
 begin
-  Result := FindTrainObjectByNodeID(AMessage.SourceID);
+  Result := Find(AMessage.SourceID);
   if Assigned(Result) then
     Result.Functions[AMessage.TractionExtractFunctionAddress] := AMessage.TractionExtractFunctionValue;
 end;
 
-function TLccTrainServer.UpdateControllerAssign(AMessage: TLccMessage): TLccTrainObject;
+function TLccTractionServer.UpdateControllerAssign(AMessage: TLccMessage): TLccTractionObject;
 begin
-  Result := FindTrainObjectByNodeID(AMessage.SourceID);
+  Result := Find(AMessage.SourceID);
   if Assigned(Result) then
   begin
     case AMessage.TractionExtractControllerAssignResult of
@@ -342,22 +310,22 @@ begin
   end;
 end;
 
-function TLccTrainServer.UpdateControllerQuery(AMessage: TLccMessage): TLccTrainObject;
+function TLccTractionServer.UpdateControllerQuery(AMessage: TLccMessage): TLccTractionObject;
 begin
-  Result := FindTrainObjectByNodeID(AMessage.SourceID);
+  Result := Find(AMessage.SourceID);
   if Assigned(Result) then
     AMessage.ExtractDataBytesAsNodeID(3, Result.Controller.FRequestingNodeID);
 end;
 
-procedure TLccTrainServer.Clear;
+procedure TLccTractionServer.Clear;
 var
   i: Integer;
 begin
   try
-    for i := 0 to TrainList.Count - 1 do
-      TrainList[i].Free;
+    for i := 0 to TractionList.Count - 1 do
+      TractionList[i].Free;
   finally
-    TrainList.Clear;
+    TractionList.Clear;
   end;
 
 end;

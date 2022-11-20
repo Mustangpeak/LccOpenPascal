@@ -119,14 +119,16 @@ type
     procedure OnNodeManagerIDChanged(Sender: TObject; LccSourceNode: TLccNode);
     procedure OnNodeManagerNodeLogout(Sender: TObject; LccSourceNode: TLccNode);
     procedure OnNodeManagerNodeLogin(Sender: TObject; LccSourceNode: TLccNode);
-    procedure OnLccNodeTractionListenerAttach(Sender: TObject; LccSourceNode: TLccNode; ListenerID: TNodeID; Flags: Byte);
-    procedure OnLccNodeTractionListenerDetach(Sender: TObject; LccSourceNode: TLccNode; ListenerID: TNodeID; Flags: Byte);
-    procedure OnLccNodeTractionListenerQuery(Sender: TObject; LccSourceNode: TLccNode; Index: Integer);
+
+
+    procedure OnNodeTractionListenerAttach(Sender: TObject; LccSourceNode: TLccNode; ListenerID: TNodeID; Flags: Byte);
+    procedure OnNodeTractionListenerDetach(Sender: TObject; LccSourceNode: TLccNode; ListenerID: TNodeID; Flags: Byte);
+    procedure OnNodeTractionListenerQuery(Sender: TObject; LccSourceNode: TLccNode; Index: Integer);
 
     // Other
     procedure OnAliasMappingChange(Sender: TObject; LccSourceNode: TLccNode; AnAliasMapping: TLccAliasMapping; IsMapped: Boolean);
-    procedure OnTrainRegisteringChange(Sender: TObject; LccSourceNode: TLccNode; TrainObject: TLccTrainObject; IsRegistered: Boolean);
-    procedure OnTrainInformationChange(Sender: TObject; LccSourceNode: TLccNode; TrainObject: TLccTrainObject);
+    procedure OnTrainRegisteringChange(Sender: TObject; LccSourceNode: TLccNode; TrainObject: TLccTractionObject; IsRegistered: Boolean);
+    procedure OnTrainInformationChange(Sender: TObject; LccSourceNode: TLccNode; TrainObject: TLccTractionObject);
 
     function TrainNodeToCaption(ATrainNode: TLccTrainDccNode): string;
     function FindSingleLevelNodeWithData(ParentNode: TTreeNode; const NodeData: Pointer): TTreeNode;
@@ -318,12 +320,12 @@ end;
 procedure TFormTrainCommander.FormCreate(Sender: TObject);
 begin
   NodeManager := TLccNodeManager.Create(nil, True);
-  NodeManager.OnLccNodeAliasIDChanged := @OnNodeManagerAliasIDChanged;
-  NodeManager.OnLccNodeIDChanged := @OnNodeManagerIDChanged;
-  NodeManager.OnLccNodeLogin := @OnNodeManagerNodeLogin;
-  NodeManager.OnLccNodeTractionListenerAttach := @OnLccNodeTractionListenerAttach;
-  NodeManager.OnLccNodeTractionListenerDetach := @OnLccNodeTractionListenerDetach;
-  NodeManager.OnLccNodeTractionListenerQuery := @OnLccNodeTractionListenerQuery;
+  NodeManager.OnNodeAliasIDChanged := @OnNodeManagerAliasIDChanged;
+  NodeManager.OnNodeIDChanged := @OnNodeManagerIDChanged;
+  NodeManager.OnNodeLogin := @OnNodeManagerNodeLogin;
+  NodeManager.OnNodeTractionListenerAttach := @OnNodeTractionListenerAttach;
+  NodeManager.OnNodeTractionListenerDetach := @OnNodeTractionListenerDetach;
+  NodeManager.OnNodeTractionListenerQuery := @OnNodeTractionListenerQuery;
   NodeManager.OnAliasMappingChange := @OnAliasMappingChange;
   NodeManager.OnTrainRegisteringChange := @OnTrainRegisteringChange;
   NodeManager.OnTrainInformationChange := @OnTrainInformationChange;
@@ -586,19 +588,19 @@ begin
   end;
 end;
 
-procedure TFormTrainCommander.OnLccNodeTractionListenerAttach(Sender: TObject;
+procedure TFormTrainCommander.OnNodeTractionListenerAttach(Sender: TObject;
   LccSourceNode: TLccNode; ListenerID: TNodeID; Flags: Byte);
 begin
   RebuildTrainListview;
 end;
 
-procedure TFormTrainCommander.OnLccNodeTractionListenerDetach(Sender: TObject;
+procedure TFormTrainCommander.OnNodeTractionListenerDetach(Sender: TObject;
   LccSourceNode: TLccNode; ListenerID: TNodeID; Flags: Byte);
 begin
   RebuildTrainListview ;
 end;
 
-procedure TFormTrainCommander.OnLccNodeTractionListenerQuery(Sender: TObject;
+procedure TFormTrainCommander.OnNodeTractionListenerQuery(Sender: TObject;
   LccSourceNode: TLccNode; Index: Integer);
 begin
 
@@ -612,7 +614,7 @@ begin
     FormServerInfo.RemoveAliasMap(AnAliasMapping);
 end;
 
-procedure TFormTrainCommander.OnTrainRegisteringChange(Sender: TObject; LccSourceNode: TLccNode; TrainObject: TLccTrainObject; IsRegistered: Boolean);
+procedure TFormTrainCommander.OnTrainRegisteringChange(Sender: TObject; LccSourceNode: TLccNode; TrainObject: TLccTractionObject; IsRegistered: Boolean);
 begin
   if IsRegistered then
     FormServerInfo.AddTrainObject(TrainObject)
@@ -620,7 +622,7 @@ begin
     FormServerInfo.RemoveTrainObject(TrainObject);
 end;
 
-procedure TFormTrainCommander.OnTrainInformationChange(Sender: TObject; LccSourceNode: TLccNode; TrainObject: TLccTrainObject);
+procedure TFormTrainCommander.OnTrainInformationChange(Sender: TObject; LccSourceNode: TLccNode; TrainObject: TLccTractionObject);
 begin
 
 end;

@@ -182,9 +182,9 @@ begin
 end;
 
 procedure TLccBaseEthernetThread.RequestErrorMessageSent;
-var
-  i: Integer;
-  List: TList;
+//var
+ // i: Integer;
+ // List: TList;
 begin
   inherited RequestErrorMessageSent;
 

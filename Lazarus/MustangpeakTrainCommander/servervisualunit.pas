@@ -26,8 +26,8 @@ type
     procedure AddAliasMap(AMap: TLccAliasMapping);
     procedure RemoveAliasMap(AMap: TLccAliasMapping);
 
-    procedure AddTrainObject(ATrain: TLccTrainObject);
-    procedure RemoveTrainObject(ATrain: TLccTrainObject);
+    procedure AddTrainObject(ATrain: TLccTractionObject);
+    procedure RemoveTrainObject(ATrain: TLccTractionObject);
   end;
 
 var
@@ -75,7 +75,7 @@ begin
   end;
 end;
 
-procedure TFormServerInfo.AddTrainObject(ATrain: TLccTrainObject);
+procedure TFormServerInfo.AddTrainObject(ATrain: TLccTractionObject);
 var
   TreeNode: TTreeNode;
   CaptionStr: String;
@@ -94,7 +94,7 @@ begin
   end;
 end;
 
-procedure TFormServerInfo.RemoveTrainObject(ATrain: TLccTrainObject);
+procedure TFormServerInfo.RemoveTrainObject(ATrain: TLccTractionObject);
 var
   TreeNode: TTreeNode;
   CaptionStr: String;

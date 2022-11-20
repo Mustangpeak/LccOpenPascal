@@ -118,10 +118,12 @@ type
 
   TLccEthernetServer = class(TLccEthernetHardwareConnectionManager)
   private
+    FClosingConnection: Boolean;
     FListenerThread: TLccEthernetListener;
     { Private declarations }
   protected
     { Protected declarations }
+    property ClosingConnection: Boolean read FClosingConnection write FClosingConnection;
     function CreateListenerObject(AConnectionInfo: TLccEthernetConnectionInfo): TLccEthernetListener; virtual;
     function IsLccLink: Boolean; override;
     function GetConnected: Boolean; override;
@@ -564,23 +566,28 @@ procedure TLccEthernetServer.CloseConnection;
 var
   TimeCount: Integer;
 begin
-  NodeManager.Clear;
-
-  inherited CloseConnection;
-  if Assigned(ListenerThread) then
+  if not ClosingConnection then  // Stop reentrant from that nasty ProcessMessage
   begin
-    TimeCount := 0;
-    ListenerThread.Terminate;
-    while ListenerThread.Running do
+    ClosingConnection := True;
+    NodeManager.Clear;
+
+    inherited CloseConnection;
+    if Assigned(ListenerThread) then
     begin
-      // Needed to make Syncronize function if it is called during the thread shut down for notifications
-      {$IFNDEF FPC_CONSOLE_APP}Application.ProcessMessages;{$ELSE}CheckSynchronize();{$ENDIF}  // Pump the timers
-      Inc(TimeCount);
-      Sleep(500);
-      if TimeCount = 10 then Break // Something went really wrong
+      TimeCount := 0;
+      ListenerThread.Terminate;
+      while ListenerThread.Running do
+      begin
+        // Needed to make Syncronize function if it is called during the thread shut down for notifications
+        // This call could actucally make a doulble click reentrant!  Need to protect against that!
+        {$IFNDEF FPC_CONSOLE_APP}Application.ProcessMessages;{$ELSE}CheckSynchronize();{$ENDIF}  // Pump the timers
+        Inc(TimeCount);
+        Sleep(500);
+        if TimeCount = 10 then Break // Something went really wrong
+      end;
+      FreeAndNil(FListenerThread);
     end;
-    FreeAndNil(FListenerThread);
-  end;
+  end
 end;
 
 function TLccEthernetServer.IsLccLink: Boolean;
@@ -609,6 +616,7 @@ end;
 
 function TLccEthernetServer.OpenConnection(AConnectionInfo: TLccHardwareConnectionInfo): TLccConnectionThread;
 begin
+  ClosingConnection := False;
   inherited OpenConnection(AConnectionInfo);
   Result := CreateListenerObject(AConnectionInfo.Clone as TLccEthernetConnectionInfo);
   ListenerThread := Result as TLccEthernetListener;

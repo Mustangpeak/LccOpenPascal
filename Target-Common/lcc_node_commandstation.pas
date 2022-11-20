@@ -24,6 +24,7 @@ uses
   lcc_node_messages,
   lcc_node,
   lcc_node_train,
+  lcc_node_traindatabase,
   lcc_utilities;
 
 const
@@ -58,7 +59,7 @@ type
 
   { TLccCommandStationNode }
 
-  TLccCommandStationNode = class(TLccNode)
+  TLccCommandStationNode = class(TLccTrainDatabaseNode)
   protected
     function GetCdiFile: string; override;
     procedure BeforeLogin; override;
@@ -127,7 +128,6 @@ end;
 constructor TLccCommandStationNode.Create(ANodeManager: {$IFDEF DELPHI}TComponent{$ELSE}TObject{$ENDIF}; CdiXML: string; GridConnectLink: Boolean);
 begin
   inherited Create(ANodeManager, CdiXML, GridConnectLink);
-  EnableTrainDatabase := True;
 end;
 
 procedure TLccCommandStationNode.ClearTrains;

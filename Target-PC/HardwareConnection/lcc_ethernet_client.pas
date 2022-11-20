@@ -66,9 +66,12 @@ type
   TLccEthernetClient = class(TLccEthernetHardwareConnectionManager)
   private
     FClientThread: TLccEthernetClientThread;
+    FClosingConnection: Boolean;
     { Private declarations }
   protected
     { Protected declarations }
+    property ClosingConnection: Boolean read FClosingConnection write FClosingConnection;
+
     function IsLccLink: Boolean; override;
     function GetConnected: Boolean; override;
   public
@@ -106,6 +109,7 @@ end;
 
 function TLccEthernetClient.OpenConnection(ConnectionInfo: TLccHardwareConnectionInfo): TLccConnectionThread;
 begin
+  ClosingConnection := False;
   inherited OpenConnection(ConnectionInfo as TLccEthernetConnectionInfo);
   Result := TLccEthernetClientThread.Create(True, Self, ConnectionInfo);
   FClientThread := Result as TLccEthernetClientThread;
@@ -115,19 +119,23 @@ procedure TLccEthernetClient.CloseConnection;
 var
   TimeCount: Integer;
 begin
-  inherited CloseConnection;
-  TimeCount := 0;
-  ClientThread.Terminate;
-  while ClientThread.Running do
+  if not ClosingConnection then  // Stop reentrant from that nasty ProcessMessage
   begin
-    // Needed to make Syncronize function if it is called during the thread shut down for notifications
-    {$IFNDEF FPC_CONSOLE_APP}Application.ProcessMessages;{$ELSE}CheckSynchronize();{$ENDIF}  // Pump the timers
-    Inc(TimeCount);
-    Sleep(100);
-    if TimeCount = 10 then Break // Something went really wrong
+    inherited CloseConnection;
+    TimeCount := 0;
+    ClientThread.Terminate;
+    while ClientThread.Running do
+    begin
+      // Needed to make Syncronize function if it is called during the thread shut down for notifications
+      {$IFNDEF FPC_CONSOLE_APP}Application.ProcessMessages;{$ELSE}CheckSynchronize();{$ENDIF}  // Pump the timers
+      Inc(TimeCount);
+      Sleep(100);
+      if TimeCount = 10 then Break // Something went really wrong
+    end;
+    FreeAndNil(FClientThread);
   end;
-  FreeAndNil(FClientThread);
 end;
+
 { TLccEthernetClientThread }
 constructor TLccEthernetClientThread.Create(CreateSuspended: Boolean;
   AnOwner: TLccHardwareConnectionManager;

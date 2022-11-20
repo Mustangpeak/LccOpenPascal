@@ -326,7 +326,6 @@ end;
 constructor TLccTrainController.Create(ANodeManager: {$IFDEF DELPHI}TComponent{$ELSE}TObject{$ENDIF}; CdiXML: string; GridConnectLink: Boolean);
 begin
   inherited Create(ANodeManager, CdiXML, GridConnectLink);
-  EnableTrainDatabase := True;
   FAssignedTrain := TAssignedTrainState.Create;
 end;
 

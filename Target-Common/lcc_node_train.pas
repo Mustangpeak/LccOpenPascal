@@ -212,9 +212,9 @@ type
     function EncodeFlags: Byte;
   end;
 
-  { TListenerList }
+  { TListenerState }
 
-  TListenerList = class(TPersistent)
+  TListenerState = class
   private
     function GetCount: Integer;
     function GetListener(Index: Integer): TListenerNode;
@@ -228,12 +228,11 @@ type
     function FindNodeIndex(NodeID: TNodeID): Integer;
   public
     property Count: Integer read GetCount;
-    property Listener[Index: Integer]: TListenerNode read GetListener;
+    property Listener[Index: Integer]: TListenerNode read GetListener; default;
 
     constructor Create;
     destructor Destroy; override;
-    function AddListener(NodeID: TNodeID; Flags: Byte; AnAliasID: Word): TListenerNode;
-    function Add: TListenerNode;
+    function Add(NodeID: TNodeID; Flags: Byte; AnAliasID: Word): TListenerNode;
     function Delete(NodeID: TNodeID): Boolean;
     function FindNode(NodeID: TNodeID): TListenerNode;
     function FindByIndex(Index: Byte): TListenerNode;
@@ -299,7 +298,7 @@ type
     FSpeed: THalfFloat;
 
     FSearchEvent: TEventID;  // When creating a train node this is the temporary storage for the train node as the node is being created and allocating is NodeID/AliasID
-    FListeners: TListenerList;
+    FListeners: TListenerState;
 
     function GetDirection: TLccTrainDirection;
     function GetFunctions(Index: Integer): Word;
@@ -350,7 +349,7 @@ type
     property DccLongAddress: Boolean read FDccLongAddress write SetDccLongAddress;
     property DccSpeedStep: TLccDccSpeedStep read FDccSpeedStep write SetDccSpeedStep;
 
-    property Listeners: TListenerList read FListeners write FListeners;
+    property Listeners: TListenerState read FListeners write FListeners;
     property Speed: THalfFloat read FSpeed write SetSpeed;
     property Direction: TLccTrainDirection read GetDirection write SetDirection;
     property Functions[Index: Integer]: Word read GetFunctions write SetFunctions;
@@ -530,9 +529,9 @@ begin
   if ReverseDirection then Result := Result or TRACTION_LISTENER_FLAG_HIDDEN;
 end;
 
-{ TListenerList }
+{ TListenerState }
 
-constructor TListenerList.Create;
+constructor TListenerState.Create;
 begin
   inherited Create;
   {$IFDEF DELPHI}
@@ -543,7 +542,7 @@ begin
   {$ENDIF}
 end;
 
-function TListenerList.AddListener(NodeID: TNodeID; Flags: Byte; AnAliasID: Word): TListenerNode;
+function TListenerState.Add(NodeID: TNodeID; Flags: Byte; AnAliasID: Word): TListenerNode;
 begin
   Result := TListenerNode.Create;
   Result.NodeID := NodeID;
@@ -552,12 +551,7 @@ begin
   FListenerList.Add(Result);
 end;
 
-function TListenerList.Add: TListenerNode;
-begin
-  Result := nil;
-end;
-
-function TListenerList.Delete(NodeID: TNodeID): Boolean;
+function TListenerState.Delete(NodeID: TNodeID): Boolean;
 var
   Index: Integer;
 begin
@@ -570,13 +564,13 @@ begin
   end;
 end;
 
-destructor TListenerList.Destroy;
+destructor TListenerState.Destroy;
 begin
   FreeAndNil(FListenerList);
   inherited Destroy;
 end;
 
-function TListenerList.FindNode(NodeID: TNodeID): TListenerNode;
+function TListenerState.FindNode(NodeID: TNodeID): TListenerNode;
 var
   i: Integer;
   ListenerNode: TListenerNode;
@@ -592,7 +586,7 @@ begin
   end;
 end;
 
-function TListenerList.FindByIndex(Index: Byte): TListenerNode;
+function TListenerState.FindByIndex(Index: Byte): TListenerNode;
 begin
   if Index < Count then
     Result := FListenerList[Index] as TListenerNode
@@ -600,7 +594,7 @@ begin
     Result := nil
 end;
 
-function TListenerList.FindNodeIndex(NodeID: TNodeID): Integer;
+function TListenerState.FindNodeIndex(NodeID: TNodeID): Integer;
 var
   i: Integer;
   ListenerNode: TListenerNode;
@@ -616,12 +610,12 @@ begin
   end;
 end;
 
-function TListenerList.GetCount: Integer;
+function TListenerState.GetCount: Integer;
 begin
   Result := FListenerList.Count;
 end;
 
-function TListenerList.GetListener(Index: Integer): TListenerNode;
+function TListenerState.GetListener(Index: Integer): TListenerNode;
 begin
   Result := FListenerList[Index] as TListenerNode
 end;
@@ -632,7 +626,7 @@ constructor TLccTrainDccNode.Create(ANodeManager: {$IFDEF DELPHI}TComponent{$ELS
 begin
   {$IFDEF WriteLnDebug} WriteLn('Train Node Create'); {$ENDIF}
   inherited Create(ANodeManager, CdiXML, GridConnectLink);
-  FListeners := TListenerList.Create;
+  FListeners := TListenerState.Create;
   FControllerState := TControllerState.Create;
   FReservedNodeState := TReservationState.Create;
 end;
@@ -1011,10 +1005,7 @@ begin
       WorkerMessage.LoadTractionListenerAttachReply(NodeID, AliasID, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias, ListenerNodeID, S_OK)
     end else
     begin  // Add The listener to the list
-
-      NewListenerNode := Listeners.Add;
-
-      NewListenerNode := Listeners.AddListener(ListenerNodeID, ListenerNodeAlias, ListenerAttachFlags);
+      NewListenerNode := Listeners.Add(ListenerNodeID, ListenerNodeAlias, ListenerAttachFlags);
       if Assigned(NewListenerNode) then
         WorkerMessage.LoadTractionListenerAttachReply(NodeID, AliasID, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias, ListenerNodeID, S_OK)
       else
@@ -1207,6 +1198,8 @@ procedure TLccTrainDccNode.SetFunctions(Index: Integer; AValue: Word);
 var
   DccPacket: TDCCPacket;
   DccGridConnect: string;
+  i: Integer;
+  ListenerNode: TListenerNode;
 begin
   if (Index >= 0) and (Index < Length(FFunctions)) then
   begin
@@ -1214,6 +1207,15 @@ begin
     DccPacket := DccFunctionHandler(DccAddress, DccLongAddress, Index, EncodeFunctionValuesDccStyle);
     DccGridConnect := EncodeToDccGridConnect( DccPacket);
     DoSendMessageComPort(DccGridConnect);
+
+    for i := 0 to Listeners.Count - 1 do
+    begin
+      ListenerNode := TListenerNode(Listeners[i]);
+      if ListenerNode.LinkF0 and (Index = 0 ) then
+        WorkerMessage.LoadTractionSetFunction(NodeID, AliasID, ListenerNode.NodeID, ListenerNode.AliasID, Index, AValue);
+      if ListenerNode.LinkFn and (Index > 0) then
+        WorkerMessage.LoadTractionSetFunction(NodeID, AliasID, ListenerNode.NodeID, ListenerNode.AliasID, Index, AValue)
+    end;
   end;
 end;
 
@@ -1221,12 +1223,24 @@ procedure TLccTrainDccNode.SetSpeed(AValue: THalfFloat);
 var
   DccPacket: TDCCPacket;
   DccGridConnect: string;
+  i: Integer;
+  ListenerNode: TListenerNode;
 begin
   if AValue = Speed then Exit;
   FSpeed := AValue;
   DccPacket := DccSpeedDirHandler(DccAddress, DccLongAddress, Speed, DccSpeedStep);
   DccGridConnect := EncodeToDccGridConnect( DccPacket);
   DoSendMessageComPort(DccGridConnect);
+
+  for i := 0 to Listeners.Count - 1 do
+  begin
+    ListenerNode := TListenerNode(Listeners[i]);
+    if ListenerNode.ReverseDirection then
+      WorkerMessage.LoadTractionSetSpeed(NodeID, AliasID, ListenerNode.NodeID, ListenerNode.AliasID, FlipHalfFloatSign(Speed))
+    else
+      WorkerMessage.LoadTractionSetSpeed(NodeID, AliasID, ListenerNode.NodeID, ListenerNode.AliasID, Speed);
+    SendMessageFunc(Self, WorkerMessage);
+  end;
 end;
 
 procedure TLccTrainDccNode.SetDccSpeedStep(AValue: TLccDccSpeedStep);
