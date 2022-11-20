@@ -37,8 +37,7 @@ type
   TLccHardwareConnectionInfo = class;
   TLccConnectionThread = class;
 
-  TOnHardwareConnectionStateChangeEvent = procedure(Sender: TObject; ConnectionInfo: TLccHardwareConnectionInfo) of object;
-  TOnHardwareConnectionErrorEvent = procedure(Sender: TObject; ConnectionInfo: TLccHardwareConnectionInfo) of object;
+  TOnHardwareConnectionInfoEvent = procedure(Sender: TObject; ConnectionInfo: TLccHardwareConnectionInfo) of object;
 
   { TLccHardwareConnectionInfo }
 
@@ -119,8 +118,8 @@ type
   private
     FHub: Boolean;
     FNodeManager: TLccNodeManager;
-    FOnConnectionStateChange: TOnHardwareConnectionStateChangeEvent;
-    FOnErrorMessage: TOnHardwareConnectionErrorEvent;
+    FOnConnectionStateChange: TOnHardwareConnectionInfoEvent;
+    FOnErrorMessage: TOnHardwareConnectionInfoEvent;
     FOnLccMessageReceive: TOnMessageEvent;
     FOnLccMessageSend: TOnMessageEvent;
     FWorkerMessage: TLccMessage;
@@ -168,8 +167,8 @@ type
     procedure CloseConnection; virtual;
 
   published
-    property OnConnectionStateChange: TOnHardwareConnectionStateChangeEvent read FOnConnectionStateChange write FOnConnectionStateChange;
-    property OnErrorMessage: TOnHardwareConnectionErrorEvent read FOnErrorMessage write FOnErrorMessage;
+    property OnConnectionStateChange: TOnHardwareConnectionInfoEvent read FOnConnectionStateChange write FOnConnectionStateChange;
+    property OnErrorMessage: TOnHardwareConnectionInfoEvent read FOnErrorMessage write FOnErrorMessage;
     property OnLccMessageReceive: TOnMessageEvent read FOnLccMessageReceive write FOnLccMessageReceive;
     property OnLccMessageSend: TOnMessageEvent read FOnLccMessageSend write FOnLccMessageSend;
     property WorkerMessage: TLccMessage read FWorkerMessage write FWorkerMessage;

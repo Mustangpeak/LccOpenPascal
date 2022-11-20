@@ -456,7 +456,7 @@ begin
   FProtocolSimpleNodeInfo := TProtocolSimpleNodeInfo.Create;
   FProtocolMemoryConfigurationDefinitionInfo := TProtocolMemoryConfigurationDefinitionInfo.Create;
   FProtocolMemoryOptions := TProtocolMemoryOptions.Create;
- // FProtocolMemoryConfiguration := TProtocolMemoryConfiguration.Create(SendMessageFunc);
+  FProtocolMemoryConfiguration := TProtocolMemoryConfiguration.Create;
   FProtocolMemoryInfo := TProtocolMemoryInfo.Create;
   FProtocolEventConsumed := TProtocolEvents.Create;
   FProtocolEventsProduced := TProtocolEvents.Create;
@@ -1350,8 +1350,7 @@ begin
   FreeAndNil(FStreamTractionFdi);
   FreeAndNil(FTrainServer);
   FreeAndNil(FLocalMessageStack);
-
-//  FProtocolMemoryConfiguration.Free;
+  FProtocolMemoryConfiguration.Free;
   inherited;
 end;
 
@@ -1438,7 +1437,6 @@ end;
 procedure TLccNode.On_100msTimer(Sender: TObject);
 var
   Temp: TNodeID;
-  LocalMapping: TLccAliasMapping;
 begin
   if GridConnect then
   begin
@@ -1469,10 +1467,10 @@ begin
         begin
           {$IFDEF WriteLnDebug} WriteLn('Node Logged In'); {$ENDIF}
           FPermitted := True;
-          Assert(AliasID <> 0, 'Alias = 0');
-          Assert(not NullNodeID(NodeID), 'NodeID = NULL_ID');
-          LocalMapping := AliasServer.AddMapping(AliasID, NodeID);
-          Assert(Assigned(LocalMapping), 'Could not Assign Node AliasMapping');
+  //        Assert(AliasID <> 0, 'Alias = 0');
+  //        Assert(not NullNodeID(NodeID), 'NodeID = NULL_ID');
+  //        LocalMapping := AliasServer.AddMapping(AliasID, NodeID);
+  //        Assert(Assigned(LocalMapping), 'Could not Assign Node AliasMapping');
           WorkerMessage.LoadRID(NodeID, AliasID);
           SendMessageFunc(Self, WorkerMessage);
           WorkerMessage.LoadAMD(NodeID, AliasID);

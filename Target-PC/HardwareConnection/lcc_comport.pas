@@ -25,9 +25,7 @@ uses
     System.Generics.Collections,
   {$ENDIF}
 
-  blcksock,
-  synsock,
-  synaser,
+  LazSynaSer,
   lcc_threaded_circulararray,
   lcc_threaded_stringlist,
   lcc_gridconnect,
@@ -74,13 +72,16 @@ type
 
   TLccComPortThread =  class(TLccConnectionThread)
     private
+      FConnected: Boolean;
       FRawData: Boolean;
       FSerial: TBlockSerial;                                                      // Serial object
     protected
       procedure Execute; override;
+      procedure ReceiveMessage;  // For Syncronize
 
       property Serial: TBlockSerial read FSerial write FSerial;
     public
+      property Connected: Boolean read FConnected;
       property RawData: Boolean read FRawData write FRawData;
   end;
 
@@ -88,18 +89,22 @@ type
 
   TLccComPort = class(TLccHardwareConnectionManager)
   private
+    FComPortThread: TLccComPortThread;
     FCurrentConnectionState: TLccConnectionState;
     FHub: Boolean;
     FLccSettings: TLccSettings;
     FNodeManager: TLccNodeManager;
+    FOnReceiveMessage: TOnHardwareConnectionInfoEvent;
     FRawData: Boolean;
     { Private declarations }
   protected
     { Protected declarations }
     function IsLccLink: Boolean; override;
+    function GetConnected: Boolean; override;
+    procedure DoReceiveMessage(Info: TLccHardwareConnectionInfo); reintroduce; virtual;
   public
     { Public declarations }
-    {$IFDEF LOGGING}property LoggingFrame: TFrameLccLogging read FLoggingFrame write FLoggingFrame;{$ENDIF}     // Designtime can't find Frames to assign in Object Inspector
+    property ComPortThread: TLccComPortThread read FComPortThread write FComPortThread;
     property RawData: Boolean read FRawData write FRawData;
     property CurrentConnectionState: TLccConnectionState read FCurrentConnectionState write FCurrentConnectionState;  // Current State of the connection
 
@@ -112,6 +117,7 @@ type
     { Published declarations }
     property Hub: Boolean read FHub write FHub;
     property LccSettings: TLccSettings read FLccSettings write FLccSettings;
+    property OnReceiveMessage: TOnHardwareConnectionInfoEvent read FOnReceiveMessage write FOnReceiveMessage;
 
     property NodeManager: TLccNodeManager read FNodeManager write FNodeManager;
   end;
@@ -138,7 +144,20 @@ end;
 
 function TLccComPort.IsLccLink: Boolean;
 begin
+  Result := False;    // This link does not speak LCC Gridconnect/TCP... it is a custom DCC Gridconnect
+end;
+
+function TLccComPort.GetConnected: Boolean;
+begin
   Result := False;
+  if Assigned(FComPortThread) then
+    Result := ComPortThread.Connected;
+end;
+
+procedure TLccComPort.DoReceiveMessage(Info: TLccHardwareConnectionInfo);
+begin
+  if Assigned(OnReceiveMessage) then
+    OnReceiveMessage(Self, Info);
 end;
 
 constructor TLccComPort.Create(AOwner: TComponent; ANodeManager: TLccNodeManager);
@@ -172,10 +191,10 @@ begin
     (ConnectionInfo as TLccComPortConnectionInfo).ComPort := PATH_LINUX_DEV + (ConnectionInfo as TLccComPortConnectionInfo).ComPort;
     {$ENDIF}
   {$ENDIF}
-  Result := TLccComPortThread.Create(True, Self, ConnectionInfo);
-  (Result as TLccComPortThread).RawData := RawData;
-  ConnectionThreads.Add(Result);
-  Result.Suspended := False;
+  ComPortThread := TLccComPortThread.Create(True, Self, ConnectionInfo);
+  ComPortThread.RawData := RawData;
+  ComPortThread.Suspended := False;
+  Result := ComPortThread;
 end;
 
 function TLccComPort.OpenConnectionWithLccSettings: TLccConnectionThread;
@@ -241,16 +260,11 @@ var
   TxStr, RcvStr: String;
   i: Integer;
   GridConnectStrPtr: PGridConnectString;
-  GridConnectHelper: TGridConnectHelper;
   TxList: TStringList;
-  LocalSleepCount: Integer;
-  DynamicByteArray: TLccDynamicByteArray;
-  RcvByte: Byte;
 begin
   FRunning := True;
 
   HandleSendConnectionNotification(lcsConnecting);
-  GridConnectHelper := TGridConnectHelper.Create;
   Serial := TBlockSerial.Create;                                                // Create the Serial object in the context of the thread
   Serial.LinuxLock:=False;
   Serial.RaiseExcept:=False;
@@ -275,34 +289,31 @@ begin
       HandleSendConnectionNotification(lcsConnected);
       try
         try
-          LocalSleepCount := 0;
+          FConnected := True;
           while not IsTerminated and ((ConnectionInfo as TLccComPortConnectionInfo).ConnectionState = lcsConnected) do
           begin
             if ConnectionInfo.Gridconnect then              // Handle the ComPort using GridConnect
             begin
-              if LocalSleepCount >= ConnectionInfo.SleepCount then
-              begin
-                TxStr := '';
-                TxList := OutgoingGridConnect.LockList;
-                try
-                  if TxList.Count > 0 then
-                  begin
-                    TxStr := TxList[0];
-                    TxList.Delete(0);
-                  end;
-                finally
-                  OutgoingGridConnect.UnlockList;
-                end;
-
-                if TxStr <> '' then
-                begin
-                  Serial.SendString(TxStr);
-                  if Serial.LastError <> 0 then
-                    HandleErrorAndDisconnect(ConnectionInfo.SuppressErrorMessages);
-                end;
-                LocalSleepCount := 0;
+               // Get all the strings from the outgoing buffer into a single concatinated string
+              TxStr := '';
+              TxList := OutgoingGridConnect.LockList;
+              try
+                for i := 0 to TxList.Count - 1 do
+                  TxStr := TxStr + TxList[i] + #10;
+                TxList.Clear;
+              finally
+                OutgoingGridConnect.UnlockList;
               end;
-              Inc(LocalSleepCount);
+
+              // Outside of the threaded string list (so not to block the main thread sending more messages)
+              // dispatch this string to all the connections
+              if TxStr <> '' then
+              begin
+                Serial.SendString(TxStr);
+                if Serial.LastError <> 0 then
+                  HandleErrorAndDisconnect(ConnectionInfo.SuppressErrorMessages);
+              end;
+
 
               RcvStr := Serial.Recvstring(1);
               case Serial.LastError of
@@ -310,6 +321,7 @@ begin
               else
                 HandleErrorAndDisconnect(ConnectionInfo.SuppressErrorMessages)
               end;
+
               for i := 1 to Length(RcvStr) do
               begin
                 GridConnectStrPtr := nil;
@@ -319,77 +331,30 @@ begin
                   ConnectionInfo.MessageStr := GridConnectBufferToString(GridConnectStrPtr^);
                   if not RawData then
                     ConnectionInfo.LccMessage.LoadByGridConnectStr(ConnectionInfo.MessageStr);
-                  Synchronize(@ReceiveMessage);
+                  Synchronize({$IFDEF FPC}@{$ENDIF}ReceiveMessage);
                 end;
-              end;
-            end else
-            begin    // Handle the Socket with LCC TCP Protocol
-              if LocalSleepCount >= ConnectionInfo.SleepCount then
-              begin
-                DynamicByteArray := nil;
-                OutgoingCircularArray.LockArray;
-                try
-                  if OutgoingCircularArray.Count > 0 then
-                    OutgoingCircularArray.PullArray(DynamicByteArray);
-                finally
-                  OutgoingCircularArray.UnLockArray;
-                end;
-
-                if Length(DynamicByteArray) > 0 then
-                begin
-                  Serial.SendBuffer(@DynamicByteArray[0], Length(DynamicByteArray));
-                  if Serial.LastError <> 0 then
-                    HandleErrorAndDisconnect(ConnectionInfo.SuppressErrorMessages);
-                  DynamicByteArray := nil;
-                end;
-                LocalSleepCount := 0;
-              end;
-              Inc(LocalSleepCount);
-
-              RcvByte := Serial.RecvByte(1);
-              case Serial.LastError of
-                0 :
-                  begin
-                    DynamicByteArray := nil;
-                    if TcpDecodeStateMachine.OPStackcoreTcp_DecodeMachine(RcvByte, ConnectionInfo.MessageArray) then
-                    begin
-                      if ConnectionInfo.UseSyncronize then
-                        Synchronize({$IFDEF FPC}@{$ENDIF}ReceiveMessage)
-                      else begin
-                        DynamicByteArray := nil;
-                        Owner.IncomingCircularArray.LockArray;
-                        try
-                          Owner.IncomingCircularArray.AddChunk(ConnectionInfo.MessageArray);
-                        finally
-                          Owner.IncomingCircularArray.UnLockArray;
-                        end;
-                      end
-                    end;
-                  end;
-                ErrTimeout :
-                  begin
-
-                  end;
-              else
-                HandleErrorAndDisconnect(ConnectionInfo.SuppressErrorMessages)
               end;
             end;
           end;
         finally
           HandleSendConnectionNotification(lcsDisconnecting);
 
+          FConnected := False;
           if Serial.InstanceActive then
             Serial.CloseSocket;
           Serial.Free;
-          GridConnectHelper.Free;
         end;
       finally
         HandleSendConnectionNotification(lcsDisconnected);
-        Owner.ConnectionThreads.Remove(Self);
         FRunning := False;
       end;
     end;
   end;
+end;
+
+procedure TLccComPortThread.ReceiveMessage;
+begin
+   (Owner as TLccComPort).DoReceiveMessage(ConnectionInfo);
 end;
 
 

@@ -981,7 +981,8 @@ var
 begin
   // Send the message to the interfaces (Ethernet, WebSocket, UART, ect)
   for iHardwareConnection := 0 to HardwarewareConnectionList.Count - 1 do
-    (HardwarewareConnectionList[iHardwareConnection] as IHardwareConnectionManagerLink).SendMessage(LccMessage);
+    if (HardwarewareConnectionList[iHardwareConnection] as IHardwareConnectionManagerLink).IsLccLink then
+      (HardwarewareConnectionList[iHardwareConnection] as IHardwareConnectionManagerLink).SendMessage(LccMessage);
 
 
   // Send the messages to all the other virtual nodes where this would be the receiving end of the sendmessage

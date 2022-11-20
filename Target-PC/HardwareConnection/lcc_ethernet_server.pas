@@ -247,9 +247,8 @@ end;
 
 procedure TLccContextsList.AddGridConnectStringByContext(AContext: TIdContext; AString: string; NodeManager: TLccNodeManager);
 var
-  ContextList, NodeList, MessageStackList:  TList;
-  ThreadedNode: TLccNode;
-  iContext, iString, iNode: Integer;
+  ContextList:  TList;
+  iContext, iString: Integer;
   ServerContext: TLccServerContexts;
   GridConnectStrPtr: PGridConnectString;
   MessageStr: String;
@@ -329,6 +328,7 @@ end;
 { TLccEthernetListener }
 
 procedure TLccEthernetListener.Execute;
+// Receiving messages are handled in the IdTCPServerExecute handler and dispatched directly to each LccNode
 var
   i: Integer;
   ContextList: TList;
@@ -374,15 +374,12 @@ begin
           HandleSendConnectionNotification(lcsConnected);
           while not Terminated do
           begin
-
-            // Receiving messages are handled IdTCPServerExecute handler and dispatched
-            // directly to each LccNode
-
             // Sending out what need to be sent to the connections
             ContextList := IdTCPServer.Contexts.LockList;
             try
               if (ConnectionInfo as TLccEthernetConnectionInfo).GridConnect then
               begin
+                // Get all the strings from the outgoing buffer into a single concatinated string
                 TxStr := '';
                 TxList := OutgoingGridConnect.LockList;
                 try
@@ -393,6 +390,8 @@ begin
                   OutgoingGridConnect.UnlockList;
                 end;
 
+                // Outside of the threaded string list (so not to block the main thread sending more messages)
+                // dispatch this string to all the connections
                 if TxStr <> '' then
                 begin
                   for i := 0 to IdTCPServer.Contexts.Count - 1 do
@@ -403,6 +402,7 @@ begin
                 end;
               end else
               begin
+                // Get a block of raw TCP bytes
                 DynamicByteArray := nil;
                 OutgoingCircularArray.LockArray;
                 try
@@ -412,6 +412,8 @@ begin
                   OutgoingCircularArray.UnLockArray;
                 end;
 
+                // Outside of the threaded Byte Array (so not to block the main thread sending more messages)
+                // dispatch this data to all the connections
                 if Length(DynamicByteArray) > 0 then
                 begin
                   for i := 0 to IdTCPServer.Contexts.Count - 1 do
@@ -425,7 +427,7 @@ begin
               IdTCPServer.Contexts.UnlockList;
             end;
 
-            IndySleep(10);
+            IndySleep(50);
           end
         end;
       finally
@@ -508,7 +510,7 @@ begin
   if AString <> '' then
   begin
 
-    {$IFDEF WriteLnDebug} WriteLn('R:' + AString); {$ENDIF}
+    {$IFDEF WriteLnDebugReceivedMessages} WriteLn('R:' + AString); {$ENDIF}
 
     if Owner.NodeManager.GridConnect then
       GridConnectContextList.AddGridConnectStringByContext(AContext, AString, Owner.NodeManager)

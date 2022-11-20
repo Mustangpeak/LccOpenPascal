@@ -16,8 +16,8 @@ uses
   lcc_node_commandstation,
   lcc_node_controller,
   lcc_node_train,
- // lcc_comport,
- // synaser,
+  lcc_comport,
+  LazSynaSer,
  // lcc_ethernet_http,
   lcc_ethernet_websocket,
   lcc_common_classes,
@@ -32,7 +32,6 @@ type
   { TFormTrainCommander }
 
   TFormTrainCommander = class(TForm)
-    Button1: TButton;
     ButtonHTTPServer: TButton;
     ButtonWebserverConnect: TButton;
     ButtonManualConnectComPort: TButton;
@@ -63,13 +62,12 @@ type
     StatusBarMain: TStatusBar;
     ToggleBoxServerForm: TToggleBox;
     TreeViewTrains: TTreeView;
-    procedure Button1Click(Sender: TObject);
     procedure ButtonHTTPServerClick(Sender: TObject);
     procedure ButtonWebserverConnectClick(Sender: TObject);
     procedure ButtonManualConnectComPortClick(Sender: TObject);
     procedure ButtonClearClick(Sender: TObject);
     procedure ButtonEthernetConnectClick(Sender: TObject);
-    procedure ButtonTrainsClearClick(Sender: TObject);
+    procedure ButtonTrainsReleaseAliasClick(Sender: TObject);
     procedure CheckBox1Change(Sender: TObject);
     procedure FormCloseQuery(Sender: TObject; var CanClose: boolean);
     procedure FormCreate(Sender: TObject);
@@ -77,7 +75,7 @@ type
     procedure FormShow(Sender: TObject);
     procedure ToggleBoxServerFormChange(Sender: TObject);
   private
- //   FComPort: TLccComPort;
+    FComPort: TLccComPort;
  //   FLccHTTPServer: TLccHTTPServer;
  //   FLccWebsocketServer: TLccWebsocketServer;
     FNodeManager: TLccNodeManager;
@@ -133,14 +131,14 @@ type
     function TrainNodeToCaption(ATrainNode: TLccTrainDccNode): string;
     function FindSingleLevelNodeWithData(ParentNode: TTreeNode; const NodeData: Pointer): TTreeNode;
     procedure RebuildTrainListview;
-    procedure FlushTrains;
+    procedure ReleaseAliasOnTrains;
 
   public
     property LccServer: TLccEthernetServer read FLccServer write FLccServer;
   //  property LccWebsocketServer: TLccWebsocketServer read FLccWebsocketServer write FLccWebsocketServer;
   //  property LccHTTPServer: TLccHTTPServer read FLccHTTPServer write FLccHTTPServer;
     property NodeManager: TLccNodeManager read FNodeManager write FNodeManager;
- //   property ComPort: TLccComPort read FComPort write FComPort;
+    property ComPort: TLccComPort read FComPort write FComPort;
 
 
     procedure JUNK(Sender: TObject; LccMessage: TLccMessage);
@@ -163,11 +161,6 @@ begin
  //   ConnectHTTPServer;
 end;
 
-procedure TFormTrainCommander.Button1Click(Sender: TObject);
-begin
- // NodeManager[0].ProcessPopMessages;
-end;
-
 procedure TFormTrainCommander.ButtonWebserverConnectClick(Sender: TObject);
 begin
  // if LccWebsocketServer.ListenerConnected then
@@ -178,10 +171,10 @@ end;
 
 procedure TFormTrainCommander.ButtonManualConnectComPortClick(Sender: TObject);
 begin
-{  if ComPort.Connected then
+  if ComPort.Connected then
     DisconnectComPortServer
   else
-    ConnectComPortServer;    }
+    ConnectComPortServer;
 end;
 
 procedure TFormTrainCommander.ButtonClearClick(Sender: TObject);
@@ -209,9 +202,9 @@ begin
     ConnectServer;
 end;
 
-procedure TFormTrainCommander.ButtonTrainsClearClick(Sender: TObject);
+procedure TFormTrainCommander.ButtonTrainsReleaseAliasClick(Sender: TObject);
 begin
-  FlushTrains
+  ReleaseAliasOnTrains
 end;
 
 procedure TFormTrainCommander.CheckBox1Change(Sender: TObject);
@@ -291,10 +284,10 @@ begin
 end;
 
 function TFormTrainCommander.ConnectComPortServer: Boolean;
-//var
- // LocalInfo: TLccComPortConnectionInfo;
+var
+  LocalInfo: TLccComPortConnectionInfo;
 begin
- { Result := False;
+  Result := False;
   LocalInfo := TLccComPortConnectionInfo.Create;
   try
     LocalInfo.ComPort := ComboBoxComPorts.Items[ComboBoxComPorts.ItemIndex];
@@ -305,18 +298,18 @@ begin
     Result := Assigned(ComPort.OpenConnection(LocalInfo))
   finally
     LocalInfo.Free;
-  end;     }
+  end;
 end;
 
 procedure TFormTrainCommander.DisconnectComPortServer;
 begin
- // ComPort.CloseConnection(nil);
+  ComPort.CloseConnection;
 end;
 
 procedure TFormTrainCommander.FormCloseQuery(Sender: TObject; var CanClose: boolean);
 begin
   CanClose := CanClose; // Keep Hints quiet
- // ComPort.CloseConnection;
+  ComPort.CloseConnection;
   LccServer.CloseConnection;
  // LccWebsocketServer.CloseConnection;
 //  LccHTTPServer.CloseConnection;
@@ -351,11 +344,11 @@ begin
 //  LccHTTPServer.OnConnectionStateChange := @OnCommandStationHTTPConnectionState;
 //  LccHTTPServer.OnErrorMessage := @OnCommandStationHTTPErrorMessage;
 
- // ComPort := TLccComPort.Create(nil, nil); // This is only to send Raw GridConnect Message to the CS, don't pass the Node Manager to send every OpenLCB Message
- // ComPort.OnConnectionStateChange := @OnComPortConnectionStateChange;
- // ComPort.OnErrorMessage := @OnComPortErrorMessage;
- // ComPort.OnReceiveMessage := @OnComPortReceiveMessage;
- // ComPort.RawData := True;
+  ComPort := TLccComPort.Create(nil, NodeManager); // This is only to send Raw GridConnect Message to the CS so it is defined as not a LCCLink
+  ComPort.OnConnectionStateChange := @OnComPortConnectionStateChange;
+  ComPort.OnErrorMessage := @OnComPortErrorMessage;
+  ComPort.OnReceiveMessage := @OnComPortReceiveMessage;
+  ComPort.RawData := True;
 
   Max_Allowed_Buffers := 1;
 
@@ -367,7 +360,7 @@ begin
  // FreeAndNil(FLccHTTPServer);
   FreeAndNil(FLccServer);
  // FreeAndNil(FLccWebsocketServer);
- // FreeAndNil(FComPort);
+  FreeAndNil(FComPort);
   FreeAndNil(FNodeManager);   // after the servers are destroyed
   FreeAndNil(FWorkerMessage);
 end;
@@ -375,7 +368,7 @@ end;
 procedure TFormTrainCommander.FormShow(Sender: TObject);
 begin
   ComboBoxComPorts.Items.Delimiter := ';';
- // ComboBoxComPorts.Items.DelimitedText := StringReplace(GetSerialPortNames, ',', ';', [rfReplaceAll, rfIgnoreCase]);
+  ComboBoxComPorts.Items.DelimitedText := StringReplace(GetSerialPortNames, ',', ';', [rfReplaceAll, rfIgnoreCase]);
   ComboBoxComPorts.ItemIndex := 0;
 end;
 
@@ -692,23 +685,18 @@ begin
   end;
 end;
 
-procedure TFormTrainCommander.FlushTrains;
+procedure TFormTrainCommander.ReleaseAliasOnTrains;
 var
   i: Integer;
   TrainNode: TLccTrainDccNode;
 begin
-  try
-    for i := NodeManager.Nodes.Count - 1 downto 0  do
+  for i := NodeManager.Nodes.Count - 1 downto 0  do
+  begin
+    if TLccNode(NodeManager.Nodes.Items[i]) is TLccTrainDccNode then
     begin
-      if TLccNode(NodeManager.Nodes.Items[i]) is TLccTrainDccNode then
-      begin
-        TrainNode := TLccNode(NodeManager.Nodes.Items[i]) as TLccTrainDccNode;
-        NodeManager.Nodes.Delete(i);
-        TrainNode.Free;
-      end;
+      TrainNode := TLccNode(NodeManager.Nodes.Items[i]) as TLccTrainDccNode;
+      TrainNode.ReleaseAlias(100);
     end;
-  finally
-    TreeViewTrains.Items.Clear;
   end;
 end;
 
@@ -719,7 +707,7 @@ end;
 
 procedure TFormTrainCommander.OnComPortConnectionStateChange(Sender: TObject; Info: TLccHardwareConnectionInfo);
 begin
- { if Sender is TLccConnectionThread then
+  if Sender is TLccConnectionThread then
   begin
     case (Info as TLccComPortConnectionInfo).ConnectionState of
       lcsConnecting :    StatusBarMain.Panels[3].Text := 'ComPort Connecting';
@@ -735,7 +723,7 @@ begin
           StatusBarMain.Panels[3].Text := 'ComPort Disconnected';
         end;
     end;
-  end;    }
+  end;
 end;
 
 procedure TFormTrainCommander.OnComPortErrorMessage(Sender: TObject;
@@ -757,7 +745,7 @@ end;
 
 procedure TFormTrainCommander.OnComPortSendMessage(Sender: TObject; var GridConnectStyleMessage: string);
 begin
-//  ComPort.SendMessageRawGridConnect(GridConnectStyleMessage);
+  ComPort.SendMessageRawGridConnect(GridConnectStyleMessage);
 
   MemoComPort.Lines.BeginUpdate;
   try

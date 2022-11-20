@@ -163,11 +163,13 @@ begin
 end;
 
 function TLccAliasServer.AddMapping(AnAlias: Word; AnID: TNodeID): TLccAliasMapping;
-var
-  List: TList;
 begin
   Result := nil;
-  List := MappingList.LockList;
+
+  Assert(AnAlias <> 0, 'Alias = 0 in TLccAliasServer.AddMapping');
+  Assert(not NullNodeID(AnID), 'NodeID = NULL_ID in TLccAliasServer.AddMapping');
+
+  MappingList.LockList;
   try
     Result := FindMapping(AnAlias);
     if not Assigned(Result) then

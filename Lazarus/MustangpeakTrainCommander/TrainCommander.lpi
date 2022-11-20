@@ -25,7 +25,7 @@
           </Target>
           <SearchPaths>
             <IncludeFiles Value="$(ProjOutDir)"/>
-            <OtherUnitFiles Value="..\..\Target-PC;..\..\Target-PC\HardwareConnection;..\..\Target-Common;..\..\Target-PC\HardwareConnection\Indy_Lcc\Core;..\..\Target-PC\HardwareConnection\Indy_Lcc\Protocols;..\..\Target-PC\HardwareConnection\Indy_Lcc\System"/>
+            <OtherUnitFiles Value="..\..\Target-PC;..\..\Target-PC\HardwareConnection;..\..\Target-Common;..\..\Target-PC\HardwareConnection\Indy_Lcc\Core;..\..\Target-PC\HardwareConnection\Indy_Lcc\Protocols;..\..\Target-PC\HardwareConnection\Indy_Lcc\System;..\..\Target-PC\HardwareConnection\TLazSerial"/>
             <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
           </SearchPaths>
           <Conditionals Value="if TargetOS = &apos;darwin&apos; then
@@ -71,8 +71,10 @@ if TargetOS = &apos;linux&apos; then
             </Options>
           </Linking>
           <Other>
-            <OtherDefines Count="1">
+            <CustomOptions Value="-dWriteLnDebug"/>
+            <OtherDefines Count="2">
               <Define0 Value="WriteLnDebug"/>
+              <Define1 Value="WriteLnDebugReceivedMessages"/>
             </OtherDefines>
           </Other>
         </CompilerOptions>

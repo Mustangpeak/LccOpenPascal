@@ -174,8 +174,10 @@ begin
       try
         while not IsTerminated and idTCPClient.Connected do
         begin
-          if ConnectionInfo.Gridconnect then
+
+          if (ConnectionInfo as TLccEthernetConnectionInfo).GridConnect then
           begin
+            // Get all the strings from the outgoing buffer into a single concatinated string
             TxStr := '';
             TxList := OutgoingGridConnect.LockList;
             try
@@ -186,10 +188,16 @@ begin
               OutgoingGridConnect.UnlockList;
             end;
 
-            if (TxStr <> '') and idTCPClient.IOHandler.Connected then
-              idTCPClient.IOHandler.WriteLn(TxStr);
+            // Outside of the threaded string list (so not to block the main thread sending more messages)
+            // dispatch this string to all the connections
+            if TxStr <> '' then
+            begin
+              if idTCPClient.IOHandler.Connected then
+                idTCPClient.IOHandler.WriteLn(TxStr);
+            end;
           end else
           begin
+            // Get a block of raw TCP bytes
             DynamicByteArray := nil;
             OutgoingCircularArray.LockArray;
             try
@@ -199,11 +207,16 @@ begin
               OutgoingCircularArray.UnLockArray;
             end;
 
-            if (Length(DynamicByteArray) > 0) and idTCPClient.IOHandler.Connected then
-              idTCPClient.IOHandler.Write(DynamicByteArray, Length(DynamicByteArray));
+            // Outside of the threaded Byte Array (so not to block the main thread sending more messages)
+            // dispatch this data to all the connections
+            if Length(DynamicByteArray) > 0 then
+            begin
+              if idTCPClient.IOHandler.Connected then
+                idTCPClient.IOHandler.Write(DynamicByteArray, Length(DynamicByteArray));
+            end;
           end;
 
-          Sleep(10);
+          Sleep(50);
         end;
       finally
         HandleSendConnectionNotification(lcsDisconnecting);

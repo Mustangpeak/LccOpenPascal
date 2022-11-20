@@ -14,11 +14,11 @@ object FormTrainCommander: TFormTrainCommander
   LCLVersion = '2.2.4.0'
   object PanelDetails: TPanel
     Left = 0
-    Height = 120
+    Height = 96
     Top = 0
     Width = 1241
     Align = alTop
-    ClientHeight = 120
+    ClientHeight = 96
     ClientWidth = 1241
     TabOrder = 0
     object CheckBoxAutoConnect: TCheckBox
@@ -39,18 +39,18 @@ object FormTrainCommander: TFormTrainCommander
       TabOrder = 1
     end
     object ButtonClear: TButton
-      Left = 568
+      Left = 763
       Height = 23
-      Top = 88
+      Top = 72
       Width = 104
       Caption = 'Clear'
       OnClick = ButtonClearClick
       TabOrder = 2
     end
     object CheckBoxLoopBackIP: TCheckBox
-      Left = 192
+      Left = 376
       Height = 18
-      Top = 24
+      Top = 8
       Width = 67
       Caption = 'Local IP'
       TabOrder = 3
@@ -65,9 +65,9 @@ object FormTrainCommander: TFormTrainCommander
       ParentColor = False
     end
     object LabelAliasIDCaption: TLabel
-      Left = 17
+      Left = 256
       Height = 16
-      Top = 96
+      Top = 72
       Width = 65
       AutoSize = False
       Caption = 'AliasID'
@@ -82,17 +82,17 @@ object FormTrainCommander: TFormTrainCommander
       ParentColor = False
     end
     object LabelAliasID: TLabel
-      Left = 96
+      Left = 336
       Height = 16
-      Top = 93
+      Top = 72
       Width = 147
       AutoSize = False
       ParentColor = False
     end
     object CheckBoxLogMessages: TCheckBox
-      Left = 440
+      Left = 520
       Height = 18
-      Top = 72
+      Top = 70
       Width = 104
       Caption = 'Log Messages'
       Checked = True
@@ -100,9 +100,9 @@ object FormTrainCommander: TFormTrainCommander
       TabOrder = 4
     end
     object ComboBoxComPorts: TComboBox
-      Left = 376
+      Left = 184
       Height = 20
-      Top = 47
+      Top = 32
       Width = 284
       ItemHeight = 26
       Style = csDropDownList
@@ -110,18 +110,18 @@ object FormTrainCommander: TFormTrainCommander
       Text = '0'
     end
     object ButtonManualConnectComPort: TButton
-      Left = 256
+      Left = 16
       Height = 23
-      Top = 43
-      Width = 107
+      Top = 32
+      Width = 152
       Caption = 'Open ComPort'
       OnClick = ButtonManualConnectComPortClick
       TabOrder = 6
     end
     object CheckBoxDetailedLog: TCheckBox
-      Left = 443
+      Left = 648
       Height = 18
-      Top = 93
+      Top = 72
       Width = 94
       Caption = 'Detailed Log'
       ParentShowHint = False
@@ -129,9 +129,9 @@ object FormTrainCommander: TFormTrainCommander
       TabOrder = 7
     end
     object ButtonWebserverConnect: TButton
-      Left = 17
+      Left = 720
       Height = 23
-      Top = 36
+      Top = 38
       Width = 152
       Caption = 'Webserver Connect'
       OnClick = ButtonWebserverConnectClick
@@ -147,9 +147,9 @@ object FormTrainCommander: TFormTrainCommander
       TabOrder = 9
     end
     object CheckBox1: TCheckBox
-      Left = 384
+      Left = 896
       Height = 18
-      Top = 24
+      Top = 11
       Width = 175
       Caption = 'Allow Python Script To Run'
       Checked = True
@@ -158,22 +158,13 @@ object FormTrainCommander: TFormTrainCommander
       TabOrder = 10
     end
     object ToggleBoxServerForm: TToggleBox
-      Left = 720
+      Left = 512
       Height = 25
-      Top = 36
+      Top = 8
       Width = 147
       Caption = 'Show Server Form'
       OnChange = ToggleBoxServerFormChange
       TabOrder = 11
-    end
-    object Button1: TButton
-      Left = 953
-      Height = 25
-      Top = 41
-      Width = 75
-      Caption = 'Button1'
-      OnClick = Button1Click
-      TabOrder = 12
     end
   end
   object PanelConnections: TPanel
@@ -214,8 +205,8 @@ object FormTrainCommander: TFormTrainCommander
   end
   object SplitterTrains: TSplitter
     Left = 267
-    Height = 217
-    Top = 120
+    Height = 241
+    Top = 96
     Width = 5
   end
   object StatusBarMain: TStatusBar
@@ -240,38 +231,40 @@ object FormTrainCommander: TFormTrainCommander
   end
   object PanelTrains: TPanel
     Left = 0
-    Height = 217
-    Top = 120
+    Height = 241
+    Top = 96
     Width = 267
     Align = alLeft
     Caption = 'PanelTrains'
-    ClientHeight = 217
+    ClientHeight = 241
     ClientWidth = 267
     TabOrder = 5
     object PanelTrainsHeader: TPanel
-      Left = 1
+      Left = 9
       Height = 23
       Top = 1
-      Width = 265
+      Width = 257
       Align = alTop
+      Alignment = taLeftJustify
+      BorderSpacing.Left = 8
       Caption = 'Trains'
       ClientHeight = 23
-      ClientWidth = 265
+      ClientWidth = 257
       TabOrder = 0
       object ButtonTrainsClear: TButton
-        Left = 184
+        Left = 112
         Height = 23
         Top = 0
-        Width = 75
+        Width = 139
         Anchors = [akRight, akBottom]
-        Caption = 'Clear'
-        OnClick = ButtonTrainsClearClick
+        Caption = 'Release Aliases'
+        OnClick = ButtonTrainsReleaseAliasClick
         TabOrder = 0
       end
     end
     object TreeViewTrains: TTreeView
       Left = 1
-      Height = 192
+      Height = 216
       Top = 24
       Width = 265
       Align = alClient
@@ -281,8 +274,8 @@ object FormTrainCommander: TFormTrainCommander
   end
   object MemoLog: TMemo
     Left = 272
-    Height = 217
-    Top = 120
+    Height = 241
+    Top = 96
     Width = 969
     Align = alClient
     ScrollBars = ssVertical
