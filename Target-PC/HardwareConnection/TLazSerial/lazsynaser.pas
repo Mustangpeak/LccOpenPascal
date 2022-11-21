@@ -1970,6 +1970,15 @@ begin
   ExceptCheck;
 end;
 
+{$IFDEF DARWIN}   // JDK
+function real_tcflush(fd,qsel: cint): cint; cdecl; external name 'tcflush';
+
+function TCFlush(fd,qsel:cint):cint;  {$ifdef VER2_0}inline;{$endif}
+begin
+  TCFlush:=real_tcflush(fd,qsel);
+end;
+{$ENDIF}
+
 {$IFNDEF MSWINDOWS}
 procedure TBlockSerial.Purge;
 begin
@@ -1977,7 +1986,8 @@ begin
   SerialCheck(ioctl(FHandle, TCFLSH, TCIOFLUSH));
   {$ELSE}
     {$IFDEF DARWIN}
-    SerialCheck(fpioctl(FHandle, TCIOflush, Pointer(PtrInt(TCIOFLUSH))));
+    SerialCheck(TCFlush(FHandle, TCIOFLUSH));                               // JDK
+  //  SerialCheck(fpioctl(FHandle, TCIOflush, Pointer(PtrInt(TCIOFLUSH))));
     {$ELSE}
     SerialCheck(fpioctl(FHandle, TCFLSH, Pointer(PtrInt(TCIOFLUSH))));
     {$ENDIF}
@@ -2416,9 +2426,11 @@ begin
     ScanForPorts( '/dev/ttyS*',false);
     ScanForPorts('/dev/ttyACM*',true);
     ScanForPorts('/dev/cu.*', true); // JDK
+    ScanForPorts('/dev/tty.*', true); // JDK
    {$IFDEF DARWIN}
     ScanForPorts( '/dev/tty.usbserial*',false); // RPH 14May2016, for FTDI driver
     ScanForPorts( '/dev/tty.UC-232*',false);    // RPH 15May2016, for Prolific driver
+    ScanForPorts( '/dev/tty.wchusbserial*',false); // for WCH driver
    {$ELSE}
      ScanForPorts( '/dev/ttyAM*',false); // for ARM board
    {$ENDIF}
