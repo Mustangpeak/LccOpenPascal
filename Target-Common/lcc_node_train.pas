@@ -212,29 +212,22 @@ type
     function EncodeFlags: Byte;
   end;
 
-  { TListenerState }
+  { TListenerList }
 
-  TListenerState = class
+  TListenerList = class(TList)
   private
-    function GetCount: Integer;
     function GetListener(Index: Integer): TListenerNode;
   protected
-    {$IFDEF DELPHI}
-    FListenerList: TObjectList<TListenerNode>;
-   {$ELSE}
-    FListenerList: TObjectList;
-   {$ENDIF}
 
-    function FindNodeIndex(NodeID: TNodeID): Integer;
+    function FindListenerIndex(NodeID: TNodeID): Integer;
   public
-    property Count: Integer read GetCount;
     property Listener[Index: Integer]: TListenerNode read GetListener; default;
 
-    constructor Create;
     destructor Destroy; override;
-    function Add(NodeID: TNodeID; Flags: Byte; AnAliasID: Word): TListenerNode;
-    function Delete(NodeID: TNodeID): Boolean;
-    function FindNode(NodeID: TNodeID): TListenerNode;
+
+    procedure ClearListeners;
+    function DeleteListener(NodeID: TNodeID): Boolean;
+    function FindListener(NodeID: TNodeID): TListenerNode;
   end;
 
   TAttachedController = record
@@ -297,7 +290,7 @@ type
     FSpeed: THalfFloat;
 
     FSearchEvent: TEventID;  // When creating a train node this is the temporary storage for the train node as the node is being created and allocating is NodeID/AliasID
-    FListeners: TListenerState;
+    FListeners: TListenerList;
 
     function GetFunctions(Index: Integer; AMessage: TLccMessage): Word;
     function GetSpeed(AMessage: TLccMessage): THalfFloat;
@@ -347,7 +340,7 @@ type
     property DccLongAddress: Boolean read FDccLongAddress write SetDccLongAddress;
     property DccSpeedStep: TLccDccSpeedStep read FDccSpeedStep write SetDccSpeedStep;
 
-    property Listeners: TListenerState read FListeners write FListeners;
+    property Listeners: TListenerList read FListeners write FListeners;
  //   property Speed[AMessage: TLccMessage]: THalfFloat read GetSpeed write SetSpeed;
     property Functions[Index: Integer; AMessage: TLccMessage]: Word read GetFunctions write SetFunctions;
     property OnSendMessageComPort: TMessageComPort read FOnSendMessageComPort write FOnSendMessageComPort;
@@ -526,88 +519,82 @@ begin
   if FHidden then Result := Result or TRACTION_LISTENER_FLAG_HIDDEN;
 end;
 
-{ TListenerState }
+{ TListenerList }
 
-constructor TListenerState.Create;
-begin
-  inherited Create;
-  {$IFDEF DELPHI}
-  FListenerList := TObjectList<TListenerNode>.Create(True);
-  {$ELSE}
-    FListenerList := TObjectList.Create;
-    FListenerList.OwnsObjects := True;
-  {$ENDIF}
-end;
-
-function TListenerState.Add(NodeID: TNodeID; Flags: Byte; AnAliasID: Word): TListenerNode;
-begin
-  Result := TListenerNode.Create;
-  Result.NodeID := NodeID;
-  Result.AliasID := AnAliasID;
-  Result.DecodeFlags(Flags);
-  FListenerList.Add(Result);
-end;
-
-function TListenerState.Delete(NodeID: TNodeID): Boolean;
+procedure TListenerList.ClearListeners;
 var
-  Index: Integer;
+  i: Integer;
 begin
-  Result := False;
-  Index := FindNodeIndex(NodeID);
-  if Index >= 0 then
-  begin
-    FListenerList.Delete(Index);
-    Result := True;
+  try
+    for i := 0 to Count - 1 do
+      TObject( Items[i]).Free;
+  finally
+    Clear;
   end;
 end;
 
-destructor TListenerState.Destroy;
+function TListenerList.DeleteListener(NodeID: TNodeID): Boolean;
+var
+  Index: Integer;
+  ListenerNode: TListenerNode;
 begin
-  FreeAndNil(FListenerList);
+  Result := False;
+  Index := FindListenerIndex(NodeID);
+  if Index >= 0 then
+  begin
+    try
+      ListenerNode := TListenerNode( Items[Index]);
+      ListenerNode.Free;
+    finally
+      Delete(Index);
+      Result := True;
+    end;
+  end;
+end;
+
+destructor TListenerList.Destroy;
+begin
+  ClearListeners;
   inherited Destroy;
 end;
 
-function TListenerState.FindNode(NodeID: TNodeID): TListenerNode;
+function TListenerList.FindListener(NodeID: TNodeID): TListenerNode;
 var
   i: Integer;
   ListenerNode: TListenerNode;
 begin
   Result := nil;
   i := 0;
-  while (Result = nil) and (i < FListenerList.Count) do
+  while (Result = nil) and (i < Count) do
   begin
-    ListenerNode := (FListenerList[i] as TListenerNode);
+    ListenerNode := TListenerNode( Items[i]);
     if (ListenerNode.NodeID[0] = NodeID[0]) and (ListenerNode.NodeID[1] = NodeID[1]) then
       Result := ListenerNode;
     Inc(i);
   end;
 end;
 
-function TListenerState.FindNodeIndex(NodeID: TNodeID): Integer;
+function TListenerList.FindListenerIndex(NodeID: TNodeID): Integer;
 var
   i: Integer;
   ListenerNode: TListenerNode;
 begin
   Result := -1;
   i := 0;
-  while (Result < 0) and (i < FListenerList.Count) do
+  while (Result < 0) and (i < Count) do
   begin
-    ListenerNode := (FListenerList[i] as TListenerNode);
+    ListenerNode := TListenerNode(Items[i]);
     if (ListenerNode.NodeID[0] = NodeID[0]) and (ListenerNode.NodeID[1] = NodeID[1]) then
       Result := i;
     Inc(i);
   end;
 end;
 
-function TListenerState.GetCount: Integer;
+function TListenerList.GetListener(Index: Integer): TListenerNode;
 begin
-  Result := FListenerList.Count;
+  Result := TListenerNode( Items[Index])
 end;
 
-function TListenerState.GetListener(Index: Integer): TListenerNode;
-begin
-  Result := FListenerList[Index] as TListenerNode
-end;
 
 { TLccTrainDccNode }
 
@@ -615,7 +602,7 @@ constructor TLccTrainDccNode.Create(ANodeManager: {$IFDEF DELPHI}TComponent{$ELS
 begin
   {$IFDEF WriteLnDebug} WriteLn('Train Node Create'); {$ENDIF}
   inherited Create(ANodeManager, CdiXML, GridConnectLink);
-  FListeners := TListenerState.Create;
+  FListeners := TListenerList.Create;
   FControllerState := TControllerState.Create;
   FReservedNodeState := TReservationState.Create;
 end;
@@ -986,17 +973,22 @@ begin
   if EqualNodeID(NodeID, ListenerNodeID, False) then  // Trying to create a Listener that is the nodes itself.... will cause infinte loops
     WorkerMessage.LoadTractionListenerAttachReply(NodeID, AliasID, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias, ListenerNodeID, ERROR_PERMANENT_INVALID_ARGUMENTS)
   else begin
-    NewListenerNode := Listeners.FindNode(ListenerNodeID);
+    NewListenerNode := Listeners.FindListener(ListenerNodeID);
     if Assigned(NewListenerNode) then
     begin  // Simple update of flags
       NewListenerNode.DecodeFlags(ListenerAttachFlags);
       WorkerMessage.LoadTractionListenerAttachReply(NodeID, AliasID, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias, ListenerNodeID, S_OK)
     end else
     begin  // Add The listener to the list
-      NewListenerNode := Listeners.Add(ListenerNodeID, ListenerNodeAlias, ListenerAttachFlags);
+      NewListenerNode := TListenerNode.Create;
       if Assigned(NewListenerNode) then
+      begin
+        NewListenerNode.NodeID := ListenerNodeID;
+        NewListenerNode.AliasID := ListenerNodeAlias;
+        NewListenerNode.DecodeFlags(ListenerAttachFlags);
+        Listeners.Add(NewListenerNode);
         WorkerMessage.LoadTractionListenerAttachReply(NodeID, AliasID, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias, ListenerNodeID, S_OK)
-      else
+      end else
         WorkerMessage.LoadTractionListenerAttachReply(NodeID, AliasID, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias, ListenerNodeID, ERROR_TEMPORARY_BUFFER_UNAVAILABLE)
     end;
   end;
@@ -1009,7 +1001,7 @@ var
 begin
   ListenerNodeID := SourceMessage.TractionExtractListenerID;
 
-  if Listeners.Delete(ListenerNodeID) then
+  if Listeners.DeleteListener(ListenerNodeID) then
     WorkerMessage.LoadTractionListenerDetachReply(NodeID, AliasID, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias, ListenerNodeID, S_OK)
   else
     WorkerMessage.LoadTractionListenerDetachReply(NodeID, AliasID, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias, ListenerNodeID, ERROR_PERMANENT_INVALID_ARGUMENTS);
