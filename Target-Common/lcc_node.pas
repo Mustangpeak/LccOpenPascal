@@ -983,59 +983,7 @@ begin
     end else
     begin
       if not Result then
-      begin
-        if not Result then
-        begin
-          ANodeIdentificationObjectList := SourceMessage.ExtractNodeIdentifications(False);
-          for i := 0 to ANodeIdentificationObjectList.Count - 1 do
-          begin
-            LocalNodeIdentificationObject := ANodeIdentificationObjectList[i];
-
-            if LocalNodeIdentificationObject.Active then
-            begin
-              if not LocalNodeIdentificationObject.Valid then
-              begin
-                if LocalNodeIdentificationObject.Alias > 0 then
-                  AliasMapping := AliasServer.FindMapping(LocalNodeIdentificationObject.Alias)
-                else
-                  AliasMapping := AliasServer.FindMapping(LocalNodeIdentificationObject.NodeID);
-
-                if not Assigned(AliasMapping) then
-                begin
-                  {$IFDEF WriteLnDebug}
-                  AliasServer.WriteMapping('Cound not find Mapping at Message Position: ' +
-                    IntToStr(i) +
-                    ' - Alias' +
-                    IntToHex(LocalNodeIdentificationObject.Alias, 4) + ' ID: ' +
-                    NodeIDToString(LocalNodeIdentificationObject.NodeID, True),
-                    nil);
-                  {$ENDIF}
-
-                  if LocalNodeIdentificationObject.Alias > 0 then
-                  begin
-                    WorkerMessage.LoadVerifyNodeIDAddressed(NodeID, AliasID, LocalNodeIdentificationObject.NodeID, LocalNodeIdentificationObject.Alias, NULL_NODE_ID);
-                    SendMessageFunc(Self, WorkerMessage);
-                  end else
-                  if not NullNodeID(LocalNodeIdentificationObject.NodeID) then
-                  begin
-                    WorkerMessage.LoadVerifyNodeID(NodeID, AliasID, LocalNodeIdentificationObject.NodeID);
-                    SendMessageFunc(Self, WorkerMessage);
-                  end;
-
-                  // wait for it to return and complete the mapping
-                  while not Assigned(AliasMapping) do
-                  begin
-                    AliasMapping := AliasServer.FindMapping(LocalNodeIdentificationObject.Alias);
-                    Sleep(5);
-                  end;
-                end;
-              end;
-            end;
-          end;
-
-          ProcessMessageLCC(SourceMessage);
-        end
-      end
+        ProcessMessageLCC(SourceMessage);
     end;
   end;
 end;

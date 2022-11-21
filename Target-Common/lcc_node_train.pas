@@ -235,7 +235,6 @@ type
     function Add(NodeID: TNodeID; Flags: Byte; AnAliasID: Word): TListenerNode;
     function Delete(NodeID: TNodeID): Boolean;
     function FindNode(NodeID: TNodeID): TListenerNode;
-    function FindByIndex(Index: Byte): TListenerNode;
   end;
 
   TAttachedController = record
@@ -300,16 +299,15 @@ type
     FSearchEvent: TEventID;  // When creating a train node this is the temporary storage for the train node as the node is being created and allocating is NodeID/AliasID
     FListeners: TListenerState;
 
-    function GetDirection: TLccTrainDirection;
-    function GetFunctions(Index: Integer): Word;
+    function GetFunctions(Index: Integer; AMessage: TLccMessage): Word;
+    function GetSpeed(AMessage: TLccMessage): THalfFloat;
 
     procedure SetDccAddress(AValue: Word);
     procedure SetDccLongAddress(AValue: Boolean);
     procedure SetDccSpeedStep(AValue: TLccDccSpeedStep);
 
-    procedure SetDirection(AValue: TLccTrainDirection);
-    procedure SetFunctions(Index: Integer; AValue: Word);
-    procedure SetSpeed(AValue: THalfFloat);
+    procedure SetFunctions(Index: Integer; AMessage: TLccMessage; AValue: Word);
+    procedure SetSpeed(AMessage: TLccMessage; AValue: THalfFloat);
   protected
     property ControllerState: TControllerState read FControllerState write FControllerState;
     property ReservedNodeState: TReservationState read FReservedNodeState write FReservedNodeState;
@@ -350,9 +348,8 @@ type
     property DccSpeedStep: TLccDccSpeedStep read FDccSpeedStep write SetDccSpeedStep;
 
     property Listeners: TListenerState read FListeners write FListeners;
-    property Speed: THalfFloat read FSpeed write SetSpeed;
-    property Direction: TLccTrainDirection read GetDirection write SetDirection;
-    property Functions[Index: Integer]: Word read GetFunctions write SetFunctions;
+ //   property Speed[AMessage: TLccMessage]: THalfFloat read GetSpeed write SetSpeed;
+    property Functions[Index: Integer; AMessage: TLccMessage]: Word read GetFunctions write SetFunctions;
     property OnSendMessageComPort: TMessageComPort read FOnSendMessageComPort write FOnSendMessageComPort;
     property SearchEvent: TEventID read FSearchEvent write FSearchevent;  // The TractionSearch Event associated with this train
 
@@ -524,9 +521,9 @@ function TListenerNode.EncodeFlags: Byte;
 begin
   Result := 0;
   if ReverseDirection then Result := Result or TRACTION_LISTENER_FLAG_REVERSE_DIR;
-  if ReverseDirection then Result := Result or TRACTION_LISTENER_FLAG_LINK_F0;
-  if ReverseDirection then Result := Result or TRACTION_LISTENER_FLAG_LINK_FN;
-  if ReverseDirection then Result := Result or TRACTION_LISTENER_FLAG_HIDDEN;
+  if FLinkF0 then Result := Result or TRACTION_LISTENER_FLAG_LINK_F0;
+  if FLinkFn then Result := Result or TRACTION_LISTENER_FLAG_LINK_FN;
+  if FHidden then Result := Result or TRACTION_LISTENER_FLAG_HIDDEN;
 end;
 
 { TListenerState }
@@ -584,14 +581,6 @@ begin
       Result := ListenerNode;
     Inc(i);
   end;
-end;
-
-function TListenerState.FindByIndex(Index: Byte): TListenerNode;
-begin
-  if Index < Count then
-    Result := FListenerList[Index] as TListenerNode
-  else
-    Result := nil
 end;
 
 function TListenerState.FindNodeIndex(NodeID: TNodeID): Integer;
@@ -712,7 +701,7 @@ begin
   Result := 0;
   for i := MAX_DCC_FUNCTIONS - 1 downto 0 do
   begin
-    if Functions[i] > 0 then
+    if Functions[i, nil] > 0 then
       Result := Result or $00000001;
     if i > 0 then
       Result := Result shl 1
@@ -986,7 +975,6 @@ begin
   //   5) Not enough memory to allocate another Listener
   ListenerNodeID := SourceMessage.TractionExtractListenerID;
   ListenerAttachFlags := SourceMessage.TractionExtractListenerFlags;
-
   ListenerNodeAlias := 0;
   if GridConnect then
   begin
@@ -1039,7 +1027,7 @@ begin
     RequestedIndex := SourceMessage.TractionExtractListenerIndex;
     if RequestedIndex < Listeners.Count then
     begin
-      Listener := Listeners.FindByIndex(RequestedIndex);
+      Listener := Listeners[RequestedIndex];
       WorkerMessage.LoadTractionListenerQueryReply(NodeID, AliasID, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias, Listeners.Count, RequestedIndex, Listener.NodeID, Listener.EncodeFlags);
     end else
       WorkerMessage.LoadTractionListenerQueryReply(NodeID, AliasID, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias, Listeners.Count, 0, NULL_NODE_ID, 0);   // Outside of range, bad index
@@ -1060,7 +1048,7 @@ end;
 procedure TLccTrainDccNode.HandleTractionSetSpeed(SourceMessage: TLccMessage);
 begin
   // Should be from assigned controller only but.....
-  Speed := SourceMessage.TractionExtractSetSpeed;
+  SetSpeed(SourceMessage, SourceMessage.TractionExtractSetSpeed);
 end;
 
 procedure TLccTrainDccNode.HandleTractionSetFunction(SourceMessage: TLccMessage);
@@ -1069,17 +1057,17 @@ var
 begin
   // Should be from assigned controller only but.....
   FunctionAddress := SourceMessage.TractionExtractFunctionAddress;
-  Functions[FunctionAddress] := SourceMessage.TractionExtractFunctionValue;
+  Functions[FunctionAddress, SourceMessage] := SourceMessage.TractionExtractFunctionValue;
 end;
 
 procedure TLccTrainDccNode.HandleTractionEStop(SourceMessage: TLccMessage);
 begin
-  Speed := 0;
+  SetSpeed(SourceMessage, 0);
 end;
 
 procedure TLccTrainDccNode.HandleTractionQuerySpeed(SourceMessage: TLccMessage);
 begin
-  WorkerMessage.LoadTractionQuerySpeedReply(NodeId, AliasID, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias, Speed, 0, HalfNaN, HalfNaN);
+  WorkerMessage.LoadTractionQuerySpeedReply(NodeId, AliasID, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias, GetSpeed(SourceMessage), 0, HalfNaN, HalfNaN);
   SendMessageFunc(Self, WorkerMessage);
 end;
 
@@ -1088,7 +1076,7 @@ var
   FunctionAddress: DWORD;
 begin
   FunctionAddress := SourceMessage.TractionExtractFunctionAddress;
-  WorkerMessage.LoadTractionQueryFunctionReply(NodeId, AliasID, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias, FunctionAddress, Functions[FunctionAddress]);
+  WorkerMessage.LoadTractionQueryFunctionReply(NodeId, AliasID, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias, FunctionAddress, Functions[FunctionAddress, nil]);
   SendMessageFunc(Self, WorkerMessage);
 end;
 
@@ -1105,20 +1093,17 @@ begin
   Result := CDI_XML_TRAIN_NODE
 end;
 
-function TLccTrainDccNode.GetDirection: TLccTrainDirection;
-begin
-  if HalfIsNegative(Speed) then
-    Result := tdReverse
-  else
-    Result := tdForward;
-end;
-
-function TLccTrainDccNode.GetFunctions(Index: Integer): Word;
+function TLccTrainDccNode.GetFunctions(Index: Integer; AMessage: TLccMessage): Word;
 begin
   if (Index >= 0) and (Index < Length(FFunctions)) then
     Result := FFunctions[Index]
   else
     Result := $FFFF
+end;
+
+function TLccTrainDccNode.GetSpeed(AMessage: TLccMessage): THalfFloat;
+begin
+  Result := FSpeed;
 end;
 
 function TLccTrainDccNode.ProcessMessageLCC(SourceMessage: TLccMessage): Boolean;
@@ -1186,15 +1171,7 @@ begin
   FDccLongAddress := AValue;
 end;
 
-procedure TLccTrainDccNode.SetDirection(AValue: TLccTrainDirection);
-begin
-  if AValue = tdReverse then
-    Speed := FSpeed or $8000
-  else
-    Speed := FSpeed and $7FFF;
-end;
-
-procedure TLccTrainDccNode.SetFunctions(Index: Integer; AValue: Word);
+procedure TLccTrainDccNode.SetFunctions(Index: Integer; AMessage: TLccMessage; AValue: Word);
 var
   DccPacket: TDCCPacket;
   DccGridConnect: string;
@@ -1214,21 +1191,25 @@ begin
     for i := 0 to Listeners.Count - 1 do
     begin
       ListenerNode := TListenerNode(Listeners[i]);
-      if ListenerNode.LinkF0 and (Index = 0 ) then
+      // Don't sent back to the same place that sent the message
+      if not EqualNode(ListenerNode.NodeID, ListenerNode.AliasID, AMessage.SourceID, AMessage.CAN.SourceAlias, True) then
       begin
-        WorkerMessage.LoadTractionSetFunction(NodeID, AliasID, ListenerNode.NodeID, ListenerNode.AliasID, Index, AValue);
-        SendMessageFunc(Self, WorkerMessage);
-      end else
-      if ListenerNode.LinkFn and (Index > 0) then
-      begin
-        WorkerMessage.LoadTractionSetFunction(NodeID, AliasID, ListenerNode.NodeID, ListenerNode.AliasID, Index, AValue);
-        SendMessageFunc(Self, WorkerMessage);
+        if ListenerNode.LinkF0 and (Index = 0 ) then
+        begin
+          WorkerMessage.LoadTractionSetFunction(NodeID, AliasID, ListenerNode.NodeID, ListenerNode.AliasID, Index, AValue);
+          SendMessageFunc(Self, WorkerMessage);
+        end else
+        if ListenerNode.LinkFn and (Index > 0) then
+        begin
+          WorkerMessage.LoadTractionSetFunction(NodeID, AliasID, ListenerNode.NodeID, ListenerNode.AliasID, Index, AValue);
+          SendMessageFunc(Self, WorkerMessage);
+        end;
       end;
     end;
   end;
 end;
 
-procedure TLccTrainDccNode.SetSpeed(AValue: THalfFloat);
+procedure TLccTrainDccNode.SetSpeed(AMessage: TLccMessage; AValue: THalfFloat);
 var
   DccPacket: TDCCPacket;
   DccGridConnect: string;
@@ -1238,18 +1219,22 @@ begin
   if AValue = FSpeed then Exit;
 
   FSpeed := AValue;
-  DccPacket := DccSpeedDirHandler(DccAddress, DccLongAddress, Speed, DccSpeedStep);
+  DccPacket := DccSpeedDirHandler(DccAddress, DccLongAddress, FSpeed, DccSpeedStep);
   DccGridConnect := EncodeToDccGridConnect( DccPacket);
   DoSendMessageComPort(DccGridConnect);
 
   for i := 0 to Listeners.Count - 1 do
   begin
-    ListenerNode := TListenerNode(Listeners[i]);
-    if ListenerNode.ReverseDirection then
-      WorkerMessage.LoadTractionSetSpeed(NodeID, AliasID, ListenerNode.NodeID, ListenerNode.AliasID, FlipHalfFloatSign(Speed))
-    else
-      WorkerMessage.LoadTractionSetSpeed(NodeID, AliasID, ListenerNode.NodeID, ListenerNode.AliasID, Speed);
-    SendMessageFunc(Self, WorkerMessage);
+    ListenerNode := Listeners[i];
+
+    if not EqualNode(ListenerNode.NodeID, ListenerNode.AliasID, AMessage.SourceID, AMessage.CAN.SourceAlias, True) then
+    begin
+      if ListenerNode.ReverseDirection then
+        WorkerMessage.LoadTractionSetSpeed(NodeID, AliasID, ListenerNode.NodeID, ListenerNode.AliasID, FlipHalfFloatSign(FSpeed))
+      else
+        WorkerMessage.LoadTractionSetSpeed(NodeID, AliasID, ListenerNode.NodeID, ListenerNode.AliasID, FSpeed);
+      SendMessageFunc(Self, WorkerMessage);
+    end;
   end;
 end;
 

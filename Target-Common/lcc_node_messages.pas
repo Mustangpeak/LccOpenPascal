@@ -91,7 +91,7 @@ type
     function Compare(TestMapping: TLccAliasMapping): Boolean overload;
     function CompareEitherOr(TestObject: TLccNodeIdentificationObject): Boolean; overload;
     function CompareEitherOr(TestMapping: TLccAliasMapping): Boolean; overload;
-    function Valid: Boolean;
+    function Valid: Boolean;  // Valid means one or the other is non zero, not that is is mapped
   end;
 
 
@@ -776,7 +776,7 @@ end;
 
 function TLccNodeIdentificationObject.Valid: Boolean;
 begin
-  Result := (Alias <> 0) and ((NodeID[0] <> 0) or (NodeID[1] <> 0))
+  Result := (Alias <> 0) or ((NodeID[0] <> 0) or (NodeID[1] <> 0))
 end;
 
 { TLccNodeIdentificationObjectList }

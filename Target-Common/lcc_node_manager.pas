@@ -557,7 +557,7 @@ begin
   // alias under all conditions for CAN messages... just ignore them and let them do their job.
   if not AMessage.IsCAN then
   begin
-    LocalNodeIdentificationObjectList := AMessage.ExtractNodeIdentifications(False);
+    LocalNodeIdentificationObjectList := AMessage.ExtractNodeIdentifications(True);
     for i := 0 to LocalNodeIdentificationObjectList.Count - 1 do
     begin
       // An index may not be valid... i.e. if a node ID is carried in an event there won't be a destination
@@ -569,9 +569,23 @@ begin
         if not NullNodeID(LocalNodeIdentificationObjectList[i].NodeID) then
           LocalAliasMapping := AliasServer.FindMapping(LocalNodeIdentificationObjectList[i].NodeID)
         else
-          raise ENodeIdentificationObjectIsNull.Create('Received Message Alias/Node Extractions failed');
+          raise ENodeIdentificationObjectIsNull.Create('TReceiveMessageServerThread.ValidateMapping: Received Message Alias/Node Extractions failed');
 
-        if not Assigned(LocalAliasMapping) then
+        if Assigned(LocalAliasMapping) then
+        begin
+          case i of
+            0 :
+              begin
+                AMessage.SourceID := LocalAliasMapping.NodeID;
+                AMessage.CAN.SourceAlias := LocalAliasMapping.NodeAlias;
+              end;
+            1 :
+              begin
+                AMessage.DestID := LocalAliasMapping.NodeID;
+                AMessage.CAN.DestAlias := LocalAliasMapping.NodeAlias;
+              end;
+          end;
+        end else
         begin // Gotta do something..... but what.......  or do I do this during the transfer to the local list
               //  in the thread and not transfer it if there are ID's to be mapped?
           {$IFDEF WriteLnDebug}
