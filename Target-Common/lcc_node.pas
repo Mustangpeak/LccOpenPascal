@@ -123,6 +123,8 @@ type
     FProtocolSupportedProtocols: TProtocolSupportedProtocols;
     FProtocolMemoryConfigurationDefinitionInfo: TProtocolMemoryConfigurationDefinitionInfo;
     FSeedNodeID: TNodeID;
+    FTractionServer: TLccTractionServer;
+    FTractionServerEnabled: Boolean;
     FWorkerMessageDatagram: TLccMessage;
     FInitialized: Boolean;
     FNodeManager: {$IFDEF DELPHI}TComponent{$ELSE}TObject{$ENDIF};
@@ -153,6 +155,103 @@ type
   protected
     FNodeID: TNodeID;
 
+    // Datagram Message Handlers
+    //**************************************************************************
+    procedure HandleDatagramOkReply(var SourceMessage: TLccMessage); virtual;
+    procedure HandleDatagramRejectedReply(var SourceMessage: TLccMessage); virtual;
+
+    // Datagram LogRequest Type Handlers
+    procedure HandleProtocolLogRequest(var SourceMessage: TLccMessage); virtual;
+
+    // Datagram Configuration Type Handlers
+        // Datagram Configuration Type Handlers - Memory Space Write Handlers
+    procedure HandleCDI_MemorySpaceWrite(var SourceMessage: TLccMessage); virtual;
+    procedure HandleAll_MemorySpaceWrite(var SourceMessage: TLccMessage);virtual;
+    procedure HandleConfiguration_MemorySpaceWrite(var SourceMessage: TLccMessage);virtual;
+    procedure HandleACDI_Manufacturer_MemorySpaceWrite(var SourceMessage: TLccMessage); virtual;
+    procedure HandleACDI_UserMemorySpaceWrite(var SourceMessage: TLccMessage);virtual;
+    procedure HandleStreamRead;
+    procedure HandleStreamWrite;
+    procedure HandleTractionFDI_MemorySpaceWrite(var SourceMessage: TLccMessage); virtual;
+    procedure HandleTractionFDI_ConfigurationMemorySpaceWrite(var SourceMessage: TLccMessage); virtual;
+       // Datagram Configuration Type Handlers - Memory Space Read Handlers
+    procedure HandleCDI_MemorySpaceRead(var SourceMessage: TLccMessage);virtual;
+    procedure HandleAll_MemorySpaceRead(var SourceMessage: TLccMessage);virtual;
+    procedure HandleConfiguration_MemorySpaceRead(var SourceMessage: TLccMessage); virtual;
+    procedure HandleACDI_Manufacturer_MemorySpaceRead(var SourceMessage: TLccMessage);virtual;
+    procedure HandleACDI_User_MemorySpaceRead(var SourceMessage: TLccMessage);virtual;
+    procedure HandleTractionFDI_MemorySpaceRead(var SourceMessage: TLccMessage); virtual;
+    procedure HandleTractionFDI_ConfigurationMemorySpaceRead(var SourceMessage: TLccMessage); virtual;
+      // Datagram Configuration Options Handlers
+    procedure HandleOperationGetAddressSpaceInfo(var SourceMessage: TLccMessage);
+    procedure HandleOperationGetConfiguration(var SourceMessage: TLccMessage);
+    procedure HandleOperationLock(var SourceMessage: TLccMessage);
+    procedure HandleOperationGetUniqueID(var SourceMessage: TLccMessage);
+    procedure HandleOperationFreeze(var SourceMessage: TLccMessage);
+    procedure HandleOperationIndicate(var SourceMessage: TLccMessage);
+    procedure HandleOperationReset(var SourceMessage: TLccMessage);
+    //**************************************************************************
+
+
+    // Event Message Handlers
+    //**************************************************************************
+    procedure HandleEventsIdentify; virtual;
+    procedure HandleEventsIdentifyDest; virtual;
+    procedure HandleConsumerIdentifiedClear(var SourceMessage: TLccMessage); virtual;
+    procedure HandleConsumerIdentifiedSet(var SourceMessage: TLccMessage); virtual;
+    procedure HandleConsumerIdentifiedUnknown(var SourceMessage: TLccMessage); virtual;
+    procedure HandleConsumerIdentify(var SourceMessage: TLccMessage); virtual;
+    procedure HandleProducerIdentifiedClear(var SourceMessage: TLccMessage); virtual;
+    procedure HandleProducerIdentifiedSet(var SourceMessage: TLccMessage); virtual;
+    procedure HandleProducerIdentifiedUnknown(var SourceMessage: TLccMessage); virtual;
+    procedure HandleProducerIdentify(var SourceMessage: TLccMessage); virtual;
+    //**************************************************************************
+
+    // Protocol Information Protocol Handlers
+    //**************************************************************************
+    procedure HandleProtocolSupportInquiry(var SourceMessage: TLccMessage); virtual;
+    procedure HandleProtocolSupportReply(var SourceMessage: TLccMessage); virtual;
+    //**************************************************************************
+
+    // Undknown MTI Handlers
+    //**************************************************************************
+    procedure HandleOptionalInteractionRejected(var SourceMessage: TLccMessage); virtual;
+    //**************************************************************************
+
+    // SNIP Handlers
+    //**************************************************************************
+    procedure HandleSimpleNodeInfoReply(var SourceMessage: TLccMessage); virtual;
+    procedure HandleSimpleNodeInfoRequest(var SourceMessage: TLccMessage); virtual;
+    //**************************************************************************
+
+    // Node Management Handlers
+    //**************************************************************************
+    procedure HandleVerifiedNodeIDNumber(var SourceMessage: TLccMessage); virtual;
+    procedure HandleVerifyNodeIDNumber(var SourceMessage: TLccMessage); virtual;
+    procedure HandleVerifyNodeIDNumberDest; virtual;
+    //**************************************************************************
+
+    // Traction Handlers - Does nothing here.  Traction Object Nodes decendants override these
+    //**************************************************************************
+    procedure HandleTractionControllerAssign(var SourceMessage: TLccMessage);  virtual;
+    procedure HandleTractionControllerRelease(var SourceMessage: TLccMessage);  virtual;
+    procedure HandleTractionControllerQuery(var SourceMessage: TLccMessage);  virtual;
+    procedure HandleTractionControllerChangingNotify(var SourceMessage: TLccMessage);  virtual;
+    procedure HandleTractionControllerChangedNotify(var SourceMessage: TLccMessage);  virtual;
+    procedure HandleTractionEStop(var SourceMessage: TLccMessage);  virtual;
+    procedure HandleTractionListenerAttach(var SourceMessage: TLccMessage); virtual;
+    procedure HandleTractionListenerDetach(var SourceMessage: TLccMessage); virtual;
+    procedure HandleTractionListenerQuery(var SourceMessage: TLccMessage); virtual;
+    procedure HandleTractionManageReserve(var SourceMessage: TLccMessage); virtual;
+    procedure HandleTractionManageRelease(var SourceMessage: TLccMessage); virtual;
+    procedure HandleTractionSetSpeed(var SourceMessage: TLccMessage); virtual;
+    procedure HandleTractionSetFunction(var SourceMessage: TLccMessage); virtual;
+    procedure HandleTractionSimpleTrainInfoReply(var SourceMessage: TLccMessage); virtual;
+    procedure HandleTractionQuerySpeed(var SourceMessage: TLccMessage); virtual;
+    procedure HandleTractionQueryFunction(var SourceMessage: TLccMessage); virtual;
+    //**************************************************************************
+
+
     property NodeManager:{$IFDEF DELPHI}TComponent{$ELSE}TObject{$ENDIF} read FNodeManager write FNodeManager;
     property StreamCdi: TMemoryStream read FStreamCdi write FStreamCdi;
     property StreamConfig: TMemoryStream read FStreamConfig write FStreamConfig;
@@ -168,6 +267,9 @@ type
     property DuplicateAliasDetected: Boolean read FDuplicateAliasDetected write FDuplicateAliasDetected;
     property SeedNodeID: TNodeID read FSeedNodeID write FSeedNodeID;
     property LoginTimoutCounter: Integer read FLoginTimoutCounter write FLoginTimoutCounter;
+
+    // TractionServer
+    property TractionServer: TLccTractionServer read FTractionServer;
 
     procedure CreateNodeID(var Seed: TNodeID);
     function FindCdiElement(TestXML, Element: string; var Offset: Integer; var ALength: Integer): Boolean;
@@ -373,6 +475,310 @@ begin
   DatagramResendQueue.SendMessageFunc := AValue;
 end;
 
+procedure TLccNode.HandleTractionFDI_MemorySpaceWrite(var SourceMessage: TLccMessage);
+begin
+  SendDatagramAckReply(SourceMessage, False, 0);  // Can't write to this memory space
+end;
+
+procedure TLccNode.HandleOptionalInteractionRejected(var SourceMessage: TLccMessage);
+begin
+  (NodeManager as INodeManagerCallbacks).DoOptionalInteractionRejected(Self,SourceMessage);
+end;
+
+procedure TLccNode.HandleProducerIdentifiedClear(var SourceMessage: TLccMessage);
+begin
+  (NodeManager as INodeManagerCallbacks).DoProducerIdentified(Self, SourceMessage);
+end;
+
+procedure TLccNode.HandleProducerIdentifiedSet(var SourceMessage: TLccMessage);
+begin
+  (NodeManager as INodeManagerCallbacks).DoProducerIdentified(Self, SourceMessage);
+end;
+
+procedure TLccNode.HandleProducerIdentifiedUnknown(var SourceMessage: TLccMessage);
+begin
+  (NodeManager as INodeManagerCallbacks).DoProducerIdentified(Self, SourceMessage);
+end;
+
+procedure TLccNode.HandleProducerIdentify(var SourceMessage: TLccMessage);
+begin
+  SendProducerIdentify(SourceMessage.ExtractDataBytesAsEventID(0));
+end;
+
+procedure TLccNode.HandleEventsIdentify;
+begin
+  SendConsumedEvents;
+  SendProducedEvents;
+end;
+
+procedure TLccNode.HandleConsumerIdentify(var SourceMessage: TLccMessage);
+begin
+  SendConsumerIdentify(SourceMessage.ExtractDataBytesAsEventID(0));
+end;
+
+procedure TLccNode.HandleDatagramOkReply(var SourceMessage: TLccMessage);
+begin
+  DatagramResendQueue.Remove(SourceMessage);
+end;
+
+procedure TLccNode.HandleProtocolLogRequest(var SourceMessage: TLccMessage);
+begin
+  SendDatagramAckReply(SourceMessage, False, 0);
+end;
+
+procedure TLccNode.HandleDatagramRejectedReply(var SourceMessage: TLccMessage);
+begin
+  DatagramResendQueue.Resend(SourceMessage);
+end;
+
+procedure TLccNode.HandleOperationGetAddressSpaceInfo(var SourceMessage: TLccMessage);
+begin
+  WorkerMessage.LoadDatagram(NodeID, FAliasID, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias);
+  ProtocolMemoryInfo.LoadReply(SourceMessage, WorkerMessage);
+  SendDatagramRequiredReply(SourceMessage, WorkerMessage);
+end;
+
+procedure TLccNode.HandleOperationGetConfiguration(var SourceMessage: TLccMessage);
+begin
+  WorkerMessage.LoadDatagram(NodeID, FAliasID, SourceMessage.SourceID,
+  SourceMessage.CAN.SourceAlias);
+  ProtocolMemoryOptions.LoadReply(WorkerMessage);
+  SendDatagramRequiredReply(SourceMessage,WorkerMessage);
+end;
+
+procedure TLccNode.HandleOperationLock(var SourceMessage: TLccMessage);
+begin
+
+end;
+
+procedure TLccNode.HandleOperationGetUniqueID(var SourceMessage: TLccMessage);
+begin
+
+end;
+
+procedure TLccNode.HandleOperationFreeze(var SourceMessage: TLccMessage);
+begin
+
+end;
+
+procedure TLccNode.HandleOperationIndicate(var SourceMessage: TLccMessage);
+begin
+
+end;
+
+procedure TLccNode.HandleOperationReset(var SourceMessage: TLccMessage);
+begin
+
+end;
+
+procedure TLccNode.HandleConsumerIdentifiedClear(var SourceMessage: TLccMessage);
+begin
+  (NodeManager as INodeManagerCallbacks).DoConsumerIdentified(Self, SourceMessage);
+end;
+
+procedure TLccNode.HandleConfiguration_MemorySpaceWrite(
+  var SourceMessage: TLccMessage);
+begin
+  SendDatagramAckReply(SourceMessage, False, 0);     // We will be sending a Write Reply
+  ProtocolMemoryConfiguration.DatagramWriteRequest(SourceMessage, StreamConfig);
+end;
+
+procedure TLccNode.HandleACDI_Manufacturer_MemorySpaceWrite(var SourceMessage: TLccMessage);
+begin
+  SendDatagramAckReply(SourceMessage, False, 0);  // Can't write to this memory space
+end;
+
+procedure TLccNode.HandleConfiguration_MemorySpaceRead(var SourceMessage: TLccMessage);
+begin
+  WorkerMessage.LoadDatagram(NodeID, FAliasID, SourceMessage.SourceID,
+  SourceMessage.CAN.SourceAlias);
+  ProtocolMemoryConfiguration.DatagramReadRequest(SourceMessage, WorkerMessage, StreamConfig);
+  SendDatagramRequiredReply(SourceMessage,WorkerMessage);
+end;
+
+procedure TLccNode.HandleACDI_UserMemorySpaceWrite(var SourceMessage: TLccMessage);
+begin
+  SendDatagramAckReply(SourceMessage, False, 0);     // We will be sending a Write Reply
+  ProtocolACDIUser.DatagramWriteRequest(
+  SourceMessage, StreamConfig);
+end;
+
+procedure TLccNode.HandleStreamRead;
+begin
+
+end;
+
+procedure TLccNode.HandleStreamWrite;
+begin
+
+end;
+
+procedure TLccNode.HandleACDI_User_MemorySpaceRead(var SourceMessage: TLccMessage);
+begin
+  WorkerMessage.LoadDatagram(NodeID, FAliasID, SourceMessage.SourceID,
+  SourceMessage.CAN.SourceAlias);
+  ProtocolACDIUser.DatagramReadRequest(SourceMessage, WorkerMessage, StreamConfig);
+  SendDatagramRequiredReply(SourceMessage,WorkerMessage);
+end;
+
+procedure TLccNode.HandleACDI_Manufacturer_MemorySpaceRead(
+  var SourceMessage: TLccMessage);
+begin
+  WorkerMessage.LoadDatagram(NodeID, FAliasID, SourceMessage.SourceID,
+  SourceMessage.CAN.SourceAlias);
+  ProtocolACDIMfg.DatagramReadRequest(SourceMessage, WorkerMessage, StreamManufacturerData);
+  SendDatagramRequiredReply(SourceMessage, WorkerMessage);
+end;
+
+procedure TLccNode.HandleAll_MemorySpaceRead(var SourceMessage: TLccMessage);
+begin
+  SendDatagramAckReply(SourceMessage, False, 0);
+end;
+
+procedure TLccNode.HandleCDI_MemorySpaceRead(var SourceMessage: TLccMessage);
+begin
+  WorkerMessage.LoadDatagram(NodeID, FAliasID, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias);
+  ProtocolMemoryConfigurationDefinitionInfo.DatagramReadRequest(SourceMessage, WorkerMessage, StreamCdi);
+  SendDatagramRequiredReply(SourceMessage, WorkerMessage);
+end;
+
+procedure TLccNode.HandleCDI_MemorySpaceWrite(var SourceMessage: TLccMessage);
+begin
+  SendDatagramAckReply(SourceMessage, False, 0);  // Can't write to this memory space
+end;
+
+procedure TLccNode.HandleAll_MemorySpaceWrite(var SourceMessage: TLccMessage);
+begin
+  SendDatagramAckReply(SourceMessage, False, 0);  // Can't write to this memory space
+end;
+
+procedure TLccNode.HandleConsumerIdentifiedSet(var SourceMessage: TLccMessage);
+begin
+  (NodeManager as INodeManagerCallbacks).DoConsumerIdentified(Self, SourceMessage);
+end;
+
+procedure TLccNode.HandleConsumerIdentifiedUnknown(var SourceMessage: TLccMessage);
+begin
+  (NodeManager as INodeManagerCallbacks).DoConsumerIdentified(Self, SourceMessage);
+end;
+
+procedure TLccNode.HandleEventsIdentifyDest;
+begin
+  SendConsumedEvents;  // already known the destination is us
+  SendProducedEvents;
+end;
+
+procedure TLccNode.HandleProtocolSupportInquiry(var SourceMessage: TLccMessage);
+begin
+  WorkerMessage.LoadProtocolIdentifyReply(NodeID, FAliasID,
+  SourceMessage.SourceID, SourceMessage.CAN.SourceAlias,
+  ProtocolSupportedProtocols.EncodeFlags);
+  SendMessageFunc(Self, WorkerMessage);
+end;
+
+procedure TLccNode.HandleProtocolSupportReply(var SourceMessage: TLccMessage);
+begin
+  (NodeManager as INodeManagerCallbacks).DoProtocolIdentifyReply(Self, SourceMessage);
+end;
+
+procedure TLccNode.HandleSimpleNodeInfoReply(var SourceMessage: TLccMessage);
+begin
+  (NodeManager as INodeManagerCallbacks).DoSimpleNodeIdentReply(Self, SourceMessage);
+end;
+
+procedure TLccNode.HandleSimpleNodeInfoRequest(var SourceMessage: TLccMessage);
+begin
+  WorkerMessage.LoadSimpleNodeIdentInfoReply(NodeID, FAliasID,
+  SourceMessage.SourceID, SourceMessage.CAN.SourceAlias,
+  ProtocolSimpleNodeInfo.PackedFormat(StreamManufacturerData, StreamConfig));
+  SendMessageFunc(Self, WorkerMessage);
+end;
+
+procedure TLccNode.HandleTractionFDI_ConfigurationMemorySpaceRead(var SourceMessage: TLccMessage);
+begin
+  WorkerMessage.LoadDatagram(NodeID, FAliasID, SourceMessage.SourceID,
+  SourceMessage.CAN.SourceAlias);
+  ProtocolMemoryConfiguration.DatagramReadRequest(SourceMessage, WorkerMessage, StreamTractionConfig);
+  SendDatagramRequiredReply(SourceMessage, WorkerMessage);
+end;
+
+procedure TLccNode.HandleTractionFDI_MemorySpaceRead(var SourceMessage: TLccMessage);
+begin
+  WorkerMessage.LoadDatagram(NodeID, FAliasID, SourceMessage.SourceID,SourceMessage.CAN.SourceAlias);
+  ProtocolMemoryConfigurationDefinitionInfo.DatagramReadRequest(SourceMessage, WorkerMessage, StreamTractionFdi);
+  SendDatagramRequiredReply(SourceMessage, WorkerMessage);
+end;
+
+procedure TLccNode.HandleTractionFDI_ConfigurationMemorySpaceWrite(var SourceMessage: TLccMessage);
+begin
+  SendDatagramAckReply(SourceMessage, False, 0);     // We will be sending a Write Reply
+  ProtocolMemoryConfiguration.DatagramWriteRequest(SourceMessage, StreamTractionConfig);
+end;
+
+procedure TLccNode.HandleVerifiedNodeIDNumber(var SourceMessage: TLccMessage);
+begin
+  (NodeManager as INodeManagerCallbacks).DoVerifiedNodeID(Self, SourceMessage);
+end;
+
+procedure TLccNode.HandleVerifyNodeIDNumber(var SourceMessage: TLccMessage);
+var
+  TestNodeID: TNodeID;
+begin
+  if SourceMessage.DataCount = 6 then
+  begin
+    TestNodeID := NULL_NODE_ID;
+    SourceMessage.ExtractDataBytesAsNodeID(0, TestNodeID);
+    if EqualNodeID(TestNodeID, NodeID, False) then
+    begin
+      WorkerMessage.LoadVerifiedNodeID(NodeID, FAliasID);
+      SendMessageFunc(Self, WorkerMessage);
+    end
+  end else
+  begin
+    WorkerMessage.LoadVerifiedNodeID(NodeID, FAliasID);
+    SendMessageFunc(Self, WorkerMessage);
+  end;
+end;
+
+procedure TLccNode.HandleVerifyNodeIDNumberDest;
+begin
+  WorkerMessage.LoadVerifiedNodeID(NodeID, FAliasID);
+  SendMessageFunc(Self, WorkerMessage);
+end;
+
+procedure TLccNode.HandleTractionControllerAssign(var SourceMessage: TLccMessage); begin end;
+
+procedure TLccNode.HandleTractionControllerRelease(var SourceMessage: TLccMessage); begin end;
+
+procedure TLccNode.HandleTractionControllerQuery(var SourceMessage: TLccMessage); begin end;
+
+procedure TLccNode.HandleTractionControllerChangingNotify(var SourceMessage: TLccMessage); begin end;
+
+procedure TLccNode.HandleTractionControllerChangedNotify(var SourceMessage: TLccMessage); begin end;
+
+procedure TLccNode.HandleTractionEStop(var SourceMessage: TLccMessage); begin end;
+
+procedure TLccNode.HandleTractionListenerAttach(var SourceMessage: TLccMessage); begin end;
+
+procedure TLccNode.HandleTractionListenerDetach(var SourceMessage: TLccMessage); begin end;
+
+procedure TLccNode.HandleTractionListenerQuery(var SourceMessage: TLccMessage); begin end;
+
+procedure TLccNode.HandleTractionManageReserve(var SourceMessage: TLccMessage); begin end;
+
+procedure TLccNode.HandleTractionManageRelease(var SourceMessage: TLccMessage); begin end;
+
+procedure TLccNode.HandleTractionSetSpeed(var SourceMessage: TLccMessage); begin end;
+
+procedure TLccNode.HandleTractionSetFunction(var SourceMessage: TLccMessage); begin end;
+
+procedure TLccNode.HandleTractionSimpleTrainInfoReply(var SourceMessage: TLccMessage); begin end;
+
+procedure TLccNode.HandleTractionQuerySpeed(var SourceMessage: TLccMessage);
+begin end;
+
+procedure TLccNode.HandleTractionQueryFunction(var SourceMessage: TLccMessage); begin end;
+
 function TLccNode.GetAliasIDStr: String;
 begin
   Result := NodeAliasToString(AliasID);
@@ -457,6 +863,7 @@ begin
   FDatagramResendQueue := TDatagramQueue.Create;
   FWorkerMessageDatagram := TLccMessage.Create;
   FWorkerMessage := TLccMessage.Create;
+  FTractionServer := TLccTractionServer.Create;
   FNodeManager := ANodeManager;
   FGridConnect := GridConnectLink;
  // FMessageIdentificationList := TLccMessageWithNodeIdentificationList.Create;
@@ -587,8 +994,6 @@ end;
 function TLccNode.ProcessMessageLCC(SourceMessage: TLccMessage): Boolean;
 
 var
-  TestNodeID: TNodeID;
-  Temp: TEventID;
   AddressSpace, OperationType: Byte;
 begin
 
@@ -608,9 +1013,6 @@ begin
     Result := True; // Handled
     Exit;
   end;
-
-  TestNodeID[0] := 0;
-  TestNodeID[1] := 0;
 
 
   // Guarenteed to have Mappings before I ever get here
@@ -633,84 +1035,39 @@ begin
       Exit;
   end;
 
+  TractionServer.ProcessMessageLCC(Self, SourceMessage);
+
   case SourceMessage.MTI of
-    MTI_OPTIONAL_INTERACTION_REJECTED :
-        begin
-          (NodeManager as INodeManagerCallbacks).DoOptionalInteractionRejected(Self, SourceMessage);
-        end;
+    MTI_OPTIONAL_INTERACTION_REJECTED : HandleOptionalInteractionRejected(SourceMessage);
 
     // *************************************************************************
     // *************************************************************************
-    MTI_VERIFY_NODE_ID_NUMBER      :
-        begin
-          if SourceMessage.DataCount = 6 then
-          begin
-            SourceMessage.ExtractDataBytesAsNodeID(0, TestNodeID);
-            if EqualNodeID(TestNodeID, NodeID, False) then
-            begin
-              WorkerMessage.LoadVerifiedNodeID(NodeID, FAliasID);
-              SendMessageFunc(Self, WorkerMessage);
-            end
-          end else
-          begin
-            WorkerMessage.LoadVerifiedNodeID(NodeID, FAliasID);
-            SendMessageFunc(Self, WorkerMessage);
-          end;
-        end;
-    MTI_VERIFY_NODE_ID_NUMBER_DEST :
-        begin
-          WorkerMessage.LoadVerifiedNodeID(NodeID, FAliasID);
-          SendMessageFunc(Self, WorkerMessage);
-        end;
-    MTI_VERIFIED_NODE_ID_NUMBER :
-        begin
-          (NodeManager as INodeManagerCallbacks).DoVerifiedNodeID(Self, SourceMessage, SourceMessage.SourceID);
-        end;
+    MTI_VERIFY_NODE_ID_NUMBER      : HandleVerifyNodeIDNumber(SourceMessage);
+    MTI_VERIFY_NODE_ID_NUMBER_DEST : HandleVerifyNodeIDNumberDest;
+    MTI_VERIFIED_NODE_ID_NUMBER    : HandleVerifiedNodeIDNumber(SourceMessage);
 
     // *************************************************************************
     // *************************************************************************
-    MTI_SIMPLE_NODE_INFO_REQUEST :
-        begin
-          WorkerMessage.LoadSimpleNodeIdentInfoReply(NodeID, FAliasID, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias, ProtocolSimpleNodeInfo.PackedFormat(StreamManufacturerData, StreamConfig));
-          SendMessageFunc(Self, WorkerMessage);
-        end;
-    MTI_SIMPLE_NODE_INFO_REPLY :
-        begin
-          (NodeManager as INodeManagerCallbacks).DoSimpleNodeIdentReply(Self, SourceMessage);
-        end;
+    MTI_SIMPLE_NODE_INFO_REQUEST : HandleSimpleNodeInfoRequest(SourceMessage);
+    MTI_SIMPLE_NODE_INFO_REPLY   : HandleSimpleNodeInfoReply(SourceMessage);
 
     // *************************************************************************
     // *************************************************************************
-    MTI_PROTOCOL_SUPPORT_INQUIRY :
-        begin
-          WorkerMessage.LoadProtocolIdentifyReply(NodeID, FAliasID, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias, ProtocolSupportedProtocols.EncodeFlags);
-          SendMessageFunc(Self, WorkerMessage);
-        end;
-    MTI_PROTOCOL_SUPPORT_REPLY :
-        begin
-          (NodeManager as INodeManagerCallbacks).DoProtocolIdentifyReply(Self, SourceMessage);
-        end;
+    MTI_PROTOCOL_SUPPORT_INQUIRY : HandleProtocolSupportInquiry(SourceMessage);
+    MTI_PROTOCOL_SUPPORT_REPLY   : HandleProtocolSupportReply(SourceMessage);
 
     // *************************************************************************
     // Producer/Consumer tell me what events do you care about (for routers, getting mass
     // results for the state of the layout
     // *************************************************************************
-    MTI_EVENTS_IDENTIFY :
-        begin
-          SendConsumedEvents;
-          SendProducedEvents;
-        end;
-    MTI_EVENTS_IDENTIFY_DEST :
-        begin
-          SendConsumedEvents;  // already known the destination is us
-          SendProducedEvents;
-        end;
+    MTI_EVENTS_IDENTIFY      : HandleEventsIdentify;
+    MTI_EVENTS_IDENTIFY_DEST : HandleEventsIdentifyDest;
 
     // *************************************************************************
     // General Producer/Consumer Queries
     // *************************************************************************
-    MTI_PRODUCER_IDENDIFY : SendProducerIdentify(SourceMessage.ExtractDataBytesAsEventID(0));
-    MTI_CONSUMER_IDENTIFY : SendConsumerIdentify(SourceMessage.ExtractDataBytesAsEventID(0));
+    MTI_PRODUCER_IDENDIFY : HandleProducerIdentify(SourceMessage);
+    MTI_CONSUMER_IDENTIFY : HandleConsumerIdentify(SourceMessage);
 
     // *************************************************************************
      // This block of messages is if we sent at "Producer" or "Consumer" Identify
@@ -718,64 +1075,75 @@ begin
      // needs different states as the replying node is not in control of the state only
      // the "Producer" is in control
      // *************************************************************************
-     MTI_CONSUMER_IDENTIFIED_CLEAR :
-        begin
-          Temp := SourceMessage.ExtractDataBytesAsEventID(0);
-          (NodeManager as INodeManagerCallbacks).DoConsumerIdentified(Self, SourceMessage, Temp, evs_InValid);
-        end;
-     MTI_CONSUMER_IDENTIFIED_SET :
-        begin
-         Temp := SourceMessage.ExtractDataBytesAsEventID(0);
-          (NodeManager as INodeManagerCallbacks).DoConsumerIdentified(Self, SourceMessage, Temp, evs_Valid);
-        end;
-     MTI_CONSUMER_IDENTIFIED_UNKNOWN :
-        begin
-          Temp := SourceMessage.ExtractDataBytesAsEventID(0);
-          (NodeManager as INodeManagerCallbacks).DoConsumerIdentified(Self, SourceMessage, Temp, evs_Unknown);
-        end;
-     MTI_PRODUCER_IDENTIFIED_CLEAR :
-        begin
-          Temp := SourceMessage.ExtractDataBytesAsEventID(0);
-          (NodeManager as INodeManagerCallbacks).DoProducerIdentified(Self, SourceMessage, Temp, evs_InValid);
-        end;
-     MTI_PRODUCER_IDENTIFIED_SET :
-        begin
-          Temp := SourceMessage.ExtractDataBytesAsEventID(0);
-          (NodeManager as INodeManagerCallbacks).DoProducerIdentified(Self, SourceMessage, Temp, evs_Valid);
-        end;
-     MTI_PRODUCER_IDENTIFIED_UNKNOWN :
-        begin
-          Temp := SourceMessage.ExtractDataBytesAsEventID(0);
-          (NodeManager as INodeManagerCallbacks).DoProducerIdentified(Self, SourceMessage, Temp, evs_Unknown);
-        end;
+    MTI_CONSUMER_IDENTIFIED_CLEAR   : HandleConsumerIdentifiedClear(SourceMessage);
+    MTI_CONSUMER_IDENTIFIED_SET     : HandleConsumerIdentifiedSet(SourceMessage);
+    MTI_CONSUMER_IDENTIFIED_UNKNOWN : HandleConsumerIdentifiedUnknown(SourceMessage);
+    MTI_PRODUCER_IDENTIFIED_CLEAR   : HandleProducerIdentifiedClear(SourceMessage);
+    MTI_PRODUCER_IDENTIFIED_SET     : HandleProducerIdentifiedSet(SourceMessage);
+    MTI_PRODUCER_IDENTIFIED_UNKNOWN : HandleProducerIdentifiedUnknown(SourceMessage);
 
-     // *************************************************************************
-     // Traction (just so we say we handle them somewere and don't send a Optional Interaction Rejected below
-     // *************************************************************************
-     MTI_TRACTION_SIMPLE_TRAIN_INFO_REPLY,
-     MTI_TRACTION_REQUEST,
-     MTI_TRACTION_REPLY: begin end;
+    // *************************************************************************
+    // Traction (just so we say we handle them somewere and don't send a Optional Interaction Rejected below
+    // *************************************************************************
+    MTI_TRACTION_SIMPLE_TRAIN_INFO_REPLY : HandleTractionSimpleTrainInfoReply(SourceMessage);
+
+    MTI_TRACTION_REPLY :
+      begin
+        case SourceMessage.DataArray[0] of
+          TRACTION_CONTROLLER_CONFIG :
+            begin
+              case SourceMessage.DataArray[1] of
+                TRACTION_CONTROLLER_CONFIG_CHANGED_NOTIFY : HandleTractionControllerChangedNotify(SourceMessage);
+              end;
+            end;
+        end
+      end;
+    MTI_TRACTION_REQUEST :
+      begin
+        case SourceMessage.DataArray[0] of
+          TRACTION_SET_SPEED_DIR       : HandleTractionSetSpeed(SourceMessage);
+          TRACTION_SET_FUNCTION        : HandleTractionSetFunction(SourceMessage);
+          TRACTION_SET_E_STOP          : HandleTractionEStop(SourceMessage);
+          TRACTION_QUERY_SPEED         : HandleTractionQuerySpeed(SourceMessage);
+          TRACTION_QUERY_FUNCTION      : HandleTractionQueryFunction(SourceMessage);
+          TRACTION_CONTROLLER_CONFIG :
+            begin
+              case SourceMessage.DataArray[1] of
+                TRACTION_CONTROLLER_CONFIG_ASSIGN  : HandleTractionControllerAssign(SourceMessage);
+                TRACTION_CONTROLLER_CONFIG_RELEASE : HandleTractionControllerRelease(SourceMessage);
+                TRACTION_CONTROLLER_CONFIG_QUERY   : HandleTractionControllerQuery(SourceMessage);
+                TRACTION_CONTROLLER_CONFIG_CHANGING_NOTIFY : HandleTractionControllerChangingNotify(SourceMessage);
+              end
+            end;
+          TRACTION_LISTENER :
+            begin
+              case SourceMessage.DataArray[1] of
+                TRACTION_LISTENER_ATTACH : HandleTractionListenerAttach(SourceMessage);
+                TRACTION_LISTENER_DETACH : HandleTractionListenerDetach(SourceMessage);
+                TRACTION_LISTENER_QUERY  : HandleTractionListenerQuery(SourceMessage);
+              end;
+            end;
+          TRACTION_MANAGE :
+            begin
+              case SourceMessage.DataArray[1] of
+                TRACTION_MANAGE_RESERVE : HandleTractionManageReserve(SourceMessage);
+                TRACTION_MANAGE_RELEASE : HandleTractionManageRelease(SourceMessage);
+              end
+            end;
+        end;
+      end;
 
 
     // *************************************************************************
     // Datagram Messages
     // *************************************************************************
-     MTI_DATAGRAM_REJECTED_REPLY :
-       begin
-         DatagramResendQueue.Resend(SourceMessage);
-       end;
-     MTI_DATAGRAM_OK_REPLY :
-       begin
-         DatagramResendQueue.Remove(SourceMessage);
-       end;
+     MTI_DATAGRAM_REJECTED_REPLY : HandleDatagramRejectedReply(SourceMessage);
+     MTI_DATAGRAM_OK_REPLY       : HandleDatagramOkReply(SourceMessage);
      MTI_DATAGRAM :
        begin
          case SourceMessage.DataArray[0] of
-           DATAGRAM_PROTOCOL_LOGREQUEST : {0x01}  // Makes the Python Script Happy
-             begin
-               SendDatagramAckReply(SourceMessage, False, 0);
-             end;
-           DATAGRAM_PROTOCOL_CONFIGURATION :     {0x20}
+           DATAGRAM_PROTOCOL_LOGREQUEST : HandleProtocolLogRequest(SourceMessage); {0x01}  // Makes the Python Script Happy
+           DATAGRAM_PROTOCOL_CONFIGURATION :                                       {0x20}  // Configuration
              begin
                AddressSpace := 0;
 
@@ -791,111 +1159,40 @@ begin
                  MCP_WRITE :
                    begin
                      case AddressSpace of
-                       MSI_CDI       : begin end; // Can't write to the CDI
-                       MSI_ALL       : begin end; // Can't write to the program area
-                       MSI_CONFIG    :            // Needs access to the Configuration Memory Information
-                         begin
-                           SendDatagramAckReply(SourceMessage, False, 0);     // We will be sending a Write Reply
-                           ProtocolMemoryConfiguration.DatagramWriteRequest(SourceMessage, StreamConfig);
-                         end;
-                       MSI_ACDI_MFG  : begin end; // Can't write to the Manufacturers area
-                       MSI_ACDI_USER :            // Needs access to the Configuration Memory Information
-                         begin
-                           SendDatagramAckReply(SourceMessage, False, 0);     // We will be sending a Write Reply
-                           ProtocolACDIUser.DatagramWriteRequest(SourceMessage, StreamConfig);
-                         end;
-                       MSI_TRACTION_FDI       : begin end; // Can't write to the FDI area
-                       MSI_TRACTION_FUNCTION_CONFIG :
-                         begin
-                           SendDatagramAckReply(SourceMessage, False, 0);     // We will be sending a Write Reply
-                           ProtocolMemoryConfiguration.DatagramWriteRequest(SourceMessage, StreamTractionConfig);
-                         end;
+                       MSI_CDI                      : HandleCDI_MemorySpaceWrite(SourceMessage);
+                       MSI_ALL                      : HandleAll_MemorySpaceWrite(SourceMessage);
+                       MSI_CONFIG                   : HandleConfiguration_MemorySpaceWrite(SourceMessage); // Configuration Memory through the CDI protocol
+                       MSI_ACDI_MFG                 : HandleACDI_Manufacturer_MemorySpaceWrite(SourceMessage);
+                       MSI_ACDI_USER                : HandleACDI_UserMemorySpaceWrite(SourceMessage);            // Configuration Memory through the Abbreviated CDI protocol
+                       MSI_TRACTION_FDI             : HandleTractionFDI_MemorySpaceWrite(SourceMessage);
+                       MSI_TRACTION_FUNCTION_CONFIG : HandleTractionFDI_ConfigurationMemorySpaceWrite(SourceMessage); // Traction Function Configuration Memory
                      end;
                    end;
                  MCP_READ :
                    begin
                      case AddressSpace of
-                       MSI_CDI :
-                         begin
-                           WorkerMessage.LoadDatagram(NodeID, FAliasID, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias);
-                           ProtocolMemoryConfigurationDefinitionInfo.DatagramReadRequest(SourceMessage, WorkerMessage, StreamCdi);
-                           SendDatagramRequiredReply(SourceMessage, WorkerMessage);
-                         end;
-                       MSI_ALL       :
-                           begin  // Can't read from the program area
-                             SendDatagramAckReply(SourceMessage, False, 0);
-                           end;
-                       MSI_CONFIG :
-                         begin
-                           WorkerMessage.LoadDatagram(NodeID, FAliasID, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias);
-                           ProtocolMemoryConfiguration.DatagramReadRequest(SourceMessage, WorkerMessage, StreamConfig);
-                           SendDatagramRequiredReply(SourceMessage, WorkerMessage);
-                         end;
-                       MSI_ACDI_MFG :
-                         begin
-                           WorkerMessage.LoadDatagram(NodeID, FAliasID, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias);
-                           ProtocolACDIMfg.DatagramReadRequest(SourceMessage, WorkerMessage, StreamManufacturerData);
-                           SendDatagramRequiredReply(SourceMessage, WorkerMessage);
-                         end;
-                       MSI_ACDI_USER :
-                         begin
-                           WorkerMessage.LoadDatagram(NodeID, FAliasID, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias);
-                           ProtocolACDIUser.DatagramReadRequest(SourceMessage, WorkerMessage, StreamConfig);
-                           SendDatagramRequiredReply(SourceMessage, WorkerMessage);
-                         end;
-                       MSI_TRACTION_FDI :
-                         begin
-                           WorkerMessage.LoadDatagram(NodeID, FAliasID, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias);
-                           ProtocolMemoryConfigurationDefinitionInfo.DatagramReadRequest(SourceMessage, WorkerMessage, StreamTractionFdi);
-                           SendDatagramRequiredReply(SourceMessage, WorkerMessage);
-                         end;
-                       MSI_TRACTION_FUNCTION_CONFIG :
-                         begin
-                           WorkerMessage.LoadDatagram(NodeID, FAliasID, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias);
-                           ProtocolMemoryConfiguration.DatagramReadRequest(SourceMessage, WorkerMessage, StreamTractionConfig);
-                           SendDatagramRequiredReply(SourceMessage, WorkerMessage);
-                         end;
+                       MSI_CDI                      : HandleCDI_MemorySpaceRead(SourceMessage);
+                       MSI_ALL                      : HandleAll_MemorySpaceRead(SourceMessage);
+                       MSI_CONFIG                   : HandleConfiguration_MemorySpaceRead(SourceMessage);
+                       MSI_ACDI_MFG                 : HandleACDI_Manufacturer_MemorySpaceRead(SourceMessage);
+                       MSI_ACDI_USER                : HandleACDI_User_MemorySpaceRead(SourceMessage);
+                       MSI_TRACTION_FDI             : HandleTractionFDI_MemorySpaceRead(SourceMessage);
+                       MSI_TRACTION_FUNCTION_CONFIG : HandleTractionFDI_ConfigurationMemorySpaceRead(SourceMessage);
                      end;
                    end;
-                 MCP_WRITE_STREAM :
-                   begin
-                   end;
-                 MCP_READ_STREAM :
-                   begin
-                   end;
+                 MCP_WRITE_STREAM : HandleStreamWrite;
+                 MCP_READ_STREAM  : HandleStreamRead;
                  MCP_OPERATION :
                    begin
                      OperationType := SourceMessage.DataArray[1];
                      case OperationType of
-                       MCP_OP_GET_CONFIG :
-                           begin
-                             WorkerMessage.LoadDatagram(NodeID, FAliasID, SourceMessage.SourceID,
-                                                        SourceMessage.CAN.SourceAlias);
-                             ProtocolMemoryOptions.LoadReply(WorkerMessage);
-                             SendDatagramRequiredReply(SourceMessage, WorkerMessage);
-                           end;
-                       MCP_OP_GET_ADD_SPACE_INFO :
-                           begin
-                             WorkerMessage.LoadDatagram(NodeID, FAliasID, SourceMessage.SourceID,
-                                                        SourceMessage.CAN.SourceAlias);
-                             ProtocolMemoryInfo.LoadReply(SourceMessage, WorkerMessage);
-                             SendDatagramRequiredReply(SourceMessage, WorkerMessage);
-                           end;
-                       MCP_OP_LOCK :
-                           begin
-                           end;
-                       MCP_OP_GET_UNIQUEID :
-                           begin
-                           end;
-                       MCP_OP_FREEZE :
-                           begin
-                           end;
-                       MCP_OP_INDICATE :
-                           begin
-                           end;
-                       MCP_OP_RESETS :
-                           begin
-                           end;
+                       MCP_OP_GET_CONFIG         : HandleOperationGetConfiguration(SourceMessage);
+                       MCP_OP_GET_ADD_SPACE_INFO : HandleOperationGetAddressSpaceInfo(SourceMessage);
+                       MCP_OP_LOCK               : HandleOperationLock(SourceMessage);
+                       MCP_OP_GET_UNIQUEID       : HandleOperationGetUniqueID(SourceMessage);
+                       MCP_OP_FREEZE             : HandleOperationFreeze(SourceMessage);
+                       MCP_OP_INDICATE           : HandleOperationIndicate(SourceMessage);
+                       MCP_OP_RESETS             : HandleOperationReset(SourceMessage);
                      end // case
                    end;
                end
@@ -1087,6 +1384,7 @@ begin
   (NodeManager as INodeManagerCallbacks).DoDestroyLccNode(Self);
   _100msTimer.Free;
 
+  FreeAndNil(FTractionServer);
   FreeAndNil(FProtocolSupportedProtocols);
   FreeAndNil(FProtocolSimpleNodeInfo);
   FreeAndNil(FProtocolEventConsumed);

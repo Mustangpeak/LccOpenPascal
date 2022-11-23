@@ -18,9 +18,8 @@
         <ComponentName Value="Form1"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
-        <IsVisibleTab Value="True"/>
-        <TopLine Value="1129"/>
-        <CursorPos X="59" Y="1143"/>
+        <TopLine Value="352"/>
+        <CursorPos X="23" Y="360"/>
         <UsageCount Value="206"/>
         <Loaded Value="True"/>
         <LoadedDesigner Value="True"/>
@@ -170,9 +169,10 @@
       </Unit18>
       <Unit19>
         <Filename Value="../../Target-PC/HardwareConnection/lcc_ethernet_client.pas"/>
+        <IsVisibleTab Value="True"/>
         <EditorIndex Value="4"/>
-        <TopLine Value="272"/>
-        <CursorPos X="44" Y="89"/>
+        <TopLine Value="117"/>
+        <CursorPos X="3" Y="122"/>
         <UsageCount Value="101"/>
         <Loaded Value="True"/>
       </Unit19>
@@ -378,124 +378,124 @@
     </Units>
     <JumpHistory Count="30" HistoryIndex="29">
       <Position1>
-        <Filename Value="DualController.lpr"/>
-        <Caret Line="22" Column="78"/>
-      </Position1>
-      <Position2>
-        <Filename Value="DualController.lpr"/>
-        <Caret Line="11" Column="3"/>
-      </Position2>
-      <Position3>
-        <Filename Value="dualcontroller_unit.pas"/>
-        <Caret Line="568" Column="17" TopLine="560"/>
-      </Position3>
-      <Position4>
         <Filename Value="../../Target-Common/lcc_node_controller.pas"/>
         <Caret Line="323" TopLine="308"/>
-      </Position4>
-      <Position5>
+      </Position1>
+      <Position2>
         <Filename Value="../../Target-PC/HardwareConnection/lcc_ethernet_client.pas"/>
         <Caret Line="95" TopLine="80"/>
-      </Position5>
-      <Position6>
+      </Position2>
+      <Position3>
         <Filename Value="../../Target-PC/HardwareConnection/Indy_Lcc/Core/IdIOHandler.pas"/>
         <Caret Line="2130" TopLine="2116"/>
-      </Position6>
-      <Position7>
+      </Position3>
+      <Position4>
         <Filename Value="../../Target-PC/HardwareConnection/Indy_Lcc/Core/IdIOHandler.pas"/>
         <Caret Line="2130" TopLine="2116"/>
-      </Position7>
-      <Position8>
+      </Position4>
+      <Position5>
         <Filename Value="../../Target-Common/lcc_node.pas"/>
         <Caret Line="208" Column="21" TopLine="195"/>
-      </Position8>
-      <Position9>
+      </Position5>
+      <Position6>
         <Filename Value="../../Target-Common/lcc_node_controller.pas"/>
         <Caret Line="323" Column="24" TopLine="308"/>
-      </Position9>
-      <Position10>
+      </Position6>
+      <Position7>
         <Filename Value="../../Target-Common/lcc_node_controller.pas"/>
         <Caret Line="103" Column="18" TopLine="90"/>
-      </Position10>
-      <Position11>
+      </Position7>
+      <Position8>
         <Filename Value="../../Target-PC/HardwareConnection/lcc_ethernet_client.pas"/>
         <Caret Line="95" Column="22" TopLine="80"/>
-      </Position11>
-      <Position12>
+      </Position8>
+      <Position9>
         <Filename Value="../../Target-PC/HardwareConnection/lcc_ethernet_client.pas"/>
         <Caret Line="51" Column="17" TopLine="43"/>
-      </Position12>
-      <Position13>
+      </Position9>
+      <Position10>
         <Filename Value="../../Target-Common/lcc_node_train.pas"/>
         <Caret Line="400" TopLine="377"/>
-      </Position13>
-      <Position14>
+      </Position10>
+      <Position11>
         <Filename Value="../../Target-PC/lcc_common_classes.pas"/>
         <Caret Line="153" Column="15" TopLine="140"/>
+      </Position11>
+      <Position12>
+        <Filename Value="dualcontroller_unit.pas"/>
+        <Caret Line="440" Column="16" TopLine="425"/>
+      </Position12>
+      <Position13>
+        <Filename Value="dualcontroller_unit.pas"/>
+        <Caret Line="447" Column="15" TopLine="444"/>
+      </Position13>
+      <Position14>
+        <Filename Value="dualcontroller_unit.pas"/>
+        <Caret Line="219" Column="22" TopLine="206"/>
       </Position14>
       <Position15>
         <Filename Value="dualcontroller_unit.pas"/>
-        <Caret Line="440" Column="16" TopLine="425"/>
+        <Caret Line="781" Column="62" TopLine="774"/>
       </Position15>
       <Position16>
         <Filename Value="dualcontroller_unit.pas"/>
-        <Caret Line="447" Column="15" TopLine="444"/>
+        <Caret Line="222" Column="15" TopLine="206"/>
       </Position16>
       <Position17>
         <Filename Value="dualcontroller_unit.pas"/>
-        <Caret Line="219" Column="22" TopLine="206"/>
+        <Caret Line="838" Column="25" TopLine="822"/>
       </Position17>
       <Position18>
         <Filename Value="dualcontroller_unit.pas"/>
-        <Caret Line="781" Column="62" TopLine="774"/>
+        <Caret Line="219" Column="15" TopLine="209"/>
       </Position18>
       <Position19>
         <Filename Value="dualcontroller_unit.pas"/>
-        <Caret Line="222" Column="15" TopLine="206"/>
+        <Caret Line="783" Column="51" TopLine="754"/>
       </Position19>
       <Position20>
         <Filename Value="dualcontroller_unit.pas"/>
-        <Caret Line="838" Column="25" TopLine="822"/>
+        <Caret Line="225" Column="26" TopLine="215"/>
       </Position20>
       <Position21>
-        <Filename Value="dualcontroller_unit.pas"/>
-        <Caret Line="219" Column="15" TopLine="209"/>
+        <Filename Value="form_visual_server.pas"/>
+        <Caret Line="26" Column="61" TopLine="15"/>
       </Position21>
       <Position22>
-        <Filename Value="dualcontroller_unit.pas"/>
-        <Caret Line="783" Column="51" TopLine="754"/>
+        <Filename Value="form_visual_server.pas"/>
+        <Caret Line="29" Column="38" TopLine="15"/>
       </Position22>
       <Position23>
-        <Filename Value="dualcontroller_unit.pas"/>
-        <Caret Line="225" Column="26" TopLine="215"/>
+        <Filename Value="form_visual_server.pas"/>
+        <Caret Line="30" Column="59" TopLine="15"/>
       </Position23>
       <Position24>
         <Filename Value="form_visual_server.pas"/>
-        <Caret Line="26" Column="61" TopLine="15"/>
+        <Caret Line="78" Column="68" TopLine="64"/>
       </Position24>
       <Position25>
         <Filename Value="form_visual_server.pas"/>
-        <Caret Line="29" Column="38" TopLine="15"/>
+        <Caret Line="97" Column="71" TopLine="83"/>
       </Position25>
       <Position26>
-        <Filename Value="form_visual_server.pas"/>
-        <Caret Line="30" Column="59" TopLine="15"/>
+        <Filename Value="dualcontroller_unit.pas"/>
+        <Caret Line="269" Column="113" TopLine="256"/>
       </Position26>
       <Position27>
-        <Filename Value="form_visual_server.pas"/>
-        <Caret Line="78" Column="68" TopLine="64"/>
+        <Filename Value="dualcontroller_unit.pas"/>
+        <Caret Line="434" Column="18" TopLine="411"/>
       </Position27>
       <Position28>
-        <Filename Value="form_visual_server.pas"/>
-        <Caret Line="97" Column="71" TopLine="83"/>
+        <Filename Value="dualcontroller_unit.pas"/>
+        <Caret Line="1143" Column="59" TopLine="1129"/>
       </Position28>
       <Position29>
         <Filename Value="dualcontroller_unit.pas"/>
-        <Caret Line="269" Column="113" TopLine="256"/>
+        <Caret Line="360" Column="23" TopLine="352"/>
       </Position29>
       <Position30>
-        <Filename Value="dualcontroller_unit.pas"/>
-        <Caret Line="434" Column="18" TopLine="411"/>
+        <Filename Value="../../Target-PC/HardwareConnection/lcc_ethernet_client.pas"/>
+        <Caret Line="82" Column="15" TopLine="69"/>
       </Position30>
     </JumpHistory>
     <RunParams>

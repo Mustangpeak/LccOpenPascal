@@ -59,12 +59,14 @@ type
 
   { TLccCommandStationNode }
 
-  TLccCommandStationNode = class(TLccTrainDatabaseNode)
+  TLccCommandStationNode = class(TLccNode)
   protected
     function GetCdiFile: string; override;
     procedure BeforeLogin; override;
 
   public
+    property TractionServer;
+
     constructor Create(ANodeManager: {$IFDEF DELPHI}TComponent{$ELSE}TObject{$ENDIF}; CdiXML: string; GridConnectLink: Boolean); override;
     function AddTrain(ADccAddress: Word; ALongAddress: Boolean; ASpeedStep: TLccDccSpeedStep): TLccTrainDccNode;
     procedure ClearTrains;
@@ -128,6 +130,7 @@ end;
 constructor TLccCommandStationNode.Create(ANodeManager: {$IFDEF DELPHI}TComponent{$ELSE}TObject{$ENDIF}; CdiXML: string; GridConnectLink: Boolean);
 begin
   inherited Create(ANodeManager, CdiXML, GridConnectLink);
+  TractionServer.Enabled := True;
 end;
 
 procedure TLccCommandStationNode.ClearTrains;
@@ -148,8 +151,7 @@ begin
    end;
 end;
 
-function TLccCommandStationNode.FindTrainByDccAddress(DccAddress: Word;
-  IsLongAddress: Boolean): TLccTrainDccNode;
+function TLccCommandStationNode.FindTrainByDccAddress(DccAddress: Word; IsLongAddress: Boolean): TLccTrainDccNode;
 var
   i: Integer;
   LocalTrainNode: TLccTrainDccNode;

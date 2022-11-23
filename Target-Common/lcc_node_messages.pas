@@ -276,6 +276,7 @@ public
   function TractionExtractFunctionValue: Word;
   function TractionExtractControllerAssignResult: Byte;
   function TractionExtractControllerChangedResult: Byte;
+  function TractionExtractControllerNodeID: TNodeID;
   function TractionExtractListenerID: TNodeID;
   function TractionExtractListenerFlags: Byte;
   function TractionExtractListenerIndex: Byte;
@@ -1876,6 +1877,11 @@ end;
 function TLccMessage.TractionExtractControllerChangedResult: Byte;
 begin
   Result := DataArray[2];
+end;
+
+function TLccMessage.TractionExtractControllerNodeID: TNodeID;
+begin
+  Result := ExtractDataBytesAsNodeID(3, Result);
 end;
 
 function TLccMessage.TractionExtractListenerID: TNodeID;

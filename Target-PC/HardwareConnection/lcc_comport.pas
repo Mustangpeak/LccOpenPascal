@@ -113,6 +113,7 @@ type
     function FormatComPortString(ComPort: string): string;
     function OpenConnection(ConnectionInfo: TLccHardwareConnectionInfo): TLccConnectionThread; override;
     function OpenConnectionWithLccSettings: TLccConnectionThread; override;
+    procedure SendMessageRawGridConnect(GridConnectStr: String); override;
   published
     { Published declarations }
     property Hub: Boolean read FHub write FHub;
@@ -158,6 +159,12 @@ procedure TLccComPort.DoReceiveMessage(Info: TLccHardwareConnectionInfo);
 begin
   if Assigned(OnReceiveMessage) then
     OnReceiveMessage(Self, Info);
+end;
+
+procedure TLccComPort.SendMessageRawGridConnect(GridConnectStr: String);
+begin
+  if Assigned(FComPortThread) then
+    ComPortThread.OutgoingGridConnect.Add(GridConnectStr + #10);
 end;
 
 constructor TLccComPort.Create(AOwner: TComponent; ANodeManager: TLccNodeManager);

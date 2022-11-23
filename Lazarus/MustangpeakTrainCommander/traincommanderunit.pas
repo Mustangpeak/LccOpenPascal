@@ -75,6 +75,7 @@ type
     procedure FormShow(Sender: TObject);
     procedure ToggleBoxServerFormChange(Sender: TObject);
   private
+    FCommandStationNode: TLccCommandStationNode;
     FComPort: TLccComPort;
  //   FLccHTTPServer: TLccHTTPServer;
  //   FLccWebsocketServer: TLccWebsocketServer;
@@ -121,14 +122,14 @@ type
     procedure OnNodeManagerNodeLogin(Sender: TObject; LccSourceNode: TLccNode);
 
 
-    procedure OnNodeTractionListenerAttach(Sender: TObject; LccNode: TLccNode; ListenerNode: TNodeID; Flags: Byte);
-    procedure OnNodeTractionListenerDetach(Sender: TObject; LccNode: TLccNode; ListenerNode: TNodeID; Flags: Byte);
-    procedure OnNodeTractionListenerQuery(Sender: TObject; LccSourceNode: TLccNode; Index: Integer);
+    procedure OnNodeTractionListenerAttach(Sender: TObject; LccNode: TLccNode; AMessage: TLccMessage; var DoDefault: Boolean);
+    procedure OnNodeTractionListenerDetach(Sender: TObject; LccNode: TLccNode; AMessage: TLccMessage; var DoDefault: Boolean);
+    procedure OnNodeTractionListenerQuery(Sender: TObject; LccNode: TLccNode; AMessage: TLccMessage; var DoDefault: Boolean);
 
     // Other
     procedure OnAliasMappingChange(Sender: TObject; LccSourceNode: TLccNode; AnAliasMapping: TLccAliasMapping; IsMapped: Boolean);
-    procedure OnTrainRegisteringChange(Sender: TObject; LccSourceNode: TLccNode; TrainObject: TLccTractionObject; IsRegistered: Boolean);
-    procedure OnTrainInformationChange(Sender: TObject; LccSourceNode: TLccNode; TrainObject: TLccTractionObject);
+    procedure OnTractionRegisterNotify(TractionServer: TLccTractionServer; LccNode: TObject; TractionObject: TLccTractionObject; IsRegistered: Boolean);
+    procedure OnTractionNotify(TractionServer: TLccTractionServer; LccNode: TObject; TractionObject: TLccTractionObject);
 
     function TrainNodeToCaption(ATrainNode: TLccTrainDccNode): string;
     function FindSingleLevelNodeWithData(ParentNode: TTreeNode; const NodeData: Pointer): TTreeNode;
@@ -142,8 +143,7 @@ type
     property NodeManager: TLccNodeManager read FNodeManager write FNodeManager;
     property ComPort: TLccComPort read FComPort write FComPort;
 
-
-    procedure JUNK(Sender: TObject; LccMessage: TLccMessage);
+    property CommandStationNode: TLccCommandStationNode read FCommandStationNode write FCommandStationNode;
   end;
 
 var
@@ -327,8 +327,6 @@ begin
   NodeManager.OnNodeTractionListenerDetach := @OnNodeTractionListenerDetach;
   NodeManager.OnNodeTractionListenerQuery := @OnNodeTractionListenerQuery;
   NodeManager.OnAliasMappingChange := @OnAliasMappingChange;
-  NodeManager.OnTrainRegisteringChange := @OnTrainRegisteringChange;
-  NodeManager.OnTrainInformationChange := @OnTrainInformationChange;
 
   FLccServer := TLccEthernetServer.Create(nil, NodeManager);
   LccServer.OnConnectionStateChange := @OnCommandStationServerConnectionState;
@@ -391,7 +389,16 @@ begin
         ButtonEthernetConnect.Caption := 'Disconnect Ethernet';
         StatusBarMain.Panels[0].Text := 'Ethernet: Command Station Connected at: ' + (Info as TLccEthernetConnectionInfo).ListenerIP + ':' + IntToStr((Info as TLccEthernetConnectionInfo).ListenerPort);
         if NodeManager.Nodes.Count = 0 then
-          NodeManager.AddNodeByClass('', TLccCommandStationNode , True, NULL_NODE_ID);
+          CommandStationNode := NodeManager.AddNodeByClass('', TLccCommandStationNode , True, NULL_NODE_ID) as TLccCommandStationNode;
+        if Assigned(CommandStationNode) then
+        begin
+          CommandStationNode.TractionServer.OnSpeedChange := @OnTractionNotify;
+          CommandStationNode.TractionServer.OnEmergencyStopChange := @OnTractionNotify;
+          CommandStationNode.TractionServer.OnFunctionChange := @OnTractionNotify;
+          CommandStationNode.TractionServer.OnSNIPChange := @OnTractionNotify;
+          CommandStationNode.TractionServer.OnTrainSNIPChange := @OnTractionNotify;
+          CommandStationNode.TractionServer.OnRegisterChange := @OnTractionRegisterNotify;
+        end;
       end;
     lcsDisconnecting :
       begin
@@ -589,18 +596,19 @@ begin
 end;
 
 procedure TFormTrainCommander.OnNodeTractionListenerAttach(Sender: TObject;
-  LccNode: TLccNode; ListenerNode: TNodeID; Flags: Byte);
+  LccNode: TLccNode; AMessage: TLccMessage; var DoDefault: Boolean);
 begin
   RebuildTrainListview;
 end;
 
 procedure TFormTrainCommander.OnNodeTractionListenerDetach(Sender: TObject;
-  LccNode: TLccNode; ListenerNode: TNodeID; Flags: Byte);
+  LccNode: TLccNode; AMessage: TLccMessage; var DoDefault: Boolean);
 begin
   RebuildTrainListview ;
 end;
 
-procedure TFormTrainCommander.OnNodeTractionListenerQuery(Sender: TObject; LccSourceNode: TLccNode; Index: Integer);
+procedure TFormTrainCommander.OnNodeTractionListenerQuery(Sender: TObject;
+  LccNode: TLccNode; AMessage: TLccMessage; var DoDefault: Boolean);
 begin
 
 end;
@@ -613,15 +621,15 @@ begin
     FormServerInfo.RemoveAliasMap(AnAliasMapping);
 end;
 
-procedure TFormTrainCommander.OnTrainRegisteringChange(Sender: TObject; LccSourceNode: TLccNode; TrainObject: TLccTractionObject; IsRegistered: Boolean);
+procedure TFormTrainCommander.OnTractionRegisterNotify(TractionServer: TLccTractionServer; LccNode: TObject; TractionObject: TLccTractionObject; IsRegistered: Boolean);
 begin
   if IsRegistered then
-    FormServerInfo.AddTrainObject(TrainObject)
+    FormServerInfo.AddTrainObject(TractionObject)
   else
-    FormServerInfo.RemoveTrainObject(TrainObject);
+    FormServerInfo.RemoveTrainObject(TractionObject);
 end;
 
-procedure TFormTrainCommander.OnTrainInformationChange(Sender: TObject; LccSourceNode: TLccNode; TrainObject: TLccTractionObject);
+procedure TFormTrainCommander.OnTractionNotify(TractionServer: TLccTractionServer; LccNode: TObject; TractionObject: TLccTractionObject);
 begin
 
 end;
@@ -699,11 +707,6 @@ begin
       TrainNode.ReleaseAlias(100);
     end;
   end;
-end;
-
-procedure TFormTrainCommander.JUNK(Sender: TObject; LccMessage: TLccMessage);
-begin
-
 end;
 
 procedure TFormTrainCommander.OnComPortConnectionStateChange(Sender: TObject; Info: TLccHardwareConnectionInfo);
