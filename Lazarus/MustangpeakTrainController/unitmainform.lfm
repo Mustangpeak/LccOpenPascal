@@ -1,0 +1,375 @@
+object FormTrainController: TFormTrainController
+  Left = 448
+  Height = 603
+  Top = 167
+  Width = 440
+  Caption = 'Mustangpeak TrainController'
+  ClientHeight = 603
+  ClientWidth = 440
+  OnCloseQuery = FormCloseQuery
+  OnCreate = FormCreate
+  OnDestroy = FormDestroy
+  OnShow = FormShow
+  LCLVersion = '2.2.4.0'
+  object PageControlMain: TPageControl
+    Left = 0
+    Height = 603
+    Top = 0
+    Width = 440
+    ActivePage = Throttle
+    Align = alClient
+    TabIndex = 0
+    TabOrder = 0
+    object Throttle: TTabSheet
+      Caption = 'Throttle'
+      ClientHeight = 573
+      ClientWidth = 434
+      object ScrollBox1: TScrollBox
+        Left = 280
+        Height = 539
+        Top = 34
+        Width = 154
+        HorzScrollBar.Page = 128
+        VertScrollBar.Page = 522
+        Align = alRight
+        ClientHeight = 522
+        ClientWidth = 137
+        TabOrder = 0
+        object ToggleBoxF0: TToggleBox
+          Left = 16
+          Height = 25
+          Top = 32
+          Width = 112
+          Caption = 'F0'
+          TabOrder = 0
+        end
+        object ToggleBoxF1: TToggleBox
+          Left = 16
+          Height = 25
+          Top = 64
+          Width = 112
+          Caption = 'F1'
+          OnChange = ToggleBoxF1Change
+          TabOrder = 1
+        end
+        object ToggleBoxF4: TToggleBox
+          Left = 16
+          Height = 25
+          Top = 160
+          Width = 112
+          Caption = 'F4'
+          TabOrder = 2
+        end
+        object ToggleBoxF5: TToggleBox
+          Left = 16
+          Height = 25
+          Top = 192
+          Width = 112
+          Caption = 'F5'
+          TabOrder = 3
+        end
+        object ToggleBoxF6: TToggleBox
+          Left = 16
+          Height = 25
+          Top = 224
+          Width = 112
+          Caption = 'F6'
+          TabOrder = 4
+        end
+        object ToggleBoxF7: TToggleBox
+          Left = 16
+          Height = 25
+          Top = 256
+          Width = 112
+          Caption = 'F7'
+          TabOrder = 5
+        end
+        object ToggleBoxF8: TToggleBox
+          Left = 16
+          Height = 25
+          Top = 288
+          Width = 112
+          Caption = 'F8'
+          TabOrder = 6
+        end
+        object ToggleBoxF9: TToggleBox
+          Left = 16
+          Height = 25
+          Top = 320
+          Width = 112
+          Caption = 'F9'
+          TabOrder = 7
+        end
+        object ToggleBoxF2: TToggleBox
+          Left = 16
+          Height = 25
+          Top = 96
+          Width = 112
+          Caption = 'F2'
+          TabOrder = 8
+        end
+        object ToggleBoxF3: TToggleBox
+          Left = 16
+          Height = 25
+          Top = 128
+          Width = 112
+          Caption = 'F3'
+          TabOrder = 9
+        end
+        object ToggleBoxF10: TToggleBox
+          Left = 16
+          Height = 25
+          Top = 352
+          Width = 112
+          Caption = 'F10'
+          TabOrder = 10
+        end
+        object ToggleBoxF11: TToggleBox
+          Left = 16
+          Height = 25
+          Top = 382
+          Width = 112
+          Caption = 'F11'
+          OnChange = ToggleBoxF1Change
+          TabOrder = 11
+        end
+        object ToggleBoxF12: TToggleBox
+          Left = 16
+          Height = 25
+          Top = 413
+          Width = 112
+          Caption = 'F12'
+          TabOrder = 12
+        end
+        object ToggleBoxF13: TToggleBox
+          Left = 16
+          Height = 25
+          Top = 443
+          Width = 112
+          Caption = 'F13'
+          TabOrder = 13
+        end
+        object ToggleBoxF14: TToggleBox
+          Left = 16
+          Height = 25
+          Top = 474
+          Width = 112
+          Caption = 'F14'
+          TabOrder = 14
+        end
+        object ToggleBoxF15: TToggleBox
+          Left = 16
+          Height = 25
+          Top = 504
+          Width = 112
+          Caption = 'F15'
+          TabOrder = 15
+        end
+        object ToggleBoxF16: TToggleBox
+          Left = 16
+          Height = 25
+          Top = 535
+          Width = 112
+          Caption = 'F16'
+          TabOrder = 16
+        end
+        object ToggleBoxF17: TToggleBox
+          Left = 16
+          Height = 25
+          Top = 565
+          Width = 112
+          Caption = 'F17'
+          TabOrder = 17
+        end
+        object ToggleBoxF18: TToggleBox
+          Left = 16
+          Height = 25
+          Top = 596
+          Width = 112
+          Caption = 'F18'
+          TabOrder = 18
+        end
+        object ToggleBoxF19: TToggleBox
+          Left = 16
+          Height = 25
+          Top = 626
+          Width = 112
+          Caption = 'F19'
+          TabOrder = 19
+        end
+      end
+      object Panel1: TPanel
+        Left = 0
+        Height = 34
+        Top = 0
+        Width = 434
+        Align = alTop
+        Caption = 'Panel1'
+        TabOrder = 1
+      end
+      object PanelThrottleLever: TPanel
+        Left = 0
+        Height = 539
+        Top = 34
+        Width = 280
+        Align = alClient
+        Caption = 'PanelThrottleLever'
+        TabOrder = 2
+        OnResize = PanelThrottleLeverResize
+      end
+    end
+    object Roster: TTabSheet
+      Caption = 'Roster'
+    end
+    object Settings: TTabSheet
+      Caption = 'Settings'
+      ClientHeight = 573
+      ClientWidth = 434
+      object LabelSettings1: TLabel
+        Left = 0
+        Height = 16
+        Top = 50
+        Width = 434
+        Align = alTop
+        Alignment = taCenter
+        Caption = 'Enter the hub or command stations IP address '
+        ParentColor = False
+      end
+      object PanelSettings7: TPanel
+        Left = 0
+        Height = 28
+        Top = 156
+        Width = 434
+        Align = alTop
+        BevelOuter = bvNone
+        TabOrder = 0
+      end
+      object PanelSettings2: TPanel
+        Left = 0
+        Height = 38
+        Top = 66
+        Width = 434
+        Align = alTop
+        BevelOuter = bvNone
+        ClientHeight = 38
+        ClientWidth = 434
+        TabOrder = 1
+        object EditSettingsIP: TEdit
+          Left = 104
+          Height = 22
+          Top = 8
+          Width = 217
+          Alignment = taCenter
+          Anchors = [akTop, akLeft, akRight]
+          TabOrder = 0
+          Text = '10.0.3.141'
+        end
+      end
+      object LabelSettings2: TLabel
+        Left = 0
+        Height = 16
+        Top = 104
+        Width = 434
+        Align = alTop
+        Alignment = taCenter
+        Caption = 'Enter the hub or command stations port '
+        ParentColor = False
+      end
+      object PanelSettings3: TPanel
+        Left = 0
+        Height = 36
+        Top = 120
+        Width = 434
+        Align = alTop
+        BevelOuter = bvNone
+        ClientHeight = 36
+        ClientWidth = 434
+        TabOrder = 2
+        object EditSettingsPort: TEdit
+          Left = 104
+          Height = 22
+          Top = 8
+          Width = 217
+          Alignment = taCenter
+          Anchors = [akTop, akLeft, akRight]
+          TabOrder = 0
+          Text = '12021'
+        end
+      end
+      object LabelSettings3: TLabel
+        Left = 0
+        Height = 16
+        Top = 184
+        Width = 434
+        Align = alTop
+        Alignment = taCenter
+        Caption = 'Enter a NodeID for the throttle'
+        ParentColor = False
+      end
+      object PanelSettings4: TPanel
+        Left = 0
+        Height = 36
+        Top = 200
+        Width = 434
+        Align = alTop
+        BevelOuter = bvNone
+        ClientHeight = 36
+        ClientWidth = 434
+        TabOrder = 3
+        object EditSettingsNodeID: TEdit
+          Left = 104
+          Height = 22
+          Top = 8
+          Width = 217
+          Alignment = taCenter
+          Anchors = [akTop, akLeft, akRight]
+          TabOrder = 0
+        end
+      end
+      object PanelSettings6: TPanel
+        Left = 0
+        Height = 50
+        Top = 236
+        Width = 434
+        Align = alTop
+        BevelOuter = bvNone
+        TabOrder = 4
+      end
+      object PanelSettings1: TPanel
+        Left = 0
+        Height = 50
+        Top = 0
+        Width = 434
+        Align = alTop
+        BevelOuter = bvNone
+        TabOrder = 5
+      end
+      object LabelSettingsConnectionState: TLabel
+        Left = 0
+        Height = 16
+        Top = 286
+        Width = 434
+        Align = alTop
+        Alignment = taCenter
+        Caption = 'Waiting for Connection'
+        ParentColor = False
+      end
+      object ButtonSettingsRestartConnection: TButton
+        Left = 112
+        Height = 25
+        Top = 312
+        Width = 209
+        Anchors = [akTop, akLeft, akRight]
+        Caption = 'Restart Connection'
+        OnClick = ButtonSettingsRestartConnectionClick
+        TabOrder = 6
+      end
+    end
+  end
+  object TimerMain: TTimer
+    Interval = 5000
+    OnTimer = TimerMainTimer
+    Left = 336
+    Top = 32
+  end
+end
