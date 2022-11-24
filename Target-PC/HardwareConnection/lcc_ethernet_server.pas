@@ -88,18 +88,22 @@ type
     function RemoveContext(AContext: TIdContext): Boolean;
   end;
 
+  TLccEthernetServer = class; // forward
+
   { TLccEthernetListener }
 
   TLccEthernetListener = class(TLccBaseEthernetThread)
   private
     FGridConnectContextList: TLccContextsList;
     FIdTCPServer: TIdTCPServer;
+    FOwner: TLccEthernetServer;
   protected
     property Running: Boolean read FRunning;
     property IdTCPServer: TIdTCPServer read FIdTCPServer write FIdTCPServer;
     // List that contains the contexts (threads) the server is serviceing.
     // Allows us to keep the data coming in/going out associated with each context
     property GridConnectContextList: TLccContextsList read FGridConnectContextList write FGridConnectContextList;
+    property Owner: TLccEthernetServer read FOwner write FOwner;
 
     procedure IdTCPServerConnect(AContext: TIdContext);
     procedure IdTCPServerDisconnect(AContext: TIdContext);
@@ -107,6 +111,7 @@ type
     procedure IdTCPServerStatus(ASender: TObject; const AStatus: TIdStatus; const AStatusText: string);
 
     procedure ReceiveMessage;  // For Syncronize
+    procedure SetConnecting(AValue: Boolean); override;
 
     procedure Execute; override;
   public
@@ -127,6 +132,7 @@ type
     function CreateListenerObject(AConnectionInfo: TLccEthernetConnectionInfo): TLccEthernetListener; virtual;
     function IsLccLink: Boolean; override;
     function GetConnected: Boolean; override;
+    function GetConnecting: Boolean; override;
 
     procedure DoReceiveMessage(LccMessage: TLccMessage); override;
   public
@@ -339,6 +345,7 @@ var
   DynamicByteArray: TLccDynamicByteArray;
 begin
   FRunning := True;
+  Connecting := True;
   try
     try
       try
@@ -373,6 +380,7 @@ begin
 
         if IdTCPServer.Active then
         begin
+          Connecting := False;
           HandleSendConnectionNotification(lcsConnected);
           while not Terminated do
           begin
@@ -433,6 +441,7 @@ begin
           end
         end;
       finally
+        Connecting := False;
         HandleSendConnectionNotification(lcsDisconnecting);
         try
           IdTCPServer.Active := False;
@@ -445,12 +454,21 @@ begin
     except  // idTCPServer uses exceptions to throw faults, trap them so the users does not see them
       on E: EIdException do
       begin
+        Connecting := False;
         ConnectionInfo.ErrorMessage := E.Message;
         Synchronize({$IFDEF FPC}@{$ENDIF}ErrorMessage);
       end;
     end;
   finally
     FRunning := False;
+  end;
+
+  // We free on end so set us to nil in the Manager
+  Owner.CriticalSectionEnter;
+  try
+    Owner.ListenerThread := nil;
+  finally
+    Owner.CriticalSectionLeave;
   end;
 end;
 
@@ -560,6 +578,16 @@ begin
   (Owner as TLccEthernetServer).DoReceiveMessage(GridConnectContextList.WorkerMessage);
 end;
 
+procedure TLccEthernetListener.SetConnecting(AValue: Boolean);
+begin
+  Owner.CriticalSectionEnter;
+  try
+    inherited SetConnecting(AValue);
+  finally
+    Owner.CriticalSectionLeave;
+  end;
+end;
+
 { TLccEthernetServer }
 
 procedure TLccEthernetServer.CloseConnection;
@@ -572,21 +600,26 @@ begin
     NodeManager.Clear;
 
     inherited CloseConnection;
-    if Assigned(ListenerThread) then
-    begin
-      TimeCount := 0;
-      ListenerThread.Terminate;
-      while ListenerThread.Running do
+    CriticalSectionEnter;
+    try
+      if Assigned(ListenerThread) then
       begin
-        // Needed to make Syncronize function if it is called during the thread shut down for notifications
-        // This call could actucally make a doulble click reentrant!  Need to protect against that!
-        {$IFNDEF FPC_CONSOLE_APP}Application.ProcessMessages;{$ELSE}CheckSynchronize();{$ENDIF}  // Pump the timers
-        Inc(TimeCount);
-        Sleep(500);
-        if TimeCount = 10 then Break // Something went really wrong
+        TimeCount := 0;
+        ListenerThread.Terminate;
+        while ListenerThread.Running do
+        begin
+          // Needed to make Syncronize function if it is called during the thread shut down for notifications
+          // This call could actucally make a doulble click reentrant!  Need to protect against that!
+          {$IFNDEF FPC_CONSOLE_APP}Application.ProcessMessages;{$ELSE}CheckSynchronize();{$ENDIF}  // Pump the timers
+          Inc(TimeCount);
+          Sleep(500);
+          if TimeCount = 10 then Break // Something went really wrong
+        end;
       end;
-      FreeAndNil(FListenerThread);
-    end;
+    finally
+      ClosingConnection := False;
+      CriticalSectionLeave;
+    end
   end
 end;
 
@@ -598,8 +631,25 @@ end;
 function TLccEthernetServer.GetConnected: Boolean;
 begin
   Result := False;
-  if Assigned(ListenerThread) and Assigned(ListenerThread.IdTCPServer) then
-    Result := ListenerThread.IdTCPServer.Active;
+  CriticalSectionEnter;
+  try
+    if Assigned(ListenerThread) and Assigned(ListenerThread.IdTCPServer) then
+      Result := ListenerThread.IdTCPServer.Active;
+  finally
+    CriticalSectionLeave;
+  end;
+end;
+
+function TLccEthernetServer.GetConnecting: Boolean;
+begin
+  Result := False;
+  CriticalSectionEnter;
+  try
+    if Assigned(ListenerThread) then
+      Result := ListenerThread.Connecting;
+  finally
+    CriticalSectionLeave;
+  end;
 end;
 
 procedure TLccEthernetServer.DoReceiveMessage(LccMessage: TLccMessage);
@@ -609,18 +659,24 @@ end;
 
 procedure TLccEthernetServer.SendMessage(ALccMessage: TLccMessage);
 begin
-  if Assigned(ListenerThread) then
-    ListenerThread.AddToOutgoingBuffer(ALccMessage);
+  CriticalSectionEnter;
+  try
+    if Assigned(ListenerThread) then
+      ListenerThread.AddToOutgoingBuffer(ALccMessage);
+  finally
+  end;
+    CriticalSectionLeave;
   inherited SendMessage(ALccMessage);
 end;
 
 function TLccEthernetServer.OpenConnection(AConnectionInfo: TLccHardwareConnectionInfo): TLccConnectionThread;
 begin
-  ClosingConnection := False;
+  CloseConnection;
   inherited OpenConnection(AConnectionInfo);
   Result := CreateListenerObject(AConnectionInfo.Clone as TLccEthernetConnectionInfo);
   ListenerThread := Result as TLccEthernetListener;
-  ListenerThread.FreeOnTerminate := False;
+  ListenerThread.Owner := Self;
+  ListenerThread.FreeOnTerminate := True;
   ListenerThread.Suspended := False;
 end;
 

@@ -48,13 +48,16 @@ type
     FGridConnectHelper: TGridConnectHelper;
     FidTCPClient: TIdTCPClient;
     FidThreadComponent: TIdThreadComponent;
+    FOwner: TLccEthernetClient;
     protected
       property GridConnectHelper: TGridConnectHelper read FGridConnectHelper write FGridConnectHelper;
+      property Owner: TLccEthernetClient read FOwner write FOwner;
       procedure Execute; override;
       procedure ReceiveMessage;  // For Syncronize
       procedure OnClientConnected(Sender: TObject);
       procedure OnClientDisconnected(Sender: TObject);
       procedure OnThreadComponentRun(Sender: TIdThreadComponent);
+      procedure SetConnecting(AValue: Boolean); override;
     public
       property idTCPClient: TIdTCPClient read FidTCPClient write FidTCPClient;
       property idThreadComponent: TIdThreadComponent read FidThreadComponent write FidThreadComponent;
@@ -74,6 +77,7 @@ type
 
     function IsLccLink: Boolean; override;
     function GetConnected: Boolean; override;
+    function GetConnecting: Boolean; override;
   public
     { Public declarations }
     property ClientThread: TLccEthernetClientThread read FClientThread write FClientThread;
@@ -96,43 +100,79 @@ end;
 function TLccEthernetClient.GetConnected: Boolean;
 begin
   Result := False;
-  if Assigned(ClientThread) and Assigned(ClientThread.IdTCPClient) then
-    Result := ClientThread.idTCPClient.Connected;
+  CriticalSectionEnter;
+  try
+    if Assigned(ClientThread) then
+      if Assigned(ClientThread.IdTCPClient) then
+        Result := ClientThread.idTCPClient.Connected;
+  finally
+    CriticalSectionLeave;
+  end;
+end;
+
+function TLccEthernetClient.GetConnecting: Boolean;
+begin
+  Result := False;
+  CriticalSectionEnter;
+  try
+    if Assigned(ClientThread) then
+      Result := ClientThread.Connecting;
+  finally
+    CriticalSectionLeave;
+  end;
 end;
 
 procedure TLccEthernetClient.SendMessage(ALccMessage: TLccMessage);
 begin
   inherited SendMessage(ALccMessage);
-  if Assigned(ClientThread) then
-    ClientThread.AddToOutgoingBuffer(ALccMessage);
+  CriticalSectionEnter;
+  try
+    if Assigned(ClientThread) then
+      ClientThread.AddToOutgoingBuffer(ALccMessage);
+  finally
+    CriticalSectionLeave;
+  end;
 end;
 
 function TLccEthernetClient.OpenConnection(ConnectionInfo: TLccHardwareConnectionInfo): TLccConnectionThread;
 begin
-  ClosingConnection := False;
+  CloseConnection;
   inherited OpenConnection(ConnectionInfo as TLccEthernetConnectionInfo);
   Result := TLccEthernetClientThread.Create(True, Self, ConnectionInfo);
-  FClientThread := Result as TLccEthernetClientThread;
+  ClientThread := Result as TLccEthernetClientThread;
+  ClientThread.Owner := Self;
+  ClientThread.FreeOnTerminate := True;
   ClientThread.Suspended := False;
 end;
+
 procedure TLccEthernetClient.CloseConnection;
 var
   TimeCount: Integer;
 begin
   if not ClosingConnection then  // Stop reentrant from that nasty ProcessMessage
   begin
+    ClosingConnection := True;
     inherited CloseConnection;
-    TimeCount := 0;
-    ClientThread.Terminate;
-    while ClientThread.Running do
-    begin
-      // Needed to make Syncronize function if it is called during the thread shut down for notifications
-      {$IFNDEF FPC_CONSOLE_APP}Application.ProcessMessages;{$ELSE}CheckSynchronize();{$ENDIF}  // Pump the timers
-      Inc(TimeCount);
-      Sleep(100);
-      if TimeCount = 10 then Break // Something went really wrong
-    end;
-    FreeAndNil(FClientThread);
+
+    CriticalSectionEnter;
+    try
+      if Assigned(ClientThread) then
+      begin
+        TimeCount := 0;
+        ClientThread.Terminate;
+        while ClientThread.Running do
+        begin
+          // Needed to make Syncronize function if it is called during the thread shut down for notifications
+          {$IFNDEF FPC_CONSOLE_APP}Application.ProcessMessages;{$ELSE}CheckSynchronize();{$ENDIF}  // Pump the timers
+          Inc(TimeCount);
+          Sleep(100);
+          if TimeCount = 10 then Break // Something went really wrong
+        end;
+      end;
+    finally
+      ClosingConnection := False;
+      CriticalSectionLeave;
+    end
   end;
 end;
 
@@ -142,12 +182,12 @@ constructor TLccEthernetClientThread.Create(CreateSuspended: Boolean;
   AConnectionInfo: TLccHardwareConnectionInfo);
 begin
   inherited;
-
+  WriteLn('TLccEthernetClientThread Create');
 end;
 
 destructor TLccEthernetClientThread.Destroy;
 begin
-
+  WriteLn('TLccEthernetClientThread Destroy');
   inherited;
 end;
 
@@ -159,6 +199,7 @@ var
   DynamicByteArray: TLccDynamicByteArray;
 begin
   FRunning := True;
+  Connecting := True;
   HandleSendConnectionNotification(lcsConnecting);
   GridConnectHelper := TGridConnectHelper.Create;
   idTCPClient := TIdTCPClient.Create();
@@ -180,6 +221,8 @@ begin
     idTCPClient.Connect((ConnectionInfo as TLccEthernetConnectionInfo).ListenerIP, (ConnectionInfo as TLccEthernetConnectionInfo).ListenerPort);
     try
       try
+        Connecting := False;
+
         while not IsTerminated and idTCPClient.Connected do
         begin
 
@@ -230,6 +273,7 @@ begin
         HandleSendConnectionNotification(lcsDisconnecting);
       end
     finally
+      Connecting := False;
       idThreadComponent.Active := False;
       idTCPClient.Disconnect;
       HandleSendConnectionNotification(lcsDisconnected);
@@ -241,9 +285,18 @@ begin
   except   // Indy uses exceptions to trigger problems
     on E: EIdException do
     begin
+      Connecting := False;
       ConnectionInfo.ErrorMessage := E.Message;
       Synchronize({$IFDEF FPC}@{$ENDIF}ErrorMessage);
     end;
+  end;
+
+  // We free on end so set us to nil in the Manager
+  Owner.CriticalSectionEnter;
+  try
+    Owner.FClientThread := nil;
+  finally
+    Owner.CriticalSectionLeave;
   end;
 end;
 
@@ -320,6 +373,16 @@ begin
     // https://stackoverflow.com/questions/64593756/delphi-rio-indy-tcpserver-high-cpu-usage
     // There is another way to do this but with this simple program this is fine
   IndySleep(50);
+end;
+
+procedure TLccEthernetClientThread.SetConnecting(AValue: Boolean);
+begin
+  Owner.CriticalSectionEnter;
+  try
+    inherited SetConnecting(AValue);
+  finally
+    Owner.CriticalSectionLeave;
+  end;
 end;
 
 end.

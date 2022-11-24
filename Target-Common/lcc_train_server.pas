@@ -433,6 +433,7 @@ begin
   TractionObject := Find(SourceMessage.DestID);
   if Assigned(TractionObject) then
   begin
+    // User can just read the Listener property in the LccNode (only works with internal trains nodes)
     DoListenerAttach(ALccNode, TractionObject);
   end;
 end;
@@ -444,6 +445,7 @@ begin
   TractionObject := Find(SourceMessage.DestID);
   if Assigned(TractionObject) then
   begin
+    // User can just read the Listener property in the LccNode (only works with internal trains nodes)
     DoListenerDetach(ALccNode, TractionObject);
   end;
 end;
@@ -460,6 +462,7 @@ begin
   TractionObject := Find(SourceMessage.DestID);
   if Assigned(TractionObject) then
   begin
+    // User can just read the Manage property in the LccNode (only works with internal trains nodes)
     DoListenerManageReserve(ALccNode, TractionObject);
   end;
 end;
@@ -471,6 +474,7 @@ begin
   TractionObject := Find(SourceMessage.DestID);
   if Assigned(TractionObject) then
   begin
+    // User can just read the Manage property in the LccNode (only works with internal trains nodes)
     DoListenerManageRelease(ALccNode, TractionObject);
   end;
 end;

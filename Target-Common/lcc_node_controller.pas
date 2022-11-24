@@ -99,6 +99,7 @@ type
   public
 
     property AssignedTrain: TAssignedTrainState read FAssignedTrain write FAssignedTrain;
+    property TractionServer;
 
     constructor Create(ANodeManager: {$IFDEF DELPHI}TComponent{$ELSE}TObject{$ENDIF}; CdiXML: string; GridConnectLink: Boolean); override;
     destructor Destroy; override;

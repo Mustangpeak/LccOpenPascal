@@ -246,7 +246,7 @@ begin
 
               if Assigned(ATrain) then
               begin
-                if ATrain.Permitted then  // Once it logs inand becomes permitted it will send this message
+                if ATrain.Permitted then  // Once it logs in and becomes permitted it will send this message if not permitted yet
                 begin
                   WorkerMessage.LoadProducerIdentified(ATrain.NodeID, ATrain.AliasID, ReturnEvent, evs_Valid);
                   SendMessageFunc(ATrain, WorkerMessage);      // Need to send the train for this one

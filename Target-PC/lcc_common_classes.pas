@@ -74,6 +74,7 @@ type
 
   TLccConnectionThread = class(TThread)
   private
+    FConnecting: Boolean;
     FConnectionInfo: TLccHardwareConnectionInfo;
     FGridConnectHelper: TGridConnectHelper;
     FGridConnectMessageAssembler: TLccGridConnectMessageAssembler;
@@ -85,6 +86,8 @@ type
     function GetIsTerminated: Boolean;
   protected
     FRunning: Boolean;
+
+    procedure SetConnecting(AValue: Boolean); virtual;
 
     // Link back to the ConnectionManager that owns the thread
     property TcpDecodeStateMachine: TOPStackcoreTcpDecodeStateMachine read FTcpDecodeStateMachine write FTcpDecodeStateMachine;
@@ -101,6 +104,7 @@ type
     destructor Destroy; override;
 
     property ConnectionInfo: TLccHardwareConnectionInfo read FConnectionInfo;
+    property Connecting: Boolean read FConnecting write SetConnecting;
     property GridConnectHelper: TGridConnectHelper read FGridConnectHelper;
     property GridConnectMessageAssembler: TLccGridConnectMessageAssembler read FGridConnectMessageAssembler write FGridConnectMessageAssembler;
     property OutgoingGridConnect: TThreadStringList read FOutgoingGridConnect write FOutgoingGridConnect;
@@ -124,11 +128,11 @@ type
     FOnLccMessageSend: TOnMessageEvent;
     FWorkerMessage: TLccMessage;
   protected
-    // useful in decendants, GetConnected could just return this with the object setting FConnected correctly
-    FConnected: Boolean;
+    FCriticalSection: TRTLCriticalSection;
 
     // Decendents only know what connected means to them
     function GetConnected: Boolean; virtual; abstract;
+    function GetConnecting: Boolean; virtual; abstract;
 
     // Event call methods
     procedure DoReceiveMessage(LccMessage: TLccMessage); virtual;
@@ -142,6 +146,7 @@ type
   public
     // True if the Manager is capabable of receiveing/sending messages on the wire... getter must be overridden
     property Connected: Boolean read GetConnected;
+    property Connecting: Boolean read GetConnecting;
     //
     property Hub: Boolean read FHub write FHub;
     // The Connection Mangaer is assigned to this Connection Manager and it uses it to pass messages
@@ -150,6 +155,9 @@ type
     constructor Create(AOwner: TComponent; ANodeManager: TLccNodeManager); reintroduce; virtual;
     destructor Destroy; override;
 
+    procedure CriticalSectionEnter;
+    procedure CriticalSectionLeave;
+    procedure CriticalSectionTryEnter;
     // When a thread owned by the manager receives a message it will call these centraized methods
     // ----------------------
     // Decendant must override this.  The Node Manager calls this when its nodes needs to send a message to the "wire".
@@ -277,13 +285,30 @@ begin
   FNodeManager := ANodeManager;
   FWorkerMessage := TLccMessage.Create;
   NodeManager.HardwarewareConnectionList.Add(Self as IHardwareConnectionManagerLink);
+  InitCriticalSection(FCriticalSection);
 end;
 
 destructor TLccHardwareConnectionManager.Destroy;
 begin
   NodeManager.HardwarewareConnectionList.Remove(Self as IHardwareConnectionManagerLink);
   FreeAndNil(FWorkerMessage);
+  DoneCriticalSection(FCriticalSection);
   inherited Destroy;
+end;
+
+procedure TLccHardwareConnectionManager.CriticalSectionEnter;
+begin
+  EnterCriticalSection(FCriticalSection);
+end;
+
+procedure TLccHardwareConnectionManager.CriticalSectionLeave;
+begin
+  LeaveCriticalSection(FCriticalSection);
+end;
+
+procedure TLccHardwareConnectionManager.CriticalSectionTryEnter;
+begin
+  TryEnterCriticalSection(FCriticalSection);
 end;
 
 { TLccConnectionThread }
@@ -318,6 +343,12 @@ end;
 function TLccConnectionThread.GetIsTerminated: Boolean;
 begin
   Result := Terminated;
+end;
+
+procedure TLccConnectionThread.SetConnecting(AValue: Boolean);
+begin
+  if FConnecting=AValue then Exit;
+  FConnecting:=AValue;
 end;
 
 procedure TLccConnectionThread.HandleErrorAndDisconnect(SuppressMessage: Boolean);

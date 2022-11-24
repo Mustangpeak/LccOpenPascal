@@ -1,7 +1,7 @@
 object Form1: TForm1
-  Left = 593
+  Left = 550
   Height = 610
-  Top = 179
+  Top = 153
   Width = 743
   BorderStyle = bsSingle
   Caption = 'Dual Throttle [LccOpenPascal]'
