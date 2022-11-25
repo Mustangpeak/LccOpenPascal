@@ -14,6 +14,9 @@ uses
   ComCtrls,
   StdCtrls,
   ExtCtrls,
+  LCLType,
+  strutils,
+  CheckBoxThemed,
   lcc_ethernet_client,
   lcc_node_manager,
   lcc_train_server,
@@ -24,8 +27,8 @@ uses
   lcc_defines;
 
 const
-  MAX_LED_SEGMENTS = 128;
-  LED_TAPER = 0.001;
+  MAX_LED_SEGMENTS = 100;
+  LED_TAPER = 0.010;
 
 type
 
@@ -34,7 +37,10 @@ type
   { TFormTrainController }
 
   TFormTrainController = class(TForm)
+    ButtonThrottleSelectGo: TButton;
+    ButtonThrottleStop: TButton;
     ButtonSettingsRestartConnection: TButton;
+    ComboBoxTrainSelect: TComboBox;
     EditSettingsIP: TEdit;
     EditSettingsPort: TEdit;
     EditSettingsNodeID: TEdit;
@@ -43,7 +49,10 @@ type
     LabelSettings3: TLabel;
     LabelSettingsConnectionState: TLabel;
     PageControlMain: TPageControl;
-    Panel1: TPanel;
+    PanelThrottleContainer: TPanel;
+    PanelThrottleSlider: TPanel;
+    PanelThrottleFooter: TPanel;
+    PanelThrottleHeader: TPanel;
     PanelThrottleLever: TPanel;
     PanelSettings7: TPanel;
     PanelSettings2: TPanel;
@@ -56,6 +65,9 @@ type
     Roster: TTabSheet;
     Settings: TTabSheet;
     TimerMain: TTimer;
+    ToggleBoxThrottleSelectShort: TToggleBox;
+    ToggleBoxThrottleForward: TToggleBox;
+    ToggleBoxThrottleReverse: TToggleBox;
     ToggleBoxF0: TToggleBox;
     ToggleBoxF1: TToggleBox;
     ToggleBoxF10: TToggleBox;
@@ -76,7 +88,10 @@ type
     ToggleBoxF7: TToggleBox;
     ToggleBoxF8: TToggleBox;
     ToggleBoxF9: TToggleBox;
+    TrackBarThrottle: TTrackBar;
     procedure ButtonSettingsRestartConnectionClick(Sender: TObject);
+    procedure ButtonThrottleSelectGoClick(Sender: TObject);
+    procedure ComboBoxTrainSelectKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure FormCloseQuery(Sender: TObject; var CanClose: Boolean);
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
@@ -84,6 +99,7 @@ type
     procedure PanelThrottleLeverResize(Sender: TObject);
     procedure TimerMainTimer(Sender: TObject);
     procedure ToggleBoxF1Change(Sender: TObject);
+    procedure TrackBarThrottleChange(Sender: TObject);
   private
     FController: TLccTrainController;
     FEthernetClient: TLccEthernetClient;
@@ -126,6 +142,7 @@ end;
 
 procedure TFormTrainController.FormCloseQuery(Sender: TObject; var CanClose: Boolean);
 begin
+  TimerMain.Enabled := False; // Stop trying to log in
   NodeManager.ReleaseAliasAll;
   EthernetClient.CloseConnection;
 end;
@@ -143,6 +160,74 @@ begin
     Info.SuppressErrorMessages := False;
     EthernetClient.OpenConnection(Info);
   end;
+end;
+
+procedure TFormTrainController.ButtonThrottleSelectGoClick(Sender: TObject);
+var
+  Test: String;
+  Valid: Boolean;
+  DccAddress: LongInt;
+  IsDccAddressLong: Boolean;
+  i: Integer;
+begin
+  Valid := True;
+  IsDccAddressLong := False;
+  Test := ComboBoxTrainSelect.Text;
+  if Test = '' then
+    Valid := False
+  else begin
+    if Length(Test) = 1 then
+    begin
+      if not TryStrToInt(Test, DccAddress) then
+        Valid := False;
+    end else
+    begin
+      for i := 1 to Length(Test) do
+      begin
+        if i < Length(Test) then
+        begin
+          if (Test[i] < '0') or (Test[i] > '9') then
+            Valid := False;
+        end else
+        begin
+          if (Test[i] >= '0') and (Test[i] <= '9') then
+          begin // all numbers
+            IsDccAddressLong := True;
+            if not TryStrToInt(Test, DccAddress) then   // This should always succeed
+              Valid := False;
+          end else
+          begin
+            if (Test[i] = 'L') or (Test[i] = 'l') or (Test[i] = 'S') or (Test[i] = 's') then
+            begin
+              IsDccAddressLong := (Test[i] = 'L') or (Test[i] = 'l');
+              SetLength(Test, Length(Test) - 1);  // strip it off
+              if not TryStrToInt(Test, DccAddress) then   // This should always succeed
+                Valid := False;
+            end else
+               Valid := False
+          end
+        end;
+      end
+    end
+  end;
+
+  if not Valid then
+    ShowMessage('Not a valid Address format valid examples are: 40L, 40S, 40s, 40s, 40....')
+  else begin
+    if IsDccAddressLong then
+      ShowMessage(IntToStr( DccAddress) + 'L')
+    else
+      ShowMessage(IntToStr( DccAddress) + 'S')
+  end
+end;
+
+procedure TFormTrainController.ComboBoxTrainSelectKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+begin
+  if (Key = VK_RETURN) then
+    ButtonThrottleSelectGoClick(Self);
+  if (Key < VK_0) or (Key > VK_9) then
+    if not ((Key = VK_S) or (Key = VK_L) or (Key = VK_BACK) or (Key = VK_LEFT) or (Key = VK_RIGHT)) then
+      Key := 0;
 end;
 
 procedure TFormTrainController.FormDestroy(Sender: TObject);
@@ -192,7 +277,7 @@ begin
       LED.Top := LastBottom - LEDHeight;
       LED.Height := LEDHeight;
       LED.Left := Trunc(MAX_LED_SEGMENTS * LED_TAPER * i);
-      LED.Width := PanelThrottleLever.Width - 2 * (Trunc(MAX_LED_SEGMENTS * LED_TAPER * i));
+      LED.Width := PanelThrottleLever.Width - (Trunc(MAX_LED_SEGMENTS * LED_TAPER * i));
       LastBottom := LED.Top;
     end;
   end;
@@ -209,6 +294,11 @@ begin
 end;
 
 procedure TFormTrainController.ToggleBoxF1Change(Sender: TObject);
+begin
+
+end;
+
+procedure TFormTrainController.TrackBarThrottleChange(Sender: TObject);
 begin
 
 end;
