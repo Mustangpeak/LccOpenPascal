@@ -22,6 +22,9 @@ uses
   SysUtils;
 
 const
+  TIMEOUT_CONTROLLER_NOTIFY_WAIT = 2000;  // milliseconds
+
+const
   PATH_OSX_RESOURCES = 'Contents/Resources/';
   PATH_OSX_EXECUTABLE = 'Contents/MacOS/';
   PATH_UNIX_APPLICATION = '/usr/share/';    // Typical place to store the application foldler

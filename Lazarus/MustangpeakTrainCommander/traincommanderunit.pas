@@ -128,8 +128,8 @@ type
 
     // Other
     procedure OnAliasMappingChange(Sender: TObject; LccSourceNode: TLccNode; AnAliasMapping: TLccAliasMapping; IsMapped: Boolean);
-    procedure OnTractionRegisterNotify(TractionServer: TLccTractionServer; LccNode: TObject; TractionObject: TLccTractionObject; IsRegistered: Boolean);
-    procedure OnTractionNotify(TractionServer: TLccTractionServer; LccNode: TObject; TractionObject: TLccTractionObject);
+    procedure OnTractionRegisterNotify(TractionServer: TLccTractionServer; TractionObject: TLccTractionObject; IsRegistered: Boolean);
+    procedure OnTractionNotify(TractionServer: TLccTractionServer; TractionObject: TLccTractionObject);
 
     function TrainNodeToCaption(ATrainNode: TLccTrainDccNode): string;
     function FindSingleLevelNodeWithData(ParentNode: TTreeNode; const NodeData: Pointer): TTreeNode;
@@ -357,6 +357,7 @@ end;
 
 procedure TFormTrainCommander.FormDestroy(Sender: TObject);
 begin
+  NodeManager.ReleaseAliasAll;
  // FreeAndNil(FLccHTTPServer);
   FreeAndNil(FLccServer);
  // FreeAndNil(FLccWebsocketServer);
@@ -621,7 +622,7 @@ begin
     FormServerInfo.RemoveAliasMap(AnAliasMapping);
 end;
 
-procedure TFormTrainCommander.OnTractionRegisterNotify(TractionServer: TLccTractionServer; LccNode: TObject; TractionObject: TLccTractionObject; IsRegistered: Boolean);
+procedure TFormTrainCommander.OnTractionRegisterNotify(TractionServer: TLccTractionServer; TractionObject: TLccTractionObject; IsRegistered: Boolean);
 begin
   if IsRegistered then
     FormServerInfo.AddTrainObject(TractionObject)
@@ -629,7 +630,7 @@ begin
     FormServerInfo.RemoveTrainObject(TractionObject);
 end;
 
-procedure TFormTrainCommander.OnTractionNotify(TractionServer: TLccTractionServer; LccNode: TObject; TractionObject: TLccTractionObject);
+procedure TFormTrainCommander.OnTractionNotify(TractionServer: TLccTractionServer; TractionObject: TLccTractionObject);
 begin
 
 end;

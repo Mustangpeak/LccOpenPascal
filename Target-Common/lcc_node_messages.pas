@@ -87,6 +87,7 @@ type
     property RetryCount: Integer read FRetryCount write FRetryCount;
 
     procedure AssignID(ANodeID: TNodeID; AnAlias: Word);
+    function Clone: TLccNodeIdentificationObject;
     function Compare(TestObject: TLccNodeIdentificationObject): Boolean; overload;
     function Compare(TestMapping: TLccAliasMapping): Boolean overload;
     function CompareEitherOr(TestObject: TLccNodeIdentificationObject): Boolean; overload;
@@ -118,7 +119,8 @@ type
     // Returns true if all the Identifications have been filled in or are not active anyway
     function IdentificationsValid: Boolean;
     // Tests if the passed Identification is already in the list
-    function IsDuplicate(DestinationObject: TLccNodeIdentificationObject): Boolean;
+    function IsDuplicate(DestinationObject: TLccNodeIdentificationObject): Boolean; overload;
+    function IsDuplicate(ANodeID: TNodeID; AnAlias: Word): Boolean; overload;
     // Updates the list with the new mapping that is passed
     function ProcessNewMapping(NewMapping: TLccAliasMapping): Boolean;
     // Removes any Identification objects that match the mapping
@@ -165,7 +167,7 @@ private
   FNodeIdentifications: TLccNodeIdentificationObjectList;
   FSourceID: TNodeID;                       // NodeID of the Source of a message
   FMTI: Word;                               // The Actual MTI of the message IF it is not a CAN frame message
-  FRetryAttempts: Integer;                  // If a message returned "Temporary" (like no buffers) this holds how many time it has been retried and defines a give up time to stop resending
+  FRetryAttemptsDatagram: Integer;                  // If a message returned "Temporary" (like no buffers) this holds how many time it has been retried and defines a give up time to stop resending
   function GetHasDestination: Boolean;
   function GetHasDestNodeID: Boolean;
   function GetHasSourceNodeID: Boolean;
@@ -186,7 +188,7 @@ public
   property HasSourceNodeID: Boolean read GetHasSourceNodeID;
   property IsCAN: Boolean read FIsCAN write FIsCAN;
   property MTI: Word read FMTI write FMTI;
-  property RetryAttempts: Integer read FRetryAttempts write FRetryAttempts;
+  property RetryAttemptsDatagram: Integer read FRetryAttemptsDatagram write FRetryAttemptsDatagram;
   property SourceID: TNodeID read FSourceID write FSourceID;
   property NodeIdentifications: TLccNodeIdentificationObjectList read FNodeIdentifications write FNodeIdentifications;
 
@@ -755,6 +757,15 @@ begin
   FActive := True;
 end;
 
+function TLccNodeIdentificationObject.Clone: TLccNodeIdentificationObject;
+begin
+  Result := TLccNodeIdentificationObject.Create;
+  Result.NodeID := NodeID;
+  Result.Alias := Alias;
+  Result.Active := Active;
+  Result.RetryCount := 0;
+end;
+
 function TLccNodeIdentificationObject.Compare(TestObject: TLccNodeIdentificationObject): Boolean;
 begin
   Result := (TestObject.Alias = Alias) and (TestObject.NodeID[0] = NodeID[0]) and (TestObject.NodeID[0] = NodeID[0])
@@ -872,6 +883,23 @@ begin
   end;
 end;
 
+function TLccNodeIdentificationObjectList.IsDuplicate(ANodeID: TNodeID; AnAlias: Word): Boolean;
+var
+  i: Integer;
+  NodeIdentificationObject: TLccNodeIdentificationObject;
+begin
+  Result := False;
+  for i := 0 to Count - 1 do
+  begin
+    NodeIdentificationObject := TLccNodeIdentificationObject( Items[i]);
+    if (NodeIdentificationObject.NodeID[0] = ANodeID[0]) and (NodeIdentificationObject.NodeID[1] = ANodeID[1]) and (NodeIdentificationObject.Alias = AnAlias) then
+    begin
+      Result := True;
+      Break
+    end;
+  end;
+end;
+
 function TLccNodeIdentificationObjectList.ProcessNewMapping(NewMapping: TLccAliasMapping): Boolean;
 var
   i: Integer;
@@ -931,6 +959,7 @@ function TLccNodeIdentificationObjectList.AddNodeIdentificationObject(ANodeID: T
 begin
   Result := TLccNodeIdentificationObject.Create;
   Result.AssignID(ANodeID, AnAlias);
+  Add(Result)
 end;
 
 function TLccNodeIdentificationObjectList.RetryCountMaxedOut(ATestCount: Integer): Boolean;
@@ -998,7 +1027,7 @@ begin
   Result.FDestID := FDestID;
   Result.FSourceID := FSourceID;
   Result.FMTI := FMTI;
-  Result.RetryAttempts := 0;
+  Result.RetryAttemptsDatagram := 0;
   Result.AbandonTimeout := 0;
 end;
 
@@ -1881,6 +1910,7 @@ end;
 
 function TLccMessage.TractionExtractControllerNodeID: TNodeID;
 begin
+  Result := NULL_NODE_ID;
   Result := ExtractDataBytesAsNodeID(3, Result);
 end;
 

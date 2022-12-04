@@ -28,6 +28,7 @@ uses
   lcc_defines,
   lcc_alias_server,
   lcc_train_server,
+  lcc_node_traindatabase,
   lcc_node_messages;
 
 const
@@ -85,7 +86,7 @@ type
 
   { TLccTrainController }
 
-  TLccTrainController = class(TLccNode)
+  TLccTrainController = class(TLccTractionServerNode)
   private
     FAssignedTrain: TAssignedTrainState;
 
@@ -99,7 +100,6 @@ type
   public
 
     property AssignedTrain: TAssignedTrainState read FAssignedTrain write FAssignedTrain;
-    property TractionServer;
 
     constructor Create(ANodeManager: {$IFDEF DELPHI}TComponent{$ELSE}TObject{$ENDIF}; CdiXML: string; GridConnectLink: Boolean); override;
     destructor Destroy; override;
@@ -167,13 +167,6 @@ begin
     if not EqualNode(NodeID,  AliasID, SourceMessage.DestID, SourceMessage.CAN.DestAlias, True) then
       Exit;
   end;
-
-  // We can snoop here on all train nodes and try to keep the database updated.
-  // The works until they are on a different segment and messages don't get routed
-  // to this segment.  When will that every occur?  Who nows
-
- // TrainServer.;
-
 
   case SourceMessage.MTI of
     MTI_PRODUCER_IDENTIFIED_CLEAR,
@@ -260,7 +253,7 @@ end;
 
 procedure TLccTrainController.BeforeLogin;
 begin
- { ProtocolSupportedProtocols.ConfigurationDefinitionInfo := True;
+  ProtocolSupportedProtocols.ConfigurationDefinitionInfo := True;
   ProtocolSupportedProtocols.MemConfig := True;
   ProtocolSupportedProtocols.Datagram := True;
   ProtocolSupportedProtocols.EventExchange := True;
@@ -288,7 +281,7 @@ begin
   ProtocolMemoryOptions.WriteArbitraryBytes := True;
   ProtocolMemoryOptions.WriteStream := False;
   ProtocolMemoryOptions.HighSpace := MSI_CDI;
-  ProtocolMemoryOptions.LowSpace := MSI_TRACTION_FUNCTION_CONFIG;       }
+  ProtocolMemoryOptions.LowSpace := MSI_TRACTION_FUNCTION_CONFIG;
 end;
 
 procedure TLccTrainController.DoControllerTakeOverRequest(var AllowTakeOver: Boolean);

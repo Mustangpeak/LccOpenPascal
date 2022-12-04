@@ -243,10 +243,13 @@ type
   private
     FAttachedController: TNodeIdentification;
     FRequestingController: TNodeIdentification;
-
+    FWaitingForNotifyReply: Boolean;
+    FWaitingForNotifyReplyTimer: Integer;
   public
     property AttachedController: TNodeIdentification read FAttachedController write FAttachedController;
     property RequestingController: TNodeIdentification read FRequestingController write FRequestingController;
+    property WaitingForNotifyReply: Boolean read FWaitingForNotifyReply;
+    property WaitingForNotifyReplyTimer: Integer read FWaitingForNotifyReplyTimer write FWaitingForNotifyReplyTimer;
 
     procedure AssignController(ANodeID: TNodeId; AnAlias: Word);
     procedure AssignRequestingController(ANodeID: TNodeId; AnAlias: Word);
@@ -256,6 +259,9 @@ type
     procedure ClearRequestingController;
     function IsControllerAssigned: Boolean;
     function IsControllerEqual(ATestNodeID: TNodeID; ATestNodeAlias: Word): Boolean;
+    procedure On_100msTimer;
+    function WaitingForNotifyReplyTimerExpired: Boolean;
+
   end;
 
   { TReservationState }
@@ -333,6 +339,7 @@ type
     procedure HandleTractionSimpleTrainInfoReply(var SourceMessage: TLccMessage); override;
 
     procedure LccLogIn(ANodeID: TNodeID); override;
+    procedure On_100msTimer(Sender: TObject); override;
 
 
   public
@@ -459,17 +466,20 @@ procedure TControllerState.AssignController(ANodeID: TNodeId; AnAlias: Word);
 begin
   FAttachedController.NodeID := ANodeId;
   FAttachedController.Alias := AnAlias;
+  FWaitingForNotifyReply := False;
 end;
 
 procedure TControllerState.AssignRequestingController(ANodeID: TNodeId; AnAlias: Word);
 begin
   FRequestingController.NodeID := ANodeId;
   FRequestingController.Alias := AnAlias;
+  FWaitingForNotifyReply := True;
+  FWaitingForNotifyReplyTimer := 0;
 end;
 
 procedure TControllerState.AcceptRequestingController;
 begin
-  FAttachedController := RequestingController;
+  AssignController(RequestingController.NodeId, RequestingController.Alias);
   ClearRequestingController;
 end;
 
@@ -477,6 +487,8 @@ procedure TControllerState.Clear;
 begin
   ClearAttachedController;
   ClearRequestingController;
+  FWaitingForNotifyReply := False;
+  FWaitingForNotifyReplyTimer := 0;
 end;
 
 procedure TControllerState.ClearAttachedController;
@@ -489,6 +501,8 @@ procedure TControllerState.ClearRequestingController;
 begin
   FRequestingController.NodeID := NULL_NODE_ID;
   FRequestingController.Alias := 0;
+  FWaitingForNotifyReply := False;
+  FWaitingForNotifyReplyTimer := 0;
 end;
 
 function TControllerState.IsControllerAssigned: Boolean;
@@ -499,6 +513,17 @@ end;
 function TControllerState.IsControllerEqual(ATestNodeID: TNodeID; ATestNodeAlias: Word): Boolean;
 begin
   Result := EqualNodeID(ATestNodeID, AttachedController.NodeID, False) or (ATestNodeAlias = AttachedController.Alias);
+end;
+
+procedure TControllerState.On_100msTimer;
+begin
+  if WaitingForNotifyReply then
+    WaitingForNotifyReplyTimer := WaitingForNotifyReplyTimer + 1;
+end;
+
+function TControllerState.WaitingForNotifyReplyTimerExpired: Boolean;
+begin
+  Result := WaitingForNotifyReplyTimer > TIMEOUT_CONTROLLER_NOTIFY_WAIT div 100; // 100ms timer
 end;
 
 
@@ -1206,6 +1231,19 @@ begin
   if not EqualEventID(SearchEvent, NULL_EVENT_ID) then
     ProtocolEventsProduced.Add(SearchEvent, evs_Valid);
   inherited LccLogIn(ANodeID);
+end;
+
+procedure TLccTrainDccNode.On_100msTimer(Sender: TObject);
+begin
+  inherited On_100msTimer(Sender);
+  ControllerState.On_100msTimer;
+  if ControllerState.WaitingForNotifyReply then
+    if ControllerState.WaitingForNotifyReplyTimerExpired then
+    begin
+      ControllerState.AcceptRequestingController;
+       WorkerMessage.LoadTractionControllerAssignReply(NodeID, AliasID, ControllerState.AttachedController.NodeID, ControllerState.AttachedController.Alias, TRACTION_CONTROLLER_CONFIG_REPLY_OK);
+      SendMessageFunc(Self, WorkerMessage);
+    end;
 end;
 
 function TLccTrainDccNode.GetCdiFile: string;

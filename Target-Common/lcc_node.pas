@@ -123,8 +123,6 @@ type
     FProtocolSupportedProtocols: TProtocolSupportedProtocols;
     FProtocolMemoryConfigurationDefinitionInfo: TProtocolMemoryConfigurationDefinitionInfo;
     FSeedNodeID: TNodeID;
-    FTractionServer: TLccTractionServer;
-    FTractionServerEnabled: Boolean;
     FWorkerMessageDatagram: TLccMessage;
     FInitialized: Boolean;
     FNodeManager: {$IFDEF DELPHI}TComponent{$ELSE}TObject{$ENDIF};
@@ -268,9 +266,6 @@ type
     property SeedNodeID: TNodeID read FSeedNodeID write FSeedNodeID;
     property LoginTimoutCounter: Integer read FLoginTimoutCounter write FLoginTimoutCounter;
 
-    // TractionServer
-    property TractionServer: TLccTractionServer read FTractionServer;
-
     procedure CreateNodeID(var Seed: TNodeID);
     function FindCdiElement(TestXML, Element: string; var Offset: Integer; var ALength: Integer): Boolean;
     function LoadManufacturerDataStream(ACdi: string): Boolean;
@@ -355,7 +350,7 @@ function TDatagramQueue.Add(LccMessage: TLccMessage): Boolean;
 begin
   Result := True;
   Queue.Add(LccMessage);
-  LccMessage.RetryAttempts := 0;
+  LccMessage.RetryAttemptsDatagram := 0;
   LccMessage.AbandonTimeout := 0;
 end;
 
@@ -426,11 +421,11 @@ begin
   if iLocalMessage > -1 then
   begin
     LocalMessage := Queue[iLocalMessage] as TLccMessage;
-    if LocalMessage.RetryAttempts < 5 then
+    if LocalMessage.RetryAttemptsDatagram < 5 then
     begin
       LocalMessage := Queue[iLocalMessage] as TLccMessage;
       SendMessageFunc(Self, LocalMessage);
-      LocalMessage.RetryAttempts := LocalMessage.RetryAttempts + 1;
+      LocalMessage.RetryAttemptsDatagram := LocalMessage.RetryAttemptsDatagram + 1;
     end else
       {$IFDEF DWSCRIPT}
       Queue.Remove(Queue.IndexOf(LocalMessage));
@@ -863,7 +858,6 @@ begin
   FDatagramResendQueue := TDatagramQueue.Create;
   FWorkerMessageDatagram := TLccMessage.Create;
   FWorkerMessage := TLccMessage.Create;
-  FTractionServer := TLccTractionServer.Create;
   FNodeManager := ANodeManager;
   FGridConnect := GridConnectLink;
  // FMessageIdentificationList := TLccMessageWithNodeIdentificationList.Create;
@@ -1028,14 +1022,11 @@ begin
 
   // Next look to see if it is an addressed message and if not for use just exit
 
-
   if SourceMessage.HasDestination then
   begin
     if not EqualNode(NodeID,  AliasID, SourceMessage.DestID, SourceMessage.CAN.DestAlias, True) then
       Exit;
   end;
-
-  TractionServer.ProcessMessageLCC(Self, SourceMessage);
 
   case SourceMessage.MTI of
     MTI_OPTIONAL_INTERACTION_REJECTED : HandleOptionalInteractionRejected(SourceMessage);
@@ -1384,7 +1375,6 @@ begin
   (NodeManager as INodeManagerCallbacks).DoDestroyLccNode(Self);
   _100msTimer.Free;
 
-  FreeAndNil(FTractionServer);
   FreeAndNil(FProtocolSupportedProtocols);
   FreeAndNil(FProtocolSimpleNodeInfo);
   FreeAndNil(FProtocolEventConsumed);

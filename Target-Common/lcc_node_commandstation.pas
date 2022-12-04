@@ -59,7 +59,7 @@ type
 
   { TLccCommandStationNode }
 
-  TLccCommandStationNode = class(TLccNode)
+  TLccCommandStationNode = class(TLccTractionServerNode)
   protected
     function GetCdiFile: string; override;
     procedure BeforeLogin; override;
