@@ -86,9 +86,8 @@
       </Unit8>
       <Unit9>
         <Filename Value="../../Target-Common/lcc_node_train.pas"/>
-        <IsVisibleTab Value="True"/>
         <EditorIndex Value="4"/>
-        <TopLine Value="896"/>
+        <TopLine Value="932"/>
         <CursorPos Y="910"/>
         <UsageCount Value="151"/>
         <Loaded Value="True"/>
@@ -103,8 +102,9 @@
       </Unit10>
       <Unit11>
         <Filename Value="../../Target-Common/lcc_node_manager.pas"/>
+        <IsVisibleTab Value="True"/>
         <EditorIndex Value="2"/>
-        <TopLine Value="253"/>
+        <TopLine Value="430"/>
         <CursorPos X="14" Y="265"/>
         <UsageCount Value="100"/>
         <Loaded Value="True"/>

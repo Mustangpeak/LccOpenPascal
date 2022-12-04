@@ -79,12 +79,12 @@ type
     FActive: Boolean;
     FAlias: Word;
     FNodeID: TNodeID;
-    FRetryCount: Integer;
+    FAbandonCount: Integer;
   public
     property NodeID: TNodeID read FNodeID write FNodeID;
     property Alias: Word read FAlias write FAlias;
     property Active: Boolean read FActive write FActive;
-    property RetryCount: Integer read FRetryCount write FRetryCount;
+    property AbandonCount: Integer read FAbandonCount write FAbandonCount;
 
     procedure AssignID(ANodeID: TNodeID; AnAlias: Word);
     function Clone: TLccNodeIdentificationObject;
@@ -158,7 +158,7 @@ type
 
 TLccMessage = class
 private
-  FAbandonTimeout: Integer;                 // If the message is being held for some reason (CAN multi frame assembly, waiting for AME to aquire the Alias, etc) this is used to see how long it has been alive and when to decide it has been abandon and should be freed
+  FAbandonCount: Integer;                 // If the message is being held for some reason (CAN multi frame assembly, waiting for AME to aquire the Alias, etc) this is used to see how long it has been alive and when to decide it has been abandon and should be freed
   FIsCAN: Boolean;                          // The message is a CAN link message which typically needs special handling
   FCAN: TLccCANMessage;
   FDataArray: TLccByteArray;                // The payload of the message (if there is a payload).  This is the full payload that has been already been assembled if we are on a CAN link
@@ -177,7 +177,7 @@ private
 protected
 
 public
-  property AbandonTimeout: Integer read FAbandonTimeout write FAbandonTimeout;
+  property AbandonCount: Integer read FAbandonCount write FAbandonCount;
   property CAN: TLccCANMessage read FCAN write FCAN;
   property DestID: TNodeID read FDestID write FDestID;
   property DataArray: TLccByteArray read FDataArray write FDataArray;
@@ -763,7 +763,7 @@ begin
   Result.NodeID := NodeID;
   Result.Alias := Alias;
   Result.Active := Active;
-  Result.RetryCount := 0;
+  Result.AbandonCount := 0;
 end;
 
 function TLccNodeIdentificationObject.Compare(TestObject: TLccNodeIdentificationObject): Boolean;
@@ -972,7 +972,7 @@ begin
   begin
     if TLccNodeIdentificationObject( Items[i]).Valid then
     begin
-      if TLccNodeIdentificationObject( Items[i]).RetryCount < ATestCount then
+      if TLccNodeIdentificationObject( Items[i]).AbandonCount < ATestCount then
       begin
         Result := False;
         Break
@@ -1028,7 +1028,7 @@ begin
   Result.FSourceID := FSourceID;
   Result.FMTI := FMTI;
   Result.RetryAttemptsDatagram := 0;
-  Result.AbandonTimeout := 0;
+  Result.AbandonCount := 0;
 end;
 
 procedure TLccMessage.InsertNodeID(StartIndex: Integer; var ANodeID: TNodeID);

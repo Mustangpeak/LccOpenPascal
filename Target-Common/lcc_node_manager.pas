@@ -29,10 +29,6 @@ uses
   lcc_train_server,
   lcc_alias_server;
 
-
-const
-  RECIEVE_THREAD_DELAYTIME_MS = 20;  // 20ms sleep time
-
 type
 
   // This is how the Node Manager has access to the Connection Links with needing
@@ -136,7 +132,7 @@ type
     procedure SendMessageSyncronize;      // Syncronize Method
     procedure UpdateGlobalMappings(AMessage: TLccMessage);
     function ValidateMappingsInMessage(AMessage: TLccMessage; ANodeIdentificationForSendMessageList: TList): Boolean;
-    function IsDuplicateNodeIdentificationObject(ANodeIdentificationObjectList: TList; ANodeIDObject: TLccNodeIdentificationObject): Boolean;
+    function IsDuplicateNodeIdentificationObject(ANodeIdentificationObjectList: TList; ATestNodeIDObject: TLccNodeIdentificationObject): Boolean;
 
   public
     property Messages: TThreadList read FMessages write FMessages;
@@ -337,24 +333,44 @@ implementation
 
 procedure TReceiveMessageServerThread.Execute;
 var
-  LocalMessageList, LocalValidatedMessageList, LocalUnValidatedMessageList, NodeIdentificationForSendMessageList: TList;
+  LocalMessageList, LocalValidatedMessageList, LocalUnValidatedMessageList, LocalNodeIdentificationForSendMessageList: TList;
   LocalNodeIDObject: TLccNodeIdentificationObject;
   i: Integer;
+  {$IFDEF WriteLnDebug}iPrint: Integer;{$ENDIF WriteLnDebug}
+  LocalMessage: TLccMessage;
 begin
   Messages := TThreadList.Create;
   LocalValidatedMessageList := TList.Create;
   LocalUnValidatedMessageList := TList.Create;
-  NodeIdentificationForSendMessageList := TList.Create;
+  LocalNodeIdentificationForSendMessageList := TList.Create;
   WorkerMessage := TLccMessage.Create;
+  {$IFDEF WriteLnDebug}iPrint := 0;{$ENDIF WriteLnDebug}
   try
     while not Terminated do
     begin
+      {$IFDEF WriteLnDebug}
+      if iPrint > 100 then
+      begin
+        WriteLn('LocalValidatedMessageList count: ' + IntToStr(LocalValidatedMessageList.Count));
+        WriteLn('LocalUnValidatedMessageList count: ' + IntToStr(LocalUnValidatedMessageList.Count));
+        WriteLn('NodeIdentificationForSendMessageList count: ' + IntToStr(LocalNodeIdentificationForSendMessageList.Count));
+      end;
+      {$ENDIF WriteLnDebug}
+
       // First run through the waiting messages.  If there is a Mapping move them in to the
       // LocalValidatedMessageList and set that slot to nil.  If there is no Mapping then the message is moved to the
       // UnValidated list to be handled outside the locked list
       // Need to run from 0 up to maintain order
       LocalMessageList := Messages.LockList;
       try
+        {$IFDEF WriteLnDebug}
+        if iPrint > 100 then
+        begin
+          WriteLn('Main MesageList count: ' + IntToStr(LocalMessageList.Count));
+          iPrint := 0;
+        end;
+        Inc(iPrint);
+        {$ENDIF WriteLnDebug}
         for i := 0 to LocalMessageList.Count - 1 do
         begin
           if Owner.GridConnect then
@@ -366,10 +382,15 @@ begin
             // If they are not there then push the Alias or NodeID (from a message payload) into the SendMessage Queue and
             // return false and put them in the LocalUnValidatedMessageList to hold else they get put in the ValidatedList for
             // sending to the nodes
-            if ValidateMappingsInMessage(TLccMessage( LocalMessageList[i]), NodeIdentificationForSendMessageList) then
+            if ValidateMappingsInMessage(TLccMessage( LocalMessageList[i]), LocalNodeIdentificationForSendMessageList) then
+            begin
+              {$IFDEF WriteLnDebug}WriteLn('Message added to the Validated List');{$ENDIF WriteLnDebug}
               LocalValidatedMessageList.Add(LocalMessageList[i])
-            else
+            end else
+            begin
+              {$IFDEF WriteLnDebug}WriteLn('Message added to the UnValidated List');{$ENDIF WriteLnDebug}
               LocalUnValidatedMessageList.Add(LocalMessageList[i]);
+            end;
           end else
           begin  // Raw TCP we move them all
             LocalValidatedMessageList.Add(LocalMessageList[i]);
@@ -391,9 +412,11 @@ begin
               ReceivedMessage := TLccMessage(LocalValidatedMessageList[i]);
               Synchronize({$IFDEF FPC}@{$ENDIF}ReceiveMessageSyncronize);
             finally
+              {$IFDEF WriteLnDebug}WriteLn('Message freed from Validated List');{$ENDIF WriteLnDebug}
               FreeAndNil(FReceivedMessage);
             end;
           except
+            {$IFDEF WriteLnDebug}WriteLn('Message freed from Validated List');{$ENDIF WriteLnDebug}
             FreeAndNil(FReceivedMessage);
           end;
         end;
@@ -402,41 +425,43 @@ begin
       end;
       // ***********************************************************************
 
-      // Deliever the requests for VerifyNode we moved from the MainList to the NodeIdentificationForSendMessageList
+      // Deliever the requests for VerifyNode we moved from the MainList to the LocalNodeIdentificationForSendMessageList
       // ***********************************************************************
-      for i := 0 to NodeIdentificationForSendMessageList.Count - 1 do
+      for i := 0 to LocalNodeIdentificationForSendMessageList.Count - 1 do
       begin
         if not Terminated then
         try
-          LocalNodeIDObject := TLccNodeIdentificationObject( NodeIdentificationForSendMessageList[i]);
+          LocalNodeIDObject := TLccNodeIdentificationObject( LocalNodeIdentificationForSendMessageList[i]);
 
           // Lets hold this in the list to allow the node to respond.  This will also stop lots of duplicate
           // call to the same node while waiting for a reply
-          if LocalNodeIDObject.RetryCount = 0 then
+          if LocalNodeIDObject.AbandonCount = 0 then
           begin
             DestAlias := LocalNodeIDObject.Alias;
             DestNodeID := LocalNodeIDObject.NodeID;
+            {$IFDEF WriteLnDebug}WriteLn('VerifyNode sent from NodeIdentification List');{$ENDIF WriteLnDebug}
             Synchronize({$IFDEF FPC}@{$ENDIF}SendMessageSyncronize);
           end;
 
-          LocalNodeIDObject.RetryCount  := LocalNodeIDObject.RetryCount  + 1;
-
-          // Wait 2 seconds at least
-          if LocalNodeIDObject.RetryCount > (2000 div RECIEVE_THREAD_DELAYTIME_MS) then
+          // If abandon then done.. this must be longer than the lifetime of the object that created them
+          if LocalNodeIDObject.AbandonCount > TIMEOUT_NODE_IDENTIFICTION_OBJECT_COUNT then
           begin
-            TObject( NodeIdentificationForSendMessageList[i]).Free;
-            NodeIdentificationForSendMessageList[i] := nil;
+            {$IFDEF WriteLnDebug}WriteLn('NodeIdentification List item Freed: 0x' + IntToHex(LocalNodeIDObject.Alias, 4));{$ENDIF WriteLnDebug}
+            TObject( LocalNodeIdentificationForSendMessageList[i]).Free;
+            LocalNodeIdentificationForSendMessageList[i] := nil;
           end;
+
+           LocalNodeIDObject.AbandonCount  := LocalNodeIDObject.AbandonCount  + 1;
 
         except
         end;
       end;
 
       // Now go through and delete the slot that are empty
-      for i := NodeIdentificationForSendMessageList.Count - 1 downto 0 do
+      for i := LocalNodeIdentificationForSendMessageList.Count - 1 downto 0 do
       begin
-        if NodeIdentificationForSendMessageList[i] = nil then
-          NodeIdentificationForSendMessageList.Delete(i);
+        if LocalNodeIdentificationForSendMessageList[i] = nil then
+          LocalNodeIdentificationForSendMessageList.Delete(i);
       end;
 
 
@@ -446,27 +471,42 @@ begin
       // TODO:  THESE NEED TO BE COUNTED AND DECIDED WHAT TO DO IF THEY DON'T GET A REPLY FROM THE
       //        VERIFY ID CALL.  TRY SENDING VERIFY ID A FEW MORE TIMES THEN THROW IT AWAY?
       // ***********************************************************************
-      if Owner.GridConnect then
-      begin // Must keep order intact so have to run them this way
-        for i := 0 to LocalUnValidatedMessageList.Count - 1 do
-        begin // Sending the NIL for the list will cause just the Message required Nodes to be tested against the Mapping Database
-          if ValidateMappingsInMessage(TLccMessage( LocalUnValidatedMessageList[i]), nil) then
-          begin // We now have a mapping so move it into the Validated list.
-            LocalValidatedMessageList.Add(LocalUnValidatedMessageList[i]);
-            LocalUnValidatedMessageList[i] := nil;
+      if not Terminated then
+      begin
+        if Owner.GridConnect then
+        begin // Must keep order intact so have to run them this way
+          for i := 0 to LocalUnValidatedMessageList.Count - 1 do
+          begin // Sending the NIL for the list will cause just the Message required Nodes to be tested against the Mapping Database
+            if ValidateMappingsInMessage(TLccMessage( LocalUnValidatedMessageList[i]), LocalNodeIdentificationForSendMessageList) then
+            begin // We now have a mapping so move it into the Validated list.
+              {$IFDEF WriteLnDebug}WriteLn('UnValidated Message Mapping found and moved to Validated Message List');{$ENDIF WriteLnDebug}
+              LocalValidatedMessageList.Add(LocalUnValidatedMessageList[i]);
+              LocalUnValidatedMessageList[i] := nil;
+            end else
+            begin
+              LocalMessage := TLccMessage( LocalUnValidatedMessageList[i]);
+              if LocalMessage.AbandonCount > TIMEOUT_UNVALIDATED_MESSAGE_COUNT then
+              begin
+                {$IFDEF WriteLnDebug}WriteLn('UnValidated Message Mapping not found so Abandoned and Freed');{$ENDIF WriteLnDebug}
+                LocalMessage.Free;
+                LocalUnValidatedMessageList[i] := nil;
+              end else
+                LocalMessage.AbandonCount := LocalMessage.AbandonCount + 1;
+            end;
           end;
-        end;
 
-        // Now go through and delete the slot that are empty
-        for i := LocalUnValidatedMessageList.Count - 1 downto 0 do
-        begin
-          if LocalUnValidatedMessageList[i] = nil then
-            LocalUnValidatedMessageList.Delete(i);
+          // Now go through and delete the slots that are empty
+          for i := LocalUnValidatedMessageList.Count - 1 downto 0 do
+          begin
+            if LocalUnValidatedMessageList[i] = nil then
+              LocalUnValidatedMessageList.Delete(i);
+          end;
         end;
       end;
       // ***********************************************************************
 
-      Sleep(RECIEVE_THREAD_DELAYTIME_MS);
+
+      Sleep(TIMEOUT_RECIEVE_THREAD);
     end;
 
   finally
@@ -489,8 +529,8 @@ begin
       LocalValidatedMessageList.Free;
     end;
 
-    NodeIdentificationForSendMessageList.Clear;
-    FreeAndNil(NodeIdentificationForSendMessageList);
+    LocalNodeIdentificationForSendMessageList.Clear;
+    FreeAndNil(LocalNodeIdentificationForSendMessageList);
 
     WorkerMessage.Free;
   end;
@@ -619,24 +659,19 @@ begin
         end else
         begin // Mapping did not exist
           {$IFDEF WriteLnDebug}
-          AliasServer.WriteMapping('Cound not find Mapping at Message Position: ' +
+      {    AliasServer.WriteMapping('Cound not find Mapping at Message Position: ' +
             IntToStr(i) +
             ' - Alias' +
             IntToHex(LocalNodeIdentificationObjectList[i].Alias, 4) + ' ID: ' +
             NodeIDToString(LocalNodeIdentificationObjectList[i].NodeID, True),
-            nil);
+            nil);  }
           {$ENDIF}
 
-          if Assigned(ANodeIdentificationForSendMessageList) then // This could be null if we are just testing if the result of a Verify message sent has returned
+          // Load it up in the SendMessage Queue to send a Verify node
+          if not IsDuplicateNodeIdentificationObject(ANodeIdentificationForSendMessageList, LocalNodeIdentificationObjectList[i]) then
           begin
-            // Load it up in the SendMessage Queue to send a Verify node
-            if not IsDuplicateNodeIdentificationObject(ANodeIdentificationForSendMessageList, LocalNodeIdentificationObjectList[i]) then
-            begin
-              {$IFDEF WriteLnDebug}
-               WriteLn('New NodeIDObject added to ASendMessageQueue');
-              {$ENDIF}
-              ANodeIdentificationForSendMessageList.Add(LocalNodeIdentificationObjectList[i].Clone);
-            end;
+            {$IFDEF WriteLnDebug}WriteLn('New NodeIDObject added to NodeIdentificationObjectList');{$ENDIF}
+            ANodeIdentificationForSendMessageList.Add(LocalNodeIdentificationObjectList[i].Clone);
           end;
 
           Result := False;
@@ -646,7 +681,7 @@ begin
   end;
 end;
 
-function TReceiveMessageServerThread.IsDuplicateNodeIdentificationObject(ANodeIdentificationObjectList: TList; ANodeIDObject: TLccNodeIdentificationObject): Boolean;
+function TReceiveMessageServerThread.IsDuplicateNodeIdentificationObject(ANodeIdentificationObjectList: TList; ATestNodeIDObject: TLccNodeIdentificationObject): Boolean;
 var
   i: Integer;
   LocalNodeIDObject: TLccNodeIdentificationObject;
@@ -655,7 +690,7 @@ begin
   for i := 0 to ANodeIdentificationObjectList.Count - 1 do
   begin
     LocalNodeIDObject := TLccNodeIdentificationObject(ANodeIdentificationObjectList[i]);
-    if (LocalNodeIDObject.NodeID[0] = ANodeIDObject.NodeID[0]) and (LocalNodeIDObject.NodeID[1] = ANodeIDObject.NodeID[1]) and (LocalNodeIDObject.Alias = ANodeIDObject.Alias) then
+    if (LocalNodeIDObject.NodeID[0] = ATestNodeIDObject.NodeID[0]) and (LocalNodeIDObject.NodeID[1] = ATestNodeIDObject.NodeID[1]) and (LocalNodeIDObject.Alias = ATestNodeIDObject.Alias) then
     begin
       Result := True;
       Break

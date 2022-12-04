@@ -351,7 +351,7 @@ begin
   Result := True;
   Queue.Add(LccMessage);
   LccMessage.RetryAttemptsDatagram := 0;
-  LccMessage.AbandonTimeout := 0;
+  LccMessage.AbandonCount := 0;
 end;
 
 constructor TDatagramQueue.Create;
@@ -443,8 +443,8 @@ begin
   for i := Queue.Count - 1 downto 0 do
   begin
     LocalMessage := Queue[i] as TLccMessage;
-    if LocalMessage.AbandonTimeout < 6 then   // 800ms * 6
-      LocalMessage.AbandonTimeout := LocalMessage.AbandonTimeout + 1
+    if LocalMessage.AbandonCount < 6 then   // 800ms * 6
+      LocalMessage.AbandonCount := LocalMessage.AbandonCount + 1
     else
       Queue.Delete(i);
   end;

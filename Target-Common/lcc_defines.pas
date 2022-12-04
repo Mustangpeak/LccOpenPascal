@@ -22,7 +22,11 @@ uses
   SysUtils;
 
 const
-  TIMEOUT_CONTROLLER_NOTIFY_WAIT = 2000;  // milliseconds
+  TIMEOUT_RECIEVE_THREAD = 20;             // 20ms sleep time
+  TIMEOUT_CONTROLLER_NOTIFY_WAIT = 2000;   // milliseconds   How long we wait for the Notified message to come from the currently assigned Controller
+  TIMEOUT_UNVALIDATED_MESSAGE_COUNT = 2000 div TIMEOUT_RECIEVE_THREAD;  // can Live 2 seconds before giving up
+  TIMEOUT_NODE_IDENTIFICTION_OBJECT_COUNT = TIMEOUT_UNVALIDATED_MESSAGE_COUNT * 2; // These need to live longer than the messages that created them
+ // TIMEOUT_VERIFYNODE_SENDMESSAGE_WAIT = (TIMOUT_UNVALIDATEED_MESSAGE_WAIT div 2) + 10; // milliseconds.  How long we hold the TLccNodeIdentificationObject to send another VerifyNode message; NOTE this gets reset to 0 at TIMOUT_UNVALIDATEED_MESSAGE_WAIT div 2 for a second message send attempt
 
 const
   PATH_OSX_RESOURCES = 'Contents/Resources/';
