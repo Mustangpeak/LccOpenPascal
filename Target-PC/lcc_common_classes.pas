@@ -12,9 +12,11 @@ uses
   Classes,
   SysUtils,
   {$IFDEF FPC}
+  syncobjs,
     {$IFNDEF FPC_CONSOLE_APP}Forms, {$ENDIF}
   {$ELSE}
   FMX.Forms,
+  System.SyncObjs,
   {$ENDIF}
 
   {$IFDEF FPC}
@@ -128,7 +130,7 @@ type
     FOnLccMessageSend: TOnMessageEvent;
     FWorkerMessage: TLccMessage;
   protected
-    FCriticalSection: TRTLCriticalSection;
+    FCriticalSection: TCriticalSection;
 
     // Decendents only know what connected means to them
     function GetConnected: Boolean; virtual; abstract;
@@ -285,30 +287,30 @@ begin
   FNodeManager := ANodeManager;
   FWorkerMessage := TLccMessage.Create;
   NodeManager.HardwarewareConnectionList.Add(Self as IHardwareConnectionManagerLink);
-  InitCriticalSection(FCriticalSection);
+  FCriticalSection := TCriticalSection.Create;
 end;
 
 destructor TLccHardwareConnectionManager.Destroy;
 begin
   NodeManager.HardwarewareConnectionList.Remove(Self as IHardwareConnectionManagerLink);
   FreeAndNil(FWorkerMessage);
-  DoneCriticalSection(FCriticalSection);
+  FreeAndNil(FCriticalSection);
   inherited Destroy;
 end;
 
 procedure TLccHardwareConnectionManager.CriticalSectionEnter;
 begin
-  EnterCriticalSection(FCriticalSection);
+  FCriticalSection.Enter
 end;
 
 procedure TLccHardwareConnectionManager.CriticalSectionLeave;
 begin
-  LeaveCriticalSection(FCriticalSection);
+  FCriticalSection.Leave
 end;
 
 procedure TLccHardwareConnectionManager.CriticalSectionTryEnter;
 begin
-  TryEnterCriticalSection(FCriticalSection);
+  FCriticalSection.TryEnter
 end;
 
 { TLccConnectionThread }

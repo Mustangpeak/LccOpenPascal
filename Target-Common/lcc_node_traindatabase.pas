@@ -50,7 +50,7 @@ implementation
 
 { TLccTractionServerNode }
 
-constructor TLccTractionServerNode.Create(ANodeManager: TObject; CdiXML: string; GridConnectLink: Boolean);
+constructor TLccTractionServerNode.Create(ANodeManager: {$IFDEF DELPHI}TComponent{$ELSE}TObject{$ENDIF}; CdiXML: string; GridConnectLink: Boolean);
 begin
   inherited Create(ANodeManager, CdiXML, GridConnectLink);
   FTractionServer := TLccTractionServer.Create(GridConnectLink);

@@ -100,9 +100,9 @@ type
     FList: TObjectList<TLccTractionObject>;
     {$ELSE}
     FList: TObjectList;
+    {$ENDIF}
     FWorkerMessage: TLccMessage;
     function GetItem(Index: Integer): TLccTractionObject;
-    {$ENDIF}
   protected
     property WorkerMessage: TLccMessage read FWorkerMessage write FWorkerMessage;
 

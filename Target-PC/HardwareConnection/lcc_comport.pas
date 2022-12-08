@@ -101,6 +101,7 @@ type
     { Protected declarations }
     function IsLccLink: Boolean; override;
     function GetConnected: Boolean; override;
+    function GetConnecting: Boolean; override;
     procedure DoReceiveMessage(Info: TLccHardwareConnectionInfo); reintroduce; virtual;
   public
     { Public declarations }
@@ -153,6 +154,11 @@ begin
   Result := False;
   if Assigned(FComPortThread) then
     Result := ComPortThread.Connected;
+end;
+
+function TLccComPort.GetConnecting: Boolean;
+begin
+  Result := False;
 end;
 
 procedure TLccComPort.DoReceiveMessage(Info: TLccHardwareConnectionInfo);

@@ -429,7 +429,7 @@ begin
                   for i := 0 to IdTCPServer.Contexts.Count - 1 do
                   begin
                     if TIdContext( ContextList[i]).Connection.Connected then
-                      TIdContext( ContextList[i]).Connection.IOHandler.Write(DynamicByteArray, Length(DynamicByteArray));
+                      TIdContext( ContextList[i]).Connection.IOHandler.Write(TIdBytes( DynamicByteArray), Length(DynamicByteArray));
                   end;
                 end;
               end;

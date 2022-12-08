@@ -243,7 +243,7 @@ begin
   if not ShownOnce then
   begin
     ShownOnce := True;
-    WriteLn('Restarting on Show');
+ // WriteLn('Restarting on Show');
     for i := 0 to MAX_LED_SEGMENTS - 1 do
     begin
       LED := TShape.Create(PanelThrottleLever);
@@ -296,10 +296,10 @@ end;
 
 procedure TFormTrainController.TimerMainTimer(Sender: TObject);
 begin
-  WriteLn('Timer Tick');
+//  WriteLn('Timer Tick');
   if not (EthernetClient.Connected or EthernetClient.Connecting) then
   begin
-    WriteLn('Restarting on Timer');
+//    WriteLn('Restarting on Timer');
     ButtonSettingsRestartConnectionClick(Self)
   end;
 end;

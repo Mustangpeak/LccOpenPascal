@@ -1,4 +1,4 @@
-unit FormLccThrottleApp;
+﻿unit FormLccThrottleApp;
 
 interface
 
@@ -128,7 +128,6 @@ type
     FControllerNode: TLccTrainController;
     FConnectionState: TLccConnectionState;
     FShownOnce: Boolean;
-    FCloseQueried: Boolean;
     FClipboard: IFMXClipboardService;
     FCurrentNodeID: TNodeID;
     FCurrentPort: Word;
@@ -138,6 +137,8 @@ type
     FPathMemoryConfig: string;
     FActiveTrainObject: TListViewItem;
     FCdiParserFrame: TLccCdiParser;
+    procedure OnLccTractionUpdateListenerCount(
+      TractionObject: TLccTractionObject);
     { Private declarations }
 
   protected
@@ -149,10 +150,9 @@ type
     { Public declarations }
     property EthernetClient: TLccEthernetClient read FEthernetClient write FEthernetClient;
     property NodeManager: TLccNodeManager read FNodeManager write FNodeManager;
-    property ControllerNode: TLccTrainController read FControllerNode write FControllerNode;
+    property Controller: TLccTrainController read FControllerNode write FControllerNode;
     property ConnectionState: TLccConnectionState read FConnectionState write FConnectionState;
     property ShownOnce: Boolean read FShownOnce;
-    property CloseQueried: Boolean read FCloseQueried;
     property Clipboard: IFMXClipboardService read FClipboard write FClipboard;
     property CurrentIpAddress: string read FCurrentIpAddress write FCurrentIpAddress;
     property CurrentPort: Word read FCurrentPort write FCurrentPort;
@@ -166,19 +166,21 @@ type
     // Callbacks
     procedure OnNodeLogin(Sender: TObject; LccSourceNode: TLccNode);
     procedure OnAliasMappingChange(Sender: TObject; LccSourceNode: TLccNode; AnAliasMapping: TLccAliasMapping; IsMapped: Boolean);
-    procedure OnTrainRegisteringChange(Sender: TObject; LccSourceNode: TLccNode; TrainObject: TLccTrainObject; IsRegistered: Boolean);
-    procedure OnLccTractionUpdateSNIP(Sender: TObject; LccSourceNode: TLccNode; TrainObject: TLccTrainObject);
-    procedure OnLccTractionUpdateTrainSNIP(Sender: TObject; LccSourceNode: TLccNode; TrainObject: TLccTrainObject);
-    procedure OnLccTractionUpdateListenerCount(Sender: TObject; LccSourceNode: TLccNode; TrainObject: TLccTrainObject);
+    procedure OnTractionRegisterNotify(TractionObject: TLccTractionObject; IsRegistered: Boolean);
+    procedure OnSNIPChange(TractionObject: TLccTractionObject);
+    procedure OnTrainSNIPChange(TractionObject: TLccTractionObject);
 
     procedure OnNodeManagerSendMessage(Sender: TObject; LccMessage: TLccMessage);
     procedure OnNodeManagerReceiveMessage(Sender: TObject; LccMessage: TLccMessage);
+
+    procedure OnNodeIDChanged(Sender: TObject; ALccNode: TLccNode);
+    procedure OnNodeAliasChanged(Sender: TObject; ALccNode: TLccNode);
 
     procedure OnClientServerConnectionChange(Sender: TObject; Info: TLccHardwareConnectionInfo);
     procedure OnClientServerErrorMessage(Sender: TObject; Info: TLccHardwareConnectionInfo);
 
     function ValidEditBoxKey(Key: Word): Boolean;
-    function FindTrainRosterListItem(TrainObject: TLccTrainObject): TListViewItem;
+    function FindTrainRosterListItem(TractionObject: TLccTractionObject): TListViewItem;
     function ConnectionLogin: Boolean;
   end;
 
@@ -321,14 +323,10 @@ begin
   CurrentPort := StrToInt(EditPort.Text);
   CurrentNodeID := StrToNodeID(EditNodeID.Text, True);
 
-  NodeManager.LogoutAll;
-  EthernetClient.CloseConnection;
-  ActiveTrainObject := nil;
-  ListViewTrainRoster.Items.Clear;
-  TimerLogin.Enabled := True;
+  ConnectionLogin
 end;
 
-function TLccThrottleAppForm.FindTrainRosterListItem(TrainObject: TLccTrainObject): TListViewItem;
+function TLccThrottleAppForm.FindTrainRosterListItem(TractionObject: TLccTractionObject): TListViewItem;
 var
   i: Integer;
 begin
@@ -336,7 +334,7 @@ begin
   i := 0;
   while i < ListViewTrainRoster.Items.Count do
   begin
-    if TrainObject = TLccTrainObject( ListViewTrainRoster.Items[i].Tag) then
+    if TractionObject = TLccTractionObject( ListViewTrainRoster.Items[i].Tag) then
       Result := ListViewTrainRoster.Items[i];
     Inc(i);
   end;
@@ -344,11 +342,8 @@ end;
 
 procedure TLccThrottleAppForm.FormCloseQuery(Sender: TObject; var CanClose: Boolean);
 begin
-  FCloseQueried := True;
-  NodeManager.OnLccMessageSend := nil;;
-  NodeManager.OnLccMessageReceive := nil;
   TimerLogin.Enabled := False;
-  NodeManager.LogoutAll;
+  NodeManager.ReleaseAliasAll;
   EthernetClient.CloseConnection;
 end;
 
@@ -360,8 +355,12 @@ begin
   // Lcc library setup
   NodeManager := TLccNodeManager.Create(nil, True);
   EthernetClient := TLccEthernetClient.Create(nil, NodeManager);
+
   EthernetClient.OnConnectionStateChange := OnClientServerConnectionChange;
   EthernetClient.OnErrorMessage := OnClientServerErrorMessage;
+
+  NodeManager.OnNodeAliasIDChanged := OnNodeAliasChanged;
+  NodeManager.OnNodeIDChanged := OnNodeIdChanged;
 
   // Default values to the settings
   CurrentIpAddress := DEFAULT_IP_ADDRESS;
@@ -376,6 +375,7 @@ end;
 
 procedure TLccThrottleAppForm.FormDestroy(Sender: TObject);
 begin
+  NodeManager.ReleaseAliasAll;
   FreeAndNil(FEthernetClient);
   FreeAndNil(FNodeManager);
 end;
@@ -406,17 +406,12 @@ begin
     // Setup components to a standard state in case forgotten in the designer
     TabControl1.ActiveTab := TabItem1;    // This defines the default active tab at runtime
     MultiViewConsist.Mode := TMultiViewMode.Drawer;
-    TimerLogin.Enabled := False;
     TabControlTrainRoster.ActiveTab := TabItemTrainRosterSelect;
     TimerLogin.Enabled := True; // Try to connect
 
 
     CdiParserFrame := TLccCdiParser.Create;
     CdiParserFrame.Render_CDI_Interface(LayoutTrainRosterEdit, nil);
-
-
-    NodeManager.OnLccMessageSend := OnNodeManagerSendMessage;
-    NodeManager.OnLccMessageReceive := OnNodeManagerReceiveMessage;
 
     if FileExists(PathSettingsFile) then
       XmlLoadSettingsFromFile
@@ -426,6 +421,8 @@ begin
     EditIpAddress.Text := CurrentIpAddress;
     EditPort.Text := IntToStr( CurrentPort);
     EditNodeID.Text := NodeIDToString(CurrentNodeID, True);
+
+    ButtonResetConnectionClick(Self)
   end;
 end;
 
@@ -486,42 +483,30 @@ begin
     case Info.ConnectionState of
       lcsConnecting :
         begin
-          TimerLogin.Enabled := False;
           TextConnectionStatus.Text := 'connecting';
         end;
      lcsConnected :
         begin
           TextConnectionStatus.Text := 'connected';
-          ControllerNode := NodeManager.AddNodeByClass('', TLccTrainController, True, CurrentNodeID) as TLccTrainController;
-
-          NodeManager.OnAliasMappingChange := OnAliasMappingChange;
-          NodeManager.OnTrainRegisteringChange := OnTrainRegisteringChange;
-          NodeManager.OnLccNodeLogin := OnNodeLogin;
-          NodeManager.OnLccTractionUpdateSNIP := OnLccTractionUpdateSNIP;
-          NodeManager.OnLccTractionUpdateTrainSNIP := OnLccTractionUpdateSNIP;
-          NodeManager.OnLccTractionUpdateListenerCount := OnLccTractionUpdateListenerCount;
-
-   //       ControllerNode.OnTrainAssigned := @OnControllerNodeTrainAssigned;
-   //       ControllerNode.OnTrainReleased := @OnControllerNodeTrainReleased;
+          if NodeManager.Nodes.Count = 0 then
+          begin
+            Controller := NodeManager.AddNodeByClass('', TLccTrainController, True, NULL_NODE_ID) as TLccTrainController;
+            Controller.TractionServer.OnSNIPChange := OnSNIPChange;
+            Controller.TractionServer.OnTrainSNIPChange := OnTrainSNIPChange;
+       //     Controller.TractionServer.OnRegisterChange := OnRegisterChange;
+        //    Controller.TractionServer.OnEmergencyStopChange := OnEmergencyStopChange;
+       //     Controller.TractionServer.OnFunctionChange := OnFunctionChange;
+       //     Controller.TractionServer.OnSpeedChange := OnSpeedChange;
+       //     Controller.OnControllerAssignChange := OnControllerAssignChange;
+          end;
         end;
       lcsDisconnecting :
         begin
           TextConnectionStatus.Text := 'disconnecting';
-
-          NodeManager.OnAliasMappingChange := nil;
-          NodeManager.OnTrainRegisteringChange := nil;
-          NodeManager.OnLccNodeLogin := nil;
-          NodeManager.OnLccTractionUpdateSNIP := nil;
-          NodeManager.OnLccTractionUpdateTrainSNIP := nil;
-          NodeManager.OnLccTractionUpdateListenerCount := nil;
-
-          NodeManager.Clear;   // Logout
-          ControllerNode := nil;
         end;
       lcsDisconnected :
         begin
           TextConnectionStatus.Text := 'disconnected';
-          TimerLogin.Enabled := True;  // Try to reconnect
         end;
     end;
   end;
@@ -529,35 +514,43 @@ end;
 
 procedure TLccThrottleAppForm.OnClientServerErrorMessage(Sender: TObject; Info: TLccHardwareConnectionInfo);
 begin
-  NodeManager.LogoutAll;
-  TimerLogin.Enabled := True
 end;
 
-procedure TLccThrottleAppForm.OnLccTractionUpdateListenerCount(Sender: TObject; LccSourceNode: TLccNode; TrainObject: TLccTrainObject);
+procedure TLccThrottleAppForm.OnLccTractionUpdateListenerCount(TractionObject: TLccTractionObject);
 begin
 
 end;
 
-procedure TLccThrottleAppForm.OnLccTractionUpdateSNIP(Sender: TObject; LccSourceNode: TLccNode; TrainObject: TLccTrainObject);
+procedure TLccThrottleAppForm.OnSNIPChange(TractionObject: TLccTractionObject);
 var
   ListViewItem: TListViewItem;
 begin
-  ListViewItem := FindTrainRosterListItem(TrainObject);
+  ListViewItem := FindTrainRosterListItem(TractionObject);
   if Assigned(ListViewItem) then
   begin
-    ListViewItem.Text := TrainObject.SNIP.UserName
+    ListViewItem.Text := TractionObject.SNIP.UserName
   end;
 end;
 
-procedure TLccThrottleAppForm.OnLccTractionUpdateTrainSNIP(Sender: TObject; LccSourceNode: TLccNode; TrainObject: TLccTrainObject);
+procedure TLccThrottleAppForm.OnTrainSNIPChange(TractionObject: TLccTractionObject);
+begin
+
+end;
+
+procedure TLccThrottleAppForm.OnNodeAliasChanged(Sender: TObject; ALccNode: TLccNode);
+begin
+
+end;
+
+procedure TLccThrottleAppForm.OnNodeIDChanged(Sender: TObject; ALccNode: TLccNode);
 begin
 
 end;
 
 procedure TLccThrottleAppForm.OnNodeLogin(Sender: TObject; LccSourceNode: TLccNode);
 begin
-  if LccSourceNode = ControllerNode then
-    ControllerNode.FindAllTrains;
+  if LccSourceNode = Controller then
+    Controller.FindAllTrains;
 end;
 
 procedure TLccThrottleAppForm.OnNodeManagerReceiveMessage(Sender: TObject; LccMessage: TLccMessage);
@@ -580,25 +573,25 @@ begin
   end;
 end;
 
-procedure TLccThrottleAppForm.OnTrainRegisteringChange(Sender: TObject; LccSourceNode: TLccNode; TrainObject: TLccTrainObject; IsRegistered: Boolean);
+procedure TLccThrottleAppForm.OnTractionRegisterNotify(TractionObject: TLccTractionObject; IsRegistered: Boolean);
 var
   TrainListViewItem: TListViewItem;
 begin
   if IsRegistered then
   begin
     TrainListViewItem := ListViewTrainRoster.Items.Add;
-    TrainListViewItem.Tag := nativeint( TrainObject);   /// HOW DO WE HOLD REFERENCES FOR FUTURE USE OF UPDATES IN EVENTS?
+    TrainListViewItem.Tag := nativeint( TractionObject);   /// HOW DO WE HOLD REFERENCES FOR FUTURE USE OF UPDATES IN EVENTS?
 
-    if TrainObject.SNIP.Valid then
+    if TractionObject.SNIP.Valid then
     begin
-      TrainListViewItem.Text := 'Train: ' + TrainObject.SNIP.UserName;
+      TrainListViewItem.Text := 'Train: ' + TractionObject.SNIP.UserName;
     end else
     begin
-      TrainListViewItem.Text := 'Train: ' + NodeIDToString(TrainObject.NodeID, True);
+      TrainListViewItem.Text := 'Train: ' + NodeIDToString(TractionObject.NodeID, True);
     end;
   end else
   begin
-    TrainListViewItem := FindTrainRosterListItem(TrainObject);
+    TrainListViewItem := FindTrainRosterListItem(TractionObject);
     if Assigned(TrainListViewItem) then
     begin
       if ActiveTrainObject = TrainListViewItem then
@@ -625,16 +618,8 @@ end;
 
 procedure TLccThrottleAppForm.TimerLoginTimer(Sender: TObject);
 begin
-  if not CloseQueried and (ConnectionState = lcsDisconnected) then
-  begin
-    TimerLogin.Enabled := False;
-    ConnectionState := lcsConnecting;    // Fake this starting, the statemachine will reset it once the thread starts
-    if not ConnectionLogin then
-    begin
-      TimerLogin.Enabled := True;
-      ConnectionState := lcsDisconnected;
-    end;
-  end;
+  if not (EthernetClient.Connected or EthernetClient.Connecting) then
+    ButtonResetConnectionClick(Self)
 end;
 
 function TLccThrottleAppForm.ValidEditBoxKey(Key: Word): Boolean;

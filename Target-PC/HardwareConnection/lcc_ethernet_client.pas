@@ -182,12 +182,12 @@ constructor TLccEthernetClientThread.Create(CreateSuspended: Boolean;
   AConnectionInfo: TLccHardwareConnectionInfo);
 begin
   inherited;
-  WriteLn('TLccEthernetClientThread Create');
+//  WriteLn('TLccEthernetClientThread Create');
 end;
 
 destructor TLccEthernetClientThread.Destroy;
 begin
-  WriteLn('TLccEthernetClientThread Destroy');
+//  WriteLn('TLccEthernetClientThread Destroy');
   inherited;
 end;
 
@@ -263,7 +263,7 @@ begin
             if Length(DynamicByteArray) > 0 then
             begin
               if idTCPClient.IOHandler.Connected then
-                idTCPClient.IOHandler.Write(DynamicByteArray, Length(DynamicByteArray));
+                idTCPClient.IOHandler.Write(TIdBytes( DynamicByteArray), Length(DynamicByteArray));
             end;
           end;
 

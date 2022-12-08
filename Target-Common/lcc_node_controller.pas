@@ -113,7 +113,7 @@ type
     procedure HandleProducerIdentifiedClear(var SourceMessage: TLccMessage); override;
     procedure HandleProducerIdentifiedSet(var SourceMessage: TLccMessage); override;
     procedure HandleProducerIdentifiedUnknown(var SourceMessage: TLccMessage); override;
-    procedure HandleTractionControllerAssignReply(var SourceMessage: TLccMessage) override;
+    procedure HandleTractionControllerAssignReply(var SourceMessage: TLccMessage); override;
     procedure HandleTractionControllerChanging(var SourceMessage: TLccMessage); override;
 
     function MessageFromControlledTrain(ALccMessage: TLccMessage): Boolean;

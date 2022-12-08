@@ -471,7 +471,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
           Touch.InteractiveGestures = [LongTap, DoubleTap]
           Anchors = [akLeft, akTop, akRight]
           TabOrder = 2
-          Text = '192.168.0.38'
+          Text = '10.0.3.137'
           Position.X = 208.000000000000000000
           Position.Y = 8.000000000000000000
           Size.Width = 189.000000000000000000
