@@ -65,7 +65,7 @@ type
     PanelSettings4: TPanel;
     PanelSettings6: TPanel;
     PanelSettings1: TPanel;
-    ScrollBox1: TScrollBox;
+    ScrollBoxFunctions: TScrollBox;
     Throttle: TTabSheet;
     Roster: TTabSheet;
     Settings: TTabSheet;
@@ -105,7 +105,9 @@ type
     procedure OnFunctionClick(Sender: TObject);
     procedure PanelThrottleLeverResize(Sender: TObject);
     procedure TimerMainTimer(Sender: TObject);
-    procedure ToggleBoxF1Change(Sender: TObject);
+    procedure ToggleBoxFunctionChange(Sender: TObject);
+    procedure ToggleBoxThrottleForwardChange(Sender: TObject);
+    procedure ToggleBoxThrottleReverseChange(Sender: TObject);
     procedure TrackBarThrottleChange(Sender: TObject);
   private
     FController: TLccTrainController;
@@ -119,15 +121,19 @@ type
     procedure OnConnectionStateChange(Sender: TObject; ConnectionInfo: TLccHardwareConnectionInfo);
     procedure OnErrorMessage(Sender: TObject; ConnectionInfo: TLccHardwareConnectionInfo);
 
-    procedure OnSNIPChange(TractionServer: TLccTractionServer; TractionObject: TLccTractionObject);
-    procedure OnTrainSNIPChange(TractionServer: TLccTractionServer; TractionObject: TLccTractionObject);
-    procedure OnEmergencyStopChange(TractionServer: TLccTractionServer; TractionObject: TLccTractionObject);
-    procedure OnFunctionChange(TractionServer: TLccTractionServer; TractionObject: TLccTractionObject);
-    procedure OnSpeedChange(TractionServer: TLccTractionServer; TractionObject: TLccTractionObject);
-    procedure OnRegisterChange(TractionServer: TLccTractionServer; TractionObject: TLccTractionObject; IsRegistered: Boolean);
+    procedure OnSNIPChange(TractionObject: TLccTractionObject);
+    procedure OnTrainSNIPChange(TractionObject: TLccTractionObject);
+    procedure OnEmergencyStopChange(TractionObject: TLccTractionObject);
+    procedure OnFunctionChange(TractionObject: TLccTractionObject);
+    procedure OnSpeedChange(TractionObject: TLccTractionObject);
+    procedure OnRegisterChange(TractionObject: TLccTractionObject; IsRegistered: Boolean);
 
     procedure OnNodeIDChanged(Sender: TObject; ALccNode: TLccNode);
     procedure OnNodeAliasChanged(Sender: TObject; ALccNode: TLccNode);
+
+    procedure OnControllerAssignChange(Sender: TObject; ATractionServer: TLccTractionServer; ATractionObject: TLccTractionObject; IsAssigned: Boolean);
+
+    procedure EnableControls(DoEnable: Boolean);
 
     procedure OnLEDClick(Sender: TObject);
     procedure UpdateRoster;
@@ -152,7 +158,6 @@ implementation
 procedure TFormTrainController.FormCreate(Sender: TObject);
 begin
   NodeManager := TLccNodeManager.Create(nil, True);
-  Controller := TLccTrainController.Create(NodeManager, '', True);
   EthernetClient := TLccEthernetClient.Create(Self, NodeManager);
 
   EthernetClient.OnConnectionStateChange := @OnConnectionStateChange;
@@ -248,6 +253,8 @@ begin
       LED.Tag := i;
       LED.OnClick := @OnLEDClick;
       FLEDArray[i] := LED;
+      EnableControls(False);
+      ToggleBoxThrottleForward.Checked := True;
     end;
     PanelThrottleLeverResize(Self);
     ButtonSettingsRestartConnectionClick(Self);
@@ -280,8 +287,8 @@ begin
       LED := FLEDArray[i];
       LED.Top := LastBottom - LEDHeight;
       LED.Height := LEDHeight;
-      LED.Left := Trunc(MAX_LED_SEGMENTS * LED_TAPER * i);
-      LED.Width := PanelThrottleLever.Width - (Trunc(MAX_LED_SEGMENTS * LED_TAPER * i));
+      LED.Left := 0 {Trunc(MAX_LED_SEGMENTS * LED_TAPER * i)};
+      LED.Width := PanelThrottleLever.Width {- (Trunc(MAX_LED_SEGMENTS * LED_TAPER * i))};
       LastBottom := LED.Top;
     end;
   end;
@@ -297,14 +304,27 @@ begin
   end;
 end;
 
-procedure TFormTrainController.ToggleBoxF1Change(Sender: TObject);
+procedure TFormTrainController.ToggleBoxFunctionChange(Sender: TObject);
 begin
+  Controller.AssignedTrain.SetFunction( (Sender as TToggleBox).Tag, Word( (Sender as TToggleBox).Checked));
+end;
 
+procedure TFormTrainController.ToggleBoxThrottleForwardChange(Sender: TObject);
+begin
+  ToggleBoxThrottleReverse.Checked := not ToggleBoxThrottleForward.Checked;
+end;
+
+procedure TFormTrainController.ToggleBoxThrottleReverseChange(Sender: TObject);
+begin
+  ToggleBoxThrottleForward.Checked := not ToggleBoxThrottleReverse.Checked;
 end;
 
 procedure TFormTrainController.TrackBarThrottleChange(Sender: TObject);
 begin
-
+  if ToggleBoxThrottleForward.Checked then
+    Controller.AssignedTrain.SetSpeed(TrackBarThrottle.Position)
+  else
+    Controller.AssignedTrain.SetSpeed(-TrackBarThrottle.Position)
 end;
 
 procedure TFormTrainController.OnConnectionStateChange(Sender: TObject; ConnectionInfo: TLccHardwareConnectionInfo);
@@ -330,6 +350,7 @@ begin
           Controller.TractionServer.OnEmergencyStopChange := @OnEmergencyStopChange;
           Controller.TractionServer.OnFunctionChange := @OnFunctionChange;
           Controller.TractionServer.OnSpeedChange := @OnSpeedChange;
+          Controller.OnControllerAssignChange := @OnControllerAssignChange;
         end;
       end;
     lcsDisconnecting :
@@ -344,32 +365,32 @@ begin
 
 end;
 
-procedure TFormTrainController.OnSNIPChange(TractionServer: TLccTractionServer; TractionObject: TLccTractionObject);
+procedure TFormTrainController.OnSNIPChange(TractionObject: TLccTractionObject);
 begin
   UpdateRoster
 end;
 
-procedure TFormTrainController.OnTrainSNIPChange(TractionServer: TLccTractionServer; TractionObject: TLccTractionObject);
+procedure TFormTrainController.OnTrainSNIPChange(TractionObject: TLccTractionObject);
 begin
 
 end;
 
-procedure TFormTrainController.OnEmergencyStopChange(TractionServer: TLccTractionServer; TractionObject: TLccTractionObject);
+procedure TFormTrainController.OnEmergencyStopChange(TractionObject: TLccTractionObject);
 begin
 
 end;
 
-procedure TFormTrainController.OnFunctionChange(TractionServer: TLccTractionServer; TractionObject: TLccTractionObject);
+procedure TFormTrainController.OnFunctionChange(TractionObject: TLccTractionObject);
 begin
 
 end;
 
-procedure TFormTrainController.OnSpeedChange(TractionServer: TLccTractionServer; TractionObject: TLccTractionObject);
+procedure TFormTrainController.OnSpeedChange(TractionObject: TLccTractionObject);
 begin
 
 end;
 
-procedure TFormTrainController.OnRegisterChange(TractionServer: TLccTractionServer; TractionObject: TLccTractionObject; IsRegistered: Boolean);
+procedure TFormTrainController.OnRegisterChange(TractionObject: TLccTractionObject; IsRegistered: Boolean);
 begin
 
 end;
@@ -382,6 +403,24 @@ end;
 procedure TFormTrainController.OnNodeAliasChanged(Sender: TObject; ALccNode: TLccNode);
 begin
  LabelSettingsAliasID.Caption := ALccNode.AliasIDStr;
+end;
+
+procedure TFormTrainController.OnControllerAssignChange(Sender: TObject; ATractionServer: TLccTractionServer; ATractionObject: TLccTractionObject; IsAssigned: Boolean);
+begin
+  EnableControls(IsAssigned);
+  if IsAssigned then
+  begin
+    Controller.ListenerDetachFromAssignedTrain;
+    Controller.ListenerAttach(ATractionObject);
+  end else
+    Controller.ListenerDetachFromAssignedTrain;
+end;
+
+procedure TFormTrainController.EnableControls(DoEnable: Boolean);
+begin
+  ScrollBoxFunctions.Enabled := DoEnable;
+  PanelThrottleFooter.Enabled := DoEnable;
+  PanelThrottleContainer.Enabled := DoEnable;
 end;
 
 procedure TFormTrainController.OnLEDClick(Sender: TObject);
@@ -414,7 +453,7 @@ var
   i: Integer;
 begin
   Result := True;
-  IsLong := False;
+  IsLong := not ToggleBoxThrottleSelectShort.Checked;
   DccAddress := -1;
   AddressStr := ComboBoxTrainSelect.Text;
   if AddressStr = '' then
@@ -436,7 +475,6 @@ begin
         begin
           if (AddressStr[i] >= '0') and (AddressStr[i] <= '9') then
           begin // all numbers
-            IsLong := True;
             if not TryStrToInt(AddressStr, DccAddress) then   // This should always succeed
               Result := False;
           end else

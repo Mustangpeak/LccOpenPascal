@@ -78,8 +78,8 @@ type
     procedure DoTractionControllerAssign(LccNode: TLccNode; ALccMessage: TLccMessage; var DoDefault: Boolean);
     procedure DoTractionControllerRelease(LccNode: TLccNode; ALccMessage: TLccMessage; var DoDefault: Boolean);
     procedure DoTractionControllerQuery(LccNode: TLccNode; ALccMessage: TLccMessage; var DoDefault: Boolean);
-    procedure DoTractionControllerChanged(LccNode: TLccNode; ALccMessage: TLccMessage; var DoDefault: Boolean);
-    procedure DoTractionControllerChanging(LccNode: TLccNode; ALccMessage: TLccMessage; var DoDefault: Boolean);
+    procedure DoTractionControllerChange(LccNode: TLccNode; ALccMessage: TLccMessage; var DoDefault: Boolean);
+    procedure DoTractionControllerChangeReply(LccNode: TLccNode; ALccMessage: TLccMessage; var DoDefault: Boolean);
     procedure DoTractionEmergencyStop(LccNode: TLccNode; ALccMessage: TLccMessage; var DoDefault: Boolean);
     procedure DoTractionListenerAttach(LccNode: TLccNode; ALccMessage: TLccMessage; var DoDefault: Boolean);
     procedure DoTractionListenerDetach(LccNode: TLccNode; ALccMessage: TLccMessage; var DoDefault: Boolean);
@@ -218,8 +218,8 @@ type
 
     // INodeManagerTractionCallbacks
     procedure DoTractionControllerAssign(LccNode: TLccNode; ALccMessage: TLccMessage; var DoDefault: Boolean);
-    procedure DoTractionControllerChanged(LccNode: TLccNode; ALccMessage: TLccMessage; var DoDefault: Boolean);
-    procedure DoTractionControllerChanging(LccNode: TLccNode; ALccMessage: TLccMessage; var DoDefault: Boolean);
+    procedure DoTractionControllerChange(LccNode: TLccNode; ALccMessage: TLccMessage; var DoDefault: Boolean);
+    procedure DoTractionControllerChangeReply(LccNode: TLccNode; ALccMessage: TLccMessage; var DoDefault: Boolean);
     procedure DoTractionControllerRelease(LccNode: TLccNode; ALccMessage: TLccMessage; var DoDefault: Boolean);
     procedure DoTractionControllerQuery(LccNode: TLccNode; ALccMessage: TLccMessage; var DoDefault: Boolean);
     procedure DoTractionEmergencyStop(LccNode: TLccNode; ALccMessage: TLccMessage; var DoDefault: Boolean);
@@ -881,13 +881,13 @@ begin
     OnNodeTractionEmergencyStop(Self, LccNode, ALccMessage, DoDefault);
 end;
 
-procedure TLccNodeManager.DoTractionControllerChanged(LccNode: TLccNode; ALccMessage: TLccMessage; var DoDefault: Boolean);
+procedure TLccNodeManager.DoTractionControllerChangeReply(LccNode: TLccNode; ALccMessage: TLccMessage; var DoDefault: Boolean);
 begin
   if Assigned(OnNodeTractionControllerChanged) then
     OnNodeTractionControllerChanged(Self, LccNode, ALccMessage, DoDefault);
 end;
 
-procedure TLccNodeManager.DoTractionControllerChanging(LccNode: TLccNode; ALccMessage: TLccMessage; var DoDefault: Boolean);
+procedure TLccNodeManager.DoTractionControllerChange(LccNode: TLccNode; ALccMessage: TLccMessage; var DoDefault: Boolean);
 begin
   if Assigned(OnNodeTractionControllerChanging) then
     OnNodeTractionControllerChanging(Self, LccNode, ALccMessage, DoDefault);

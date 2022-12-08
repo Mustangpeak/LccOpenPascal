@@ -234,8 +234,7 @@ type
     procedure HandleTractionControllerAssign(var SourceMessage: TLccMessage);  virtual;
     procedure HandleTractionControllerRelease(var SourceMessage: TLccMessage);  virtual;
     procedure HandleTractionControllerQuery(var SourceMessage: TLccMessage);  virtual;
-    procedure HandleTractionControllerChangingNotify(var SourceMessage: TLccMessage);  virtual;
-    procedure HandleTractionControllerChangedNotify(var SourceMessage: TLccMessage);  virtual;
+    procedure HandleTractionControllerChanging(var SourceMessage: TLccMessage);  virtual;  // Sent from Train To currently Assigned Controller if it has one
     procedure HandleTractionEStop(var SourceMessage: TLccMessage);  virtual;
     procedure HandleTractionListenerAttach(var SourceMessage: TLccMessage); virtual;
     procedure HandleTractionListenerDetach(var SourceMessage: TLccMessage); virtual;
@@ -247,6 +246,16 @@ type
     procedure HandleTractionSimpleTrainInfoReply(var SourceMessage: TLccMessage); virtual;
     procedure HandleTractionQuerySpeed(var SourceMessage: TLccMessage); virtual;
     procedure HandleTractionQueryFunction(var SourceMessage: TLccMessage); virtual;
+
+    procedure HandleTractionControllerAssignReply(var SourceMessage: TLccMessage); virtual;
+    procedure HandleTractionControllerQueryReply(var SourceMessage: TLccMessage); virtual;
+    procedure HandleTractionControllerChangingReply(var SourceMessage: TLccMessage); virtual;  // Sent from Controller to the Train to tell it if it's willing to release control of the train
+    procedure HandleTractionListenerAttachReply(var SourceMessage: TLccMessage); virtual;
+    procedure HandleTractionListenerDetachReply(var SourceMessage: TLccMessage); virtual;
+    procedure HandleTractionListenerQueryReply(var SourceMessage: TLccMessage); virtual;
+    procedure HandleTractionManageReserveReply(var SourceMessage: TLccMessage); virtual;
+    procedure HandleTractionQuerySpeedReply(var SourceMessage: TLccMessage); virtual;
+    procedure HandleTractionQueryFunctionReply(var SourceMessage: TLccMessage); virtual;
     //**************************************************************************
 
 
@@ -747,9 +756,7 @@ procedure TLccNode.HandleTractionControllerRelease(var SourceMessage: TLccMessag
 
 procedure TLccNode.HandleTractionControllerQuery(var SourceMessage: TLccMessage); begin end;
 
-procedure TLccNode.HandleTractionControllerChangingNotify(var SourceMessage: TLccMessage); begin end;
-
-procedure TLccNode.HandleTractionControllerChangedNotify(var SourceMessage: TLccMessage); begin end;
+procedure TLccNode.HandleTractionControllerChanging(var SourceMessage: TLccMessage); begin end;
 
 procedure TLccNode.HandleTractionEStop(var SourceMessage: TLccMessage); begin end;
 
@@ -769,10 +776,27 @@ procedure TLccNode.HandleTractionSetFunction(var SourceMessage: TLccMessage); be
 
 procedure TLccNode.HandleTractionSimpleTrainInfoReply(var SourceMessage: TLccMessage); begin end;
 
-procedure TLccNode.HandleTractionQuerySpeed(var SourceMessage: TLccMessage);
-begin end;
+procedure TLccNode.HandleTractionQuerySpeed(var SourceMessage: TLccMessage); begin end;
 
 procedure TLccNode.HandleTractionQueryFunction(var SourceMessage: TLccMessage); begin end;
+
+procedure TLccNode.HandleTractionControllerAssignReply(var SourceMessage: TLccMessage); begin end;
+
+procedure TLccNode.HandleTractionControllerQueryReply(var SourceMessage: TLccMessage); begin end;
+
+procedure TLccNode.HandleTractionControllerChangingReply(var SourceMessage: TLccMessage); begin end;
+
+procedure TLccNode.HandleTractionListenerAttachReply(var SourceMessage: TLccMessage); begin end;
+
+procedure TLccNode.HandleTractionListenerDetachReply(var SourceMessage: TLccMessage); begin end;
+
+procedure TLccNode.HandleTractionListenerQueryReply(var SourceMessage: TLccMessage); begin end;
+
+procedure TLccNode.HandleTractionManageReserveReply(var SourceMessage: TLccMessage); begin end;
+
+procedure TLccNode.HandleTractionQuerySpeedReply(var SourceMessage: TLccMessage); begin end;
+
+procedure TLccNode.HandleTractionQueryFunctionReply(var SourceMessage: TLccMessage); begin end;
 
 function TLccNode.GetAliasIDStr: String;
 begin
@@ -1081,11 +1105,32 @@ begin
     MTI_TRACTION_REPLY :
       begin
         case SourceMessage.DataArray[0] of
+          TRACTION_QUERY_SPEED         : HandleTractionQuerySpeedReply(SourceMessage);
+          TRACTION_QUERY_FUNCTION      : HandleTractionQueryFunctionReply(SourceMessage);
+
           TRACTION_CONTROLLER_CONFIG :
             begin
               case SourceMessage.DataArray[1] of
-                TRACTION_CONTROLLER_CONFIG_CHANGED_NOTIFY : HandleTractionControllerChangedNotify(SourceMessage);
+                TRACTION_CONTROLLER_CONFIG_ASSIGN  : HandleTractionControllerAssignReply(SourceMessage);
+        //        TRACTION_CONTROLLER_CONFIG_RELEASE : HandleTractionControllerReleaseReply(SourceMessage);
+                TRACTION_CONTROLLER_CONFIG_QUERY   : HandleTractionControllerQueryReply(SourceMessage);
+                TRACTION_CONTROLLER_CONFIG_CHANGED_NOTIFY : HandleTractionControllerChangingReply(SourceMessage);
               end;
+            end;
+          TRACTION_LISTENER :
+            begin
+              case SourceMessage.DataArray[1] of
+                TRACTION_LISTENER_ATTACH : HandleTractionListenerAttachReply(SourceMessage);
+                TRACTION_LISTENER_DETACH : HandleTractionListenerDetachReply(SourceMessage);
+                TRACTION_LISTENER_QUERY  : HandleTractionListenerQueryReply(SourceMessage);
+              end;
+            end;
+          TRACTION_MANAGE :
+            begin
+              case SourceMessage.DataArray[1] of
+                TRACTION_MANAGE_RESERVE : HandleTractionManageReserveReply(SourceMessage);
+        //        TRACTION_MANAGE_RELEASE : HandleTractionManageReleaseReply(SourceMessage);
+              end
             end;
         end
       end;
@@ -1103,7 +1148,7 @@ begin
                 TRACTION_CONTROLLER_CONFIG_ASSIGN  : HandleTractionControllerAssign(SourceMessage);
                 TRACTION_CONTROLLER_CONFIG_RELEASE : HandleTractionControllerRelease(SourceMessage);
                 TRACTION_CONTROLLER_CONFIG_QUERY   : HandleTractionControllerQuery(SourceMessage);
-                TRACTION_CONTROLLER_CONFIG_CHANGING_NOTIFY : HandleTractionControllerChangingNotify(SourceMessage);
+                TRACTION_CONTROLLER_CONFIG_CHANGING_NOTIFY : HandleTractionControllerChanging(SourceMessage);
               end
             end;
           TRACTION_LISTENER :
@@ -1209,10 +1254,6 @@ function TLccNode.ProcessMessageGridConnect(SourceMessage: TLccMessage): Boolean
 
 var
   TestNodeID: TNodeID;
-  ANodeIdentificationObjectList: TLccNodeIdentificationObjectList;
-  LocalNodeIdentificationObject: TLccNodeIdentificationObject;
-  i: Integer;
-  AliasMapping: TLccAliasMapping;
 begin
   Result := False;
   TestNodeID[0] := 0;

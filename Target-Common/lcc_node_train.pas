@@ -324,8 +324,8 @@ type
     procedure HandleTractionControllerAssign(var SourceMessage: TLccMessage); override;
     procedure HandleTractionControllerRelease(var SourceMessage: TLccMessage); override;
     procedure HandleTractionControllerQuery(var SourceMessage: TLccMessage); override;
-    procedure HandleTractionControllerChangingNotify(var SourceMessage: TLccMessage); override;
-    procedure HandleTractionControllerChangedNotify(var SourceMessage: TLccMessage); override;
+    procedure HandleTractionControllerChanging(var SourceMessage: TLccMessage); override;
+    procedure HandleTractionControllerChangingReply(var SourceMessage: TLccMessage); override;
     procedure HandleTractionEStop(var SourceMessage: TLccMessage); override;
     procedure HandleTractionListenerAttach(var SourceMessage: TLccMessage); override;
     procedure HandleTractionListenerDetach(var SourceMessage: TLccMessage);override;
@@ -956,33 +956,33 @@ begin
   end;
 end;
 
-procedure TLccTrainDccNode.HandleTractionControllerChangingNotify(var SourceMessage: TLccMessage);
+procedure TLccTrainDccNode.HandleTractionControllerChanging(var SourceMessage: TLccMessage);
 var
   DoDefault: Boolean;
 begin
   DoDefault := True;
-  (NodeManager as INodeManagerTractionCallbacks).DoTractionControllerChanging(Self, SourceMessage, DoDefault);
+  (NodeManager as INodeManagerTractionCallbacks).DoTractionControllerChange(Self, SourceMessage, DoDefault);
 
   if DoDefault then
   begin
     // Just say yes for now
-    WorkerMessage.LoadTractionControllerChangedReply(NodeID, AliasID, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias, True);
+    WorkerMessage.LoadTractionControllerChangingReply(NodeID, AliasID, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias, True);
     SendMessageFunc(Self, WorkerMessage);
   end;
 end;
 
-procedure TLccTrainDccNode.HandleTractionControllerChangedNotify(var SourceMessage: TLccMessage);
+procedure TLccTrainDccNode.HandleTractionControllerChangingReply(var SourceMessage: TLccMessage);
 var
   ChangedResult: Byte;
   DoDefault: Boolean;
 begin
   DoDefault := True;
-  (NodeManager as INodeManagerTractionCallbacks).DoTractionControllerChanged(Self, SourceMessage, DoDefault);
+  (NodeManager as INodeManagerTractionCallbacks).DoTractionControllerChangeReply(Self, SourceMessage, DoDefault);
 
   if DoDefault then
   begin
 
-    // What did the existing controller that is attached say about the new controller taking over the train?
+    // What did the train that is attached say about the new controller taking over the train?
     ChangedResult := SourceMessage.TractionExtractControllerChangedResult;
 
     case ChangedResult of

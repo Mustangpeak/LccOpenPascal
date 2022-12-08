@@ -50,6 +50,7 @@ type
     FController: TLccTractionControllerObject;
     FNodeAlias: Word;
     FNodeID: TNodeID;
+    FServer: TLccTractionServer;
     FSNIP: TLccSNIPObject;
     FSpeedActual: THalfFloat;
     FSpeedCommanded: THalfFloat;
@@ -70,13 +71,14 @@ type
     property SNIP: TLccSNIPObject read FSNIP;
     property TrainSNIP: TLccTrainSNIPObject read FTrainSNIP;
     property Controller: TLccTractionControllerObject read FController write FController;
+    property Server: TLccTractionServer read FServer;
 
-    constructor Create;
+    constructor Create(AServer: TLccTractionServer);
     destructor Destroy; override;
   end;
 
-  TOnLccServerRegisterChange = procedure(TractionServer: TLccTractionServer; TractionObject: TLccTractionObject; IsRegistered: Boolean) of object;
-  TOnLccServerChange = procedure(TractionServer: TLccTractionServer; TractionObject: TLccTractionObject) of object;
+  TOnLccServerRegisterChange = procedure(TractionObject: TLccTractionObject; IsRegistered: Boolean) of object;
+  TOnLccServerChange = procedure(TractionObject: TLccTractionObject) of object;
 
   { TLccTractionServer }
 
@@ -190,8 +192,9 @@ begin
      FFunctions[Index] := AValue
 end;
 
-constructor TLccTractionObject.Create;
+constructor TLccTractionObject.Create(AServer: TLccTractionServer);
 begin
+  FServer := AServer;
   FSNIP := TLccSNIPObject.Create;
   FTrainSNIP := TLccTrainSNIPObject.Create;
   FController := TLccTractionControllerObject.Create;
@@ -249,61 +252,61 @@ end;
 procedure TLccTractionServer.DoRegisterChange(TractionObject: TLccTractionObject; IsRegistered: Boolean);
 begin
   if Assigned(OnRegisterChange) then
-    OnRegisterChange(Self, TractionObject, IsRegistered);
+    OnRegisterChange(TractionObject, IsRegistered);
 end;
 
 procedure TLccTractionServer.DoSNIPChange(TractionObject: TLccTractionObject);
 begin
   if Assigned(OnSNIPChange) then
-    OnSNIPChange(Self, TractionObject);
+    OnSNIPChange(TractionObject);
 end;
 
 procedure TLccTractionServer.DoTrainSNIPChange(TractionObject: TLccTractionObject);
 begin
   if Assigned(OnTrainSNIPChange) then
-    OnTrainSNIPChange(Self, TractionObject);
+    OnTrainSNIPChange(TractionObject);
 end;
 
 procedure TLccTractionServer.DoSpeedChange(TractionObject: TLccTractionObject);
 begin
   if Assigned(OnSpeedChange) then
-    OnSpeedChange(Self, TractionObject);
+    OnSpeedChange(TractionObject);
 end;
 
 procedure TLccTractionServer.DoFunctionChange(TractionObject: TLccTractionObject);
 begin
   if Assigned(OnFunctionChange) then
-    OnFunctionChange(Self, TractionObject);
+    OnFunctionChange(TractionObject);
 end;
 
 procedure TLccTractionServer.DoEmergencyStopChange(TractionObject: TLccTractionObject);
 begin
   if Assigned(OnEmergencyStopChange) then
-    OnEmergencyStopChange(Self, TractionObject);
+    OnEmergencyStopChange(TractionObject);
 end;
 
 procedure TLccTractionServer.DoListenerAttach(TractionObject: TLccTractionObject);
 begin
   if Assigned(OnListenerAttach) then
-    OnListenerAttach(Self, TractionObject);
+    OnListenerAttach(TractionObject);
 end;
 
 procedure TLccTractionServer.DoListenerDetach(TractionObject: TLccTractionObject);
 begin
   if Assigned(OnListenerDetach) then
-    OnListenerDetach(Self, TractionObject);
+    OnListenerDetach(TractionObject);
 end;
 
 procedure TLccTractionServer.DoListenerManageReserve(TractionObject: TLccTractionObject);
 begin
   if Assigned(OnListenerManageReserve) then
-    OnListenerManageReserve(Self, TractionObject);
+    OnListenerManageReserve(TractionObject);
 end;
 
 procedure TLccTractionServer.DoListenerManageRelease(TractionObject: TLccTractionObject);
 begin
   if Assigned(OnListenerManageRelease) then
-    OnListenerManageRelease(Self, TractionObject);
+    OnListenerManageRelease(TractionObject);
 end;
 
 procedure TLccTractionServer.HandleProducerIdentifiedAll(ALccNode: TObject; SourceMessage: TLccMessage);
@@ -545,7 +548,7 @@ end;
 
 function TLccTractionServer.Add(NewNodeID: TNodeID; NewAlias: Word): TLccTractionObject;
 begin
-  Result := TLccTractionObject.Create;
+  Result := TLccTractionObject.Create(Self);
   List.Add(Result);
   Result.NodeAlias := NewAlias;
   Result.NodeID := NewNodeID;

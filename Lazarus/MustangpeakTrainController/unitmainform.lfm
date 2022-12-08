@@ -1,7 +1,7 @@
 object FormTrainController: TFormTrainController
-  Left = 495
+  Left = 504
   Height = 483
-  Top = 167
+  Top = 142
   Width = 375
   Caption = 'Mustangpeak TrainController'
   ClientHeight = 483
@@ -18,32 +18,33 @@ object FormTrainController: TFormTrainController
     Height = 483
     Top = 0
     Width = 375
-    ActivePage = Settings
+    ActivePage = Throttle
     Align = alClient
-    TabIndex = 2
+    TabIndex = 0
     TabOrder = 0
     object Throttle: TTabSheet
       Caption = 'Throttle'
       ClientHeight = 453
       ClientWidth = 369
-      object ScrollBox1: TScrollBox
-        Left = 215
+      object ScrollBoxFunctions: TScrollBox
+        Left = 151
         Height = 344
         Top = 64
-        Width = 154
-        HorzScrollBar.Page = 128
+        Width = 218
+        HorzScrollBar.Page = 49
         VertScrollBar.Page = 342
         Align = alRight
         ClientHeight = 342
-        ClientWidth = 137
+        ClientWidth = 201
         TabOrder = 0
         object ToggleBoxF0: TToggleBox
           Left = 16
           Height = 25
           Top = 8
-          Width = 112
+          Width = 176
+          Anchors = [akTop, akLeft, akRight]
           Caption = 'F0'
-          OnClick = OnFunctionClick
+          OnChange = ToggleBoxFunctionChange
           TabOrder = 0
         end
         object ToggleBoxF1: TToggleBox
@@ -51,17 +52,20 @@ object FormTrainController: TFormTrainController
           Left = 16
           Height = 25
           Top = 32
-          Width = 112
+          Width = 176
+          Anchors = [akTop, akLeft, akRight]
           Caption = 'F1'
-          OnChange = ToggleBoxF1Change
+          OnChange = ToggleBoxFunctionChange
           TabOrder = 1
         end
         object ToggleBoxF4: TToggleBox
           Left = 16
           Height = 25
           Top = 104
-          Width = 112
+          Width = 176
+          Anchors = [akTop, akLeft, akRight]
           Caption = 'F4'
+          OnChange = ToggleBoxFunctionChange
           TabOrder = 2
         end
         object ToggleBoxF5: TToggleBox
@@ -69,8 +73,10 @@ object FormTrainController: TFormTrainController
           Left = 16
           Height = 25
           Top = 128
-          Width = 112
+          Width = 176
+          Anchors = [akTop, akLeft, akRight]
           Caption = 'F5'
+          OnChange = ToggleBoxFunctionChange
           TabOrder = 3
         end
         object ToggleBoxF6: TToggleBox
@@ -78,8 +84,10 @@ object FormTrainController: TFormTrainController
           Left = 16
           Height = 25
           Top = 152
-          Width = 112
+          Width = 176
+          Anchors = [akTop, akLeft, akRight]
           Caption = 'F6'
+          OnChange = ToggleBoxFunctionChange
           TabOrder = 4
         end
         object ToggleBoxF7: TToggleBox
@@ -87,8 +95,10 @@ object FormTrainController: TFormTrainController
           Left = 16
           Height = 25
           Top = 176
-          Width = 112
+          Width = 176
+          Anchors = [akTop, akLeft, akRight]
           Caption = 'F7'
+          OnChange = ToggleBoxFunctionChange
           TabOrder = 5
         end
         object ToggleBoxF8: TToggleBox
@@ -96,8 +106,10 @@ object FormTrainController: TFormTrainController
           Left = 16
           Height = 25
           Top = 200
-          Width = 112
+          Width = 176
+          Anchors = [akTop, akLeft, akRight]
           Caption = 'F8'
+          OnChange = ToggleBoxFunctionChange
           TabOrder = 6
         end
         object ToggleBoxF9: TToggleBox
@@ -105,8 +117,10 @@ object FormTrainController: TFormTrainController
           Left = 16
           Height = 25
           Top = 224
-          Width = 112
+          Width = 176
+          Anchors = [akTop, akLeft, akRight]
           Caption = 'F9'
+          OnChange = ToggleBoxFunctionChange
           TabOrder = 7
         end
         object ToggleBoxF2: TToggleBox
@@ -114,8 +128,10 @@ object FormTrainController: TFormTrainController
           Left = 16
           Height = 25
           Top = 56
-          Width = 112
+          Width = 176
+          Anchors = [akTop, akLeft, akRight]
           Caption = 'F2'
+          OnChange = ToggleBoxFunctionChange
           TabOrder = 8
         end
         object ToggleBoxF3: TToggleBox
@@ -123,8 +139,10 @@ object FormTrainController: TFormTrainController
           Left = 16
           Height = 25
           Top = 80
-          Width = 112
+          Width = 176
+          Anchors = [akTop, akLeft, akRight]
           Caption = 'F3'
+          OnChange = ToggleBoxFunctionChange
           TabOrder = 9
         end
         object ToggleBoxF10: TToggleBox
@@ -132,8 +150,10 @@ object FormTrainController: TFormTrainController
           Left = 16
           Height = 25
           Top = 248
-          Width = 112
+          Width = 176
+          Anchors = [akTop, akLeft, akRight]
           Caption = 'F10'
+          OnChange = ToggleBoxFunctionChange
           TabOrder = 10
         end
         object ToggleBoxF11: TToggleBox
@@ -141,9 +161,10 @@ object FormTrainController: TFormTrainController
           Left = 16
           Height = 25
           Top = 272
-          Width = 112
+          Width = 176
+          Anchors = [akTop, akLeft, akRight]
           Caption = 'F11'
-          OnChange = ToggleBoxF1Change
+          OnChange = ToggleBoxFunctionChange
           TabOrder = 11
         end
         object ToggleBoxF12: TToggleBox
@@ -151,8 +172,10 @@ object FormTrainController: TFormTrainController
           Left = 16
           Height = 25
           Top = 296
-          Width = 112
+          Width = 176
+          Anchors = [akTop, akLeft, akRight]
           Caption = 'F12'
+          OnChange = ToggleBoxFunctionChange
           TabOrder = 12
         end
         object ToggleBoxF13: TToggleBox
@@ -160,8 +183,10 @@ object FormTrainController: TFormTrainController
           Left = 16
           Height = 25
           Top = 320
-          Width = 112
+          Width = 176
+          Anchors = [akTop, akLeft, akRight]
           Caption = 'F13'
+          OnChange = ToggleBoxFunctionChange
           TabOrder = 13
         end
         object ToggleBoxF14: TToggleBox
@@ -169,8 +194,10 @@ object FormTrainController: TFormTrainController
           Left = 16
           Height = 25
           Top = 344
-          Width = 112
+          Width = 176
+          Anchors = [akTop, akLeft, akRight]
           Caption = 'F14'
+          OnChange = ToggleBoxFunctionChange
           TabOrder = 14
         end
         object ToggleBoxF15: TToggleBox
@@ -178,8 +205,10 @@ object FormTrainController: TFormTrainController
           Left = 16
           Height = 25
           Top = 368
-          Width = 112
+          Width = 176
+          Anchors = [akTop, akLeft, akRight]
           Caption = 'F15'
+          OnChange = ToggleBoxFunctionChange
           TabOrder = 15
         end
         object ToggleBoxF16: TToggleBox
@@ -187,8 +216,10 @@ object FormTrainController: TFormTrainController
           Left = 16
           Height = 25
           Top = 392
-          Width = 112
+          Width = 176
+          Anchors = [akTop, akLeft, akRight]
           Caption = 'F16'
+          OnChange = ToggleBoxFunctionChange
           TabOrder = 16
         end
         object ToggleBoxF17: TToggleBox
@@ -196,8 +227,10 @@ object FormTrainController: TFormTrainController
           Left = 16
           Height = 25
           Top = 416
-          Width = 112
+          Width = 176
+          Anchors = [akTop, akLeft, akRight]
           Caption = 'F17'
+          OnChange = ToggleBoxFunctionChange
           TabOrder = 17
         end
         object ToggleBoxF18: TToggleBox
@@ -205,8 +238,10 @@ object FormTrainController: TFormTrainController
           Left = 16
           Height = 25
           Top = 440
-          Width = 112
+          Width = 176
+          Anchors = [akTop, akLeft, akRight]
           Caption = 'F18'
+          OnChange = ToggleBoxFunctionChange
           TabOrder = 18
         end
         object ToggleBoxF19: TToggleBox
@@ -214,8 +249,10 @@ object FormTrainController: TFormTrainController
           Left = 16
           Height = 25
           Top = 464
-          Width = 112
+          Width = 176
+          Anchors = [akTop, akLeft, akRight]
           Caption = 'F19'
+          OnChange = ToggleBoxFunctionChange
           TabOrder = 19
         end
       end
@@ -312,6 +349,7 @@ object FormTrainController: TFormTrainController
           Width = 75
           Align = alRight
           Caption = 'Forward'
+          OnChange = ToggleBoxThrottleForwardChange
           TabOrder = 1
         end
         object ToggleBoxThrottleReverse: TToggleBox
@@ -321,6 +359,7 @@ object FormTrainController: TFormTrainController
           Width = 75
           Align = alRight
           Caption = 'Reverse'
+          OnChange = ToggleBoxThrottleReverseChange
           TabOrder = 2
         end
       end
@@ -328,16 +367,16 @@ object FormTrainController: TFormTrainController
         Left = 0
         Height = 344
         Top = 64
-        Width = 215
+        Width = 151
         Align = alClient
         ClientHeight = 344
-        ClientWidth = 215
+        ClientWidth = 151
         TabOrder = 3
         object PanelThrottleLever: TPanel
           Left = 56
           Height = 342
           Top = 1
-          Width = 158
+          Width = 94
           Align = alClient
           Caption = 'PanelThrottleLever'
           TabOrder = 0
