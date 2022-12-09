@@ -44,8 +44,8 @@ type
     TabItem3: TTabItem;
     ToolBar4: TToolBar;
     lblTitle4: TLabel;
-    TabItem4: TTabItem;
-    ToolBar5: TToolBar;
+    TabItemSettings: TTabItem;
+    ToolBarSettingsTop: TToolBar;
     LabelSettingsHeader: TLabel;
     GestureManager1: TGestureManager;
     ActionList1: TActionList;
@@ -54,27 +54,27 @@ type
     MultiViewConsist: TMultiView;
     ListViewTrainRoster: TListView;
     SpeedButtonTab2Hamburger: TSpeedButton;
-    LayoutSettingTab: TLayout;
-    ButtonResetConnection: TButton;
+    LayoutSettingsTab: TLayout;
+    ButtonSettingsResetConnection: TButton;
     Layout3D1: TLayout3D;
-    CheckBoxRawTCP: TCheckBox;
-    EditNodeID: TEdit;
-    TextNodeID: TText;
-    TextPort: TText;
-    EditPort: TEdit;
-    EditIpAddress: TEdit;
-    TextIpAddress: TText;
+    CheckBoxSettingsRawTCP: TCheckBox;
+    EditSettingsNodeID: TEdit;
+    TextSettingsNodeID: TText;
+    TextSettingsPort: TText;
+    EditSettingsPort: TEdit;
+    EditSettingsIpAddress: TEdit;
+    TextSettingsIpAddress: TText;
     TimerLogin: TTimer;
     LabelSystemDocumentsPath: TLabel;
     PopupMenuLabelPath: TPopupMenu;
     MenuItemSettingsLabelPath: TMenuItem;
-    TextConnectionStatus: TText;
-    ButtonDeleteSettingsFile: TButton;
-    ButtonDeleteAppFolder: TButton;
-    LabelSystemDocumentsPathHeader: TLabel;
-    LabelApplicationDocumentsHeader: TLabel;
-    LabelApplicationDocumentsPath: TLabel;
-    TextDebugHeader: TText;
+    TextSettingsConnectionStatus: TText;
+    ButtonSettingsDeleteSettingsFile: TButton;
+    ButtonSettingsDeleteAppFolder: TButton;
+    LabelSettingsSystemDocumentsPathHeader: TLabel;
+    LabeSettingslApplicationDocumentsHeader: TLabel;
+    LabelSettingsApplicationDocumentsPath: TLabel;
+    TextSettingsDebugHeader: TText;
     Layout1: TLayout;
     TabControlTrainRoster: TTabControl;
     TabItemTrainRosterSelect: TTabItem;
@@ -101,23 +101,25 @@ type
     ListBoxItem9: TListBoxItem;
     ListBoxItem11: TListBoxItem;
     LayoutTrainRosterEdit: TLayout;
+    TextSettingsNodeAlias: TText;
+    TextSettingsNodeAliasID: TText;
     procedure GestureDone(Sender: TObject; const EventInfo: TGestureEventInfo; var Handled: Boolean);
     procedure FormCreate(Sender: TObject);
     procedure FormKeyUp(Sender: TObject; var Key: Word; var KeyChar: Char; Shift: TShiftState);
     procedure TimerLoginTimer(Sender: TObject);
-    procedure ButtonResetConnectionClick(Sender: TObject);
+    procedure ButtonSettingsResetConnectionClick(Sender: TObject);
     procedure FormShow(Sender: TObject);
     procedure FormCloseQuery(Sender: TObject; var CanClose: Boolean);
     procedure FormDestroy(Sender: TObject);
     procedure MenuItemSettingsLabelPathClick(Sender: TObject);
-    procedure EditIpAddressKeyDown(Sender: TObject; var Key: Word; var KeyChar: Char; Shift: TShiftState);
-    procedure EditPortKeyDown(Sender: TObject; var Key: Word; var KeyChar: Char; Shift: TShiftState);
-    procedure EditNodeIDKeyDown(Sender: TObject; var Key: Word; var KeyChar: Char; Shift: TShiftState);
-    procedure EditIpAddressExit(Sender: TObject);
-    procedure EditPortExit(Sender: TObject);
-    procedure EditNodeIDExit(Sender: TObject);
-    procedure ButtonDeleteSettingsFileClick(Sender: TObject);
-    procedure ButtonDeleteAppFolderClick(Sender: TObject);
+    procedure EditSettingsIpAddressKeyDown(Sender: TObject; var Key: Word; var KeyChar: Char; Shift: TShiftState);
+    procedure EditSettingsPortKeyDown(Sender: TObject; var Key: Word; var KeyChar: Char; Shift: TShiftState);
+    procedure EditSettingsNodeIDKeyDown(Sender: TObject; var Key: Word; var KeyChar: Char; Shift: TShiftState);
+    procedure EditSettingsIpAddressExit(Sender: TObject);
+    procedure EditSettingsPortExit(Sender: TObject);
+    procedure EditSettingsNodeIDExit(Sender: TObject);
+    procedure ButtonSettingsDeleteSettingsFileClick(Sender: TObject);
+    procedure ButtonSettingsDeleteAppFolderClick(Sender: TObject);
     procedure SpeedButtonTrainRosterBackClick(Sender: TObject);
     procedure ListViewTrainRosterItemClickEx(const Sender: TObject; ItemIndex: Integer; const LocalClickPos: TPointF; const ItemObject: TListItemDrawable);
     procedure MultiViewConsistHidden(Sender: TObject);
@@ -137,8 +139,6 @@ type
     FPathMemoryConfig: string;
     FActiveTrainObject: TListViewItem;
     FCdiParserFrame: TLccCdiParser;
-    procedure OnLccTractionUpdateListenerCount(
-      TractionObject: TLccTractionObject);
     { Private declarations }
 
   protected
@@ -166,12 +166,13 @@ type
     // Callbacks
     procedure OnNodeLogin(Sender: TObject; LccSourceNode: TLccNode);
     procedure OnAliasMappingChange(Sender: TObject; LccSourceNode: TLccNode; AnAliasMapping: TLccAliasMapping; IsMapped: Boolean);
-    procedure OnTractionRegisterNotify(TractionObject: TLccTractionObject; IsRegistered: Boolean);
     procedure OnSNIPChange(TractionObject: TLccTractionObject);
     procedure OnTrainSNIPChange(TractionObject: TLccTractionObject);
 
-    procedure OnNodeManagerSendMessage(Sender: TObject; LccMessage: TLccMessage);
-    procedure OnNodeManagerReceiveMessage(Sender: TObject; LccMessage: TLccMessage);
+    procedure OnRegisterChange(TractionObject: TLccTractionObject; IsRegistered: Boolean);
+
+    procedure OnSendMessage(Sender: TObject; LccMessage: TLccMessage);
+    procedure OnReceiveMessage(Sender: TObject; LccMessage: TLccMessage);
 
     procedure OnNodeIDChanged(Sender: TObject; ALccNode: TLccNode);
     procedure OnNodeAliasChanged(Sender: TObject; ALccNode: TLccNode);
@@ -199,13 +200,13 @@ begin
 
   LocalInfo := TLccEthernetConnectionInfo.Create;
   try
-    TextConnectionStatus.Text := 'connecting';
-    TextConnectionStatus.TextSettings.FontColor := TAlphaColors.Black;
+    TextSettingsConnectionStatus.Text := 'connecting';
+    TextSettingsConnectionStatus.TextSettings.FontColor := TAlphaColors.Black;
 
     LocalInfo.AutoResolveIP := False;
     LocalInfo.ListenerPort := CurrentPort;
     LocalInfo.ListenerIP := CurrentIpAddress;
-    LocalInfo.GridConnect := not CheckBoxRawTCP.IsChecked;
+    LocalInfo.GridConnect := not CheckBoxSettingsRawTCP.IsChecked;
 
     EthernetClient.OpenConnection(LocalInfo);
   finally
@@ -213,13 +214,13 @@ begin
   end;
 end;
 
-procedure TLccThrottleAppForm.EditIpAddressExit(Sender: TObject);
+procedure TLccThrottleAppForm.EditSettingsIpAddressExit(Sender: TObject);
 begin
-  if ValidateIPString(EditIpAddress.Text) then
-    XmlNodeSetFirstLevelTextContent(PathSettingsFile, 'settings', 'ipaddress', EditIpAddress.Text, True);
+  if ValidateIPString(EditSettingsIpAddress.Text) then
+    XmlNodeSetFirstLevelTextContent(PathSettingsFile, 'settings', 'ipaddress', EditSettingsIpAddress.Text, True);
 end;
 
-procedure TLccThrottleAppForm.EditIpAddressKeyDown(Sender: TObject;
+procedure TLccThrottleAppForm.EditSettingsIpAddressKeyDown(Sender: TObject;
   var Key: Word; var KeyChar: Char; Shift: TShiftState);
 begin
   if not( CharInSet(KeyChar, ['0'..'9', '.']) or ValidEditBoxKey(Key) ) then
@@ -227,17 +228,17 @@ begin
     Key := 0;
     KeyChar := #0;
   end;
-  if (Key = vkReturn) and ValidateIPString(EditIpAddress.Text) then
-    XmlNodeSetFirstLevelTextContent(PathSettingsFile, 'settings', 'ipaddress', EditIpAddress.Text, True);
+  if (Key = vkReturn) and ValidateIPString(EditSettingsIpAddress.Text) then
+    XmlNodeSetFirstLevelTextContent(PathSettingsFile, 'settings', 'ipaddress', EditSettingsIpAddress.Text, True);
 end;
 
-procedure TLccThrottleAppForm.EditNodeIDExit(Sender: TObject);
+procedure TLccThrottleAppForm.EditSettingsNodeIDExit(Sender: TObject);
 begin
-  if ValidateNodeIDString(EditNodeID.Text) then
-    XmlNodeSetFirstLevelTextContent(PathSettingsFile, 'settings', 'nodeid', EditNodeID.Text, True);
+  if ValidateNodeIDString(EditSettingsNodeID.Text) then
+    XmlNodeSetFirstLevelTextContent(PathSettingsFile, 'settings', 'nodeid', EditSettingsNodeID.Text, True);
 end;
 
-procedure TLccThrottleAppForm.EditNodeIDKeyDown(Sender: TObject; var Key: Word;
+procedure TLccThrottleAppForm.EditSettingsNodeIDKeyDown(Sender: TObject; var Key: Word;
   var KeyChar: Char; Shift: TShiftState);
 begin
   if CharInSet(KeyChar, ['a'..'f']) then
@@ -249,17 +250,17 @@ begin
     KeyChar := #0;
   end;
 
-  if (Key = vkReturn) and ValidateNodeIDString(EditNodeID.Text) then
-    XmlNodeSetFirstLevelTextContent(PathSettingsFile, 'settings', 'nodeid', EditNodeID.Text, True);
+  if (Key = vkReturn) and ValidateNodeIDString(EditSettingsNodeID.Text) then
+    XmlNodeSetFirstLevelTextContent(PathSettingsFile, 'settings', 'nodeid', EditSettingsNodeID.Text, True);
 end;
 
-procedure TLccThrottleAppForm.EditPortExit(Sender: TObject);
+procedure TLccThrottleAppForm.EditSettingsPortExit(Sender: TObject);
 begin
-  if ValidatePort(EditPort.Text) then
-    XmlNodeSetFirstLevelTextContent(PathSettingsFile, 'settings', 'port', EditPort.Text, True);
+  if ValidatePort(EditSettingsPort.Text) then
+    XmlNodeSetFirstLevelTextContent(PathSettingsFile, 'settings', 'port', EditSettingsPort.Text, True);
 end;
 
-procedure TLccThrottleAppForm.EditPortKeyDown(Sender: TObject; var Key: Word;
+procedure TLccThrottleAppForm.EditSettingsPortKeyDown(Sender: TObject; var Key: Word;
   var KeyChar: Char; Shift: TShiftState);
 begin
   if not( CharInSet(KeyChar, ['0'..'9']) or ValidEditBoxKey(Key) ) then
@@ -267,11 +268,11 @@ begin
     Key := 0;
     KeyChar := #0;
   end;
-  if (Key = vkReturn) and ValidatePort(EditPort.Text) then
-    XmlNodeSetFirstLevelTextContent(PathSettingsFile, 'settings', 'port', EditPort.Text, True);
+  if (Key = vkReturn) and ValidatePort(EditSettingsPort.Text) then
+    XmlNodeSetFirstLevelTextContent(PathSettingsFile, 'settings', 'port', EditSettingsPort.Text, True);
 end;
 
-procedure TLccThrottleAppForm.ButtonDeleteAppFolderClick(Sender: TObject);
+procedure TLccThrottleAppForm.ButtonSettingsDeleteAppFolderClick(Sender: TObject);
 var
   Files: TStringDynArray;
   i: Integer;
@@ -285,43 +286,43 @@ begin
   end;
 end;
 
-procedure TLccThrottleAppForm.ButtonDeleteSettingsFileClick(Sender: TObject);
+procedure TLccThrottleAppForm.ButtonSettingsDeleteSettingsFileClick(Sender: TObject);
 begin
   if TFile.Exists(PathSettingsFile) then
     TFile.Delete(PathSettingsFile)
 end;
 
-procedure TLccThrottleAppForm.ButtonResetConnectionClick(Sender: TObject);
+procedure TLccThrottleAppForm.ButtonSettingsResetConnectionClick(Sender: TObject);
 begin
-  if not ValidateIPString(EditIpAddress.Text) then
+  if not ValidateIPString(EditSettingsIpAddress.Text) then
   begin
-    TextConnectionStatus.Text := 'Invalid IP Address';
-    TextConnectionStatus.TextSettings.FontColor := TAlphaColors.Red;
-    TextIpAddress.TextSettings.FontColor := TAlphaColors.Red;
+    TextSettingsConnectionStatus.Text := 'Invalid IP Address';
+    TextSettingsConnectionStatus.TextSettings.FontColor := TAlphaColors.Red;
+    TextSettingsIpAddress.TextSettings.FontColor := TAlphaColors.Red;
     Exit
   end;
-  if not ValidateNodeIDString(EditNodeID.Text) then
+  if not ValidateNodeIDString(EditSettingsNodeID.Text) then
   begin
-    TextConnectionStatus.Text := 'Invalid NodeID';
-    TextConnectionStatus.TextSettings.FontColor := TAlphaColors.Red;
-    TextNodeID.TextSettings.FontColor := TAlphaColors.Red;
+    TextSettingsConnectionStatus.Text := 'Invalid NodeID';
+    TextSettingsConnectionStatus.TextSettings.FontColor := TAlphaColors.Red;
+    TextSettingsNodeID.TextSettings.FontColor := TAlphaColors.Red;
     Exit
   end;
-  if not ValidatePort(EditPort.Text) then
+  if not ValidatePort(EditSettingsPort.Text) then
   begin
-    TextConnectionStatus.Text := 'Invalid Port (must be 65535 or less)';
-    TextConnectionStatus.TextSettings.FontColor := TAlphaColors.Red;
-    TextPort.TextSettings.FontColor := TAlphaColors.Red;
+    TextSettingsConnectionStatus.Text := 'Invalid Port (must be 65535 or less)';
+    TextSettingsConnectionStatus.TextSettings.FontColor := TAlphaColors.Red;
+    TextSettingsPort.TextSettings.FontColor := TAlphaColors.Red;
     Exit
   end;
 
-  TextConnectionStatus.TextSettings.FontColor := TAlphaColors.Black;
-  TextIpAddress.TextSettings.FontColor := TAlphaColors.Black;
-  TextPort.TextSettings.FontColor := TAlphaColors.Black;
+  TextSettingsConnectionStatus.TextSettings.FontColor := TAlphaColors.Black;
+  TextSettingsIpAddress.TextSettings.FontColor := TAlphaColors.Black;
+  TextSettingsPort.TextSettings.FontColor := TAlphaColors.Black;
 
-  CurrentIpAddress := EditIpAddress.Text;
-  CurrentPort := StrToInt(EditPort.Text);
-  CurrentNodeID := StrToNodeID(EditNodeID.Text, True);
+  CurrentIpAddress := EditSettingsIpAddress.Text;
+  CurrentPort := StrToInt(EditSettingsPort.Text);
+  CurrentNodeID := StrToNodeID(EditSettingsNodeID.Text, True);
 
   ConnectionLogin
 end;
@@ -358,6 +359,8 @@ begin
 
   EthernetClient.OnConnectionStateChange := OnClientServerConnectionChange;
   EthernetClient.OnErrorMessage := OnClientServerErrorMessage;
+  EthernetClient.OnLccMessageReceive := OnReceiveMessage;
+  EthernetClient.OnLccMessageSend := OnSendMessage;
 
   NodeManager.OnNodeAliasIDChanged := OnNodeAliasChanged;
   NodeManager.OnNodeIDChanged := OnNodeIdChanged;
@@ -401,7 +404,7 @@ begin
     // Setup common variables to use
     TPlatformServices.Current.SupportsPlatformService(IFMXClipboardService, FClipboard);
     LabelSystemDocumentsPath.Text := TPath.GetDocumentsPath;
-    LabelApplicationDocumentsPath.Text := PathApplicationFiles;
+    LabelSettingsApplicationDocumentsPath.Text := PathApplicationFiles;
 
     // Setup components to a standard state in case forgotten in the designer
     TabControl1.ActiveTab := TabItem1;    // This defines the default active tab at runtime
@@ -418,11 +421,11 @@ begin
     else
       XmlWriteDefaultFile;
 
-    EditIpAddress.Text := CurrentIpAddress;
-    EditPort.Text := IntToStr( CurrentPort);
-    EditNodeID.Text := NodeIDToString(CurrentNodeID, True);
+    EditSettingsIpAddress.Text := CurrentIpAddress;
+    EditSettingsPort.Text := IntToStr( CurrentPort);
+    EditSettingsNodeID.Text := NodeIDToString(CurrentNodeID, True);
 
-    ButtonResetConnectionClick(Self)
+    ButtonSettingsResetConnectionClick(Self)
   end;
 end;
 
@@ -483,17 +486,17 @@ begin
     case Info.ConnectionState of
       lcsConnecting :
         begin
-          TextConnectionStatus.Text := 'connecting';
+          TextSettingsConnectionStatus.Text := 'connecting';
         end;
      lcsConnected :
         begin
-          TextConnectionStatus.Text := 'connected';
+          TextSettingsConnectionStatus.Text := 'connected';
           if NodeManager.Nodes.Count = 0 then
           begin
             Controller := NodeManager.AddNodeByClass('', TLccTrainController, True, NULL_NODE_ID) as TLccTrainController;
             Controller.TractionServer.OnSNIPChange := OnSNIPChange;
             Controller.TractionServer.OnTrainSNIPChange := OnTrainSNIPChange;
-       //     Controller.TractionServer.OnRegisterChange := OnRegisterChange;
+            Controller.TractionServer.OnRegisterChange := OnRegisterChange;
         //    Controller.TractionServer.OnEmergencyStopChange := OnEmergencyStopChange;
        //     Controller.TractionServer.OnFunctionChange := OnFunctionChange;
        //     Controller.TractionServer.OnSpeedChange := OnSpeedChange;
@@ -502,11 +505,11 @@ begin
         end;
       lcsDisconnecting :
         begin
-          TextConnectionStatus.Text := 'disconnecting';
+          TextSettingsConnectionStatus.Text := 'disconnecting';
         end;
       lcsDisconnected :
         begin
-          TextConnectionStatus.Text := 'disconnected';
+          TextSettingsConnectionStatus.Text := 'disconnected';
         end;
     end;
   end;
@@ -514,11 +517,6 @@ end;
 
 procedure TLccThrottleAppForm.OnClientServerErrorMessage(Sender: TObject; Info: TLccHardwareConnectionInfo);
 begin
-end;
-
-procedure TLccThrottleAppForm.OnLccTractionUpdateListenerCount(TractionObject: TLccTractionObject);
-begin
-
 end;
 
 procedure TLccThrottleAppForm.OnSNIPChange(TractionObject: TLccTractionObject);
@@ -539,12 +537,12 @@ end;
 
 procedure TLccThrottleAppForm.OnNodeAliasChanged(Sender: TObject; ALccNode: TLccNode);
 begin
-
+  TextSettingsNodeAliasID.Text := ALccNode.AliasIDStr;
 end;
 
 procedure TLccThrottleAppForm.OnNodeIDChanged(Sender: TObject; ALccNode: TLccNode);
 begin
-
+  EditSettingsNodeID.Text := ALccNode.NodeIDStr
 end;
 
 procedure TLccThrottleAppForm.OnNodeLogin(Sender: TObject; LccSourceNode: TLccNode);
@@ -553,7 +551,7 @@ begin
     Controller.FindAllTrains;
 end;
 
-procedure TLccThrottleAppForm.OnNodeManagerReceiveMessage(Sender: TObject; LccMessage: TLccMessage);
+procedure TLccThrottleAppForm.OnReceiveMessage(Sender: TObject; LccMessage: TLccMessage);
 begin
   MemoLog.Lines.BeginUpdate;
   try
@@ -563,7 +561,7 @@ begin
   end;
 end;
 
-procedure TLccThrottleAppForm.OnNodeManagerSendMessage(Sender: TObject;  LccMessage: TLccMessage);
+procedure TLccThrottleAppForm.OnSendMessage(Sender: TObject;  LccMessage: TLccMessage);
 begin
   MemoLog.Lines.BeginUpdate;
   try
@@ -573,7 +571,7 @@ begin
   end;
 end;
 
-procedure TLccThrottleAppForm.OnTractionRegisterNotify(TractionObject: TLccTractionObject; IsRegistered: Boolean);
+procedure TLccThrottleAppForm.OnRegisterChange(TractionObject: TLccTractionObject; IsRegistered: Boolean);
 var
   TrainListViewItem: TListViewItem;
 begin
@@ -619,7 +617,7 @@ end;
 procedure TLccThrottleAppForm.TimerLoginTimer(Sender: TObject);
 begin
   if not (EthernetClient.Connected or EthernetClient.Connecting) then
-    ButtonResetConnectionClick(Self)
+    ButtonSettingsResetConnectionClick(Self)
 end;
 
 function TLccThrottleAppForm.ValidEditBoxKey(Key: Word): Boolean;

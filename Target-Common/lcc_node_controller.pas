@@ -82,7 +82,7 @@ type
     property WorkerMessage: TLccMessage read FWorkerMessage write FWorkerMessage;
 
     constructor Create;
-    destructor Destroy;
+    destructor Destroy; override;
 
     procedure AssignTrain(ANodeID: TNodeId; AnAlias: Word);
     procedure AcceptSearchCriteriaPending;
@@ -158,8 +158,6 @@ begin
 end;
 
 procedure TAssignedTrainState.AssignTrain(ANodeID: TNodeId; AnAlias: Word);
-var
-  TractionObject: TLccTractionObject;
 begin
   FTrain.NodeID := ANodeID;
   FTrain.Alias := AnAlias;
