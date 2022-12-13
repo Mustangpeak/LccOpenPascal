@@ -32,8 +32,6 @@ uses
   lcc_threaded_stringlist,
   lcc_defines,
   lcc_gridconnect,
-  lcc_alias_server,
-  lcc_utilities,
   lcc_node_messages_can_assembler_disassembler;
 
 type
@@ -102,7 +100,6 @@ type
     procedure ErrorMessage; virtual;
     procedure RequestErrorMessageSent; virtual;
     procedure ConnectionStateChange; virtual;
-    procedure ReceiveMessageSyncronize; virtual; // For Syncronize
 
   public
     constructor Create(CreateSuspended: Boolean; AnOwner: TLccHardwareConnectionManager; AConnectionInfo: TLccHardwareConnectionInfo); reintroduce; virtual;
@@ -189,9 +186,6 @@ type
 
 
 implementation
-
-uses
-  lcc_node;
 
 { TLccHardwareConnectionInfo }
 
@@ -402,19 +396,6 @@ begin
   finally
     LocalConnectionInfo.Free
   end;
-end;
-
-procedure TLccConnectionThread.ReceiveMessageSyncronize;
-// This is called through Syncronize... The main Message Queue is not locked so more messages can be added
-// but this will dead lock here and messages to the nodes in the application will starve plus you can't
-// Send a message then wait here for it.. it will get placed in the main Message Queue but this won't be called
-// until it returns.
-begin
-  // Find any mappings we don't have and try to get them
-  if Assigned(Owner.NodeManager) then
-    Owner.NodeManager.ProcessReceivedMessage(WorkerMessage);
-
-  Owner.DoReceiveMessage(WorkerMessage);
 end;
 
 end.

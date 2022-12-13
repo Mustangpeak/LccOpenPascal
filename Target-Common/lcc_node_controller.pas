@@ -153,6 +153,7 @@ end;
 
 destructor TAssignedTrainState.Destroy;
 begin
+  inherited Destroy;
   FreeAndNil(FWorkerMessage);
   inherited Destroy;
 end;

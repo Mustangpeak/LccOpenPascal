@@ -18,12 +18,8 @@ uses
 
 type
   TLccMessage = class; // forward
-  TLccNodeIdentificationObject = class; // forward
-
   TOnMessageEvent = procedure(Sender: TObject; LccMessage: TLccMessage) of object;
   TSearchEncodeStringError = (sese_ok, sese_TooLong, sese_InvalidCharacters);
-
-  TLccNodeIdentificationCallback = procedure(ANodeIdentifiation: TLccNodeIdentificationObject) of object;
 
   { TLccSNIPObject }
 
@@ -172,7 +168,6 @@ private
   FSourceID: TNodeID;                       // NodeID of the Source of a message
   FMTI: Word;                               // The Actual MTI of the message IF it is not a CAN frame message
   FRetryAttemptsDatagram: Integer;                  // If a message returned "Temporary" (like no buffers) this holds how many time it has been retried and defines a give up time to stop resending
-  FWorkerNodeIdentificationObject: TLccNodeIdentificationObject;
   function GetHasDestination: Boolean;
   function GetHasDestNodeID: Boolean;
   function GetHasSourceNodeID: Boolean;
@@ -196,7 +191,6 @@ public
   property RetryAttemptsDatagram: Integer read FRetryAttemptsDatagram write FRetryAttemptsDatagram;
   property SourceID: TNodeID read FSourceID write FSourceID;
   property NodeIdentifications: TLccNodeIdentificationObjectList read FNodeIdentifications write FNodeIdentifications;
-  property WorkerNodeIdentificationObject: TLccNodeIdentificationObject read FWorkerNodeIdentificationObject write FWorkerNodeIdentificationObject;
 
   constructor Create;
   destructor Destroy; override;
@@ -216,7 +210,6 @@ public
   function ExtractDataBytesAsHex(StartByteIndex, EndByteIndex: Integer): string;
   function DestinationMatchs(TestAliasID: Word; TestNodeID: TNodeID): Boolean;
   function ExtractNodeIdentifications(ForceEvaluation: Boolean): TLccNodeIdentificationObjectList;
-  procedure ExtractNodeIdentification(ExtractCallback: TLccNodeIdentificationCallback; OnlyNonMapped: Boolean);
 
   function LoadByGridConnectStr(GridConnectStr: String): Boolean;
   function LoadByLccTcp(var ByteArray: TLccDynamicByteArray): Boolean;
@@ -1099,14 +1092,12 @@ begin
   inherited Create;
   CAN := TLccCANMessage.Create;
   FNodeIdentifications := TLccNodeIdentificationObjectList.Create;
-  FWorkerNodeIdentificationObject := TLccNodeIdentificationObject.Create;
 end;
 
 destructor TLccMessage.Destroy;
 begin
   FreeAndNil(FCAN);
   FreeAndNil(FNodeIdentifications);
-  FreeAndNil(FWorkerNodeIdentificationObject);
   inherited Destroy;
 end;
 
@@ -1710,71 +1701,6 @@ begin
     end;
   end;
   Result := NodeIdentifications;
-end;
-
-procedure TLccMessage.ExtractNodeIdentification(ExtractCallback: TLccNodeIdentificationCallback; OnlyNonMapped: Boolean);
-
-    procedure QualifyNodeIdentification(ANodeID: TNodeID; AnAlias: Word);
-    begin
-      if OnlyNonMapped then
-        if Assigned( AliasServer.FindMapping(ANodeID, AnAlias)) then
-          Exit;
-      WorkerNodeIdentificationObject.AssignID(ANodeID, AnAlias);
-      ExtractCallback(WorkerNodeIdentificationObject);
-    end;
-
-var
-  ANodeID: TNodeID;
-begin
-  if Assigned(ExtractCallback) then
-  begin
-    ANodeID := NULL_NODE_ID;
-
-    QualifyNodeIdentification(SourceID, CAN.SourceAlias);
-
-    if HasDestination then
-      QualifyNodeIdentification(DestID, CAN.DestAlias);
-
-    case MTI of
-      MTI_TRACTION_REQUEST :
-        begin
-          case DataArray[0] of
-            TRACTION_CONTROLLER_CONFIG :
-              begin
-                case DataArray[1] of
-                  TRACTION_CONTROLLER_CONFIG_ASSIGN,
-                  TRACTION_CONTROLLER_CONFIG_RELEASE,
-                  TRACTION_CONTROLLER_CONFIG_CHANGING_NOTIFY : QualifyNodeIdentification(ExtractDataBytesAsNodeID(3, ANodeID), 0);
-                end
-              end;
-            TRACTION_LISTENER :
-              begin
-                case DataArray[1] of
-                  TRACTION_LISTENER_ATTACH,
-                  TRACTION_LISTENER_DETACH : QualifyNodeIdentification(ExtractDataBytesAsNodeID(3, ANodeID), 0);
-                end;
-              end
-          end
-        end;
-      MTI_TRACTION_REPLY :
-        begin
-          case DataArray[0] of
-            TRACTION_CONTROLLER_CONFIG :
-              begin
-                case DataArray[1] of
-                  TRACTION_CONTROLLER_CONFIG_QUERY : QualifyNodeIdentification(ExtractDataBytesAsNodeID(3, ANodeID), 0);
-                  end
-              end;
-
-             TRACTION_LISTENER :
-               case DataArray[1] of
-                  TRACTION_LISTENER_ATTACH,
-                  TRACTION_LISTENER_DETACH : QualifyNodeIdentification(ExtractDataBytesAsNodeID(2, ANodeID), 0);
-                end;
-          end;
-        end;
-    end;
-  end;
 end;
 
 procedure TLccMessage.ZeroFields;
