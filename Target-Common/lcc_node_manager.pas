@@ -105,42 +105,6 @@ type
   ENodeIdentificationObjectIsNull = class(Exception);
 
 
-  TDelayedMessage = class
-  public
- //   property AMessage: TLccMessage read FAMessage write FAMessage;
- //   property
-  end;
-
-  { TReceiveMessageServerThread }
-
-  TReceiveMessageServerThread = class(TThread)
-  private
-    FDestAlias: Word;
-    FDestNodeID: TNodeID;
-    FMessages: TThreadList;
-    FOwner: TLccNodeManager;
-    FReceivedMessage: TLccMessage;
-    FWorkerMessage: TLccMessage;
-  protected
-    property ReceivedMessage: TLccMessage read FReceivedMessage write FReceivedMessage;
-    property WorkerMessage: TLccMessage read FWorkerMessage write FWorkerMessage;
-    property DestAlias: Word read FDestAlias write FDestAlias;
-    property DestNodeID: TNodeID read FDestNodeID write FDestNodeID;
-
-    procedure Execute; override;
-    procedure ReceiveMessageSyncronize;   // Syncronize Method
-    procedure SendMessageSyncronize;      // Syncronize Method
-    procedure UpdateGlobalMappings(AMessage: TLccMessage);
-    function ValidateMappingsInMessage(AMessage: TLccMessage; ANodeIdentificationForSendMessageList: TList): Boolean;
-    function IsDuplicateNodeIdentificationObject(ANodeIdentificationObjectList: TList; ATestNodeIDObject: TLccNodeIdentificationObject): Boolean;
-
-  public
-    property Messages: TThreadList read FMessages write FMessages;
-    property Owner: TLccNodeManager read FOwner write FOwner;
-
-    procedure AddMessage(AMessage: TLccMessage);
-  end;
-
   { TLccNodeManager }
 
   TLccNodeManager = class(TComponent, INodeManagerCallbacks, INodeManagerTractionCallbacks)
@@ -185,7 +149,6 @@ type
     FOnNodeTractionSetSpeed: TOnLccNodeMessageCallBack;
     FOnNodeTractionTrainSNIP: TOnLccNodeMessageCallBack;
     FOnNodeVerifiedNodeID: TOnLccNodeMessageReply;
-    FReceiveMessageServerThread: TReceiveMessageServerThread;
     FWorkerMessage: TLccMessage;
 
 
@@ -234,6 +197,8 @@ type
     procedure DoTractionSetSpeed(LccNode: TLccNode; ALccMessage: TLccMessage; var DoDefault: Boolean);
     procedure DoTractionTrainSNIP(LccNode: TLccNode; ALccMessage: TLccMessage; var DoDefault: Boolean);
 
+    procedure NodeIdentificationCallbackSyncronize(ANodeIdentification: TLccNodeIdentificationObject);
+
    public
     // Connection Manager
 
@@ -246,7 +211,6 @@ type
     // May have many places a message needs to go such at TCP, WebSocket, UART, etc
     // Automatically updated through the TLccHardwareConnectionManager when it is created/destroyed
     property HardwarewareConnectionList: TInterfaceList read FHardwarewareConnectionList write FHardwarewareConnectionList;
-    property ReceiveMessageServerThread: TReceiveMessageServerThread read FReceiveMessageServerThread write FReceiveMessageServerThread;
 
     constructor Create(AnOwner: TComponent; GridConnectLink: Boolean); reintroduce; virtual;
     destructor Destroy; override;
@@ -262,7 +226,8 @@ type
     procedure ReleaseAliasAll;
 
     procedure SendMessage(Sender: TObject; LccMessage: TLccMessage); // Outgoing messages are passed through this method, its address is given to Nodes and other objects that need to send messages
-
+    procedure ProcessReceivedMessage(LccMessage: TLccMessage);
+    procedure UpdateGlobalMappings(AMessage: TLccMessage);
 
   published
 
@@ -328,386 +293,6 @@ type
 
 
 implementation
-
-{ TReceiveMessageServerThread }
-
-procedure TReceiveMessageServerThread.Execute;
-var
-  LocalMessageList, LocalValidatedMessageList, LocalUnValidatedMessageList, LocalNodeIdentificationForSendMessageList: TList;
-  LocalNodeIDObject: TLccNodeIdentificationObject;
-  i: Integer;
-  {$IFDEF WriteLnDebug}iPrint: Integer;{$ENDIF WriteLnDebug}
-  LocalMessage: TLccMessage;
-begin
-  Messages := TThreadList.Create;
-  LocalValidatedMessageList := TList.Create;
-  LocalUnValidatedMessageList := TList.Create;
-  LocalNodeIdentificationForSendMessageList := TList.Create;
-  WorkerMessage := TLccMessage.Create;
-  {$IFDEF WriteLnDebug}iPrint := 0;{$ENDIF WriteLnDebug}
-  try
-    while not Terminated do
-    begin
-      {$IFDEF WriteLnDebug}
-      if iPrint > 100 then
-      begin
-        WriteLn('LocalValidatedMessageList count: ' + IntToStr(LocalValidatedMessageList.Count));
-        WriteLn('LocalUnValidatedMessageList count: ' + IntToStr(LocalUnValidatedMessageList.Count));
-        WriteLn('NodeIdentificationForSendMessageList count: ' + IntToStr(LocalNodeIdentificationForSendMessageList.Count));
-      end;
-      {$ENDIF WriteLnDebug}
-
-      // First run through the waiting messages.  If there is a Mapping move them in to the
-      // LocalValidatedMessageList and set that slot to nil.  If there is no Mapping then the message is moved to the
-      // UnValidated list to be handled outside the locked list
-      // Need to run from 0 up to maintain order
-      LocalMessageList := Messages.LockList;
-      try
-        {$IFDEF WriteLnDebug}
-        if iPrint > 100 then
-        begin
-          WriteLn('Main MesageList count: ' + IntToStr(LocalMessageList.Count));
-          iPrint := 0;
-        end;
-        Inc(iPrint);
-        {$ENDIF WriteLnDebug}
-        for i := 0 to LocalMessageList.Count - 1 do
-        begin
-          if Owner.GridConnect then
-          begin
-            // Pick out the Verify Message and AMR/AMD to update the AliasMapping Database
-            UpdateGlobalMappings(TLccMessage( LocalMessageList[i]));
-
-            // Pull the message apart and find all the Nodes it requires then test them againt the AliasMapping Database.
-            // If they are not there then push the Alias or NodeID (from a message payload) into the SendMessage Queue and
-            // return false and put them in the LocalUnValidatedMessageList to hold else they get put in the ValidatedList for
-            // sending to the nodes
-            if ValidateMappingsInMessage(TLccMessage( LocalMessageList[i]), LocalNodeIdentificationForSendMessageList) then
-            begin
-              {$IFDEF WriteLnDebug}WriteLn('Message added to the Validated List');{$ENDIF WriteLnDebug}
-              LocalValidatedMessageList.Add(LocalMessageList[i])
-            end else
-            begin
-              {$IFDEF WriteLnDebug}WriteLn('Message added to the UnValidated List');{$ENDIF WriteLnDebug}
-              LocalUnValidatedMessageList.Add(LocalMessageList[i]);
-            end;
-          end else
-          begin  // Raw TCP we move them all
-            LocalValidatedMessageList.Add(LocalMessageList[i]);
-          end;
-        end;
-      finally
-        LocalMessageList.Clear; // All messages have been moved to other places
-        Messages.UnlockList;
-      end;
-
-      // Deliever the messages we moved from the MainList to the LocalValidatedMessageList
-      // ***********************************************************************
-      try
-        for i := 0 to LocalValidatedMessageList.Count - 1 do
-        begin
-          if not Terminated then
-          try
-            try
-              ReceivedMessage := TLccMessage(LocalValidatedMessageList[i]);
-              Synchronize({$IFDEF FPC}@{$ENDIF}ReceiveMessageSyncronize);
-            finally
-              {$IFDEF WriteLnDebug}WriteLn('Message freed from Validated List');{$ENDIF WriteLnDebug}
-              FreeAndNil(FReceivedMessage);
-            end;
-          except
-            {$IFDEF WriteLnDebug}WriteLn('Message freed from Validated List');{$ENDIF WriteLnDebug}
-            FreeAndNil(FReceivedMessage);
-          end;
-        end;
-      finally
-        LocalValidatedMessageList.Clear
-      end;
-      // ***********************************************************************
-
-      // Deliever the requests for VerifyNode we moved from the MainList to the LocalNodeIdentificationForSendMessageList
-      // ***********************************************************************
-      for i := 0 to LocalNodeIdentificationForSendMessageList.Count - 1 do
-      begin
-        if not Terminated then
-        try
-          LocalNodeIDObject := TLccNodeIdentificationObject( LocalNodeIdentificationForSendMessageList[i]);
-
-          // Lets hold this in the list to allow the node to respond.  This will also stop lots of duplicate
-          // call to the same node while waiting for a reply
-          if LocalNodeIDObject.AbandonCount = 0 then
-          begin
-            DestAlias := LocalNodeIDObject.Alias;
-            DestNodeID := LocalNodeIDObject.NodeID;
-            {$IFDEF WriteLnDebug}WriteLn('VerifyNode sent from NodeIdentification List');{$ENDIF WriteLnDebug}
-            Synchronize({$IFDEF FPC}@{$ENDIF}SendMessageSyncronize);
-          end;
-
-          // If abandon then done.. this must be longer than the lifetime of the object that created them
-          if LocalNodeIDObject.AbandonCount > TIMEOUT_NODE_IDENTIFICTION_OBJECT_COUNT then
-          begin
-            {$IFDEF WriteLnDebug}WriteLn('NodeIdentification List item Freed: 0x' + IntToHex(LocalNodeIDObject.Alias, 4));{$ENDIF WriteLnDebug}
-            TObject( LocalNodeIdentificationForSendMessageList[i]).Free;
-            LocalNodeIdentificationForSendMessageList[i] := nil;
-          end;
-
-           LocalNodeIDObject.AbandonCount  := LocalNodeIDObject.AbandonCount  + 1;
-
-        except
-        end;
-      end;
-
-      // Now go through and delete the slot that are empty
-      for i := LocalNodeIdentificationForSendMessageList.Count - 1 downto 0 do
-      begin
-        if LocalNodeIdentificationForSendMessageList[i] = nil then
-          LocalNodeIdentificationForSendMessageList.Delete(i);
-      end;
-
-
-      // ***********************************************************************
-
-      // See if any UnValidated Messages have been validated and the Mappings now exist
-      // TODO:  THESE NEED TO BE COUNTED AND DECIDED WHAT TO DO IF THEY DON'T GET A REPLY FROM THE
-      //        VERIFY ID CALL.  TRY SENDING VERIFY ID A FEW MORE TIMES THEN THROW IT AWAY?
-      // ***********************************************************************
-      if not Terminated then
-      begin
-        if Owner.GridConnect then
-        begin // Must keep order intact so have to run them this way
-          for i := 0 to LocalUnValidatedMessageList.Count - 1 do
-          begin // Sending the NIL for the list will cause just the Message required Nodes to be tested against the Mapping Database
-            if ValidateMappingsInMessage(TLccMessage( LocalUnValidatedMessageList[i]), LocalNodeIdentificationForSendMessageList) then
-            begin // We now have a mapping so move it into the Validated list.
-              {$IFDEF WriteLnDebug}WriteLn('UnValidated Message Mapping found and moved to Validated Message List');{$ENDIF WriteLnDebug}
-              LocalValidatedMessageList.Add(LocalUnValidatedMessageList[i]);
-              LocalUnValidatedMessageList[i] := nil;
-            end else
-            begin
-              LocalMessage := TLccMessage( LocalUnValidatedMessageList[i]);
-              if LocalMessage.AbandonCount > TIMEOUT_UNVALIDATED_MESSAGE_COUNT then
-              begin
-                {$IFDEF WriteLnDebug}WriteLn('UnValidated Message Mapping not found so Abandoned and Freed');{$ENDIF WriteLnDebug}
-                LocalMessage.Free;
-                LocalUnValidatedMessageList[i] := nil;
-              end else
-                LocalMessage.AbandonCount := LocalMessage.AbandonCount + 1;
-            end;
-          end;
-
-          // Now go through and delete the slots that are empty
-          for i := LocalUnValidatedMessageList.Count - 1 downto 0 do
-          begin
-            if LocalUnValidatedMessageList[i] = nil then
-              LocalUnValidatedMessageList.Delete(i);
-          end;
-        end;
-      end;
-      // ***********************************************************************
-
-
-      Sleep(TIMEOUT_RECIEVE_THREAD);
-    end;
-
-  finally
-    LocalMessageList := Messages.LockList;
-    try
-      for i := 0 to LocalMessageList.Count - 1 do
-        TObject(LocalMessageList[i]).Free
-    finally
-      LocalMessageList.Clear;
-      Messages.UnlockList;
-      FreeAndNil(FMessages);
-    end;
-
-    try
-      for i := 0 to LocalValidatedMessageList.Count - 1 do
-        TObject(LocalValidatedMessageList[i]).Free
-    finally
-      LocalValidatedMessageList.Clear;
-      FreeAndNil(LocalValidatedMessageList);
-      LocalValidatedMessageList.Free;
-    end;
-
-    LocalNodeIdentificationForSendMessageList.Clear;
-    FreeAndNil(LocalNodeIdentificationForSendMessageList);
-
-    WorkerMessage.Free;
-  end;
-end;
-
-procedure TReceiveMessageServerThread.ReceiveMessageSyncronize;
-// This is called through Syncronize... The main Message Queue is not locked so more messages can be added
-// but this will dead lock here and messages to the nodes in the application will starve plus you can't
-// Send a message then wait here for it.. it will get placed in the main Message Queue but this won't be called
-// until it returns.
-var
-  i: Integer;
-  LocalSourceNode: TLccNode;
-begin
-  if Owner.GridConnect then
-    LocalSourceNode := Owner.FindNode(ReceivedMessage.CAN.SourceAlias)
-  else
-    LocalSourceNode := Owner.FindNode(ReceivedMessage.SourceID);
-
-  // SourceNode may be nil if the message is not from one of our nodes but that is Ok
-  // and this test still is correct... the message needs to be sent to all our nodes
-  for i := 0 to Owner.Nodes.Count - 1 do
-  begin
-    // Don't send the message back to the node that created it
-    if LocalSourceNode <> TLccNode(Owner.Nodes[i]) then
-      TLccNode(Owner.Nodes[i]).ProcessMessage(ReceivedMessage)
-  end;
-end;
-
-procedure TReceiveMessageServerThread.SendMessageSyncronize;
-var
-  LocalInitiailizedNode: TLccNode;
-begin
-  // Find a Node to use as the Source of the message... it does not really matter
-  // who that is.
-  LocalInitiailizedNode := Owner.FindInitializedNode;
-
-  if Assigned(LocalInitiailizedNode) then
-  begin
-    // Either field could be valid, Alias or NodeID
-    if DestAlias > 0 then
-    begin // NOTICE: This only works with GridConnect since the DestNodeID is unknown and only the Alias is valid here
-      WorkerMessage.LoadVerifyNodeIDAddressed(LocalInitiailizedNode.NodeID, LocalInitiailizedNode.AliasID, DestNodeID, DestAlias, NULL_NODE_ID);
-      Owner.SendMessage(LocalInitiailizedNode, WorkerMessage);
-    end else
-    if not NullNodeID(DestNodeID) then
-    begin // Here we know the full NodeID but not the Alias so we use this form
-      WorkerMessage.LoadVerifyNodeID(LocalInitiailizedNode.NodeID, LocalInitiailizedNode.AliasID, DestNodeID);
-      Owner.SendMessage(LocalInitiailizedNode, WorkerMessage);
-    end;
-  end;
-end;
-
-procedure TReceiveMessageServerThread.UpdateGlobalMappings(AMessage: TLccMessage);
-var
-  LocalNodeID: TNodeID;
-begin
-  case AMessage.CAN.MTI of
-    MTI_CAN_AMR :
-      begin
-        AliasServer.MarkForRemovalByAlias(AMessage.CAN.SourceAlias);
-      end;
-    MTI_CAN_AMD :
-      begin
-        LocalNodeID := NULL_NODE_ID;
-        AliasServer.AddMapping(AMessage.CAN.SourceAlias, AMessage.ExtractDataBytesAsNodeID(0, LocalNodeID));
-      end;
-  end;
-
-  case AMessage.MTI of
-    MTI_VERIFIED_NODE_ID_NUMBER,
-    MTI_INITIALIZATION_COMPLETE :
-      begin
-        LocalNodeID := NULL_NODE_ID;
-        AliasServer.AddMapping(AMessage.CAN.SourceAlias, AMessage.ExtractDataBytesAsNodeID(0, LocalNodeID));
-      end;
-  end;
-end;
-
-function TReceiveMessageServerThread.ValidateMappingsInMessage(AMessage: TLccMessage; ANodeIdentificationForSendMessageList: TList): Boolean;
-var
-  LocalNodeIdentificationObjectList: TLccNodeIdentificationObjectList;
-  LocalAliasMapping: TLccAliasMapping;
-  i: Integer;
-begin
-  Result := True;
-
-  // CAN messages includes messages for allocating the alias so we can't expect a valid
-  // alias under all conditions for CAN messages... just ignore them and let them do their job.
-  if not AMessage.IsCAN then
-  begin
-    // Have the messages extract all the nodes that it will require to be processed
-    LocalNodeIdentificationObjectList := AMessage.ExtractNodeIdentifications(True);
-
-    // Run through all these Nodes
-    for i := 0 to LocalNodeIdentificationObjectList.Count - 1 do
-    begin
-      // An index may not be valid... i.e. if a node ID is carried in an event there won't be a destination
-      if LocalNodeIdentificationObjectList[i].Valid then
-      begin
-        // See if the mapping is in the Alias Server. May have the Alias or a full NodeID from a payload
-        if LocalNodeIdentificationObjectList[i].Alias <> 0 then
-          LocalAliasMapping := AliasServer.FindMapping(LocalNodeIdentificationObjectList[i].Alias)
-        else
-        if not NullNodeID(LocalNodeIdentificationObjectList[i].NodeID) then
-          LocalAliasMapping := AliasServer.FindMapping(LocalNodeIdentificationObjectList[i].NodeID)
-        else
-          raise ENodeIdentificationObjectIsNull.Create('TReceiveMessageServerThread.ValidateMapping: Received Message Alias/Node Extractions failed');
-
-
-        if Assigned(LocalAliasMapping) then
-        begin  // If we have a mapping then backload the message with the values
-          case i of
-            0 :
-              begin
-                AMessage.SourceID := LocalAliasMapping.NodeID;
-                AMessage.CAN.SourceAlias := LocalAliasMapping.NodeAlias;
-              end;
-            1 :
-              begin
-                AMessage.DestID := LocalAliasMapping.NodeID;
-                AMessage.CAN.DestAlias := LocalAliasMapping.NodeAlias;
-              end;
-          end;
-        end else
-        begin // Mapping did not exist
-          {$IFDEF WriteLnDebug}
-      {    AliasServer.WriteMapping('Cound not find Mapping at Message Position: ' +
-            IntToStr(i) +
-            ' - Alias' +
-            IntToHex(LocalNodeIdentificationObjectList[i].Alias, 4) + ' ID: ' +
-            NodeIDToString(LocalNodeIdentificationObjectList[i].NodeID, True),
-            nil);  }
-          {$ENDIF}
-
-          // Load it up in the SendMessage Queue to send a Verify node
-          if not IsDuplicateNodeIdentificationObject(ANodeIdentificationForSendMessageList, LocalNodeIdentificationObjectList[i]) then
-          begin
-            {$IFDEF WriteLnDebug}WriteLn('New NodeIDObject added to NodeIdentificationObjectList');{$ENDIF}
-            ANodeIdentificationForSendMessageList.Add(LocalNodeIdentificationObjectList[i].Clone);
-          end;
-
-          Result := False;
-        end;
-      end;
-    end;
-  end;
-end;
-
-function TReceiveMessageServerThread.IsDuplicateNodeIdentificationObject(ANodeIdentificationObjectList: TList; ATestNodeIDObject: TLccNodeIdentificationObject): Boolean;
-var
-  i: Integer;
-  LocalNodeIDObject: TLccNodeIdentificationObject;
-begin
-  Result := False;
-  for i := 0 to ANodeIdentificationObjectList.Count - 1 do
-  begin
-    LocalNodeIDObject := TLccNodeIdentificationObject(ANodeIdentificationObjectList[i]);
-    if (LocalNodeIDObject.NodeID[0] = ATestNodeIDObject.NodeID[0]) and (LocalNodeIDObject.NodeID[1] = ATestNodeIDObject.NodeID[1]) and (LocalNodeIDObject.Alias = ATestNodeIDObject.Alias) then
-    begin
-      Result := True;
-      Break
-    end;
-  end;
-end;
-
-procedure TReceiveMessageServerThread.AddMessage(AMessage: TLccMessage);
-var
-  LocalList: TList;
-begin
-  LocalList := Messages.LockList;
-  try
-    LocalList.Add(AMessage.Clone);
-  finally
-    Messages.UnlockList;
-  end;
-end;
 
 { TLccNodeManager }
 
@@ -856,6 +441,34 @@ begin
     OnNodeTractionTrainSNIP(Self, LccNode, ALccMessage, DoDefault);
 end;
 
+procedure TLccNodeManager.NodeIdentificationCallbackSyncronize(ANodeIdentification: TLccNodeIdentificationObject);
+var
+  LocalInitiailizedNode: TLccNode;
+begin
+  // Find a Node to use as the Source of the message... it does not really matter who that is.
+  LocalInitiailizedNode := FindInitializedNode;
+
+  if Assigned(LocalInitiailizedNode) then
+  begin
+    if not AliasServer.FindMappingRequest(ANodeIdentification.NodeID, ANodeIdentification.Alias) then
+    begin
+      // Either field could be valid, Alias or NodeID
+      if ANodeIdentification.Alias > 0 then
+      begin // NOTICE: This only works with GridConnect since the DestNodeID is unknown and only the Alias is valid here
+        WorkerMessage.LoadVerifyNodeIDAddressed(LocalInitiailizedNode.NodeID, LocalInitiailizedNode.AliasID, ANodeIdentification.NodeID, ANodeIdentification.Alias, NULL_NODE_ID);
+        LocalInitiailizedNode.SendMessageFunc(LocalInitiailizedNode, WorkerMessage);
+      end else
+      if not NullNodeID(ANodeIdentification.NodeID) then
+      begin // Here we know the full NodeID but not the Alias so we use this form
+        WorkerMessage.LoadVerifyNodeID(LocalInitiailizedNode.NodeID, LocalInitiailizedNode.AliasID, ANodeIdentification.NodeID);
+        LocalInitiailizedNode.SendMessageFunc(LocalInitiailizedNode, WorkerMessage);
+      end;
+      AliasServer.AddMappingRequest(ANodeIdentification.NodeID, ANodeIdentification.Alias);
+    end;
+  end;
+
+end;
+
 procedure TLccNodeManager.DoTractionControllerAssign(LccNode: TLccNode; ALccMessage: TLccMessage; var DoDefault: Boolean);
 begin
   if Assigned(OnNodeTractionControllerAssign) then
@@ -942,10 +555,6 @@ begin
   FGridConnect := GridConnectLink;
   FHardwarewareConnectionList := TInterfaceList.Create;
   FWorkerMessage := TLccMessage.Create;
-  FReceiveMessageServerThread := TReceiveMessageServerThread.Create(True);
-  FReceiveMessageServerThread.Owner := Self;
-  FReceiveMessageServerThread.FreeOnTerminate := True;
-  FReceiveMessageServerThread.Suspended := False;
 end;
 
 function TLccNodeManager.AddNode(CdiXML: string; AutoLogin: Boolean): TLccNode;
@@ -1023,7 +632,6 @@ begin
   FNodes.Free;
   FreeAndNil(FWorkerMessage);
   FreeAndNil(FHardwarewareConnectionList);
-  ReceiveMessageServerThread.Terminate;
   inherited Destroy;
 end;
 
@@ -1068,12 +676,59 @@ begin
     if (HardwarewareConnectionList[iHardwareConnection] as IHardwareConnectionManagerLink).IsLccLink then
       (HardwarewareConnectionList[iHardwareConnection] as IHardwareConnectionManagerLink).SendMessage(LccMessage);
 
-  // Send the messages to all the other virtual nodes where this would be the receiving end of the sendmessage
-  // Never filter these messages.  For the internal callback system to work correctly the internal nodes must
-  // snoop on eachothers messages to keep things like the internal Train data base updated... that does mean there
-  // is some future risk that if a train is found outside of this database the networks must not filter messages
-  // based on where the destinstions segement exists.  The trains messages must be sent to all segments
-  ReceiveMessageServerThread.AddMessage(LccMessage);  // I think this works....
+
+  ProcessReceivedMessage(LccMessage);  // I think this works....
+end;
+
+procedure TLccNodeManager.ProcessReceivedMessage(LccMessage: TLccMessage);
+var
+  LocalSourceNode: TLccNode;
+  i: Integer;
+begin
+   // Update the Mapping Server
+  UpdateGlobalMappings(WorkerMessage);
+
+  if GridConnect then
+  begin
+    LccMessage.ExtractNodeIdentification(@NodeIdentificationCallbackSyncronize, True);
+    LocalSourceNode := FindNode(LccMessage.CAN.SourceAlias)
+  end else
+    LocalSourceNode := FindNode(LccMessage.SourceID);
+
+  // SourceNode may be nil if the message is not from one of our nodes but that is Ok
+  // and this test still is correct... the message needs to be sent to all our nodes
+  for i := 0 to Nodes.Count - 1 do
+  begin
+    // Don't send the message back to the node that created it
+    if LocalSourceNode <> TLccNode(Nodes[i]) then
+      TLccNode(Nodes[i]).ProcessMessage(LccMessage)
+  end;
+end;
+
+procedure TLccNodeManager.UpdateGlobalMappings(AMessage: TLccMessage);
+var
+  LocalNodeID: TNodeID;
+begin
+  case AMessage.CAN.MTI of
+    MTI_CAN_AMR :
+      begin
+        AliasServer.MarkForRemovalByAlias(AMessage.CAN.SourceAlias);
+      end;
+    MTI_CAN_AMD :
+      begin
+        LocalNodeID := NULL_NODE_ID;
+        AliasServer.AddMapping(AMessage.ExtractDataBytesAsNodeID(0, LocalNodeID), AMessage.CAN.SourceAlias, True);
+      end;
+  end;
+
+  case AMessage.MTI of
+    MTI_VERIFIED_NODE_ID_NUMBER,
+    MTI_INITIALIZATION_COMPLETE :
+      begin
+        LocalNodeID := NULL_NODE_ID;
+        AliasServer.AddMapping(AMessage.ExtractDataBytesAsNodeID(0, LocalNodeID), AMessage.CAN.SourceAlias, True);
+      end;
+  end;
 end;
 
 end.

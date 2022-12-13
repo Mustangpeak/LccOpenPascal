@@ -110,7 +110,6 @@ type
     procedure IdTCPServerExecute(AContext: TIdContext);
     procedure IdTCPServerStatus(ASender: TObject; const AStatus: TIdStatus; const AStatusText: string);
 
-    procedure ReceiveMessage;  // For Syncronize
     procedure SetConnecting(AValue: Boolean); override;
 
     procedure Execute; override;
@@ -285,9 +284,8 @@ begin
             case ServerContext.GridConnectMessageAssembler.IncomingMessageGridConnect(WorkerMessage) of
               imgcr_True :
                 begin
-                  NodeManager.ReceiveMessageServerThread.AddMessage(WorkerMessage);
                   try
-                    Owner.Synchronize({$IFDEF FPC}@{$ENDIF}Owner.ReceiveMessage);  // WorkerMessage contains the message
+                    Owner.Synchronize({$IFDEF FPC}@{$ENDIF}Owner.ReceiveMessageSyncronize);  // WorkerMessage contains the message
                   except
                   end;
                 end;
@@ -571,11 +569,6 @@ begin   {
     hsDisconnecting : HandleSendConnectionNotification(lcsDisconnecting);
     hsDisconnected  : HandleSendConnectionNotification(lcsDisconnected);
   end;     }
-end;
-
-procedure TLccEthernetListener.ReceiveMessage;
-begin
-  (Owner as TLccEthernetServer).DoReceiveMessage(GridConnectContextList.WorkerMessage);
 end;
 
 procedure TLccEthernetListener.SetConnecting(AValue: Boolean);

@@ -53,7 +53,6 @@ type
       property GridConnectHelper: TGridConnectHelper read FGridConnectHelper write FGridConnectHelper;
       property Owner: TLccEthernetClient read FOwner write FOwner;
       procedure Execute; override;
-      procedure ReceiveMessage;  // For Syncronize
       procedure OnClientConnected(Sender: TObject);
       procedure OnClientDisconnected(Sender: TObject);
       procedure OnThreadComponentRun(Sender: TIdThreadComponent);
@@ -300,11 +299,6 @@ begin
   end;
 end;
 
-procedure TLccEthernetClientThread.ReceiveMessage;
-begin
-  (Owner as TLccEthernetClient).DoReceiveMessage(WorkerMessage);
-end;
-
 procedure TLccEthernetClientThread.OnClientConnected(Sender: TObject);
 begin
   HandleSendConnectionNotification(lcsConnected);
@@ -350,9 +344,8 @@ begin
         case GridConnectMessageAssembler.IncomingMessageGridConnect(WorkerMessage) of
           imgcr_True :
             begin
-              Owner.NodeManager.ReceiveMessageServerThread.AddMessage(WorkerMessage);
               try
-                Synchronize({$IFDEF FPC}@{$ENDIF}ReceiveMessage);  // WorkerMessage contains the message
+                Synchronize({$IFDEF FPC}@{$ENDIF}ReceiveMessageSyncronize);  // WorkerMessage contains the message
               except
               end;
             end;
@@ -384,5 +377,6 @@ begin
     Owner.CriticalSectionLeave;
   end;
 end;
+
 
 end.
