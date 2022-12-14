@@ -51,20 +51,27 @@ type
 
   private
     FMappingList: TThreadList;
+    FMappingRequestList: TThreadList;
 
   public
     property MappingList: TThreadList read FMappingList write FMappingList;
+    property MappingRequestList: TThreadList read FMappingRequestList write FMappingRequestList;
 
 
     constructor Create;
     destructor Destroy; override;
 
     procedure Clear;
+    procedure ClearMappingRequests;
     function Count: Integer;
     function FindMapping(AnAliasID: Word): TLccAliasMapping; overload;
     function FindMapping(ANodeID: TNodeID): TLccAliasMapping; overload;
-    function AddMapping(AnAlias: Word; AnID: TNodeID): TLccAliasMapping;
+    function FindMapping(ANodeID: TNodeID; AnAliasID: Word): TLccAliasMapping; overload;
+    function AddMapping(ANodeID: TNodeID; AnAlias: Word): TLccAliasMapping;
+    procedure AddMappingRequest(ANodeID: TNodeID; AnAlias: Word);
     function MarkForRemovalByAlias(AnAlias: Word): TLccAliasMapping;
+    procedure RemoveMappingRequest(ANodeID: TNodeID; AnAlias: Word);
+    procedure MappingRequestLiveTimeIncrease(MaxAbandonTimeCount: Word);
     {$IFDEF WriteLnDebug}procedure WriteMapping(AComment: string; AMapping: TLccAliasMapping); {$ENDIF}
   end;
 
@@ -73,18 +80,24 @@ var
 
 implementation
 
+uses
+  lcc_node_messages;
+
 { TLccAliasServer }
 
 constructor TLccAliasServer.Create;
 begin
   inherited Create;
   FMappingList := TThreadList.Create;
+  FMappingRequestList := TThreadList.Create;
 end;
 
 destructor TLccAliasServer.Destroy;
 begin
   Clear;
+  ClearMappingRequests;
   FreeAndNil(FMappingList);
+  FreeAndNil(FMappingRequestList);
   inherited Destroy;
 end;
 
@@ -100,6 +113,27 @@ begin
   finally
     List.Clear;
     MappingList.UnlockList;
+  end;
+end;
+
+procedure TLccAliasServer.ClearMappingRequests;
+var
+  LocalObj: TLccNodeIdentificationObject;
+  i: Integer;
+  List: TList;
+  Duplicate: Boolean;
+begin
+  Duplicate := False;
+  List := MappingRequestList.LockList;
+  try
+    for i := 0 to List.Count - 1 do
+    begin
+      LocalObj := TLccNodeIdentificationObject( List[i]);
+      LocalObj.Free;
+    end;
+  finally
+    List.Clear;
+    MappingRequestList.UnlockList;
   end;
 end;
 
@@ -162,12 +196,35 @@ begin
   end;
 end;
 
-function TLccAliasServer.AddMapping(AnAlias: Word; AnID: TNodeID): TLccAliasMapping;
+function TLccAliasServer.FindMapping(ANodeID: TNodeID; AnAliasID: Word): TLccAliasMapping;
+var
+  i: Integer;
+  TestMapping: TLccAliasMapping;
+  List: TList;
+begin
+  Result := nil;                      // Needs to Sort then do a binary search here eventually
+  List := MappingList.LockList;
+  try
+    for i := 0 to List.Count - 1 do
+    begin
+      TestMapping := TLccAliasMapping(List.Items[i]);
+      if EqualNodeID(TestMapping.NodeID, ANodeID, False) or (TestMapping.NodeAlias = AnAliasID) then
+      begin
+        Result := TestMapping;
+        Break;
+      end;
+    end;
+  finally
+     MappingList.UnlockList;
+  end;
+end;
+
+function TLccAliasServer.AddMapping(ANodeID: TNodeID; AnAlias: Word): TLccAliasMapping;
 begin
   Result := nil;
 
   Assert(AnAlias <> 0, 'Alias = 0 in TLccAliasServer.AddMapping');
-  Assert(not NullNodeID(AnID), 'NodeID = NULL_ID in TLccAliasServer.AddMapping');
+  Assert(not NullNodeID(ANodeID), 'NodeID = NULL_ID in TLccAliasServer.AddMapping');
 
   MappingList.LockList;
   try
@@ -175,7 +232,7 @@ begin
     if not Assigned(Result) then
     begin
       Result := TLccAliasMapping.Create;
-      Result.NodeID := AnID;
+      Result.NodeID := ANodeID;
       Result.NodeAlias := AnAlias;
       Result.MarkedForInsertion := True;
       MappingList.Add(Result);
@@ -183,6 +240,37 @@ begin
     end;
   finally
     MappingList.UnlockList;
+  end;
+end;
+
+procedure TLccAliasServer.AddMappingRequest(ANodeID: TNodeID; AnAlias: Word);
+var
+  LocalObj: TLccNodeIdentificationObject;
+  i: Integer;
+  List: TList;
+  Duplicate: Boolean;
+begin
+  Duplicate := False;
+  List := MappingRequestList.LockList;
+  try
+    for i := 0 to List.Count - 1 do
+    begin
+      LocalObj := TLccNodeIdentificationObject( List[i]);
+      if ((ANodeID[0] = LocalObj.NodeID[0]) and (ANodeID[1] = LocalObj.NodeID[1])) or (AnAlias = LocalObj.Alias) then
+      begin
+        Duplicate := True;
+        Break;
+      end;
+    end;
+  finally
+    MappingRequestList.UnlockList;
+  end;
+
+  if not Duplicate then
+  begin
+    LocalObj := TLccNodeIdentificationObject.Create;
+    LocalObj.AssignID(ANodeID, AnAlias);
+    MappingRequestList.Add(LocalObj);
   end;
 end;
 
@@ -198,6 +286,60 @@ begin
     end;
   finally
     MappingList.UnlockList;
+  end;
+end;
+
+procedure TLccAliasServer.RemoveMappingRequest(ANodeID: TNodeID; AnAlias: Word);
+var
+  i: Integer;
+  List: TList;
+  LocalObj: TLccNodeIdentificationObject;
+begin
+  List := MappingRequestList.LockList;
+  try
+    for i := 0 to List.Count - 1 do
+    begin
+      LocalObj := TLccNodeIdentificationObject( List[i]);
+      if ((ANodeID[0] = LocalObj.NodeID[0]) and (ANodeID[1] = LocalObj.NodeID[1])) or (AnAlias = LocalObj.Alias) then
+      begin
+        LocalObj.Free;
+        List.Delete(i);
+        Break;
+      end;
+    end;
+  finally
+    MappingRequestList.UnlockList;
+  end;
+end;
+
+procedure TLccAliasServer.MappingRequestLiveTimeIncrease(MaxAbandonTimeCount: Word);
+var
+  LocalObj: TLccNodeIdentificationObject;
+  i: Integer;
+  List: TList;
+begin
+  List := MappingRequestList.LockList;
+  try
+    for i := 0 to List.Count - 1 do
+    begin
+      LocalObj := TLccNodeIdentificationObject( List[i]);
+      LocalObj.AbandonCount := LocalObj.AbandonCount + 1;
+
+      if LocalObj.AbandonCount > MaxAbandonTimeCount then
+      begin
+        LocalObj.Free;
+        List[i] := nil;
+      end;
+    end;
+
+    for i := List.Count - 1 downto 0 do
+    begin
+      if List[i] = nil then
+        List.Delete(i);
+    end;
+
+  finally
+    MappingRequestList.UnlockList;
   end;
 end;
 

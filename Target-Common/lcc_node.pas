@@ -145,7 +145,6 @@ type
     FStreamTractionConfig: TMemoryStream;          // Stream containing the writable configuration memory for a Traction node where the Address = Offset in the stream
     FStreamTractionFdi: TMemoryStream;             // Stream containing the XML string for the FDI (Function Definition Info)
     FWorkerMessage: TLccMessage;
-    F_100msTimer: TLccTimer;
 
     function GetAliasIDStr: String;
     function GetNodeIDStr: String;
@@ -268,7 +267,6 @@ type
 
     property WorkerMessage: TLccMessage read FWorkerMessage write FWorkerMessage;
     property WorkerMessageDatagram: TLccMessage read FWorkerMessageDatagram write FWorkerMessageDatagram;
-    property _100msTimer: TLccTimer read F_100msTimer write F_100msTimer;
 
     // GridConnect Helpers
     property DuplicateAliasDetected: Boolean read FDuplicateAliasDetected write FDuplicateAliasDetected;
@@ -282,7 +280,6 @@ type
     procedure SendDatagramAckReply(SourceMessage: TLccMessage; ReplyPending: Boolean; TimeOutValueN: Byte);
     procedure SendDatagramRejectedReply(SourceMessage: TLccMessage; Reason: Word);
     procedure SendDatagramRequiredReply(SourceMessage, ReplyLccMessage: TLccMessage);
-    procedure On_100msTimer(Sender: TObject);  virtual;
     function GetCdiFile: string; virtual;
     procedure BeforeLogin; virtual;
     procedure LccLogIn(ANodeID: TNodeID); virtual;
@@ -321,6 +318,7 @@ type
     destructor Destroy; override;
 
     procedure Login(ANodeID: TNodeID); virtual;
+    procedure On_100msTimer(Sender: TObject);  virtual;
     procedure ReleaseAlias(DelayTime_ms: Word); virtual;
     function ProcessMessage(SourceMessage: TLccMessage): Boolean; // Do not override this override the next 2
     function ProcessMessageLCC(SourceMessage: TLccMessage): Boolean; virtual;
@@ -887,11 +885,6 @@ begin
  // FMessageIdentificationList := TLccMessageWithNodeIdentificationList.Create;
  // FMessageDestinationsWaitingForReply := TLccNodeIdentificationObjectList.Create(False);
 
-  _100msTimer := TLccTimer.Create(nil);
-  _100msTimer.Enabled := False;
-  _100msTimer.OnTimer := {$IFNDEF DELPHI}@{$ENDIF}On_100msTimer;
-  _100msTimer.Interval := 100;
-
   if CdiXML = '' then
     CdiXML := GetCdiFile;
 
@@ -1356,12 +1349,12 @@ begin
   SendMessageFunc(Self, WorkerMessage);
 
   LoginTimoutCounter := 0;
-  _100msTimer.Enabled := True;  //  Next state is in the event handler to see if anyone objects tor our Alias
 end;
 
 procedure TLccNode.NotifyAndUpdateMappingChanges;
 var
   LocalMapping: TLccAliasMapping;
+  LocalNodeIdentificationObject: TLccNodeIdentificationObject;
   MappingList: TList;
   i: Integer;
 begin
@@ -1387,6 +1380,47 @@ begin
     AliasServer.MappingList.UnlockList;
   end;
 
+  MappingList := AliasServer.MappingRequestList.LockList;
+  try
+    for i := 0 to MappingList.Count - 1 do
+    begin
+      LocalNodeIdentificationObject := TLccNodeIdentificationObject( MappingList[i]);
+
+      if LocalNodeIdentificationObject.AbandonCount = 0 then
+      begin
+        if LocalNodeIdentificationObject.Alias <> 0 then
+        begin
+          // We have the Alias but not the NodeID so use addressed to that Alias (don't need the NodeID for CAN)
+          WorkerMessage.LoadVerifyNodeIDAddressed(NodeID, AliasID, LocalNodeIdentificationObject.NodeID, LocalNodeIdentificationObject.Alias, NULL_NODE_ID);
+          SendMessageFunc(Self, WorkerMessage);
+        end else
+        if not NullNodeID(LocalNodeIdentificationObject.NodeID) then
+        begin
+          WorkerMessage.LoadVerifyNodeID(NodeID, AliasID, LocalNodeIdentificationObject.NodeID);
+          SendMessageFunc(Self, WorkerMessage);
+        end else
+        begin
+          LocalNodeIdentificationObject.Free;
+          MappingList[i] := nil;
+        end;
+      end else
+      begin
+        LocalNodeIdentificationObject.AbandonCount := LocalNodeIdentificationObject.AbandonCount + 1;
+        if LocalNodeIdentificationObject.AbandonCount > 20 then
+        begin
+          LocalNodeIdentificationObject.Free;
+          MappingList[i] := nil;
+        end;
+      end;
+    end;
+
+    for i := MappingList.Count - 1 downto 0 do
+      if MappingList[i] = nil then
+        MappingList.Delete(i);
+  finally
+    AliasServer.MappingRequestList.UnlockList;
+  end;
+
 //  (NodeManager as INodeManagerCallbacks).DoTrainRegisteringChange(Self, LocalTrainObject, False);
 end;
 
@@ -1398,8 +1432,6 @@ end;
 
 destructor TLccNode.Destroy;
 begin
-  _100msTimer.Enabled := False;
-
   NotifyAndUpdateMappingChanges; // fire any eventfor Mapping changes are are marked for deletion in the Logout method
 
   if GridConnect then
@@ -1414,7 +1446,6 @@ begin
   (NodeManager as INodeManagerCallbacks).DoNodeIDChanged(Self);
 
   (NodeManager as INodeManagerCallbacks).DoDestroyLccNode(Self);
-  _100msTimer.Free;
 
   FreeAndNil(FProtocolSupportedProtocols);
   FreeAndNil(FProtocolSimpleNodeInfo);
@@ -1493,7 +1524,6 @@ begin
     SendMessageFunc(Self, WorkerMessage);
 
     LoginTimoutCounter := 0;
-    _100msTimer.Enabled := True;  //  Next state is in the event handler to see if anyone objects tor our Alias
   end else
     LccLogIn(ANodeID);
 end;
@@ -1514,7 +1544,6 @@ begin
   end;
   DatagramResendQueue.Clear;
   FInitialized := False;
-  _100msTimer.Enabled := False;
 end;
 
 procedure TLccNode.On_100msTimer(Sender: TObject);

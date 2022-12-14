@@ -153,6 +153,8 @@ type
     property SourceAlias: Word read FSourceAlias write FSourceAlias;
   end;
 
+  TNodeIdentificationCallback = procedure(ANodeIdentification: TLccNodeIdentificationObject) of object;
+
 
 { TLccMessage }
 
@@ -168,6 +170,7 @@ private
   FSourceID: TNodeID;                       // NodeID of the Source of a message
   FMTI: Word;                               // The Actual MTI of the message IF it is not a CAN frame message
   FRetryAttemptsDatagram: Integer;                  // If a message returned "Temporary" (like no buffers) this holds how many time it has been retried and defines a give up time to stop resending
+  FWorkerNodeIdentifcationObject: TLccNodeIdentificationObject;
   function GetHasDestination: Boolean;
   function GetHasDestNodeID: Boolean;
   function GetHasSourceNodeID: Boolean;
@@ -191,6 +194,7 @@ public
   property RetryAttemptsDatagram: Integer read FRetryAttemptsDatagram write FRetryAttemptsDatagram;
   property SourceID: TNodeID read FSourceID write FSourceID;
   property NodeIdentifications: TLccNodeIdentificationObjectList read FNodeIdentifications write FNodeIdentifications;
+  property WorkerNodeIdentifcationObject: TLccNodeIdentificationObject read FWorkerNodeIdentifcationObject write FWorkerNodeIdentifcationObject;
 
   constructor Create;
   destructor Destroy; override;
@@ -209,7 +213,8 @@ public
   function ExtractDataBytesAsWord(StartIndex: Integer): Word;
   function ExtractDataBytesAsHex(StartByteIndex, EndByteIndex: Integer): string;
   function DestinationMatchs(TestAliasID: Word; TestNodeID: TNodeID): Boolean;
-  function ExtractNodeIdentifications(ForceEvaluation: Boolean): TLccNodeIdentificationObjectList;
+  function ExtractNodeIdentifications(ForceEvaluation, IgnoreCANMessages: Boolean): TLccNodeIdentificationObjectList;
+  function ExtractNodeIdentificationToCallback(NodeIdentificationCallback: TNodeIdentificationCallback; UnMappedOnly, IgnoreCANMessages: Boolean): Boolean;
 
   function LoadByGridConnectStr(GridConnectStr: String): Boolean;
   function LoadByLccTcp(var ByteArray: TLccDynamicByteArray): Boolean;
@@ -1092,12 +1097,14 @@ begin
   inherited Create;
   CAN := TLccCANMessage.Create;
   FNodeIdentifications := TLccNodeIdentificationObjectList.Create;
+  FWorkerNodeIdentifcationObject := TLccNodeIdentificationObject.Create;
 end;
 
 destructor TLccMessage.Destroy;
 begin
   FreeAndNil(FCAN);
   FreeAndNil(FNodeIdentifications);
+  FreeAndNil(FWorkerNodeIdentifcationObject);
   inherited Destroy;
 end;
 
@@ -1615,7 +1622,7 @@ begin
     Result := (TestNodeID[0] = DestID[0]) and (TestNodeID[1] = DestID[1]);
 end;
 
-function TLccMessage.ExtractNodeIdentifications(ForceEvaluation: Boolean): TLccNodeIdentificationObjectList;
+function TLccMessage.ExtractNodeIdentifications(ForceEvaluation, IgnoreCANMessages: Boolean): TLccNodeIdentificationObjectList;
 
   procedure NewIdentificationItem(ANodeID: TNodeID);
   var
@@ -1632,6 +1639,11 @@ function TLccMessage.ExtractNodeIdentifications(ForceEvaluation: Boolean): TLccN
 var
   ANodeID: TNodeID;
 begin
+  ANodeID := NULL_NODE_ID;
+
+  if IgnoreCANMessages and IsCAN then
+    Exit;
+
   if ForceEvaluation or (NodeIdentifications.Count = 0) then
   begin
     NodeIdentifications.ClearIdentifications;
@@ -1648,24 +1660,14 @@ begin
                 case DataArray[1] of
                   TRACTION_CONTROLLER_CONFIG_ASSIGN,
                   TRACTION_CONTROLLER_CONFIG_RELEASE,
-                  TRACTION_CONTROLLER_CONFIG_CHANGING_NOTIFY :
-                  begin
-                    ANodeID := NULL_NODE_ID;
-                    ExtractDataBytesAsNodeID(3, ANodeID);
-                    NewIdentificationItem(ANodeID);
-                  end;
+                  TRACTION_CONTROLLER_CONFIG_CHANGING_NOTIFY : NewIdentificationItem(ExtractDataBytesAsNodeID(3, ANodeID));
                 end
               end;
             TRACTION_LISTENER :
               begin
                 case DataArray[1] of
                   TRACTION_LISTENER_ATTACH,
-                  TRACTION_LISTENER_DETACH :
-                    begin
-                      ANodeID := NULL_NODE_ID;
-                      ExtractDataBytesAsNodeID(3, ANodeID);
-                      NewIdentificationItem(ANodeID);
-                    end;
+                  TRACTION_LISTENER_DETACH : NewIdentificationItem(ExtractDataBytesAsNodeID(3, ANodeID));
                 end;
               end
           end
@@ -1678,9 +1680,7 @@ begin
                 case DataArray[1] of
                   TRACTION_CONTROLLER_CONFIG_QUERY :
                     begin
-                     ANodeID := NULL_NODE_ID;
-                     ExtractDataBytesAsNodeID(3, ANodeID);
-                     if not NullNodeID(ANodeID) then    // NULL is valid for no controller assigned
+                     if not NullNodeID(ExtractDataBytesAsNodeID(3, ANodeID)) then    // NULL is valid for no controller assigned
                        NewIdentificationItem(ANodeID);
                     end;
                   end
@@ -1689,18 +1689,102 @@ begin
              TRACTION_LISTENER :
                case DataArray[1] of
                   TRACTION_LISTENER_ATTACH,
-                  TRACTION_LISTENER_DETACH :
-                    begin
-                      ANodeID := NULL_NODE_ID;
-                      ExtractDataBytesAsNodeID(2, ANodeID);
-                      NewIdentificationItem(ANodeID);
-                    end;
+                  TRACTION_LISTENER_DETACH : NewIdentificationItem(ExtractDataBytesAsNodeID(2, ANodeID));
                 end;
           end;
         end;
     end;
   end;
   Result := NodeIdentifications;
+end;
+
+function TLccMessage.ExtractNodeIdentificationToCallback(NodeIdentificationCallback: TNodeIdentificationCallback; UnMappedOnly, IgnoreCANMessages: Boolean): Boolean;
+
+  function IdentifyIdentificationItem(ANodeID: TNodeID; AnAliasID: Word; var OuterResult: Boolean): TLccAliasMapping;
+  begin
+    Result := AliasServer.FindMapping(ANodeID, AnAliasID);
+    if UnMappedOnly then
+    begin
+      if not Assigned(Result) then
+      begin
+        WorkerNodeIdentifcationObject.AssignID(ANodeID, AnAliasID);
+        NodeIdentificationCallback(WorkerNodeIdentifcationObject);
+        OuterResult := False;
+      end;
+    end else
+    begin
+      WorkerNodeIdentifcationObject.AssignID(ANodeID, AnAliasID);
+      NodeIdentificationCallback(WorkerNodeIdentifcationObject);
+    end;
+  end;
+
+var
+  ANodeID: TNodeID;
+  AnAliasMapping: TLccAliasMapping;
+begin
+  Result := True;
+
+  if IgnoreCANMessages and IsCAN then
+    Exit;
+
+  ANodeID := NULL_NODE_ID;
+
+  AnAliasMapping := IdentifyIdentificationItem(SourceID, CAN.SourceAlias, Result);
+  if Assigned(AnAliasMapping) then
+  begin
+    SourceID := AnAliasMapping.NodeID;
+    CAN.SourceAlias := AnAliasMapping.NodeAlias;
+  end;
+
+  if HasDestination then
+  begin
+    AnAliasMapping := IdentifyIdentificationItem(DestID, CAN.DestAlias, Result);
+    if Assigned(AnAliasMapping) then
+    begin
+      DestID := AnAliasMapping.NodeID;
+      CAN.DestAlias := AnAliasMapping.NodeAlias;
+    end;
+  end;
+
+  case MTI of
+    MTI_TRACTION_REQUEST :
+      begin
+        case DataArray[0] of
+          TRACTION_CONTROLLER_CONFIG :
+            begin
+              case DataArray[1] of
+                TRACTION_CONTROLLER_CONFIG_ASSIGN,
+                TRACTION_CONTROLLER_CONFIG_RELEASE,
+                TRACTION_CONTROLLER_CONFIG_CHANGING_NOTIFY : IdentifyIdentificationItem(ExtractDataBytesAsNodeID(3, ANodeID), 0, Result);
+              end
+            end;
+          TRACTION_LISTENER :
+            begin
+              case DataArray[1] of
+                TRACTION_LISTENER_ATTACH,
+                TRACTION_LISTENER_DETACH : IdentifyIdentificationItem(ExtractDataBytesAsNodeID(3, ANodeID), 0, Result);
+              end;
+            end
+        end
+      end;
+        MTI_TRACTION_REPLY :
+      begin
+        case DataArray[0] of
+          TRACTION_CONTROLLER_CONFIG :
+            begin
+              case DataArray[1] of
+                TRACTION_CONTROLLER_CONFIG_QUERY : IdentifyIdentificationItem(ExtractDataBytesAsNodeID(3, ANodeID), 0, Result);
+                end
+            end;
+
+           TRACTION_LISTENER :
+             case DataArray[1] of
+                TRACTION_LISTENER_ATTACH,
+                TRACTION_LISTENER_DETACH : IdentifyIdentificationItem(ExtractDataBytesAsNodeID(2, ANodeID), 0, Result);
+              end;
+        end;
+      end;
+  end;
 end;
 
 procedure TLccMessage.ZeroFields;
