@@ -285,7 +285,7 @@ begin
             case ServerContext.GridConnectMessageAssembler.IncomingMessageGridConnect(WorkerMessage) of
               imgcr_True :
                 begin
-                  NodeManager.ReceiveMessageServerThread.AddMessage(WorkerMessage);
+                  NodeManager.ReceiveMessageServerThread.ReceiveMessageServerAddMessage(WorkerMessage);
                   try
                     Owner.Synchronize({$IFDEF FPC}@{$ENDIF}Owner.ReceiveMessage);  // WorkerMessage contains the message
                   except
@@ -529,9 +529,6 @@ begin
   // to another...
   if AString <> '' then
   begin
-
-    {$IFDEF WriteLnDebugReceivedMessages} WriteLn('R:' + AString); {$ENDIF}
-
     if Owner.NodeManager.GridConnect then
       GridConnectContextList.AddGridConnectStringByContext(AContext, AString, Owner.NodeManager)
     else begin

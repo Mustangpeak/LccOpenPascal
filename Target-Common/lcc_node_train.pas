@@ -339,8 +339,6 @@ type
     procedure HandleTractionSimpleTrainInfoReply(var SourceMessage: TLccMessage); override;
 
     procedure LccLogIn(ANodeID: TNodeID); override;
-    procedure On_100msTimer(Sender: TObject); override;
-
 
   public
     property DccAddress: Word read FDccAddress write SetDccAddress;
@@ -356,6 +354,7 @@ type
     constructor Create(ANodeManager: {$IFDEF DELPHI}TComponent{$ELSE}TObject{$ENDIF}; CdiXML: String; GridConnectLink: Boolean); override;
     destructor Destroy; override;
 
+    procedure On_100msTimer(Sender: TObject); override;
   end;
 
   TLccTrainCanNodeClass = class of TLccTrainDccNode;
@@ -627,7 +626,6 @@ end;
 
 constructor TLccTrainDccNode.Create(ANodeManager: {$IFDEF DELPHI}TComponent{$ELSE}TObject{$ENDIF}; CdiXML: String; GridConnectLink: Boolean);
 begin
-  {$IFDEF WriteLnDebug} WriteLn('Train Node Create'); {$ENDIF}
   inherited Create(ANodeManager, CdiXML, GridConnectLink);
   FListeners := TListenerList.Create;
   FControllerState := TControllerState.Create;

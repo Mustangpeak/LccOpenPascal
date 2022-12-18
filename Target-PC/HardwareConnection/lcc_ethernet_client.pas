@@ -350,7 +350,7 @@ begin
         case GridConnectMessageAssembler.IncomingMessageGridConnect(WorkerMessage) of
           imgcr_True :
             begin
-              Owner.NodeManager.ReceiveMessageServerThread.AddMessage(WorkerMessage);
+              Owner.NodeManager.ReceiveMessageServerThread.ReceiveMessageServerAddMessage(WorkerMessage);
               try
                 Synchronize({$IFDEF FPC}@{$ENDIF}ReceiveMessage);  // WorkerMessage contains the message
               except

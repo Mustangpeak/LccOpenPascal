@@ -115,7 +115,7 @@ type
 
   TReceiveMessageServerThread = class(TThread)
   private
-    FMessages: TThreadList;
+    FReceivedMessages: TThreadList;
     FOwner: TLccNodeManager;
     FReceivedMessage: TLccMessage;
     FWorkerMessage: TLccMessage;
@@ -124,15 +124,15 @@ type
     property WorkerMessage: TLccMessage read FWorkerMessage write FWorkerMessage;
 
     procedure Execute; override;
-    procedure ReceiveMessageSyncronize;   // Syncronize Method
-    procedure UpdateGlobalMappings(AMessage: TLccMessage);
-    procedure NodeIdentificationToCallbackProc(ANodeIdentification: TLccNodeIdentificationObject);
+    procedure ReceiveMessageSyncronize;   // Syncronize Method called in context of main thread, this thread is stalled during that time
+    procedure UpdateGlobalMappings(AMessage: TLccMessage); // Called in context of thread
+    procedure NodeIdentificationToCallbackProc(ANodeIdentification: TLccNodeIdentificationObject); // Called in context of thread
 
   public
-    property Messages: TThreadList read FMessages write FMessages;
+    property ReceivedMessages: TThreadList read FReceivedMessages write FReceivedMessages;
     property Owner: TLccNodeManager read FOwner write FOwner;
 
-    procedure AddMessage(AMessage: TLccMessage);
+    procedure ReceiveMessageServerAddMessage(AMessage: TLccMessage);
   end;
 
   { TLccNodeManager }
@@ -330,41 +330,22 @@ implementation
 procedure TReceiveMessageServerThread.Execute;
 var
   LocalMessageList, LocalValidatedMessageList, LocalUnValidatedMessageList: TList;
-  LocalNodeIDObject: TLccNodeIdentificationObject;
   i: Integer;
-  {$IFDEF WriteLnDebug}iPrint: Integer;{$ENDIF WriteLnDebug}
   LocalMessage: TLccMessage;
 begin
-  Messages := TThreadList.Create;
+  ReceivedMessages := TThreadList.Create;
   LocalValidatedMessageList := TList.Create;
   LocalUnValidatedMessageList := TList.Create;
   WorkerMessage := TLccMessage.Create;
-  {$IFDEF WriteLnDebug}iPrint := 0;{$ENDIF WriteLnDebug}
   try
     while not Terminated do
     begin
-      {$IFDEF WriteLnDebug}
-      if iPrint > 100 then
-      begin
-        WriteLn('LocalValidatedMessageList count: ' + IntToStr(LocalValidatedMessageList.Count));
-        WriteLn('LocalUnValidatedMessageList count: ' + IntToStr(LocalUnValidatedMessageList.Count));
-      end;
-      {$ENDIF WriteLnDebug}
-
       // First run through the waiting messages.  If there is a Mapping move them in to the
       // LocalValidatedMessageList and set that slot to nil.  If there is no Mapping then the message is moved to the
       // UnValidated list to be handled outside the locked list
       // Need to run from 0 up to maintain order
-      LocalMessageList := Messages.LockList;
+      LocalMessageList := ReceivedMessages.LockList;
       try
-        {$IFDEF WriteLnDebug}
-        if iPrint > 100 then
-        begin
-          WriteLn('Main MesageList count: ' + IntToStr(LocalMessageList.Count));
-          iPrint := 0;
-        end;
-        Inc(iPrint);
-        {$ENDIF WriteLnDebug}
         for i := 0 to LocalMessageList.Count - 1 do
         begin
           if Owner.GridConnect then
@@ -375,26 +356,20 @@ begin
             UpdateGlobalMappings(LocalMessage);
 
             // Pull the message apart and find all the Nodes it requires then test them againt the AliasMapping Database.
-            // If they are not there then push the Alias or NodeID (from a message payload) into the SendMessage Queue and
-            // return false and put them in the LocalUnValidatedMessageList to hold else they get put in the ValidatedList for
-            // sending to the nodes
+            // If they are not there then push the Alias or NodeID (from a message payload) into the Alias Mapping Request list to Send that node a message
+            // to Verify it
             if LocalMessage.ExtractNodeIdentificationToCallback({$IFNDEF DELPHI}@{$ENDIF}NodeIdentificationToCallbackProc, True, True) then
-            begin
-              {$IFDEF WriteLnDebug}WriteLn('Message added to the Validated List');{$ENDIF WriteLnDebug}
               LocalValidatedMessageList.Add(LocalMessageList[i])
-            end else
-            begin
-              {$IFDEF WriteLnDebug}WriteLn('Message added to the UnValidated List');{$ENDIF WriteLnDebug}
+            else
               LocalUnValidatedMessageList.Add(LocalMessageList[i]);
-            end;
           end else
           begin  // Raw TCP we move them all
             LocalValidatedMessageList.Add(LocalMessageList[i]);
           end;
         end;
       finally
-        LocalMessageList.Clear; // All messages have been moved to other places
-        Messages.UnlockList;
+        LocalMessageList.Clear; // All received messages have been moved to other places
+        ReceivedMessages.UnlockList;
       end;
 
       // Deliever the messages we moved from the MainList to the LocalValidatedMessageList
@@ -408,11 +383,9 @@ begin
               ReceivedMessage := TLccMessage(LocalValidatedMessageList[i]);
               Synchronize({$IFDEF FPC}@{$ENDIF}ReceiveMessageSyncronize);
             finally
-              {$IFDEF WriteLnDebug}WriteLn('Message freed from Validated List');{$ENDIF WriteLnDebug}
               FreeAndNil(FReceivedMessage);
             end;
           except
-            {$IFDEF WriteLnDebug}WriteLn('Message freed from Validated List');{$ENDIF WriteLnDebug}
             FreeAndNil(FReceivedMessage);
           end;
         end;
@@ -436,7 +409,6 @@ begin
             LocalMessage := TLccMessage( LocalUnValidatedMessageList[i]);
             if LocalMessage.ExtractNodeIdentificationToCallback({$IFNDEF DELPHI}@{$ENDIF}NodeIdentificationToCallbackProc, True, True) then
             begin
-              {$IFDEF WriteLnDebug}WriteLn('Message moved from the UnValidated to the Validated List');{$ENDIF WriteLnDebug}
               LocalValidatedMessageList.Add(LocalMessage);
               LocalUnValidatedMessageList[i] := nil;
             end;
@@ -457,14 +429,14 @@ begin
     end;
 
   finally
-    LocalMessageList := Messages.LockList;
+    LocalMessageList := ReceivedMessages.LockList;
     try
       for i := 0 to LocalMessageList.Count - 1 do
         TObject(LocalMessageList[i]).Free
     finally
       LocalMessageList.Clear;
-      Messages.UnlockList;
-      FreeAndNil(FMessages);
+      ReceivedMessages.UnlockList;
+      FreeAndNil(FReceivedMessages);
     end;
 
     try
@@ -536,15 +508,15 @@ begin
   AliasServer.AddMappingRequest(ANodeIdentification.NodeID, ANodeIdentification.Alias);
 end;
 
-procedure TReceiveMessageServerThread.AddMessage(AMessage: TLccMessage);
+procedure TReceiveMessageServerThread.ReceiveMessageServerAddMessage(AMessage: TLccMessage);
 var
   LocalList: TList;
 begin
-  LocalList := Messages.LockList;
+  LocalList := ReceivedMessages.LockList;
   try
     LocalList.Add(AMessage.Clone);
   finally
-    Messages.UnlockList;
+    ReceivedMessages.UnlockList;
   end;
 end;
 
@@ -916,7 +888,7 @@ begin
 
   // Send the messages to all the other virtual nodes where this would be the receiving end of the sendmessage
   // Never filter these messages.
-  ReceiveMessageServerThread.AddMessage(LccMessage);  // I think this works....
+  ReceiveMessageServerThread.ReceiveMessageServerAddMessage(LccMessage);  // I think this works....
 end;
 
 procedure TLccNodeManager.On_100msTimer(Sender: TObject);

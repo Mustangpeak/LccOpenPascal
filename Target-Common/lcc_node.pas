@@ -4,6 +4,8 @@ unit lcc_node;
 {$mode objfpc}{$H+}
 {$ENDIF}
 
+{.$DEFINE LOG_MAPPING}
+
 interface
 
 {$I ..\lcc_compilers.inc}
@@ -21,6 +23,7 @@ uses
     FMX.Types,
     System.Generics.Collections,
   {$ENDIF}
+  LazLogger,
   lcc_protocol_utilities,
   lcc_defines,
   lcc_node_messages,
@@ -1375,7 +1378,6 @@ begin
         MappingList.Delete(i);
       end;
     end;
-
   finally
     AliasServer.MappingList.UnlockList;
   end;
@@ -1387,27 +1389,12 @@ begin
       LocalNodeIdentificationObject := TLccNodeIdentificationObject( MappingList[i]);
 
       if LocalNodeIdentificationObject.AbandonCount = 0 then
-      begin
-        if LocalNodeIdentificationObject.Alias <> 0 then
-        begin
-          // We have the Alias but not the NodeID so use addressed to that Alias (don't need the NodeID for CAN)
-          WorkerMessage.LoadVerifyNodeIDAddressed(NodeID, AliasID, LocalNodeIdentificationObject.NodeID, LocalNodeIdentificationObject.Alias, NULL_NODE_ID);
-          SendMessageFunc(Self, WorkerMessage);
-        end else
-        if not NullNodeID(LocalNodeIdentificationObject.NodeID) then
-        begin
-          WorkerMessage.LoadVerifyNodeID(NodeID, AliasID, LocalNodeIdentificationObject.NodeID);
-          SendMessageFunc(Self, WorkerMessage);
-        end else
-        begin
-          LocalNodeIdentificationObject.Free;
-          MappingList[i] := nil;
-        end;
-      end else
-      begin
+        AliasServer.MappingRequestList.Add(LocalNodeIdentificationObject.Clone)
+      else begin
         LocalNodeIdentificationObject.AbandonCount := LocalNodeIdentificationObject.AbandonCount + 1;
         if LocalNodeIdentificationObject.AbandonCount > 20 then
         begin
+          {$IFDEF LOG_MAPPING}DebugLn('Mapping Request Deleted: ' + NodeIDToString(LocalNodeIdentificationObject.NodeID, True) + '; ' + IntToHex(LocalNodeIdentificationObject.Alias, 4));{$ENDIF}
           LocalNodeIdentificationObject.Free;
           MappingList[i] := nil;
         end;
@@ -1421,7 +1408,29 @@ begin
     AliasServer.MappingRequestList.UnlockList;
   end;
 
-//  (NodeManager as INodeManagerCallbacks).DoTrainRegisteringChange(Self, LocalTrainObject, False);
+
+  // do this outside of the MappingRequestList lock
+  try
+    for i := 0 to AliasServer.WorkerMappingRequestList.Count - 1 do
+    begin
+      LocalNodeIdentificationObject := TLccNodeIdentificationObject( AliasServer.WorkerMappingRequestList[i]);
+
+      if LocalNodeIdentificationObject.Alias <> 0 then
+      begin
+        // We have the Alias but not the NodeID so use addressed to that Alias (don't need the NodeID for CAN)
+        WorkerMessage.LoadVerifyNodeIDAddressed(NodeID, AliasID, LocalNodeIdentificationObject.NodeID, LocalNodeIdentificationObject.Alias, NULL_NODE_ID);
+        SendMessageFunc(Self, WorkerMessage);
+      end else
+      if not NullNodeID(LocalNodeIdentificationObject.NodeID) then
+      begin
+        WorkerMessage.LoadVerifyNodeID(NodeID, AliasID, LocalNodeIdentificationObject.NodeID);
+        SendMessageFunc(Self, WorkerMessage);
+      end;
+    end;
+  finally
+    AliasServer.ClearWorkerMappingRequests;
+  end;
+
 end;
 
 procedure TLccNode.CreateNodeID(var Seed: TNodeID);
@@ -1504,7 +1513,6 @@ var
 begin
   if GridConnect then
   begin
-    {$IFDEF WriteLnDebug} WriteLn('Node Logging In'); {$ENDIF}
     BeforeLogin;
     if NullNodeID(ANodeID) then
       CreateNodeID(ANodeID);
@@ -1558,7 +1566,6 @@ begin
        // Did any node object to this Alias through ProcessMessage?
       if DuplicateAliasDetected then
       begin
-        {$IFDEF WriteLnDebug} WriteLn('Node Duplicate ID'); {$ENDIF}
         DuplicateAliasDetected := False;  // Reset
         Temp := FSeedNodeID;
         GenerateNewSeed(Temp);
@@ -1577,7 +1584,6 @@ begin
       begin
         if LoginTimoutCounter > 7 then
         begin
-          {$IFDEF WriteLnDebug} WriteLn('Node Logged In'); {$ENDIF}
           FPermitted := True;
           WorkerMessage.LoadRID(NodeID, AliasID);
           SendMessageFunc(Self, WorkerMessage);
