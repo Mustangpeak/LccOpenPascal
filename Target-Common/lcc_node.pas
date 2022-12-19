@@ -15,6 +15,7 @@ uses
   SysUtils,
   {$IFDEF FPC}
     contnrs,
+    LazLogger,
     {$IFNDEF FPC_CONSOLE_APP}
       ExtCtrls,
     {$ENDIF}
@@ -23,7 +24,6 @@ uses
     FMX.Types,
     System.Generics.Collections,
   {$ENDIF}
-  LazLogger,
   lcc_protocol_utilities,
   lcc_defines,
   lcc_node_messages,

@@ -18,9 +18,9 @@ object FormTrainController: TFormTrainController
     Height = 483
     Top = 0
     Width = 356
-    ActivePage = TabSheetThrottle
+    ActivePage = TabSheetRoster
     Align = alClient
-    TabIndex = 0
+    TabIndex = 1
     TabOrder = 0
     object TabSheetThrottle: TTabSheet
       Caption = 'Throttle'
