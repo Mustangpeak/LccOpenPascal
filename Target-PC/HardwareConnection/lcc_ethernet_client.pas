@@ -166,7 +166,8 @@ begin
           {$IFNDEF FPC_CONSOLE_APP}Application.ProcessMessages;{$ELSE}CheckSynchronize();{$ENDIF}  // Pump the timers
           Inc(TimeCount);
           Sleep(100);
-          if TimeCount = 10 then Break // Something went really wrong
+          if TimeCount = 10 then
+            Break // Something went really wrong
         end;
       end;
     finally

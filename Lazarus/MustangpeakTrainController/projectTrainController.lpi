@@ -80,7 +80,6 @@
       </Options>
     </Linking>
     <Other>
-      <CustomOptions Value="-dLOG_MAPPING"/>
       <OtherDefines Count="1">
         <Define0 Value="LOG_MAPPING"/>
       </OtherDefines>

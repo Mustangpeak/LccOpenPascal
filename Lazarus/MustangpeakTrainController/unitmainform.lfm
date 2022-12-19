@@ -1,5 +1,5 @@
 object FormTrainController: TFormTrainController
-  Left = 701
+  Left = 702
   Height = 483
   Top = 111
   Width = 356
@@ -11,7 +11,7 @@ object FormTrainController: TFormTrainController
   OnDestroy = FormDestroy
   OnShow = FormShow
   ShowHint = True
-  LCLVersion = '2.2.2.0'
+  LCLVersion = '2.2.4.0'
   object PageControlMain: TPageControl
     Tag = 4
     Left = 0
@@ -24,24 +24,24 @@ object FormTrainController: TFormTrainController
     TabOrder = 0
     object TabSheetThrottle: TTabSheet
       Caption = 'Throttle'
-      ClientHeight = 452
-      ClientWidth = 352
+      ClientHeight = 453
+      ClientWidth = 350
       object ScrollBoxFunctions: TScrollBox
-        Left = 134
-        Height = 343
+        Left = 132
+        Height = 344
         Top = 64
         Width = 218
-        HorzScrollBar.Page = 44
-        VertScrollBar.Page = 341
+        HorzScrollBar.Page = 57
+        VertScrollBar.Page = 342
         Align = alRight
-        ClientHeight = 341
-        ClientWidth = 203
+        ClientHeight = 342
+        ClientWidth = 201
         TabOrder = 0
         object ToggleBoxF0: TToggleBox
           Left = 4
           Height = 22
           Top = 0
-          Width = 195
+          Width = 193
           Align = alTop
           BorderSpacing.Left = 4
           BorderSpacing.Right = 4
@@ -54,7 +54,7 @@ object FormTrainController: TFormTrainController
           Left = 4
           Height = 22
           Top = 22
-          Width = 195
+          Width = 193
           Align = alTop
           BorderSpacing.Left = 4
           BorderSpacing.Right = 4
@@ -66,7 +66,7 @@ object FormTrainController: TFormTrainController
           Left = 4
           Height = 22
           Top = 44
-          Width = 195
+          Width = 193
           Align = alTop
           BorderSpacing.Left = 4
           BorderSpacing.Right = 4
@@ -79,7 +79,7 @@ object FormTrainController: TFormTrainController
           Left = 4
           Height = 22
           Top = 110
-          Width = 195
+          Width = 193
           Align = alTop
           BorderSpacing.Left = 4
           BorderSpacing.Right = 4
@@ -92,7 +92,7 @@ object FormTrainController: TFormTrainController
           Left = 4
           Height = 22
           Top = 132
-          Width = 195
+          Width = 193
           Align = alTop
           BorderSpacing.Left = 4
           BorderSpacing.Right = 4
@@ -105,7 +105,7 @@ object FormTrainController: TFormTrainController
           Left = 4
           Height = 22
           Top = 154
-          Width = 195
+          Width = 193
           Align = alTop
           BorderSpacing.Left = 4
           BorderSpacing.Right = 4
@@ -118,7 +118,7 @@ object FormTrainController: TFormTrainController
           Left = 4
           Height = 22
           Top = 176
-          Width = 195
+          Width = 193
           Align = alTop
           BorderSpacing.Left = 4
           BorderSpacing.Right = 4
@@ -131,7 +131,7 @@ object FormTrainController: TFormTrainController
           Left = 4
           Height = 22
           Top = 198
-          Width = 195
+          Width = 193
           Align = alTop
           BorderSpacing.Left = 4
           BorderSpacing.Right = 4
@@ -144,7 +144,7 @@ object FormTrainController: TFormTrainController
           Left = 4
           Height = 22
           Top = 66
-          Width = 195
+          Width = 193
           Align = alTop
           BorderSpacing.Left = 4
           BorderSpacing.Right = 4
@@ -157,7 +157,7 @@ object FormTrainController: TFormTrainController
           Left = 4
           Height = 22
           Top = 88
-          Width = 195
+          Width = 193
           Align = alTop
           BorderSpacing.Left = 4
           BorderSpacing.Right = 4
@@ -170,7 +170,7 @@ object FormTrainController: TFormTrainController
           Left = 4
           Height = 22
           Top = 220
-          Width = 195
+          Width = 193
           Align = alTop
           BorderSpacing.Left = 4
           BorderSpacing.Right = 4
@@ -183,7 +183,7 @@ object FormTrainController: TFormTrainController
           Left = 4
           Height = 22
           Top = 242
-          Width = 195
+          Width = 193
           Align = alTop
           BorderSpacing.Left = 4
           BorderSpacing.Right = 4
@@ -196,7 +196,7 @@ object FormTrainController: TFormTrainController
           Left = 4
           Height = 22
           Top = 264
-          Width = 195
+          Width = 193
           Align = alTop
           BorderSpacing.Left = 4
           BorderSpacing.Right = 4
@@ -209,7 +209,7 @@ object FormTrainController: TFormTrainController
           Left = 4
           Height = 22
           Top = 286
-          Width = 195
+          Width = 193
           Align = alTop
           BorderSpacing.Left = 4
           BorderSpacing.Right = 4
@@ -222,7 +222,7 @@ object FormTrainController: TFormTrainController
           Left = 4
           Height = 22
           Top = 308
-          Width = 195
+          Width = 193
           Align = alTop
           BorderSpacing.Left = 4
           BorderSpacing.Right = 4
@@ -235,7 +235,7 @@ object FormTrainController: TFormTrainController
           Left = 4
           Height = 22
           Top = 330
-          Width = 195
+          Width = 193
           Align = alTop
           BorderSpacing.Left = 4
           BorderSpacing.Right = 4
@@ -248,7 +248,7 @@ object FormTrainController: TFormTrainController
           Left = 4
           Height = 22
           Top = 352
-          Width = 195
+          Width = 193
           Align = alTop
           BorderSpacing.Left = 4
           BorderSpacing.Right = 4
@@ -261,7 +261,7 @@ object FormTrainController: TFormTrainController
           Left = 4
           Height = 22
           Top = 374
-          Width = 195
+          Width = 193
           Align = alTop
           BorderSpacing.Left = 4
           BorderSpacing.Right = 4
@@ -274,7 +274,7 @@ object FormTrainController: TFormTrainController
           Left = 4
           Height = 22
           Top = 396
-          Width = 195
+          Width = 193
           Align = alTop
           BorderSpacing.Left = 4
           BorderSpacing.Right = 4
@@ -287,7 +287,7 @@ object FormTrainController: TFormTrainController
           Left = 4
           Height = 22
           Top = 418
-          Width = 195
+          Width = 193
           Align = alTop
           BorderSpacing.Left = 4
           BorderSpacing.Right = 4
@@ -300,27 +300,27 @@ object FormTrainController: TFormTrainController
         Left = 0
         Height = 64
         Top = 0
-        Width = 352
+        Width = 350
         Align = alTop
         ClientHeight = 64
-        ClientWidth = 352
+        ClientWidth = 350
         TabOrder = 1
         object ComboBoxTrainSelect: TComboBox
           Left = 5
-          Height = 54
+          Height = 20
           Top = 5
-          Width = 266
+          Width = 264
           Align = alLeft
           Anchors = [akTop, akLeft, akRight, akBottom]
           BorderSpacing.Around = 4
-          ItemHeight = 0
+          ItemHeight = 19
           OnKeyDown = ComboBoxTrainSelectKeyDown
           TabOrder = 0
           Text = '[Select Train]'
           TextHint = 'Type in a DCC Address or select from the Consist List'
         end
         object ButtonThrottleSelectGo: TButton
-          Left = 276
+          Left = 274
           Height = 30
           Top = 0
           Width = 71
@@ -339,10 +339,10 @@ object FormTrainController: TFormTrainController
         end
         object ComboBoxThrottleSpeedSteps: TComboBox
           Left = 48
-          Height = 27
+          Height = 20
           Top = 36
           Width = 100
-          ItemHeight = 0
+          ItemHeight = 26
           ItemIndex = 0
           Items.Strings = (
             'Default'
@@ -356,9 +356,9 @@ object FormTrainController: TFormTrainController
         end
         object Label1: TLabel
           Left = 8
-          Height = 17
+          Height = 16
           Top = 40
-          Width = 38
+          Width = 35
           Caption = 'Steps'
           ParentColor = False
         end
@@ -366,17 +366,17 @@ object FormTrainController: TFormTrainController
       object PanelThrottleFooter: TPanel
         Left = 0
         Height = 45
-        Top = 407
-        Width = 352
+        Top = 408
+        Width = 350
         Align = alBottom
         ClientHeight = 45
-        ClientWidth = 352
+        ClientWidth = 350
         TabOrder = 2
         object ButtonThrottleStop: TButton
           Left = 1
           Height = 43
           Top = 1
-          Width = 196
+          Width = 194
           Align = alLeft
           Anchors = [akTop, akLeft, akRight]
           Caption = 'Stop'
@@ -384,7 +384,7 @@ object FormTrainController: TFormTrainController
           TabOrder = 0
         end
         object ToggleBoxThrottleForward: TToggleBox
-          Left = 201
+          Left = 199
           Height = 43
           Top = 1
           Width = 75
@@ -394,7 +394,7 @@ object FormTrainController: TFormTrainController
           TabOrder = 1
         end
         object ToggleBoxThrottleReverse: TToggleBox
-          Left = 276
+          Left = 274
           Height = 43
           Top = 1
           Width = 75
@@ -406,18 +406,18 @@ object FormTrainController: TFormTrainController
       end
       object PanelThrottleContainer: TPanel
         Left = 0
-        Height = 343
+        Height = 344
         Top = 64
-        Width = 134
+        Width = 132
         Align = alClient
-        ClientHeight = 343
-        ClientWidth = 134
+        ClientHeight = 344
+        ClientWidth = 132
         TabOrder = 3
         object PanelThrottleLever: TPanel
           Left = 56
-          Height = 341
+          Height = 342
           Top = 1
-          Width = 77
+          Width = 75
           Align = alClient
           Caption = 'PanelThrottleLever'
           TabOrder = 0
@@ -425,16 +425,16 @@ object FormTrainController: TFormTrainController
         end
         object PanelThrottleSlider: TPanel
           Left = 1
-          Height = 341
+          Height = 342
           Top = 1
           Width = 55
           Align = alLeft
-          ClientHeight = 341
+          ClientHeight = 342
           ClientWidth = 55
           TabOrder = 1
           object TrackBarThrottle: TTrackBar
             Left = 1
-            Height = 339
+            Height = 340
             Top = 1
             Width = 53
             Frequency = 5
@@ -450,25 +450,25 @@ object FormTrainController: TFormTrainController
     end
     object TabSheetRoster: TTabSheet
       Caption = 'Roster'
-      ClientHeight = 452
-      ClientWidth = 352
+      ClientHeight = 453
+      ClientWidth = 350
       object PanelRoster: TPanel
         Left = 0
-        Height = 452
+        Height = 453
         Top = 0
-        Width = 352
+        Width = 350
         Align = alClient
-        ClientHeight = 452
-        ClientWidth = 352
+        ClientHeight = 453
+        ClientWidth = 350
         TabOrder = 0
         object PanelLogHeader1: TPanel
           Left = 1
           Height = 40
           Top = 1
-          Width = 350
+          Width = 348
           Align = alTop
           ClientHeight = 40
-          ClientWidth = 350
+          ClientWidth = 348
           TabOrder = 0
           object ButtonRosterRefresh: TButton
             Left = 8
@@ -497,9 +497,9 @@ object FormTrainController: TFormTrainController
         end
         object TreeViewRoster: TTreeView
           Left = 1
-          Height = 410
+          Height = 411
           Top = 41
-          Width = 350
+          Width = 348
           Align = alClient
           TabOrder = 1
         end
@@ -507,19 +507,19 @@ object FormTrainController: TFormTrainController
     end
     object TabSheetLog: TTabSheet
       Caption = 'Log'
-      ClientHeight = 452
-      ClientWidth = 352
+      ClientHeight = 453
+      ClientWidth = 350
       object PanelLogHeader: TPanel
         Left = 0
         Height = 40
         Top = 0
-        Width = 352
+        Width = 350
         Align = alTop
         ClientHeight = 40
-        ClientWidth = 352
+        ClientWidth = 350
         TabOrder = 0
         object ButtonLogClear: TButton
-          Left = 263
+          Left = 261
           Height = 25
           Top = 8
           Width = 75
@@ -550,22 +550,23 @@ object FormTrainController: TFormTrainController
       end
       object MemoLog: TMemo
         Left = 0
-        Height = 412
+        Height = 413
         Top = 40
-        Width = 352
+        Width = 350
         Align = alClient
+        ScrollBars = ssVertical
         TabOrder = 1
       end
     end
     object TabSheetSettings: TTabSheet
       Caption = 'Settings'
-      ClientHeight = 452
-      ClientWidth = 352
+      ClientHeight = 453
+      ClientWidth = 350
       object LabelSettings1: TLabel
         Left = 0
-        Height = 17
+        Height = 16
         Top = 50
-        Width = 352
+        Width = 350
         Align = alTop
         Alignment = taCenter
         Caption = 'Enter the hub or command stations IP address '
@@ -574,8 +575,8 @@ object FormTrainController: TFormTrainController
       object PanelSettings7: TPanel
         Left = 0
         Height = 28
-        Top = 158
-        Width = 352
+        Top = 156
+        Width = 350
         Align = alTop
         BevelOuter = bvNone
         TabOrder = 0
@@ -583,18 +584,18 @@ object FormTrainController: TFormTrainController
       object PanelSettings2: TPanel
         Left = 0
         Height = 38
-        Top = 67
-        Width = 352
+        Top = 66
+        Width = 350
         Align = alTop
         BevelOuter = bvNone
         ClientHeight = 38
-        ClientWidth = 352
+        ClientWidth = 350
         TabOrder = 1
         object EditSettingsIP: TEdit
           Left = 104
-          Height = 27
+          Height = 22
           Top = 8
-          Width = 135
+          Width = 133
           Alignment = taCenter
           Anchors = [akTop, akLeft, akRight]
           TabOrder = 0
@@ -603,9 +604,9 @@ object FormTrainController: TFormTrainController
       end
       object LabelSettings2: TLabel
         Left = 0
-        Height = 17
-        Top = 105
-        Width = 352
+        Height = 16
+        Top = 104
+        Width = 350
         Align = alTop
         Alignment = taCenter
         Caption = 'Enter the hub or command stations port '
@@ -614,18 +615,18 @@ object FormTrainController: TFormTrainController
       object PanelSettings3: TPanel
         Left = 0
         Height = 36
-        Top = 122
-        Width = 352
+        Top = 120
+        Width = 350
         Align = alTop
         BevelOuter = bvNone
         ClientHeight = 36
-        ClientWidth = 352
+        ClientWidth = 350
         TabOrder = 2
         object EditSettingsPort: TEdit
           Left = 104
-          Height = 27
+          Height = 22
           Top = 8
-          Width = 135
+          Width = 133
           Alignment = taCenter
           Anchors = [akTop, akLeft, akRight]
           TabOrder = 0
@@ -634,9 +635,9 @@ object FormTrainController: TFormTrainController
       end
       object LabelSettings3: TLabel
         Left = 0
-        Height = 17
-        Top = 186
-        Width = 352
+        Height = 16
+        Top = 184
+        Width = 350
         Align = alTop
         Alignment = taCenter
         Caption = 'Enter a NodeID for the throttle'
@@ -645,18 +646,18 @@ object FormTrainController: TFormTrainController
       object PanelSettings4: TPanel
         Left = 0
         Height = 36
-        Top = 203
-        Width = 352
+        Top = 200
+        Width = 350
         Align = alTop
         BevelOuter = bvNone
         ClientHeight = 36
-        ClientWidth = 352
+        ClientWidth = 350
         TabOrder = 3
         object EditSettingsNodeID: TEdit
           Left = 104
-          Height = 27
+          Height = 22
           Top = 8
-          Width = 135
+          Width = 133
           Alignment = taCenter
           Anchors = [akTop, akLeft, akRight]
           TabOrder = 0
@@ -665,8 +666,8 @@ object FormTrainController: TFormTrainController
       object PanelSettings6: TPanel
         Left = 0
         Height = 50
-        Top = 273
-        Width = 352
+        Top = 268
+        Width = 350
         Align = alTop
         BevelOuter = bvNone
         TabOrder = 4
@@ -675,36 +676,39 @@ object FormTrainController: TFormTrainController
         Left = 0
         Height = 50
         Top = 0
-        Width = 352
+        Width = 350
         Align = alTop
         BevelOuter = bvNone
         TabOrder = 5
       end
       object LabelSettingsConnectionState: TLabel
         Left = 0
-        Height = 17
-        Top = 323
-        Width = 352
+        Height = 16
+        Top = 318
+        Width = 350
         Align = alTop
         Alignment = taCenter
         Caption = 'Waiting for Connection'
         ParentColor = False
       end
       object ButtonSettingsRestartConnection: TButton
-        Left = 112
+        Left = 32
         Height = 25
-        Top = 336
-        Width = 127
-        Anchors = [akTop, akLeft, akRight]
+        Top = 342
+        Width = 286
+        Align = alTop
+        BorderSpacing.Left = 32
+        BorderSpacing.Top = 8
+        BorderSpacing.Right = 32
         Caption = 'Restart Connection'
         OnClick = ButtonSettingsRestartConnectionClick
         TabOrder = 6
       end
       object Label2: TLabel
         Left = 0
-        Height = 17
-        Top = 239
-        Width = 352
+        Height = 16
+        Top = 236
+        Width = 350
         Align = alTop
         Alignment = taCenter
         Caption = 'Alias'
@@ -712,9 +716,9 @@ object FormTrainController: TFormTrainController
       end
       object LabelSettingsAliasID: TLabel
         Left = 0
-        Height = 17
-        Top = 256
-        Width = 352
+        Height = 16
+        Top = 252
+        Width = 350
         Align = alTop
         Alignment = taCenter
         Caption = '[none]'

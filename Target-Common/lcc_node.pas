@@ -112,6 +112,7 @@ type
     FAliasID: Word;
     FDatagramResendQueue: TDatagramQueue;
     FDuplicateAliasDetected: Boolean;
+    FEnabled: Boolean;
     FGridConnect: Boolean;
     FLoginTimoutCounter: Integer;
     FPermitted: Boolean;
@@ -261,6 +262,7 @@ type
     //**************************************************************************
 
 
+    property Enabled: Boolean read FEnabled write FEnabled;  // Internally used.. Set true by "LogIn" and false in "ReleaseAlias" so a new LogIn must be called
     property NodeManager:{$IFDEF DELPHI}TComponent{$ELSE}TObject{$ENDIF} read FNodeManager write FNodeManager;
     property StreamCdi: TMemoryStream read FStreamCdi write FStreamCdi;
     property StreamConfig: TMemoryStream read FStreamConfig write FStreamConfig;
@@ -332,6 +334,7 @@ type
     procedure SendConsumerIdentify(Event: TEventID);
     procedure SendProducedEvents;
     procedure SendProducerIdentify(Event: TEventID);
+    procedure SendSNIPRequest(TargetNodeID: TNodeID; TargetAlias: Word);
   end;
 
   TLccNodeClass = class of TLccNode;
@@ -993,23 +996,26 @@ end;
 
 procedure TLccNode.LccLogIn(ANodeID: TNodeID);
 begin
-  BeforeLogin;
-  if NullNodeID(ANodeID) then
-    CreateNodeID(ANodeID);  // This should only be true if not GridConnect and the NodeID was not set
-  FNodeID := ANodeID;
-  (NodeManager as INodeManagerCallbacks).DoNodeIDChanged(Self);
-  FInitialized := True;
+  if Enabled then
+  begin
+    BeforeLogin;
+    if NullNodeID(ANodeID) then
+      CreateNodeID(ANodeID);  // This should only be true if not GridConnect and the NodeID was not set
+    FNodeID := ANodeID;
+    (NodeManager as INodeManagerCallbacks).DoNodeIDChanged(Self);
+    FInitialized := True;
 
-  // Send Initialization Complete
-  WorkerMessage.LoadInitializationComplete(NodeID, FAliasID);
-  SendMessageFunc(Self, WorkerMessage);
-  (NodeManager as INodeManagerCallbacks).DoInitializationComplete(Self);
+    // Send Initialization Complete
+    WorkerMessage.LoadInitializationComplete(NodeID, FAliasID);
+    SendMessageFunc(Self, WorkerMessage);
+    (NodeManager as INodeManagerCallbacks).DoInitializationComplete(Self);
 
 
-  AutoGenerateEvents;
-  SendEvents;
-  (NodeManager as INodeManagerCallbacks).DoLogInNode(Self);
-  AfterLogin;
+    AutoGenerateEvents;
+    SendEvents;
+    (NodeManager as INodeManagerCallbacks).DoLogInNode(Self);
+    AfterLogin;
+  end;
 end;
 
 function TLccNode.ProcessMessageLCC(SourceMessage: TLccMessage): Boolean;
@@ -1522,6 +1528,7 @@ procedure TLccNode.Login(ANodeID: TNodeID);
 var
   Temp: TNodeID;
 begin
+  Enabled := True;
   if GridConnect then
   begin
     BeforeLogin;
@@ -1544,25 +1551,32 @@ begin
 
     LoginTimoutCounter := 0;
   end else
+  begin
+    BeforeLogIn;
     LccLogIn(ANodeID);
+  end;
 end;
 
 procedure TLccNode.ReleaseAlias(DelayTime_ms: Word);
 begin
-  if GridConnect then
+  if AliasID <> 0 then
   begin
-    WorkerMessage.LoadAMR(NodeID, AliasID);
-    SendMessageFunc(Self, WorkerMessage);
-    // Wait for the message to get sent on the hardware layers.  Testing this happens is complicated
-    // This assumes they are all running in separate thread and they keep running
-    Sleep(DelayTime_ms);
-    FPermitted := False;
-    (NodeManager as INodeManagerCallbacks).DoAliasReset(Self);
-    AliasServer.MarkForRemovalByAlias(AliasID);
-    FAliasID := 0;
+    if GridConnect then
+    begin
+      WorkerMessage.LoadAMR(NodeID, AliasID);
+      SendMessageFunc(Self, WorkerMessage);
+      // Wait for the message to get sent on the hardware layers.  Testing this happens is complicated
+      // This assumes they are all running in separate thread and they keep running
+      Sleep(DelayTime_ms);
+      FPermitted := False;
+      (NodeManager as INodeManagerCallbacks).DoAliasReset(Self);
+      AliasServer.MarkForRemovalByAlias(AliasID);
+      FAliasID := 0;
+      Enabled := False; // must call LogIn again to reenable
+    end;
+    DatagramResendQueue.Clear;
+    FInitialized := False;
   end;
-  DatagramResendQueue.Clear;
-  FInitialized := False;
 end;
 
 procedure TLccNode.On_100msTimer(Sender: TObject);
@@ -1571,44 +1585,47 @@ var
 begin
   if GridConnect then
   begin
+    if Enabled then
+    begin
     if not Permitted then
-    begin
-      Inc(FLoginTimoutCounter);
-       // Did any node object to this Alias through ProcessMessage?
-      if DuplicateAliasDetected then
       begin
-        DuplicateAliasDetected := False;  // Reset
-        Temp := FSeedNodeID;
-        GenerateNewSeed(Temp);
-        FSeedNodeID := Temp;
-        FAliasID := GenerateID_Alias_From_Seed(Temp);
-        WorkerMessage.LoadCID(NodeID, AliasID, 0);
-        SendMessageFunc(Self, WorkerMessage);
-        WorkerMessage.LoadCID(NodeID, AliasID, 1);
-        SendMessageFunc(Self, WorkerMessage);
-        WorkerMessage.LoadCID(NodeID, AliasID, 2);
-        SendMessageFunc(Self, WorkerMessage);
-        WorkerMessage.LoadCID(NodeID, AliasID, 3);
-        SendMessageFunc(Self, WorkerMessage);
-        LoginTimoutCounter := 0;
-      end else
-      begin
-        if LoginTimoutCounter > 7 then
+        Inc(FLoginTimoutCounter);
+         // Did any node object to this Alias through ProcessMessage?
+        if DuplicateAliasDetected then
         begin
-          FPermitted := True;
-          WorkerMessage.LoadRID(NodeID, AliasID);
+          DuplicateAliasDetected := False;  // Reset
+          Temp := FSeedNodeID;
+          GenerateNewSeed(Temp);
+          FSeedNodeID := Temp;
+          FAliasID := GenerateID_Alias_From_Seed(Temp);
+          WorkerMessage.LoadCID(NodeID, AliasID, 0);
           SendMessageFunc(Self, WorkerMessage);
-          WorkerMessage.LoadAMD(NodeID, AliasID);
+          WorkerMessage.LoadCID(NodeID, AliasID, 1);
           SendMessageFunc(Self, WorkerMessage);
-          (NodeManager as INodeManagerCallbacks).DoAliasIDChanged(Self);
-          LccLogIn(NodeID);
-        end;
-      end
-    end else  // Is Permitted
-    begin
-      DatagramResendQueue.TickTimeout;
-      NotifyAndUpdateMappingChanges;
-    end;
+          WorkerMessage.LoadCID(NodeID, AliasID, 2);
+          SendMessageFunc(Self, WorkerMessage);
+          WorkerMessage.LoadCID(NodeID, AliasID, 3);
+          SendMessageFunc(Self, WorkerMessage);
+          LoginTimoutCounter := 0;
+        end else
+        begin
+          if LoginTimoutCounter > 7 then
+          begin
+            FPermitted := True;
+            WorkerMessage.LoadRID(NodeID, AliasID);
+            SendMessageFunc(Self, WorkerMessage);
+            WorkerMessage.LoadAMD(NodeID, AliasID);
+            SendMessageFunc(Self, WorkerMessage);
+            (NodeManager as INodeManagerCallbacks).DoAliasIDChanged(Self);
+            LccLogIn(NodeID);
+          end;
+        end
+      end else  // Is Permitted
+      begin
+        DatagramResendQueue.TickTimeout;
+        NotifyAndUpdateMappingChanges;
+      end;
+    end
   end else  // Is not GridConnect
   begin
     DatagramResendQueue.TickTimeout;
@@ -1708,6 +1725,12 @@ begin
     WorkerMessage.LoadProducerIdentified(NodeID, FAliasID, Temp, EventObj.State);
     SendMessageFunc(Self, WorkerMessage);
   end;
+end;
+
+procedure TLccNode.SendSNIPRequest(TargetNodeID: TNodeID; TargetAlias: Word);
+begin
+  WorkerMessage.LoadSimpleNodeIdentInfoRequest(NodeID, AliasID, TargetNodeID, TargetAlias);
+  SendMessageFunc(Self, WorkerMessage);
 end;
 
 

@@ -24,7 +24,8 @@ uses
   lcc_node_controller,
   lcc_common_classes,
   lcc_node,
-  lcc_defines;
+  lcc_defines,
+  lcc_utilities;
 
 const
   MAX_LED_SEGMENTS = 100;
@@ -460,13 +461,32 @@ begin
 end;
 
 procedure TFormTrainController.OnSNIPChange(TractionObject: TLccTractionObject);
+var
+  TreeNode: TTreeNode;
 begin
-  UpdateRoster
+  //UpdateRoster
+  TreeViewRoster.Items.BeginUpdate;
+  try
+    TreeNode := TreeViewRoster.Items.FindNodeWithData(TractionObject);
+    if Assigned(TreeNode) then
+      TreeNode.Text := TractionObject.DisplayName;
+  finally
+    TreeViewRoster.Items.EndUpdate;
+  end;
 end;
 
 procedure TFormTrainController.OnTrainSNIPChange(TractionObject: TLccTractionObject);
+var
+  TreeNode: TTreeNode;
 begin
-
+  TreeViewRoster.Items.BeginUpdate;
+  try
+    TreeNode := TreeViewRoster.Items.FindNodeWithData(TractionObject);
+    if Assigned(TreeNode) then
+      TreeNode.Text := TractionObject.DisplayName;
+  finally
+    TreeViewRoster.Items.EndUpdate;
+  end;
 end;
 
 procedure TFormTrainController.OnEmergencyStopChange(TractionObject: TLccTractionObject);
@@ -485,8 +505,32 @@ begin
 end;
 
 procedure TFormTrainController.OnRegisterChange(TractionObject: TLccTractionObject; IsRegistered: Boolean);
+var
+  TreeNode: TTreeNode;
 begin
+  TreeViewRoster.Items.BeginUpdate;
+  try
+    if IsRegistered then
+    begin
+      TreeNode := TreeViewRoster.Items.FindNodeWithData(TractionObject);
+      if not Assigned(TreeNode) then
+      begin
+         TreeNode := TreeViewRoster.Items.AddObject(nil, TractionObject.DisplayName, TractionObject);
+         TreeViewRoster.Items.AddChild(TreeNode, 'NodeID: 0x' + NodeIDToString(TractionObject.NodeID, True));
+         if TractionObject.NodeAlias <> 0 then
+           TreeViewRoster.Items.AddChild(TreeNode, 'Alias: 0x' + IntToHex(TractionObject.NodeAlias, 4));
+         Controller.SendSNIPRequest(TractionObject.NodeID, TractionObject.NodeAlias);
+      end;
 
+    end else
+    begin
+      TreeNode := TreeViewRoster.Items.FindNodeWithData(TractionObject);
+      if Assigned(TreeNode) then
+        TreeViewRoster.Items.Delete(TreeNode);
+    end
+  finally
+    TreeViewRoster.Items.EndUpdate;
+  end;
 end;
 
 procedure TFormTrainController.OnNodeIDChanged(Sender: TObject; ALccNode: TLccNode);

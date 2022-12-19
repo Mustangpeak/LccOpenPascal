@@ -75,6 +75,8 @@ type
 
     constructor Create(AServer: TLccTractionServer);
     destructor Destroy; override;
+
+    function DisplayName: string;
   end;
 
   TOnLccServerRegisterChange = procedure(TractionObject: TLccTractionObject; IsRegistered: Boolean) of object;
@@ -84,6 +86,7 @@ type
 
   TLccTractionServer = class
   private
+    FAutoGatherInformation: Boolean;
     FEnabled: Boolean;
     FGridConnect: Boolean;
     FOnEmergencyStopChange: TOnLccServerChange;
@@ -152,6 +155,7 @@ type
     property List: TObjectList read FList write FList;
     {$ENDIF}
 
+    property AutoGatherInformation: Boolean read FAutoGatherInformation write FAutoGatherInformation;   // When a train is detected send out SNIP/TRAINSNIP, etc messages
     property Enabled: Boolean read FEnabled write FEnabled;
     property Item[Index: Integer]: TLccTractionObject read GetItem; default;
 
@@ -206,6 +210,15 @@ begin
   FreeAndNil(FTrainSNIP);
   FreeAndNil(FController);
   inherited Destroy;
+end;
+
+function TLccTractionObject.DisplayName: string;
+begin
+  Result := TrainSNIP.TrainName;
+  if Result = '' then
+    Result := SNIP.UserName;
+  if Result = '' then
+    Result := NodeIDToString(NodeID, True);
 end;
 
 { TLccTractionServer }
@@ -336,13 +349,16 @@ begin
       DoRegisterChange(LocalTractionObject, True);
     end;
 
+    if AutoGatherInformation then
+    begin
     // Get some information about this train
-    WorkerMessage.LoadSimpleNodeIdentInfoRequest(TLccNode( ALccNode).NodeID, TLccNode( ALccNode).AliasID, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias);
-    TLccNode( ALccNode).SendMessageFunc(Self, WorkerMessage);
-    WorkerMessage.LoadSimpleTrainNodeIdentInfoRequest(TLccNode( ALccNode).NodeID, TLccNode( ALccNode).AliasID, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias);
-    TLccNode( ALccNode).SendMessageFunc(Self, WorkerMessage);
-    WorkerMessage.LoadTractionListenerQueryCount(TLccNode( ALccNode).NodeID, TLccNode( ALccNode).AliasID, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias);
-    TLccNode( ALccNode).SendMessageFunc(Self, WorkerMessage);
+      WorkerMessage.LoadSimpleNodeIdentInfoRequest(TLccNode( ALccNode).NodeID, TLccNode( ALccNode).AliasID, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias);
+      TLccNode( ALccNode).SendMessageFunc(Self, WorkerMessage);
+      WorkerMessage.LoadSimpleTrainNodeIdentInfoRequest(TLccNode( ALccNode).NodeID, TLccNode( ALccNode).AliasID, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias);
+      TLccNode( ALccNode).SendMessageFunc(Self, WorkerMessage);
+      WorkerMessage.LoadTractionListenerQueryCount(TLccNode( ALccNode).NodeID, TLccNode( ALccNode).AliasID, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias);
+      TLccNode( ALccNode).SendMessageFunc(Self, WorkerMessage);
+    end;
   end
 end;
 
