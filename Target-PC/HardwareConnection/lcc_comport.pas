@@ -284,7 +284,9 @@ begin
   Serial := TBlockSerial.Create;                                                // Create the Serial object in the context of the thread
   Serial.LinuxLock:=False;
   Serial.RaiseExcept:=False;
+  {$IFDEF UNIX}
   Serial.NonBlock := True;
+  {$ENDIF}
   Serial.Connect((ConnectionInfo as TLccComPortConnectionInfo).ComPort);
   if Serial.LastError <> 0 then
   begin

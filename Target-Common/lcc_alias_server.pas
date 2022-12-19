@@ -75,7 +75,6 @@ type
     procedure AddMappingRequest(ANodeID: TNodeID; AnAlias: Word);
     function MarkForRemovalByAlias(AnAlias: Word): TLccAliasMapping;
     procedure MappingRequestLiveTimeIncrease(MaxAbandonTimeCount: Word);
-    {$IFDEF LOG_MAPPING}procedure WriteMapping(AComment: string; AMapping: TLccAliasMapping); {$ENDIF}
   end;
 
 var
@@ -256,7 +255,7 @@ begin
       Result.NodeAlias := AnAlias;
       Result.MarkedForInsertion := True;
       MappingList.Add(Result);
-      {$IFDEF LOG_MAPPING}WriteMapping('New Mapping', Result);{$ENDIF}
+      {$IFDEF LOG_MAPPING}DebugLn('Adding Mapping: 0x' + IntToHex(Result.NodeAlias, 4) + '; ' + NodeIDToString(Result.NodeID, True));{$ENDIF}
     end;
   finally
     MappingList.UnlockList;
@@ -276,7 +275,7 @@ begin
     for i := 0 to List.Count - 1 do
     begin
       LocalObj := TLccNodeIdentificationObject( List[i]);
-      if ((ANodeID[0] = LocalObj.NodeID[0]) and (ANodeID[1] = LocalObj.NodeID[1])) or (AnAlias = LocalObj.Alias) then
+      if (not NullNodeID(ANodeID) and ((ANodeID[0] = LocalObj.NodeID[0]) and (ANodeID[1] = LocalObj.NodeID[1]))) or (AnAlias = LocalObj.Alias) then
       begin
         Duplicate := True;
         Break;
@@ -291,7 +290,7 @@ begin
     LocalObj := TLccNodeIdentificationObject.Create;
     LocalObj.AssignID(ANodeID, AnAlias);
     MappingRequestList.Add(LocalObj);
-    {$IFDEF LOG_MAPPING}DebugLn('New Mapping Request Added: LazLogger .' + NodeIDToString(LocalObj.NodeID, True) + '; ' + IntToHex(LocalObj.Alias, 4));{$ENDIF}
+    {$IFDEF LOG_MAPPING}DebugLn('New Mapping Request Added: 0x' + IntToHex(LocalObj.Alias, 4) + '; ' + NodeIDToString(LocalObj.NodeID, True));{$ENDIF}
   end;
 end;
 
@@ -303,7 +302,7 @@ begin
     if Assigned(Result) then
     begin
       Result.MarkedForDeletion := True;
-      {$IFDEF LOG_MAPPING}WriteMapping('Marked for Deletion Mapping', Result);{$ENDIF}
+      {$IFDEF LOG_MAPPING}DebugLn('Marked for Deletion Mapping: 0x' + IntToHex(Result.NodeAlias, 4) + '; ' + NodeIDToString(Result.NodeID, True));{$ENDIF}
     end;
   finally
     MappingList.UnlockList;
@@ -340,16 +339,6 @@ begin
     MappingRequestList.UnlockList;
   end;
 end;
-
-{$IFDEF LOG_MAPPING}
-procedure TLccAliasServer.WriteMapping(AComment: string; AMapping: TLccAliasMapping);
-begin
-  if Assigned(AMapping) then
-    DebugLn(AComment + '- Alias 0x' + IntToHex(AMapping.NodeAlias, 4) + ' ID: ' + NodeIDToString(AMapping.NodeID, True))
-  else
-    DebugLn(AComment + ' Nill Mapping')
-end;
-{$ENDIF}
 
 initialization
   AliasServer := TLccAliasServer.Create;

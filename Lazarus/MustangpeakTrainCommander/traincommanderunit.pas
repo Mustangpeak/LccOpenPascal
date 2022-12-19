@@ -32,6 +32,7 @@ type
   { TFormTrainCommander }
 
   TFormTrainCommander = class(TForm)
+    Button1: TButton;
     ButtonHTTPServer: TButton;
     ButtonWebserverConnect: TButton;
     ButtonManualConnectComPort: TButton;
@@ -44,6 +45,7 @@ type
     CheckBoxLoopBackIP: TCheckBox;
     CheckBoxAutoConnect: TCheckBox;
     ComboBoxComPorts: TComboBox;
+    Edit1: TEdit;
     ImageListMain: TImageList;
     LabelNodeID: TLabel;
     LabelAliasID: TLabel;
@@ -62,6 +64,7 @@ type
     StatusBarMain: TStatusBar;
     ToggleBoxServerForm: TToggleBox;
     TreeViewTrains: TTreeView;
+    procedure Button1Click(Sender: TObject);
     procedure ButtonHTTPServerClick(Sender: TObject);
     procedure ButtonWebserverConnectClick(Sender: TObject);
     procedure ButtonManualConnectComPortClick(Sender: TObject);
@@ -100,6 +103,8 @@ type
     // Callbacks from the Ethernet Server
     procedure OnCommandStationServerConnectionState(Sender: TObject; Info: TLccHardwareConnectionInfo);
     procedure OnCommandStationServerErrorMessage(Sender: TObject; Info: TLccHardwareConnectionInfo);
+    procedure OnCommandStationServerSendMessage(Sender: TObject; LccMessage: TLccMessage);
+    procedure OnCommandStationServerReceiveMessage(Sender: TObject; LccMessage: TLccMessage);
     // Callbacks from the Websocket Server
     procedure OnCommandStationWebsocketConnectionState(Sender: TObject; Info: TLccHardwareConnectionInfo);
     procedure OnCommandStationWebsocketErrorMessage(Sender: TObject; Info: TLccHardwareConnectionInfo);
@@ -114,8 +119,6 @@ type
     procedure OnComPortSendMessage(Sender: TObject; var GridConnectStyleMessage: string);
 
     // Callbacks from the Node Manager
-    procedure OnNodeManagerSendMessage(Sender: TObject; LccMessage: TLccMessage);
-    procedure OnNodeManagerReceiveMessage(Sender: TObject; LccMessage: TLccMessage);
     procedure OnNodeManagerAliasIDChanged(Sender: TObject; LccSourceNode: TLccNode);
     procedure OnNodeManagerIDChanged(Sender: TObject; LccSourceNode: TLccNode);
     procedure OnNodeManagerNodeLogout(Sender: TObject; LccSourceNode: TLccNode);
@@ -161,6 +164,18 @@ begin
  //   DisconnectHTTPServer
  // else
  //   ConnectHTTPServer;
+end;
+
+procedure TFormTrainCommander.Button1Click(Sender: TObject);
+var
+  i: Integer;
+  Train: TLccTrainDccNode;
+begin
+  for i := 0 to StrToInt(Edit1.Text) - 1 do
+  begin
+    Train := CommandStationNode.AddTrain(i + 100, True, ldssDefault);
+    Train.Login(NULL_NODE_ID);
+  end;
 end;
 
 procedure TFormTrainCommander.ButtonWebserverConnectClick(Sender: TObject);
@@ -331,8 +346,8 @@ begin
   FLccServer := TLccEthernetServer.Create(nil, NodeManager);
   LccServer.OnConnectionStateChange := @OnCommandStationServerConnectionState;
   LccServer.OnErrorMessage := @OnCommandStationServerErrorMessage;
-  LccServer.OnLccMessageReceive := @OnNodeManagerReceiveMessage;
-  LccServer.OnLccMessageSend := @OnNodeManagerSendMessage;
+  LccServer.OnLccMessageReceive := @OnCommandStationServerReceiveMessage;
+  LccServer.OnLccMessageSend := @OnCommandStationServerSendMessage;
   LccServer.Hub := True;
 
 //  FLccWebsocketServer := TLccWebsocketServer.Create(nil, NodeManager);
@@ -781,7 +796,7 @@ begin
   end;     }
 end;
 
-procedure TFormTrainCommander.OnNodeManagerReceiveMessage(Sender: TObject; LccMessage: TLccMessage);
+procedure TFormTrainCommander.OnCommandStationServerReceiveMessage(Sender: TObject; LccMessage: TLccMessage);
 begin
   if CheckBoxLogMessages.Checked then
   begin
@@ -798,7 +813,7 @@ begin
   end;
 end;
 
-procedure TFormTrainCommander.OnNodeManagerSendMessage(Sender: TObject; LccMessage: TLccMessage);
+procedure TFormTrainCommander.OnCommandStationServerSendMessage(Sender: TObject; LccMessage: TLccMessage);
 begin
   if CheckBoxLogMessages.Checked then
   begin

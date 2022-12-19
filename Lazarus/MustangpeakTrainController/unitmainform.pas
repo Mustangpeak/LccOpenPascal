@@ -14,7 +14,7 @@ uses
   ComCtrls,
   StdCtrls,
   ExtCtrls,
-  LCLType,
+  LCLType, ActnList,
   strutils,
   lcc_ethernet_client,
   lcc_node_manager,
@@ -38,6 +38,17 @@ type
   { TFormTrainController }
 
   TFormTrainController = class(TForm)
+    ActionRosterRefresh: TAction;
+    ActionRosterCollapseAll: TAction;
+    ActionRosterExpandAll: TAction;
+    ActionLogDetailed: TAction;
+    ActionLogClear: TAction;
+    ActionLogEnable: TAction;
+    ActionListMain: TActionList;
+    ButtonRosterExpand: TButton;
+    ButtonRosterCollapse: TButton;
+    ButtonRosterRefresh: TButton;
+    ButtonLogClear: TButton;
     ButtonThrottleSelectGo: TButton;
     ButtonThrottleStop: TButton;
     ButtonSettingsRestartConnection: TButton;
@@ -53,7 +64,11 @@ type
     LabelSettings2: TLabel;
     LabelSettings3: TLabel;
     LabelSettingsConnectionState: TLabel;
+    MemoLog: TMemo;
     PageControlMain: TPageControl;
+    PanelRoster: TPanel;
+    PanelLogHeader: TPanel;
+    PanelLogHeader1: TPanel;
     PanelThrottleContainer: TPanel;
     PanelThrottleSlider: TPanel;
     PanelThrottleFooter: TPanel;
@@ -66,10 +81,13 @@ type
     PanelSettings6: TPanel;
     PanelSettings1: TPanel;
     ScrollBoxFunctions: TScrollBox;
-    Throttle: TTabSheet;
-    Roster: TTabSheet;
-    Settings: TTabSheet;
+    TabSheetLog: TTabSheet;
+    TabSheetThrottle: TTabSheet;
+    TabSheetRoster: TTabSheet;
+    TabSheetSettings: TTabSheet;
     TimerMain: TTimer;
+    ToggleBoxLogDetailed: TToggleBox;
+    ToggleBoxLogEnable: TToggleBox;
     ToggleBoxThrottleSelectShort: TToggleBox;
     ToggleBoxThrottleForward: TToggleBox;
     ToggleBoxThrottleReverse: TToggleBox;
@@ -94,6 +112,11 @@ type
     ToggleBoxF8: TToggleBox;
     ToggleBoxF9: TToggleBox;
     TrackBarThrottle: TTrackBar;
+    TreeViewRoster: TTreeView;
+    procedure ActionLogClearExecute(Sender: TObject);
+    procedure ActionRosterCollapseAllExecute(Sender: TObject);
+    procedure ActionRosterExpandAllExecute(Sender: TObject);
+    procedure ActionRosterRefreshExecute(Sender: TObject);
     procedure ButtonSettingsRestartConnectionClick(Sender: TObject);
     procedure ButtonThrottleSelectGoClick(Sender: TObject);
     procedure ButtonThrottleStopClick(Sender: TObject);
@@ -120,6 +143,9 @@ type
     property ShownOnce: Boolean read FShownOnce write FShownOnce;
     procedure OnConnectionStateChange(Sender: TObject; ConnectionInfo: TLccHardwareConnectionInfo);
     procedure OnErrorMessage(Sender: TObject; ConnectionInfo: TLccHardwareConnectionInfo);
+
+    procedure OnMessageReceive(Sender: TObject; LccMessage: TLccMessage);
+    procedure OnMessageSend(Sender: TObject; LccMessage: TLccMessage);
 
     procedure OnSNIPChange(TractionObject: TLccTractionObject);
     procedure OnTrainSNIPChange(TractionObject: TLccTractionObject);
@@ -162,6 +188,8 @@ begin
 
   EthernetClient.OnConnectionStateChange := @OnConnectionStateChange;
   EthernetClient.OnErrorMessage := @OnErrorMessage;
+  EthernetClient.OnLccMessageReceive := @OnMessageReceive;
+  EthernetClient.OnLccMessageSend := @OnMessageSend;
 
   NodeManager.OnNodeAliasIDChanged := @OnNodeAliasChanged;
   NodeManager.OnNodeIDChanged := @OnNodeIdChanged;
@@ -189,6 +217,33 @@ begin
   end;
 end;
 
+procedure TFormTrainController.ActionRosterRefreshExecute(Sender: TObject);
+begin
+  if Assigned(Controller) then
+    Controller.FindAllTrains;
+end;
+
+procedure TFormTrainController.ActionRosterExpandAllExecute(Sender: TObject);
+begin
+  TreeViewRoster.FullExpand;
+end;
+
+procedure TFormTrainController.ActionRosterCollapseAllExecute(Sender: TObject);
+begin
+  TreeViewRoster.FullCollapse;
+end;
+
+procedure TFormTrainController.ActionLogClearExecute(Sender: TObject);
+begin
+  MemoLog.Lines.BeginUpdate;
+  try
+    MemoLog.Lines.Clear;
+  finally
+    MemoLog.Lines.EndUpdate;
+  end;
+end;
+
+
 procedure TFormTrainController.ButtonThrottleSelectGoClick(Sender: TObject);
 var
   AddressStr: String;
@@ -202,7 +257,8 @@ begin
   if ValidateExtendedDccAddress(AddressStr, AddressInt, IsLong) then
   begin
     AddressWord := AddressInt;
-    Controller.AssignTrainByDccAddress(AddressWord, IsLong, TLccDccSpeedStep( ComboBoxThrottleSpeedSteps.ItemIndex));
+    if Assigned(Controller) then
+      Controller.AssignTrainByDccAddress(AddressWord, IsLong, TLccDccSpeedStep( ComboBoxThrottleSpeedSteps.ItemIndex));
   end;
 end;
 
@@ -306,7 +362,8 @@ end;
 
 procedure TFormTrainController.ToggleBoxFunctionChange(Sender: TObject);
 begin
-  Controller.AssignedTrain.SetFunction( (Sender as TToggleBox).Tag, Word( (Sender as TToggleBox).Checked));
+  if Assigned(Controller) then
+    Controller.AssignedTrain.SetFunction( (Sender as TToggleBox).Tag, Word( (Sender as TToggleBox).Checked));
 end;
 
 procedure TFormTrainController.ToggleBoxThrottleForwardChange(Sender: TObject);
@@ -321,10 +378,13 @@ end;
 
 procedure TFormTrainController.TrackBarThrottleChange(Sender: TObject);
 begin
-  if ToggleBoxThrottleForward.Checked then
-    Controller.AssignedTrain.SetSpeed(TrackBarThrottle.Position)
-  else
-    Controller.AssignedTrain.SetSpeed(-TrackBarThrottle.Position)
+  if Assigned(Controller) then
+  begin
+    if ToggleBoxThrottleForward.Checked then
+      Controller.AssignedTrain.SetSpeed(TrackBarThrottle.Position)
+    else
+      Controller.AssignedTrain.SetSpeed(-TrackBarThrottle.Position)
+  end
 end;
 
 procedure TFormTrainController.OnConnectionStateChange(Sender: TObject; ConnectionInfo: TLccHardwareConnectionInfo);
@@ -363,6 +423,40 @@ end;
 procedure TFormTrainController.OnErrorMessage(Sender: TObject; ConnectionInfo: TLccHardwareConnectionInfo);
 begin
 
+end;
+
+procedure TFormTrainController.OnMessageReceive(Sender: TObject; LccMessage: TLccMessage);
+begin
+  if ToggleBoxLogEnable.Checked then
+  begin
+    MemoLog.Lines.BeginUpdate;
+    try
+      if ToggleBoxLogDetailed.Checked then
+        MemoLog.Lines.Add('R: ' + MessageToDetailedMessage(LccMessage))
+      else
+        MemoLog.Lines.Add('R: ' + LccMessage.ConvertToGridConnectStr('', False));
+      MemoLog.SelStart := Length(MemoLog.Lines.Text);
+    finally
+      MemoLog.Lines.EndUpdate;
+    end;
+  end;
+end;
+
+procedure TFormTrainController.OnMessageSend(Sender: TObject; LccMessage: TLccMessage);
+begin
+  if ToggleBoxLogEnable.Checked then
+  begin
+    MemoLog.Lines.BeginUpdate;
+    try
+      if ToggleBoxLogDetailed.Checked then
+        MemoLog.Lines.Add('S: ' + MessageToDetailedMessage(LccMessage))
+      else
+        MemoLog.Lines.Add('S: ' + LccMessage.ConvertToGridConnectStr('', False));
+      MemoLog.SelStart := Length(MemoLog.Lines.Text);
+    finally
+      MemoLog.Lines.EndUpdate;
+    end;
+  end;
 end;
 
 procedure TFormTrainController.OnSNIPChange(TractionObject: TLccTractionObject);
@@ -408,12 +502,15 @@ end;
 procedure TFormTrainController.OnControllerAssignChange(Sender: TObject; ATractionServer: TLccTractionServer; ATractionObject: TLccTractionObject; IsAssigned: Boolean);
 begin
   EnableControls(IsAssigned);
-  if IsAssigned then
+  if Assigned(Controller) then
   begin
-    Controller.ListenerDetachFromAssignedTrain;
-    Controller.ListenerAttach(ATractionObject);
-  end else
-    Controller.ListenerDetachFromAssignedTrain;
+    if IsAssigned then
+    begin
+      Controller.ListenerDetachFromAssignedTrain;
+      Controller.ListenerAttach(ATractionObject);
+    end else
+      Controller.ListenerDetachFromAssignedTrain;
+  end;
 end;
 
 procedure TFormTrainController.EnableControls(DoEnable: Boolean);

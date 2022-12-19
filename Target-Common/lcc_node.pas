@@ -276,6 +276,7 @@ type
     property SeedNodeID: TNodeID read FSeedNodeID write FSeedNodeID;
     property LoginTimoutCounter: Integer read FLoginTimoutCounter write FLoginTimoutCounter;
 
+    procedure AfterLogin; virtual;
     procedure CreateNodeID(var Seed: TNodeID);
     function FindCdiElement(TestXML, Element: string; var Offset: Integer; var ALength: Integer): Boolean;
     function LoadManufacturerDataStream(ACdi: string): Boolean;
@@ -799,6 +800,11 @@ procedure TLccNode.HandleTractionQuerySpeedReply(var SourceMessage: TLccMessage)
 
 procedure TLccNode.HandleTractionQueryFunctionReply(var SourceMessage: TLccMessage); begin end;
 
+procedure TLccNode.AfterLogin;
+begin
+  // For overriding in decentants
+end;
+
 function TLccNode.GetAliasIDStr: String;
 begin
   Result := NodeAliasToString(AliasID);
@@ -1003,6 +1009,7 @@ begin
   AutoGenerateEvents;
   SendEvents;
   (NodeManager as INodeManagerCallbacks).DoLogInNode(Self);
+  AfterLogin;
 end;
 
 function TLccNode.ProcessMessageLCC(SourceMessage: TLccMessage): Boolean;
@@ -1374,6 +1381,7 @@ begin
       if LocalMapping.MarkedForDeletion then
       begin
         (NodeManager as INodeManagerCallbacks).DoAliasMappingChange(Self, LocalMapping, False);
+        {$IFDEF LOG_MAPPING}DebugLn('Mapping Deleted: 0x' + IntToHex(LocalMapping.NodeAlias, 4) + '; ' + NodeIDToString(LocalMapping.NodeID, True));{$ENDIF}
         LocalMapping.Free;
         MappingList.Delete(i);
       end;
@@ -1389,16 +1397,17 @@ begin
       LocalNodeIdentificationObject := TLccNodeIdentificationObject( MappingList[i]);
 
       if LocalNodeIdentificationObject.AbandonCount = 0 then
-        AliasServer.MappingRequestList.Add(LocalNodeIdentificationObject.Clone)
+        AliasServer.WorkerMappingRequestList.Add(LocalNodeIdentificationObject.Clone)
       else begin
-        LocalNodeIdentificationObject.AbandonCount := LocalNodeIdentificationObject.AbandonCount + 1;
         if LocalNodeIdentificationObject.AbandonCount > 20 then
         begin
-          {$IFDEF LOG_MAPPING}DebugLn('Mapping Request Deleted: ' + NodeIDToString(LocalNodeIdentificationObject.NodeID, True) + '; ' + IntToHex(LocalNodeIdentificationObject.Alias, 4));{$ENDIF}
-          LocalNodeIdentificationObject.Free;
+          {$IFDEF LOG_MAPPING}DebugLn('Mapping Request Deleted: 0x' + IntToHex(LocalNodeIdentificationObject.Alias, 4) + '; ' + NodeIDToString(LocalNodeIdentificationObject.NodeID, True));{$ENDIF}
+          FreeAndNil(LocalNodeIdentificationObject);
           MappingList[i] := nil;
         end;
       end;
+      if Assigned(LocalNodeIdentificationObject) then
+        LocalNodeIdentificationObject.AbandonCount := LocalNodeIdentificationObject.AbandonCount + 1;
     end;
 
     for i := MappingList.Count - 1 downto 0 do
@@ -1420,11 +1429,13 @@ begin
         // We have the Alias but not the NodeID so use addressed to that Alias (don't need the NodeID for CAN)
         WorkerMessage.LoadVerifyNodeIDAddressed(NodeID, AliasID, LocalNodeIdentificationObject.NodeID, LocalNodeIdentificationObject.Alias, NULL_NODE_ID);
         SendMessageFunc(Self, WorkerMessage);
+        {$IFDEF LOG_MAPPING}DebugLn('Mapping Request Sent: 0x' + IntToHex(LocalNodeIdentificationObject.Alias, 4) + '; ' + NodeIDToString(LocalNodeIdentificationObject.NodeID, True));{$ENDIF}
       end else
       if not NullNodeID(LocalNodeIdentificationObject.NodeID) then
       begin
         WorkerMessage.LoadVerifyNodeID(NodeID, AliasID, LocalNodeIdentificationObject.NodeID);
         SendMessageFunc(Self, WorkerMessage);
+        {$IFDEF LOG_MAPPING}DebugLn('Mapping Request Sent: 0x' + IntToHex(LocalNodeIdentificationObject.Alias, 4) + '; ' + NodeIDToString(LocalNodeIdentificationObject.NodeID, True));{$ENDIF}
       end;
     end;
   finally

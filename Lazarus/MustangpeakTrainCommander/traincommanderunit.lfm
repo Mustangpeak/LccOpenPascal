@@ -166,6 +166,23 @@ object FormTrainCommander: TFormTrainCommander
       OnChange = ToggleBoxServerFormChange
       TabOrder = 11
     end
+    object Button1: TButton
+      Left = 904
+      Height = 25
+      Top = 56
+      Width = 88
+      Caption = 'Create Trains'
+      OnClick = Button1Click
+      TabOrder = 12
+    end
+    object Edit1: TEdit
+      Left = 1000
+      Height = 22
+      Top = 58
+      Width = 80
+      TabOrder = 13
+      Text = '1'
+    end
   end
   object PanelConnections: TPanel
     Left = 0

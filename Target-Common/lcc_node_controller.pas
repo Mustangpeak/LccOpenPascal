@@ -126,6 +126,7 @@ type
     constructor Create(ANodeManager: {$IFDEF DELPHI}TComponent{$ELSE}TObject{$ENDIF}; CdiXML: string; GridConnectLink: Boolean); override;
     destructor Destroy; override;
 
+    procedure AfterLogin; override;
     procedure AssignTrainByDccAddress(DccAddress: Word; IsLongAddress: Boolean; SpeedSteps: TLccDccSpeedStep);
     procedure AssignTrainByDccTrain(SearchString: string; IsLongAddress: Boolean; SpeedSteps: TLccDccSpeedStep);
     procedure AssignTrainByOpenLCB(SearchString: string; TrackProtocolFlags: Word);
@@ -366,6 +367,7 @@ end;
 constructor TLccTrainController.Create(ANodeManager: {$IFDEF DELPHI}TComponent{$ELSE}TObject{$ENDIF}; CdiXML: string; GridConnectLink: Boolean);
 begin
   inherited Create(ANodeManager, CdiXML, GridConnectLink);
+  TractionServer.Enabled := True;
   FAssignedTrain := TAssignedTrainState.Create;
   AssignedTrain.Owner := Self;
 end;
@@ -374,6 +376,12 @@ destructor TLccTrainController.Destroy;
 begin
   FreeAndNil(FAssignedTrain);
   inherited Destroy;
+end;
+
+procedure TLccTrainController.AfterLogin;
+begin
+  inherited AfterLogin;
+ // FindAllTrains;
 end;
 
 procedure TLccTrainController.AssignTrainByDccAddress(DccAddress: Word; IsLongAddress: Boolean; SpeedSteps: TLccDccSpeedStep);
