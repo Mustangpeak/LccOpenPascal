@@ -1,13 +1,9 @@
 unit lcc_train_server;
-
 {$IFDEF FPC}
 {$mode objfpc}{$H+}
 {$ENDIF}
-
 interface
-
 {$I ..\lcc_compilers.inc}
-
 uses
   Classes,
   SysUtils,
@@ -25,15 +21,10 @@ uses
   lcc_node_messages,
   lcc_utilities,
   lcc_math_float16;
-
 type
-
   TLccTrainControllerResult = (tcr_Ok, tcr_ControllerRefused, tcr_TrainRefused);
-
   TLccTractionServer = class; // forward
-
   { TLccTractionControllerObject }
-
   TLccTractionControllerObject = class
   private
     FNodeID: TNodeID;
@@ -42,9 +33,7 @@ type
     property Node: TNodeID read FNodeID write FNodeID;
     property Flags: Byte read FFlags write FFlags;
   end;
-
   { TLccTractionObject }
-
   TLccTractionObject = class
   private
     FController: TLccTractionControllerObject;
@@ -58,9 +47,11 @@ type
     FFunctions: TLccFunctions;
     FSpeedStatusEmergencyStop: Boolean;
     FTrainSNIP: TLccTrainSNIPObject;
+    FCDI: TCDIObject;
     function GetFunctions(Index: Integer): Word;
     procedure SetFunctions(Index: Integer; AValue: Word);
   public
+    property CDI: TCDIObject read FCDI write FCDI;
     property NodeID: TNodeID read FNodeID write FNodeID;
     property NodeAlias: Word read FNodeAlias write FNodeAlias;
     property Functions[Index: Integer]: Word read GetFunctions write SetFunctions;
@@ -72,23 +63,19 @@ type
     property TrainSNIP: TLccTrainSNIPObject read FTrainSNIP;
     property Controller: TLccTractionControllerObject read FController write FController;
     property Server: TLccTractionServer read FServer;
-
     constructor Create(AServer: TLccTractionServer);
     destructor Destroy; override;
-
     function DisplayName: string;
   end;
-
   TOnLccServerRegisterChange = procedure(TractionObject: TLccTractionObject; IsRegistered: Boolean) of object;
   TOnLccServerChange = procedure(TractionObject: TLccTractionObject) of object;
-
   { TLccTractionServer }
-
   TLccTractionServer = class
   private
     FAutoGatherInformation: Boolean;
     FEnabled: Boolean;
     FGridConnect: Boolean;
+    FOnCDIReadReply: TOnLccServerChange;
     FOnEmergencyStopChange: TOnLccServerChange;
     FOnFunctionChange: TOnLccServerChange;
     FOnListenerAttach: TOnLccServerChange;
@@ -108,7 +95,7 @@ type
     function GetItem(Index: Integer): TLccTractionObject;
   protected
     property WorkerMessage: TLccMessage read FWorkerMessage write FWorkerMessage;
-
+    procedure DoCDIReadReply(TractionObject: TLccTractionObject);
     procedure DoRegisterChange(TractionObject: TLccTractionObject; IsRegistered: Boolean);
     procedure DoSNIPChange(TractionObject: TLccTractionObject);
     procedure DoTrainSNIPChange(TractionObject: TLccTractionObject);
@@ -120,6 +107,7 @@ type
     procedure DoListenerManageReserve(TractionObject: TLccTractionObject);
     procedure DoListenerManageRelease(TractionObject: TLccTractionObject);
 
+    procedure HandleCDIReadReply(SourceMessage: TLccMessage);
     procedure HandleProducerIdentifiedAll(ALccNode: TObject; SourceMessage: TLccMessage);
     procedure HandleSimpleNodeInfoReply( SourceMessage: TLccMessage);
     procedure HandleTractionControllerAssign(SourceMessage: TLccMessage);
@@ -140,25 +128,21 @@ type
     procedure HandleTractionQueryFunction(SourceMessage: TLccMessage);
   public
     property GridConnect: Boolean read FGridConnect;
-
     constructor Create(IsGridConnect: Boolean);
     destructor Destroy; override;
     function Add(NewNodeID: TNodeID; NewAlias: Word): TLccTractionObject;
     function Remove(TestNodeID: TNodeID): TLccTractionObject;
     function Find(TestNodeID: TNodeID): TLccTractionObject;
-
     procedure Clear;
-
     {$IFDEF DELPHI}
     property List: TObjectList<TLccTractionObject> read FList write FList;
     {$ELSE}
     property List: TObjectList read FList write FList;
     {$ENDIF}
-
     property AutoGatherInformation: Boolean read FAutoGatherInformation write FAutoGatherInformation;   // When a train is detected send out SNIP/TRAINSNIP, etc messages
     property Enabled: Boolean read FEnabled write FEnabled;
     property Item[Index: Integer]: TLccTractionObject read GetItem; default;
-
+    property OnCDIReadReply: TOnLccServerChange read FOnCDIReadReply write FOnCDIReadReply;
     property OnRegisterChange: TOnLccServerRegisterChange read FOnRegisterChange write FOnRegisterChange;
     property OnSNIPChange: TOnLccServerChange read FOnSNIPChange write FOnSNIPChange;
     property OnTrainSNIPChange: TOnLccServerChange read FOnTrainSNIPChange write FOnTrainSNIPChange;
@@ -170,18 +154,13 @@ type
     property OnListenerManageReserve: TOnLccServerChange read FOnListenerManageReserve write FOnListenerManageReserve;
     property OnListenerManageRelease: TOnLccServerChange read FOnListenerManageRelease write FOnListenerManageRelease;
 
-
     procedure ProcessMessageLCC(ALccNode: TObject; SourceMessage: TLccMessage); virtual;
   end;
-
 implementation
-
 uses
   lcc_alias_server,
   lcc_node;
-
 { TLccTractionObjectTLccTractionObject }
-
 function TLccTractionObject.GetFunctions(Index: Integer): Word;
 begin
   if (Index > -1) and (Index < MAX_FUNCTIONS) then
@@ -189,29 +168,27 @@ begin
   else
     Result := 0
 end;
-
 procedure TLccTractionObject.SetFunctions(Index: Integer; AValue: Word);
 begin
    if (Index > -1) and (Index < MAX_FUNCTIONS) then
      FFunctions[Index] := AValue
 end;
-
 constructor TLccTractionObject.Create(AServer: TLccTractionServer);
 begin
   FServer := AServer;
   FSNIP := TLccSNIPObject.Create;
   FTrainSNIP := TLccTrainSNIPObject.Create;
   FController := TLccTractionControllerObject.Create;
+  FCDI := TCDIObject.Create;
 end;
-
 destructor TLccTractionObject.Destroy;
 begin
   FreeAndNil(FSNIP);
   FreeAndNil(FTrainSNIP);
   FreeAndNil(FController);
+  FreeAndNil(FCDI);
   inherited Destroy;
 end;
-
 function TLccTractionObject.DisplayName: string;
 begin
   Result := TrainSNIP.TrainName;
@@ -220,9 +197,7 @@ begin
   if Result = '' then
     Result := NodeIDToString(NodeID, True);
 end;
-
 { TLccTractionServer }
-
 procedure TLccTractionServer.HandleTractionSimpleTrainInfoReply(SourceMessage: TLccMessage);
 var
   TractionObject: TLccTractionObject;
@@ -256,40 +231,39 @@ begin
     DoTrainSNIPChange(TractionObject);
   end;
 end;
-
 function TLccTractionServer.GetItem(Index: Integer): TLccTractionObject;
 begin
   Result := List[Index] as TLccTractionObject;
 end;
-
 procedure TLccTractionServer.DoRegisterChange(TractionObject: TLccTractionObject; IsRegistered: Boolean);
 begin
   if Assigned(OnRegisterChange) then
     OnRegisterChange(TractionObject, IsRegistered);
 end;
-
 procedure TLccTractionServer.DoSNIPChange(TractionObject: TLccTractionObject);
 begin
   if Assigned(OnSNIPChange) then
     OnSNIPChange(TractionObject);
 end;
-
 procedure TLccTractionServer.DoTrainSNIPChange(TractionObject: TLccTractionObject);
 begin
   if Assigned(OnTrainSNIPChange) then
     OnTrainSNIPChange(TractionObject);
 end;
-
 procedure TLccTractionServer.DoSpeedChange(TractionObject: TLccTractionObject);
 begin
   if Assigned(OnSpeedChange) then
     OnSpeedChange(TractionObject);
 end;
-
 procedure TLccTractionServer.DoFunctionChange(TractionObject: TLccTractionObject);
 begin
   if Assigned(OnFunctionChange) then
     OnFunctionChange(TractionObject);
+end;
+procedure TLccTractionServer.DoCDIReadReply(TractionObject: TLccTractionObject);
+begin
+  if Assigned(OnCDIReadReply) then
+   OnCDIReadReply(TractionObject);
 end;
 
 procedure TLccTractionServer.DoEmergencyStopChange(TractionObject: TLccTractionObject);
@@ -297,29 +271,39 @@ begin
   if Assigned(OnEmergencyStopChange) then
     OnEmergencyStopChange(TractionObject);
 end;
-
 procedure TLccTractionServer.DoListenerAttach(TractionObject: TLccTractionObject);
 begin
   if Assigned(OnListenerAttach) then
     OnListenerAttach(TractionObject);
 end;
-
 procedure TLccTractionServer.DoListenerDetach(TractionObject: TLccTractionObject);
 begin
   if Assigned(OnListenerDetach) then
     OnListenerDetach(TractionObject);
 end;
-
 procedure TLccTractionServer.DoListenerManageReserve(TractionObject: TLccTractionObject);
 begin
   if Assigned(OnListenerManageReserve) then
     OnListenerManageReserve(TractionObject);
 end;
-
 procedure TLccTractionServer.DoListenerManageRelease(TractionObject: TLccTractionObject);
 begin
   if Assigned(OnListenerManageRelease) then
     OnListenerManageRelease(TractionObject);
+end;
+
+procedure TLccTractionServer.HandleCDIReadReply(SourceMessage: TLccMessage);
+var
+  TractionObject: TLccTractionObject;
+begin
+  TractionObject := Find(SourceMessage.SourceID);
+  if Assigned(TractionObject) then
+  begin
+    TractionObject.CDI.CDI.Clear;
+    TractionObject.CDI.CDI.Write(SourceMessage.DataArray, SourceMessage.DataCount);
+    TractionObject.CDI.CDI.Position := 0;
+    DoCDIReadReply(TractionObject)
+  end;
 end;
 
 procedure TLccTractionServer.HandleProducerIdentifiedAll(ALccNode: TObject; SourceMessage: TLccMessage);
@@ -330,7 +314,6 @@ var
 begin
   if SourceMessage.TractionIsSearchEvent then
   begin
-
   end else
   if SourceMessage.TractionIsTrainEvent then
   begin
@@ -341,14 +324,12 @@ begin
       LocalTractionNodeID := LocalAliasMapping.NodeID;
     end else
       LocalTractionNodeID := SourceMessage.SourceID;
-
     LocalTractionObject := Find(LocalTractionNodeID);
     if not Assigned(LocalTractionObject) then
     begin
       LocalTractionObject := Add(SourceMessage.SourceID, SourceMessage.CAN.SourceAlias);
       DoRegisterChange(LocalTractionObject, True);
     end;
-
     if AutoGatherInformation then
     begin
     // Get some information about this train
@@ -361,7 +342,6 @@ begin
     end;
   end
 end;
-
 procedure TLccTractionServer.HandleSimpleNodeInfoReply(SourceMessage: TLccMessage);
 var
   TractionObject: TLccTractionObject;
@@ -398,7 +378,6 @@ begin
     DoSNIPChange(TractionObject);
   end;
 end;
-
 procedure TLccTractionServer.HandleTractionControllerAssign(SourceMessage: TLccMessage);
 var
   TractionObject: TLccTractionObject;
@@ -411,7 +390,6 @@ begin
     TractionObject.Controller.Node := SourceMessage.TractionExtractControllerNodeID;
   end;
 end;
-
 procedure TLccTractionServer.HandleTractionControllerRelease(SourceMessage: TLccMessage);
 var
   TractionObject: TLccTractionObject;
@@ -420,25 +398,20 @@ begin
   TractionObject := Find(SourceMessage.DestID);
   if Assigned(TractionObject) then
   begin
-
   end;
 end;
-
 procedure TLccTractionServer.HandleTractionControllerQuery(SourceMessage: TLccMessage);
 begin
    // Do Nothing: Just a query won't change the database
 end;
-
 procedure TLccTractionServer.HandleTractionControllerChangingNotify(SourceMessage: TLccMessage);
 begin
   // TODO: This is complicated if the train asks for permission...
 end;
-
 procedure TLccTractionServer.HandleTractionControllerChangedNotify(SourceMessage: TLccMessage);
 begin
   // TODO: This is complicated if the train asks for permission...
 end;
-
 procedure TLccTractionServer.HandleTractionEStop(SourceMessage: TLccMessage);
 var
   TractionObject: TLccTractionObject;
@@ -453,7 +426,6 @@ begin
     DoEmergencyStopChange(TractionObject);
   end;
 end;
-
 procedure TLccTractionServer.HandleTractionListenerAttach(SourceMessage: TLccMessage);
 var
   TractionObject: TLccTractionObject;
@@ -465,7 +437,6 @@ begin
     DoListenerAttach(TractionObject);
   end;
 end;
-
 procedure TLccTractionServer.HandleTractionListenerDetach(SourceMessage: TLccMessage);
 var
   TractionObject: TLccTractionObject;
@@ -477,12 +448,10 @@ begin
     DoListenerDetach(TractionObject);
   end;
 end;
-
 procedure TLccTractionServer.HandleTractionListenerQuery(SourceMessage: TLccMessage);
 begin
   // Do Nothing: Just a query won't change the database
 end;
-
 procedure TLccTractionServer.HandleTractionManageReserve(SourceMessage: TLccMessage);
 var
   TractionObject: TLccTractionObject;
@@ -494,7 +463,6 @@ begin
     DoListenerManageReserve(TractionObject);
   end;
 end;
-
 procedure TLccTractionServer.HandleTractionManageRelease(SourceMessage: TLccMessage);
 var
   TractionObject: TLccTractionObject;
@@ -506,7 +474,6 @@ begin
     DoListenerManageRelease(TractionObject);
   end;
 end;
-
 procedure TLccTractionServer.HandleTractionSetSpeed(SourceMessage: TLccMessage);
 var
   TractionObject: TLccTractionObject;
@@ -521,7 +488,6 @@ begin
     DoSpeedChange(TractionObject);
   end;
 end;
-
 procedure TLccTractionServer.HandleTractionSetFunction(SourceMessage: TLccMessage);
 var
   TractionObject: TLccTractionObject;
@@ -533,17 +499,14 @@ begin
     DoFunctionChange(TractionObject);
   end;
 end;
-
 procedure TLccTractionServer.HandleTractionQuerySpeed(SourceMessage: TLccMessage);
 begin
   // Do Nothing: Just a query won't change the database
 end;
-
 procedure TLccTractionServer.HandleTractionQueryFunction(SourceMessage: TLccMessage);
 begin
   // Do Nothing: Just a query won't change the database
 end;
-
 constructor TLccTractionServer.Create(IsGridConnect: Boolean);
 begin
   {$IFDEF DELPHI}
@@ -554,14 +517,12 @@ begin
   FWorkerMessage := TLccMessage.Create;
   FGridConnect := True;
 end;
-
 destructor TLccTractionServer.Destroy;
 begin
   FreeAndNil(FList);
   FreeAndNil(FWorkerMessage);
   inherited Destroy;
 end;
-
 function TLccTractionServer.Add(NewNodeID: TNodeID; NewAlias: Word): TLccTractionObject;
 begin
   Result := TLccTractionObject.Create(Self);
@@ -569,7 +530,6 @@ begin
   Result.NodeAlias := NewAlias;
   Result.NodeID := NewNodeID;
 end;
-
 function TLccTractionServer.Remove(TestNodeID: TNodeID): TLccTractionObject;
 var
   TractionObject: TLccTractionObject;
@@ -582,7 +542,6 @@ begin
     Result := TractionObject;
   end;
 end;
-
 function TLccTractionServer.Find(TestNodeID: TNodeID): TLccTractionObject;
 var
   i: Integer;
@@ -599,7 +558,6 @@ begin
     end;
   end;
 end;
-
 procedure TLccTractionServer.Clear;
 var
   i: Integer;
@@ -610,13 +568,15 @@ begin
   finally
     List.Clear;
   end;
-
 end;
 
 procedure TLccTractionServer.ProcessMessageLCC(ALccNode: TObject; SourceMessage: TLccMessage);
+var
+  AddressSpace: Byte;
 begin
   if Enabled then
   begin
+    AddressSpace := 0;
     case SourceMessage.MTI of
       MTI_TRACTION_SIMPLE_TRAIN_INFO_REPLY : HandleTractionSimpleTrainInfoReply(SourceMessage);
       MTI_SIMPLE_NODE_INFO_REPLY           : HandleSimpleNodeInfoReply(SourceMessage);
@@ -657,9 +617,52 @@ begin
               end;
           end;
         end;
+      MTI_DATAGRAM :
+        begin
+          case SourceMessage.DataArray[0] of
+            DATAGRAM_PROTOCOL_CONFIGURATION :
+            begin
+                              // Figure out where the Memory space to work on is located, encoded in the header or in the first databyte slot.
+               case SourceMessage.DataArray[1] and $03 of
+                 MCP_NONE          : AddressSpace := SourceMessage.DataArray[6];
+                 MCP_CDI           : AddressSpace := MSI_CDI;
+                 MCP_ALL           : AddressSpace := MSI_ALL;
+                 MCP_CONFIGURATION : AddressSpace := MSI_CONFIG;
+               end;
+
+               case SourceMessage.DataArray[1] and $F0 of
+             {    MCP_WRITE_REPLY :
+                   begin
+                     case AddressSpace of
+                       MSI_CDI                      : HandleCDI_MemorySpaceWrite(SourceMessage);
+                       MSI_ALL                      : HandleAll_MemorySpaceWrite(SourceMessage);
+                       MSI_CONFIG                   : HandleConfiguration_MemorySpaceWrite(SourceMessage); // Configuration Memory through the CDI protocol
+                       MSI_ACDI_MFG                 : HandleACDI_Manufacturer_MemorySpaceWrite(SourceMessage);
+                       MSI_ACDI_USER                : HandleACDI_UserMemorySpaceWrite(SourceMessage);            // Configuration Memory through the Abbreviated CDI protocol
+                       MSI_TRACTION_FDI             : HandleTractionFDI_MemorySpaceWrite(SourceMessage);
+                       MSI_TRACTION_FUNCTION_CONFIG : HandleTractionFDI_ConfigurationMemorySpaceWrite(SourceMessage); // Traction Function Configuration Memory
+                     end;
+                   end; }
+                 MCP_READ_REPLY :
+                   begin
+                     case AddressSpace of
+                       MSI_CDI                      : HandleCDIReadReply(SourceMessage);
+                 //      MSI_ALL                      : HandleAll_MemorySpaceRead(SourceMessage);
+                 //      MSI_CONFIG                   : HandleConfiguration_MemorySpaceRead(SourceMessage);
+                 //      MSI_ACDI_MFG                 : HandleACDI_Manufacturer_MemorySpaceRead(SourceMessage);
+                 //      MSI_ACDI_USER                : HandleACDI_User_MemorySpaceRead(SourceMessage);
+                 //      MSI_TRACTION_FDI             : HandleTractionFDI_MemorySpaceRead(SourceMessage);
+                 //      MSI_TRACTION_FUNCTION_CONFIG : HandleTractionFDI_ConfigurationMemorySpaceRead(SourceMessage);
+                     end;
+                   end;
+               end;
+
+
+            end;
+          end;
+        end;
+      end;
     end;
   end;
-end;
 
 end.
-

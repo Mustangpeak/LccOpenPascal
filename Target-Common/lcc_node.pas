@@ -329,12 +329,15 @@ type
     function ProcessMessage(SourceMessage: TLccMessage): Boolean; // Do not override this override the next 2
     function ProcessMessageLCC(SourceMessage: TLccMessage): Boolean; virtual;
     function ProcessMessageGridConnect(SourceMessage: TLccMessage): Boolean; virtual;
+
+    procedure ReadConfigurationDefinitionInfo(TargetNodeID: TNodeID; TargetAlias: Word);
     procedure SendEvents;
     procedure SendConsumedEvents;
     procedure SendConsumerIdentify(Event: TEventID);
     procedure SendProducedEvents;
     procedure SendProducerIdentify(Event: TEventID);
     procedure SendSNIPRequest(TargetNodeID: TNodeID; TargetAlias: Word);
+    procedure SendConfigurationMemoryRead(Address: DWORD);
   end;
 
   TLccNodeClass = class of TLccNode;
@@ -1557,6 +1560,12 @@ begin
   end;
 end;
 
+procedure TLccNode.ReadConfigurationDefinitionInfo(TargetNodeID: TNodeID; TargetAlias: Word);
+begin
+  WorkerMessage.LoadCDIRequest(NodeID, AliasID, TargetNodeID, TargetAlias);
+  SendMessageFunc(Self, WorkerMessage);
+end;
+
 procedure TLccNode.ReleaseAlias(DelayTime_ms: Word);
 begin
   if AliasID <> 0 then
@@ -1647,6 +1656,11 @@ begin
                                         SourceMessage.SourceID, SourceMessage.CAN.SourceAlias,
                                         True, ReplyPending, TimeOutValueN);
   SendMessageFunc(Self, WorkerMessageDatagram);
+end;
+
+procedure TLccNode.SendConfigurationMemoryRead(Address: DWORD);
+begin
+ // WorkerMessage.LoadConfigMemRead(NodeID, AliasID, )
 end;
 
 procedure TLccNode.SendConsumedEvents;

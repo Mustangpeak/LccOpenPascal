@@ -69,6 +69,18 @@ type
     property Valid: Boolean read FValid write FValid;
   end;
 
+  TCDIObject = class
+  private
+    FCDI: TMemoryStream;
+    FValid: Boolean;
+  public
+    property CDI: TMemoryStream read FCDI write FCDI;
+    property Valid: Boolean read FValid write FValid;
+
+    constructor Create;
+    destructor Destroy; override;
+  end;
+
   // Base struture that contains the two types of LCC node identifiers, the long
   // globally unique ID or NodeID and the local Alias (if running CAN/Gridconnect)
 
@@ -859,18 +871,17 @@ var
   i: Integer;
   TempValid: Boolean;
 begin
-  Result := False;
+  TempValid := True;
   for i := 0 to Count - 1 do
   begin
-    TempValid := True;
     if NodeIdentification[i].Active then
       if not NodeIdentification[i].Valid then
       begin
         TempValid := False;
         Break
       end;
-    Result := TempValid;
   end;
+  Result := TempValid;
 end;
 
 function TLccNodeIdentificationObjectList.IsDuplicate(DestinationObject: TLccNodeIdentificationObject): Boolean;
@@ -1641,6 +1652,8 @@ var
 begin
   ANodeID := NULL_NODE_ID;
 
+  Result := NodeIdentifications;
+
   if IgnoreCANMessages and IsCAN then
     Exit;
 
@@ -1695,7 +1708,6 @@ begin
         end;
     end;
   end;
-  Result := NodeIdentifications;
 end;
 
 function TLccMessage.ExtractNodeIdentificationToCallback(NodeIdentificationCallback: TNodeIdentificationCallback; UnMappedOnly, IgnoreCANMessages: Boolean): Boolean;
@@ -3465,6 +3477,20 @@ begin
     end;
     MTI := MTI_DATAGRAM;
   end;
+end;
+
+{ TCDIObject }
+
+constructor TCDIObject.Create;
+begin
+  inherited;
+  FCDI := TMemoryStream.Create;
+end;
+
+destructor TCDIObject.Destroy;
+begin
+  FreeAndNil(FCDI);
+  inherited;
 end;
 
 initialization

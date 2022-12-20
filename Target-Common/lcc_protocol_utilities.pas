@@ -50,6 +50,7 @@ type
     function ReadAsString(Address: DWord; AStream: TStream): String;
     procedure DatagramReadRequest(LccMessage: TLccMessage; OutMessage: TLccMessage; AStream: TStream); virtual;
     procedure DatagramWriteRequest(LccMessage: TLccMessage; AStream: TStream); virtual;
+    function DatagramReadChunk(AStream: TStream; LccMessage: TLccMessage): Boolean;
   end;
 
   { TProtocolSupportedProtocols }
@@ -351,6 +352,11 @@ begin
   AStream.Position := Address;
   for i := iStart to LccMessage.DataCount - 1 do
     StreamWriteByte(AStream, LccMessage.DataArrayIndexer[i]);
+end;
+
+function TNodeProtocolBase.DatagramReadChunk(AStream: TStream; LccMessage: TLccMessage): Boolean;
+begin
+
 end;
 
 constructor TNodeProtocolBase.Create;
