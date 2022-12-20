@@ -62,6 +62,7 @@ type
     FDatagram: Boolean;
     FDisplay: Boolean;
     FEventExchange: Boolean;
+    FSimpleNode: Boolean;
     FTractionFunctionDefinitionInfo: Boolean;
     FIdentification: Boolean;
     FMemConfig: Boolean;
@@ -100,6 +101,7 @@ type
     property TractionFunctionConfiguration: Boolean read FTractionFunctionConfiguration write FTractionFunctionConfiguration;
     property FirmwareUpgrade: Boolean read FFirmwareUpgrade write FFirmwareUpgrade;
     property FirmwareUpgradeActive: Boolean read FFirmwareUpgradeActive write FFirmwareUpgradeActive;
+    property SimpleNode: Boolean read FSimpleNode write FSimpleNode;
 
     procedure LoadFromLccMessage(SourceLccMessage: TLccMessage);
   end;
@@ -449,7 +451,7 @@ procedure TProtocolSupportedProtocols.DecodeFlags;
 begin
   if Length(Flags) > 0 then
   begin
-    // SimpleNode Flags[5]
+    FSimpleNode := Flags[5] and PIP_SIMPLENODE <> 0;
     FDatagram := Flags[5] and PIP_DATAGRAM <> 0;
     FStream := Flags[5] and PIP_STREAM <> 0;
     FMemConfig := Flags[5] and PIP_MEMORY_CONFIG <> 0;
@@ -483,7 +485,7 @@ begin
   for i := 0 to MAX_SUPPORTEDPROTOCOL_LEN - 1 do
     Result[i] := 0;
 
-// if SimpleNode then Result[5] := ....
+  if SimpleNode then Result[5] := Result[5] or PIP_SIMPLENODE;
   if Datagram then Result[5] := Result[5] or PIP_DATAGRAM;
   if Stream then Result[5] := Result[5] or PIP_STREAM;
   if MemConfig then Result[5] := Result[5] or PIP_MEMORY_CONFIG;
@@ -766,7 +768,7 @@ var
   OpsMask: Word;
 begin
   LccMessage.DataArrayIndexer[0] := $20;
-  LccMessage.DataArrayIndexer[1] := MCP_OP_GET_CONFIG_REPLY;
+  LccMessage.DataArrayIndexer[1] := MCP_OP_GET_CONFIG_OPTIONS_REPLY;
   LccMessage.DataArrayIndexer[5] := FHighSpace;
   LccMessage.DataArrayIndexer[6] := FLowSpace;
   LccMessage.DataArrayIndexer[4] := 0;

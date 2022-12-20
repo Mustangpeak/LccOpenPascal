@@ -74,6 +74,7 @@ const
 
 type
   TLccNode = class;
+  TMemorySpaceReadEngine = class;
 
     { TDatagramQueue }
 
@@ -103,6 +104,55 @@ type
     procedure Resend(LccMessage: TLccMessage);
     procedure Remove(LccMessage: TLccMessage);
     procedure TickTimeout;
+  end;
+
+  TMemorySpaceEngineState = (msesIdle, msesRunning, msesComplete, msesError, msesErrorValidateAddressSpace, msesErrorProtocolsUnsupported);
+  TOnMemorySpaceReadCallback = procedure(MemorySpaceReadEnging: TMemorySpaceReadEngine) of object;
+
+  { TMemorySpaceReadEngine }
+
+  TMemorySpaceReadEngine = class
+  private
+    FAddressHi: DWord;
+    FAddressLo: DWord;
+    FBytesToRead: Integer;
+    FCallback: TOnMemorySpaceReadCallback;
+    FCurrentAddress: DWord;
+    FMemorySpace: Byte;
+    FMemoryStream: TMemoryStream;
+    FOwnerNode: TLccNode;
+    FPIPHelper: TProtocolSupportedProtocols;
+    FState: TMemorySpaceEngineState;
+    FTargetAlias: Word;
+    FTargetNode: TNodeID;
+    FWorkerMessage: TLccMessage;
+  protected
+    property AddressLo: DWord read FAddressLo write FAddressLo;
+    property AddressHi: DWord read FAddressHi write FAddressHi;
+    property CallBack: TOnMemorySpaceReadCallback read FCallback write FCallback;
+    property CurrentAddress: DWord read FCurrentAddress write FCurrentAddress;
+    property WorkerMessage: TLccMessage read FWorkerMessage write FWorkerMessage;
+
+    procedure HandleRead(SourceMessage: TLccMessage; DataStartIndex: Integer; IsString: Boolean);
+    procedure ReadNextChunk;
+    procedure ValidatePIPAndProceed;
+    procedure ValidateAddressSpaceAndProceed(SourceMessage: TLccMessage);
+    function CalculateNextReadCount: Integer;
+  public
+    property MemoryStream: TMemoryStream read FMemoryStream;
+    property BytesToRead: Integer read FBytesToRead write FBytesToRead;          // -1 means read to the end
+    property MemorySpace: Byte read FMemorySpace write FMemorySpace;            // MSI_xxxx constants
+    property State: TMemorySpaceEngineState read FState;
+    property TargetNode: TNodeID read FTargetNode;
+    property TargetAlias: Word read FTargetAlias;
+    property OwnerNode: TLccNode read FOwnerNode;
+    property PIPHelper: TProtocolSupportedProtocols read FPIPHelper;
+
+    constructor Create(AnOwner: TLccNode; ATargetNodeID: TNodeID; ATargetAliasID: Word; ACallback: TOnMemorySpaceReadCallback);
+    destructor Destroy; override;
+    procedure Start;
+    procedure Reset;
+    procedure Process(SourceMessage: TLccMessage);
   end;
 
   { TLccNode }
@@ -330,14 +380,12 @@ type
     function ProcessMessageLCC(SourceMessage: TLccMessage): Boolean; virtual;
     function ProcessMessageGridConnect(SourceMessage: TLccMessage): Boolean; virtual;
 
-    procedure ReadConfigurationDefinitionInfo(TargetNodeID: TNodeID; TargetAlias: Word);
     procedure SendEvents;
     procedure SendConsumedEvents;
     procedure SendConsumerIdentify(Event: TEventID);
     procedure SendProducedEvents;
     procedure SendProducerIdentify(Event: TEventID);
     procedure SendSNIPRequest(TargetNodeID: TNodeID; TargetAlias: Word);
-    procedure SendConfigurationMemoryRead(Address: DWORD);
   end;
 
   TLccNodeClass = class of TLccNode;
@@ -350,6 +398,218 @@ implementation
 
 uses
   lcc_node_manager;
+
+{ TMemorySpaceReadEngine }
+
+procedure TMemorySpaceReadEngine.HandleRead(SourceMessage: TLccMessage; DataStartIndex: Integer; IsString: Boolean);
+var
+  i: Integer;
+  NullFound: Boolean;
+begin
+  if State = msesRunning then
+  begin
+    NullFound := False;
+    for i := DataStartIndex to SourceMessage.DataCount - 1 do
+    begin
+      MemoryStream.Write(SourceMessage.DataArray[i], 1);
+      if IsString then
+      begin
+        if Char( SourceMessage.DataArray[i]) = #0 then
+          NullFound := True;
+      end;
+    end;
+
+    if not NullFound and (CurrentAddress < (AddressHi-AddressLo)) then
+      ReadNextChunk
+    else begin
+      FState := msesComplete;
+      Callback(Self);
+    end;
+  end
+end;
+
+procedure TMemorySpaceReadEngine.ReadNextChunk;
+var
+  ReadCount: Integer;
+begin
+  if State = msesRunning then
+  begin
+    ReadCount := CalculateNextReadCount;
+    WorkerMessage.LoadConfigMemRead(OwnerNode.NodeID, OwnerNode.AliasID, TargetNode, TargetAlias, MemorySpace, CurrentAddress, ReadCount);
+    OwnerNode.SendMessageFunc(OwnerNode, WorkerMessage);
+    Inc(FCurrentAddress, ReadCount)
+  end;
+end;
+
+procedure TMemorySpaceReadEngine.ValidatePIPAndProceed;
+var
+  ProtocolsSupported: Boolean;
+begin
+  ProtocolsSupported := False;
+
+  PIPHelper.DecodeFlags;
+  if PIPHelper.Datagram and PIPHelper.MemConfig then
+  begin
+    case MemorySpace of
+      MSI_CDI                      : ProtocolsSupported := PIPHelper.ConfigurationDefinitionInfo;
+      MSI_ALL                      : begin end; // We don't support this
+      MSI_CONFIG                   : ProtocolsSupported := PIPHelper.MemConfig;
+      MSI_ACDI_MFG                 : ProtocolsSupported := PIPHelper.AbbreviatedConfigurationDefinitionInfo;
+      MSI_ACDI_USER                : ProtocolsSupported := PIPHelper.AbbreviatedConfigurationDefinitionInfo;
+      MSI_TRACTION_FDI             : ProtocolsSupported := PIPHelper.TractionFunctionDefinitionInfo;
+      MSI_TRACTION_FUNCTION_CONFIG : ProtocolsSupported := PIPHelper.TractionFunctionConfiguration;
+    end;
+  end;
+  if ProtocolsSupported then
+  begin
+    WorkerMessage.LoadConfigMemAddressSpaceInfo(OwnerNode.NodeID, OwnerNode.AliasID, TargetNode, TargetAlias, MemorySpace);
+    OwnerNode.SendMessageFunc(OwnerNode, WorkerMessage);
+  end else
+  begin
+    FState := msesErrorProtocolsUnsupported;
+    Callback(Self)
+  end;
+end;
+
+procedure TMemorySpaceReadEngine.ValidateAddressSpaceAndProceed(SourceMessage: TLccMessage);
+begin
+  if Assigned(SourceMessage) then
+  begin
+    if SourceMessage.DataArray[2] = MemorySpace then
+    begin
+      AddressHi := SourceMessage.ExtractDataBytesAsInt(3, 6);
+      if SourceMessage.DataArray[7] and $01 <> 0 then
+        AddressLo := SourceMessage.ExtractDataBytesAsInt(8, 11)
+      else
+        AddressLo := 0;
+
+      MemoryStream.Clear;
+      CurrentAddress := AddressLo;
+      ReadNextChunk;
+    end else
+    begin
+      FState := msesErrorValidateAddressSpace;
+      Callback(Self)
+    end;
+  end else
+  begin
+    FState := msesErrorValidateAddressSpace;
+    Callback(Self)
+  end;
+end;
+
+function TMemorySpaceReadEngine.CalculateNextReadCount: Integer;
+begin
+  if CurrentAddress + 64 > AddressHi then
+    Result := AddressHi - CurrentAddress
+  else
+    Result := 64
+end;
+
+constructor TMemorySpaceReadEngine.Create(AnOwner: TLccNode; ATargetNodeID: TNodeID; ATargetAliasID: Word; ACallback: TOnMemorySpaceReadCallback);
+begin
+  inherited Create;
+  FOwnerNode := AnOwner;
+  FTargetNode := ATargetNodeID;
+  FTargetAlias := ATargetAliasID;
+  FCallback := ACallback;
+  FWorkerMessage := TLccMessage.Create;
+  FPIPHelper := TProtocolSupportedProtocols.Create;
+end;
+
+destructor TMemorySpaceReadEngine.Destroy;
+begin
+  FreeAndNil(FWorkerMessage);
+  FreeAndNil(FPIPHelper);
+  inherited Destroy;
+end;
+
+procedure TMemorySpaceReadEngine.Start;
+begin
+  Assert(NullNodeID(FTargetNode), 'TMemorySpaceReadEngine, NodeID not set');
+
+  if PIPHelper.Valid then
+  begin
+    // Get what protocols are supported
+    WorkerMessage.LoadProtocolIdentifyInquiry(OwnerNode.NodeID, OwnerNode.AliasID, TargetNode, TargetAlias);
+    OwnerNode.SendMessageFunc(OwnerNode, WorkerMessage);
+  end else
+    ValidatePIPAndProceed;
+
+  FState := msesRunning;
+end;
+
+procedure TMemorySpaceReadEngine.Reset;
+begin
+  FState := msesIdle;
+  MemoryStream.Clear;
+end;
+
+procedure TMemorySpaceReadEngine.Process(SourceMessage: TLccMessage);
+var
+  AddressSpace: Byte;
+begin
+  if EqualNodeID(TargetNode, SourceMessage.SourceID, False) then
+  begin
+    AddressSpace := 0;
+    case SourceMessage.MTI of
+      MTI_PROTOCOL_SUPPORT_REPLY :
+        begin
+          PIPHelper.LoadFromLccMessage(SourceMessage);
+          ValidatePIPAndProceed;
+        end;
+      MTI_DATAGRAM :
+        begin
+          case SourceMessage.DataArray[0] of
+            DATAGRAM_PROTOCOL_CONFIGURATION :
+              begin
+                 // Figure out where the Memory space to work on is located, encoded in the header or in the first databyte slot.
+                 case SourceMessage.DataArray[1] and $03 of
+                   MCP_NONE          : AddressSpace := SourceMessage.DataArray[6];
+                   MCP_CDI           : AddressSpace := MSI_CDI;
+                   MCP_ALL           : AddressSpace := MSI_ALL;
+                   MCP_CONFIGURATION : AddressSpace := MSI_CONFIG;
+                 end;
+
+                 if AddressSpace = MemorySpace then
+                 begin
+                   case SourceMessage.DataArray[1] of
+                     MCP_READ_REPLY :
+                       begin
+                         case SourceMessage.DataArray[6] of
+                           MSI_ALL                      : begin end;
+                           MSI_CDI,
+                           MSI_ACDI_MFG,
+                           MSI_ACDI_USER,
+                           MSI_TRACTION_FDI             : HandleRead(SourceMessage, 7, True);
+                           MSI_CONFIG,
+                           MSI_TRACTION_FUNCTION_CONFIG : HandleRead(SourceMessage, 7, False);
+                         end;
+                       end;
+                     MCP_READ_REPLY_CONFIGURATION       : HandleRead(SourceMessage, 6, False);
+                     MCP_READ_REPLY_ALL                 : begin end;
+                     MCP_READ_REPLY_CDI                 : HandleRead(SourceMessage, 6, True);
+                     MCP_READ_REPLY_FAILURE,
+                     MCP_READ_REPLY_FAILURE_CONFIG,
+                     MCP_READ_REPLY_FAILURE_ALL,
+                     MCP_READ_REPLY_FAILURE_CDI                  :
+                         begin
+                           FState := msesError;
+                           Callback(Self);
+                         end;
+                     MCP_OP_GET_CONFIG_OPTIONS_REPLY             : begin end;
+                     MCP_OP_GET_ADD_SPACE_INFO_PRESENT_REPLY     : ValidateAddressSpaceAndProceed(SourceMessage);
+                     MCP_OP_GET_ADD_SPACE_INFO_NOT_PRESENT_REPLY : ValidateAddressSpaceAndProceed(nil);
+                     MCP_OP_LOCK_REPLY                           : begin end;
+                     MCP_OP_GET_UNIQUEID_REPLY                   : begin end;
+                   end;
+                 end;
+              end;
+        end;
+      end;
+    end;
+  end;
+end;
 
 
 { TDatagramQueue }
@@ -588,8 +848,7 @@ begin
   (NodeManager as INodeManagerCallbacks).DoConsumerIdentified(Self, SourceMessage);
 end;
 
-procedure TLccNode.HandleConfiguration_MemorySpaceWrite(
-  var SourceMessage: TLccMessage);
+procedure TLccNode.HandleConfiguration_MemorySpaceWrite(var SourceMessage: TLccMessage);
 begin
   SendDatagramAckReply(SourceMessage, False, 0);     // We will be sending a Write Reply
   ProtocolMemoryConfiguration.DatagramWriteRequest(SourceMessage, StreamConfig);
@@ -611,8 +870,7 @@ end;
 procedure TLccNode.HandleACDI_UserMemorySpaceWrite(var SourceMessage: TLccMessage);
 begin
   SendDatagramAckReply(SourceMessage, False, 0);     // We will be sending a Write Reply
-  ProtocolACDIUser.DatagramWriteRequest(
-  SourceMessage, StreamConfig);
+  ProtocolACDIUser.DatagramWriteRequest(SourceMessage, StreamConfig);
 end;
 
 procedure TLccNode.HandleStreamRead;
@@ -682,9 +940,7 @@ end;
 
 procedure TLccNode.HandleProtocolSupportInquiry(var SourceMessage: TLccMessage);
 begin
-  WorkerMessage.LoadProtocolIdentifyReply(NodeID, FAliasID,
-  SourceMessage.SourceID, SourceMessage.CAN.SourceAlias,
-  ProtocolSupportedProtocols.EncodeFlags);
+  WorkerMessage.LoadProtocolIdentifyReply(NodeID, FAliasID, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias, ProtocolSupportedProtocols.EncodeFlags);
   SendMessageFunc(Self, WorkerMessage);
 end;
 
@@ -1024,7 +1280,7 @@ end;
 function TLccNode.ProcessMessageLCC(SourceMessage: TLccMessage): Boolean;
 
 var
-  AddressSpace, OperationType: Byte;
+  AddressSpace: Byte;
 begin
 
   // By the time a messages drops into this method it is a fully qualified OpenLCB
@@ -1232,9 +1488,8 @@ begin
                  MCP_READ_STREAM  : HandleStreamRead;
                  MCP_OPERATION :
                    begin
-                     OperationType := SourceMessage.DataArray[1];
-                     case OperationType of
-                       MCP_OP_GET_CONFIG         : HandleOperationGetConfiguration(SourceMessage);
+                     case SourceMessage.DataArray[1] of
+                       MCP_OP_GET_CONFIG_OPTIONS : HandleOperationGetConfiguration(SourceMessage);
                        MCP_OP_GET_ADD_SPACE_INFO : HandleOperationGetAddressSpaceInfo(SourceMessage);
                        MCP_OP_LOCK               : HandleOperationLock(SourceMessage);
                        MCP_OP_GET_UNIQUEID       : HandleOperationGetUniqueID(SourceMessage);
@@ -1560,12 +1815,6 @@ begin
   end;
 end;
 
-procedure TLccNode.ReadConfigurationDefinitionInfo(TargetNodeID: TNodeID; TargetAlias: Word);
-begin
-  WorkerMessage.LoadCDIRequest(NodeID, AliasID, TargetNodeID, TargetAlias);
-  SendMessageFunc(Self, WorkerMessage);
-end;
-
 procedure TLccNode.ReleaseAlias(DelayTime_ms: Word);
 begin
   if AliasID <> 0 then
@@ -1656,11 +1905,6 @@ begin
                                         SourceMessage.SourceID, SourceMessage.CAN.SourceAlias,
                                         True, ReplyPending, TimeOutValueN);
   SendMessageFunc(Self, WorkerMessageDatagram);
-end;
-
-procedure TLccNode.SendConfigurationMemoryRead(Address: DWORD);
-begin
- // WorkerMessage.LoadConfigMemRead(NodeID, AliasID, )
 end;
 
 procedure TLccNode.SendConsumedEvents;

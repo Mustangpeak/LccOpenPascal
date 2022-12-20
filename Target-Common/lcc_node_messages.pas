@@ -339,7 +339,7 @@ class  function TractionSearchEncodeNMRA(ForceLongAddress: Boolean; SpeedStep: T
   procedure LoadFunctionConfigurationRead(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; FunctionAddress: DWord; Count: Integer);
   procedure LoadFunctionConfigurationWrite(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; FunctionAddress: DWord; Count: Integer; Functions: TFunctionStatesArray);
   // CDI
-  procedure LoadCDIRequest(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word);
+  procedure LoadCDIRequest(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; Address: DWORD);
   // Datagram
   procedure LoadDatagram(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word);
   procedure LoadDatagramAck(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; Ok: Boolean; ReplyPending: Boolean; TimeOutValueN: Byte);
@@ -3062,7 +3062,9 @@ begin
   MTI := MTI_DATAGRAM;
 end;
 
-procedure TLccMessage.LoadCDIRequest(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word);
+procedure TLccMessage.LoadCDIRequest(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; Address: DWORD);
+var
+  TempHi, TempLo: Word;
 begin
   // Really should be a Get Address Space Info message here to make sure the start address is 0.....
   ZeroFields;
@@ -3073,10 +3075,12 @@ begin
   DataCount := 8;
   FDataArray[0] := DATAGRAM_PROTOCOL_CONFIGURATION;
   FDataArray[1] := MCP_READ;
-  FDataArray[2] := 0;
-  FDataArray[3] := 0;
-  FDataArray[4] := 0;
-  FDataArray[5] := 0;
+  TempHi := Hi(Address);
+  TempLo := Lo(Address);
+  FDataArray[2] := Hi(TempHi);
+  FDataArray[3] := Lo(TempHi);
+  FDataArray[4] := Hi(TempLo);  ;
+  FDataArray[5] := Lo(TempLo);
   FDataArray[6] := MSI_CDI;
   FDataArray[7] := 64;                     // Read until the end.....
   MTI := MTI_DATAGRAM;
@@ -3140,7 +3144,7 @@ begin
   CAN.SourceAlias := ASourceAlias;
   CAN.DestAlias := ADestAlias;
   FDataArray[0] := DATAGRAM_PROTOCOL_CONFIGURATION;
-  FDataArray[1] := MCP_OP_GET_CONFIG;
+  FDataArray[1] := MCP_OP_GET_CONFIG_OPTIONS;
   FDataCount := 2;
   FMTI := MTI_DATAGRAM;
 end;

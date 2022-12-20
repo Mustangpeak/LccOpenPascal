@@ -286,7 +286,7 @@ const
 
   MASK_SOURCE_ALIAS                  = $00000FFF;                                // Masks out just the Source Alias Address
 
-  // Byte 0
+  // Byte 3
   PIP_SIMPLENODE                     = $80;
   PIP_DATAGRAM                       = $40;
   PIP_STREAM                         = $20;
@@ -306,7 +306,7 @@ const
   PIP_FDI                            = $02;
 // PIP_DCC_COMMAND_STATION            = $01; depreciated
 
-  // Byte 3
+  // Byte 1
   PIP_SIMPLE_TRAIN_NODE_INFO         = $80;
   PIP_FUNCTION_CONFIGURATION         = $40;
   PIP_FIRMWARE_UPGRADE               = $20;
@@ -341,6 +341,7 @@ const
 
   MCP_READ_STREAM                     = $60;
   MCP_OPERATION                       = $80;                                    // MemoryConfigurationProtocol - Operation Mask
+  MCP_OPERATION_REPLY                 = $80;
   MCP_READ_REPLY                      = $50;                                    // MemoryConfigurationProtocol - Read Reply Mask [Does not include the Address Space Mask "or" it with the the Address space masks below]
   MCP_READ_REPLY_CONFIGURATION        = $51;
   MCP_READ_REPLY_ALL                  = $52;
@@ -358,8 +359,8 @@ const
   MCP_CONFIGURATION                   = $01;                                    // Address space = Basic Configuration ($FD) access Mask
   MCP_NONE                            = $00;                                    // Use the optional {Space} byte in the datagram to defin the address space
 
-  MCP_OP_GET_CONFIG                  = $80;                                     // MemoryConfigurationProtocol Operation - Get Configuration
-  MCP_OP_GET_CONFIG_REPLY            = $82;                                     // MemoryConfigurationProtocol Operation - Get Configuration Reply
+  MCP_OP_GET_CONFIG_OPTIONS          = $80;                                     // MemoryConfigurationProtocol Operation - Get Configuration Options
+  MCP_OP_GET_CONFIG_OPTIONS_REPLY    = $82;                                     // MemoryConfigurationProtocol Operation - Get Configuration Reply
   MCP_OP_GET_ADD_SPACE_INFO          = $84;                                     // MemoryConfigurationProtocol Operation - Get Add Space Info
   MCP_OP_GET_ADD_SPACE_INFO_PRESENT_REPLY     = $87;
   MCP_OP_GET_ADD_SPACE_INFO_NOT_PRESENT_REPLY = $86;                            // MemoryConfigurationProtocol Operation - Get Add Space Info Reply
