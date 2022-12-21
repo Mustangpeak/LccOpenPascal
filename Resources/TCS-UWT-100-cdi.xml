@@ -1,0 +1,422 @@
+<?xml version="1.0" encoding="utf-8"?>
+<cdi xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://openlcb.org/schema/cdi/1/1/cdi.xsd">
+<identification>
+<manufacturer>Train Control Systems (TCS)</manufacturer>
+<model>UWT-100</model>
+<hardwareVersion>Rev D</hardwareVersion>
+<softwareVersion>3.0</softwareVersion>
+</identification>
+<acdi/>
+<segment space='251' origin='1'>
+<name>User Info</name>
+<description>Change name and description of this throttle for LCC network browsers.</description>
+<string size='63'>
+<name>User Name</name>
+<description>This name will appear in network browsers for this device.</description>
+</string>
+<string size='64'>
+<name>User Description</name>
+<description>This description will appear in network browsers for this device.</description>
+</string>
+</segment>
+<segment space='253' origin='128'>
+<name>Throttle Settings</name>
+<description>Settings that adjust the throttle behavior.</description>
+<group offset='4'/>
+<group replication='8'>
+<name>Change Buttons</name>
+<description>There are up to eight customizable buttons on the handheld:
+- four directly under the display
+- two to the left of the thumbwheel
+- two to the right of the thumbwheel
+
+These buttons are indexed below as follows:
+1 left most directly under the display
+2 left of center directly under the display
+3 right of center directly under the display
+4 right most directly under the display
+5 upper left of the thumb-wheel
+6 upper right of the thumb-wheel
+7 lower left of the thumb-wheel
+8 lower right of the thumb-wheel</description>
+<repname>Button</repname><repname>Button ￎﾇ</repname><repname>Button ￢ﾀﾥ</repname><repname>Button ￢ﾈﾴ</repname><repname>Button ￢ﾈﾷ</repname><repname>Button ￢ﾏﾫ</repname><repname>Button ￢ﾏﾶ</repname><repname>Button ￢ﾏﾬ</repname><repname>Button ￢ﾏﾷ</repname>
+<int size='2'>
+<name>Common Functions</name>
+<description>Use this option if you want the selected softkey to operate a commonly used function with a name, such as Brake or Bell. If there is no roster information with which to associate a function number to the selected option, the throttle will automatically override your selection with the next numerical button that is not already in use.</description>
+<map><relation><property>65535</property><value>Automatic</value></relation><relation><property>246</property><value>Air Compressor</value></relation><relation><property>229</property><value>Bell</value></relation><relation><property>230</property><value>Brake</value></relation><relation><property>231</property><value>Brake Release</value></relation><relation><property>250</property><value>Coupler Clank</value></relation><relation><property>251</property><value>Coupler Open</value></relation><relation><property>243</property><value>Dynamic Brake</value></relation><relation><property>235</property><value>Headlight</value></relation><relation><property>236</property><value>Horn</value></relation><relation><property>252</property><value>Manual Notch Down</value></relation><relation><property>253</property><value>Manual Notch Up</value></relation><relation><property>239</property><value>Momentum</value></relation><relation><property>254</property><value>Prime Mover</value></relation><relation><property>241</property><value>Whistle</value></relation><relation><property>234</property><value>Direction</value></relation><relation><property>249</property><value>Dual Direction</value></relation><relation><property>242</property><value>Yard Mode</value></relation><relation><property>244</property><value>Flashlight</value></relation><relation><property>240</property><value>Recall</value></relation><relation><property>255</property><value>Stop</value></relation><relation><property>232</property><value>Decrement</value></relation><relation><property>233</property><value>Decrement Fast</value></relation><relation><property>237</property><value>Increment</value></relation><relation><property>238</property><value>Increment Fast</value></relation><relation><property>245</property><value>Unmapped</value></relation></map>
+</int>
+<group offset='-2'/>
+<int size='2'>
+<name>F0 - F28</name>
+<description>Use this option if you want the selected softkey to always operate the same numbered funtion every time, such as F0, F1, F2, etc.</description>
+<min>0</min>
+<max>28</max>
+</int>
+</group>
+<group offset='32'/>
+<group replication='29'>
+<name>WT Consist Funcs</name>
+<description>Allows customizing Loco Functions behavior when driving a consist in WiThrottle Protocol mode.</description>
+<repname>F=-1+</repname><repname>F0</repname><repname>F1</repname><repname>F2</repname><repname>F3</repname><repname>F4</repname><repname>F5</repname><repname>F6</repname><repname>F7</repname><repname>F8</repname><repname>F9</repname><repname>F10</repname><repname>F11</repname><repname>F12</repname><repname>F13</repname><repname>F14</repname><repname>F15</repname><repname>F16</repname><repname>F17</repname><repname>F18</repname><repname>F19</repname><repname>F20</repname><repname>F21</repname><repname>F22</repname><repname>F23</repname><repname>F24</repname><repname>F25</repname><repname>F26</repname><repname>F27</repname><repname>F28</repname>
+<int size='1'>
+<name>Function Routing</name>
+<description>Specifies where this function should go when driving a consist created in the throttle in WiThrottle Protocol mode.</description>
+<min>0</min>
+<max>1</max>
+<default>0</default>
+<map><relation><property>0</property><value>Send to All Locos</value></relation><relation><property>1</property><value>Send to Current Cab</value></relation></map>
+</int>
+</group>
+<group offset='35'/>
+<group>
+<name>Drive Settings</name>
+<description>Settings related to the operation of locomotives.</description>
+<int size='1'>
+<name>Fast Inc/Dec Speed</name>
+<description>Specifies how much speed should be added or subtracted for each press of the fast increment/decrement button.</description>
+<min>1</min>
+<max>126</max>
+<default>10</default>
+</int>
+<int size='1'>
+<name>Reversal Stopping</name>
+<description>Sets whether the loco speed be set to zero when the direction change button is pressed, or keep running at the previous speed in the opposite direction.</description>
+<min>0</min>
+<max>1</max>
+<default>0</default>
+<map><relation><property>0</property><value>Reverse Keeps Speed</value></relation><relation><property>1</property><value>Reverse Stops Loco</value></relation></map>
+</int>
+<int size='1'>
+<name>Workaround for Recall 0 Speed</name>
+<description>On some systems connected via JMRI (e.g. NCE), after recalling a locomotive the speed is displayed as zero even if the locomotive is running. Enable this option to work around the issue.</description>
+<min>0</min>
+<max>1</max>
+<default>0</default>
+<map><relation><property>0</property><value>Disabled</value></relation><relation><property>1</property><value>Enabled</value></relation></map>
+</int>
+<group offset='7'/>
+<group offset='6'/>
+</group>
+<group>
+<name>Display Settings</name>
+<description>Configures the LCD backlight behavior.</description>
+<int size='1'>
+<name>Active Brightness</name>
+<description>Sets the active brightness of the backlight; 0=off, 100=max.</description>
+<min>0</min>
+<max>100</max>
+<default>50</default>
+</int>
+<int size='1'>
+<name>Idle Brightness</name>
+<description>Sets the idle brightness of the backlight; 0=off, 100=max.</description>
+<min>0</min>
+<max>100</max>
+<default>5</default>
+</int>
+<int size='1'>
+<name>Throttle Timeout</name>
+<description>Sets how many seconds the backlight should be active after each keypress while running trains on the Drive window. If set to zero, the backlight will never go idle.</description>
+<min>0</min>
+<max>255</max>
+<default>10</default>
+</int>
+<int size='1'>
+<name>Menu Timeout</name>
+<description>Sets how many seconds the backlight should be active after each keypress while in a menu. If set to zero, the backlight will never go idle.</description>
+<min>0</min>
+<max>255</max>
+<default>30</default>
+</int>
+<int size='1'>
+<name>Contrast</name>
+<description>Adjusts the LCD darkness, improving readability in some cases. Increase value to darken, decrease value to lighten.</description>
+<min>1</min>
+<max>20</max>
+<default>10</default>
+</int>
+<group offset='3'/>
+</group>
+<group>
+<name>Power Settings</name>
+<description>Settings related to the battery life of the throttle.</description>
+<int size='1'>
+<name>Auto Power-Off</name>
+<description>After this many minutes, if not in use, the cab will turn off. 0=forever.</description>
+<min>0</min>
+<max>254</max>
+<default>15</default>
+</int>
+<group offset='7'/>
+</group>
+<group>
+<name>E-Stop Settings</name>
+<description>Configures the behavior of the red Emergency Stop button. The E-STOP function can be configured to perform multiple stages of
+E-STOP. If multiple options are enabled, press the button multiple times to escalate to the next stage. For information on specific stages, press the Help or ? button for the options in the following submenu.</description>
+<int size='1'>
+<name>Current Locomotive</name>
+<description>Allows emergency stop of the currently selected locomotive or consist.</description>
+<min>0</min>
+<max>1</max>
+<default>1</default>
+<map><relation><property>0</property><value>Disabled</value></relation><relation><property>1</property><value>Enabled</value></relation></map>
+</int>
+<int size='1'>
+<name>Stop All Locomotives</name>
+<description>Allows emergency stop of all locomotives. Unused in WiThrottle Protocol mode.</description>
+<min>0</min>
+<max>1</max>
+<default>1</default>
+<map><relation><property>0</property><value>Disabled</value></relation><relation><property>1</property><value>Enabled</value></relation></map>
+</int>
+<int size='1'>
+<name>Power Off Layout</name>
+<description>Allows powering off the layout.</description>
+<min>0</min>
+<max>1</max>
+<default>1</default>
+<map><relation><property>0</property><value>Disabled</value></relation><relation><property>1</property><value>Enabled</value></relation></map>
+</int>
+<int size='1'>
+<name>Clear Timeout</name>
+<description>Timeout in seconds after which the emergency state can be cleared. Caution: a value of 0 only allows for one kind of emergency stop to be supported.</description>
+<min>0</min>
+<max>15</max>
+<default>3</default>
+</int>
+<group offset='4'/>
+</group>
+<group>
+<name>Fast Clock</name>
+<description>Sets whether the fast clock is shown, and the format to use for the fast clock (12 or 24 hour).</description>
+<int size='1'>
+<name>Show Fast Clock</name>
+<description>Allows showing the fast clock on the drive window on systems that support a fast clock.</description>
+<min>0</min>
+<max>1</max>
+<default>0</default>
+<map><relation><property>0</property><value>Hide Clock</value></relation><relation><property>1</property><value>Auto Show Clock</value></relation></map>
+</int>
+<int size='1'>
+<name>Clock Format</name>
+<description>Allows displaying the fast clock in a 12 hour or 24 hour format.</description>
+<min>0</min>
+<max>1</max>
+<default>1</default>
+<map><relation><property>0</property><value>24 hour</value></relation><relation><property>1</property><value>12 hour</value></relation></map>
+</int>
+<int size='1'>
+<name>LCC Clock ID</name>
+<description>The Clock ID used by this device in LCC mode. Most users do not need to edit this field. The LCC standard defines four "well-known" clock ID's. It is also possible to specify a custom clock ID. If choosing "Custom User", the user can specify any ID of their choosing which is under their own control.</description>
+<min>0</min>
+<max>4</max>
+<default>0</default>
+<map><relation><property>0</property><value>Default Fast Clock</value></relation><relation><property>1</property><value>Default Real-Time Clock</value></relation><relation><property>2</property><value>Alternate Clock 1</value></relation><relation><property>3</property><value>Alternate Clock 2</value></relation><relation><property>4</property><value>Custom User</value></relation></map>
+</int>
+<eventid>
+<name>LCC Custom Clock ID Event Base</name>
+<description>48-bit Unique ID, right padded with "00.00". Normally, the chosen clocks's 48-bit ID is automatically filled in. When Choosing "Custom User", a custom 48-bit ID, right padded with "00.00", may be filled in.</description>
+</eventid>
+<group offset='5'/>
+</group>
+<group offset='16'/>
+</segment>
+<segment space='253' origin='512'>
+<name>Network Settings</name>
+<description>Configures the settings for the network connections.</description>
+<int size='1'>
+<name>Show Welcome Tutorial</name>
+<description>Shows the welcome screen at the next start of the throttle.</description>
+<min>0</min>
+<max>1</max>
+<default>1</default>
+<map><relation><property>0</property><value>Disabled</value></relation><relation><property>1</property><value>Enabled</value></relation></map>
+</int>
+<int size='1'>
+<name>Regulatory Region</name>
+<description>Set the regulatory region. Use of this product is only valid when operating in one of the selected regulatory region countries.
+NA:
+  United States
+  Canada
+UK/EU/AU/NZ:
+  Australia
+  Austria
+  Belgium
+  Bulgaria
+  Croatia
+  Cyprus
+  Czech Republic
+  Denmark
+  Estonia
+  Finland
+  France
+  Germany
+  Greece
+  Hungary
+  Iceland
+  Ireland
+  Italy
+  Latvia
+  Liechtenstein
+  Lithuania
+  Luxembourg
+  Malta
+  Netherlands
+  New Zealand
+  Norway
+  Poland
+  Porugal
+  Romania
+  Slovakia
+  Spain
+  Sweden
+  Switzerland
+  Turkey
+  United Kingdom</description>
+<min>0</min>
+<max>1</max>
+<default>0</default>
+<map><relation><property>0</property><value>North-America</value></relation><relation><property>1</property><value>UK/EU/AU/NZ</value></relation></map>
+</int>
+<int size='1'>
+<name>Privacy Mode</name>
+<description>Privacy Mode makes the throttle use a Randomized MAC address instead of the hardware address when connecting to WiFi networks. This makes it harder to track your device or infer the manufacturer and model of your device. By selecting 'New' you can have a new Randomized address generated. You can view the in-use MAC address in Menu > About.</description>
+<min>0</min>
+<max>3</max>
+<default>3</default>
+<map><relation><property>0</property><value>Disabled</value></relation><relation><property>1</property><value>Enabled</value></relation><relation><property>2</property><value>New</value></relation><relation><property>3</property><value>Default (disabled)</value></relation></map>
+</int>
+<group offset='5'/>
+<group replication='8'>
+<name>Profiles</name>
+<description>Configures settings for a single wifi network.</description>
+<repname>Profile</repname>
+<string size='32'>
+<name>Name (SSID)</name>
+<description>The wifi network that these settings apply to.</description>
+</string>
+<string size='128'>
+<name>Password</name>
+<description>Set the password for this network. Use empty if no password is required.</description>
+</string>
+<int size='1'>
+<name>LCC/WT Mode</name>
+<description>Select whether to use LCC protocol or JMRI WiThrottle protocol on this network. Use JMRI WiThrottle setting to simulate smartphones or use this throttle with an LNWI.</description>
+<min>0</min>
+<max>1</max>
+<default>0</default>
+<map><relation><property>0</property><value>LCC</value></relation><relation><property>1</property><value>JMRI WiThrottle</value></relation></map>
+</int>
+<group offset='1'/>
+<group offset='5'/>
+<group>
+<name>Advanced</name>
+<description>Advanced network settings for this profile, such as fixed IP address.</description>
+<group offset='1'/>
+<group offset='1'/>
+<group offset='6'/>
+<group>
+<name>LCC Client</name>
+<description>Set advanced configuration for connecting to an LCC server on this wifi network.</description>
+<int size='1'>
+<name>Search Mode</name>
+<description>Defines the order of how to locate the server to connect to. 'auto' uses the mDNS protocol to find the IP address automatically. 'manual' uses the IP address entered in this settings.</description>
+<min>0</min>
+<max>3</max>
+<default>0</default>
+<map><relation><property>0</property><value>Auto, Manual</value></relation><relation><property>1</property><value>Manual, Auto</value></relation><relation><property>2</property><value>Auto Only</value></relation><relation><property>3</property><value>Manual Only</value></relation></map>
+</int>
+<group>
+<name>Manual Address</name>
+<description>Set IP address here if auto-detection does not work.</description>
+<string size='32'>
+<name>IP Address</name>
+<description>Enter the server IP address. Example: 192.168.0.55</description>
+</string>
+<int size='2'>
+<name>Port Number</name>
+<description>TCP port number of the server. Most of the time this does not need to be changed.</description>
+<min>1</min>
+<max>65535</max>
+<default>12021</default>
+</int>
+</group>
+<group>
+<name>Auto Address</name>
+<description>Advanced settings for the server IP address auto-detection (mDNS).</description>
+<string size='48'>
+<name>mDNS Service</name>
+<description>mDNS or Bonjour service name, such as _openlcb-can._tcp</description>
+</string>
+<string size='48'>
+<name>Only Hostname</name>
+<description>Use when multiple servers provide the same service on the network. If set, selects this specific host name; the connection will fail if none of the servers have this hostname (use correct capitalization!). Example: My JMRI Railroad</description>
+</string>
+</group>
+<int size='1'>
+<name>Reconnect</name>
+<description>If enabled, tries the last known good IP address before searching for the server.</description>
+<min>0</min>
+<max>1</max>
+<default>1</default>
+<map><relation><property>0</property><value>Disabled</value></relation><relation><property>1</property><value>Enabled</value></relation></map>
+</int>
+<group offset='34'/>
+</group>
+<group offset='6'/>
+<group>
+<name>WiThrottle Client</name>
+<description>Set advanced configuration for connecting to a WiThrottle server on this wifi network.</description>
+<int size='1'>
+<name>Search Mode</name>
+<description>Defines the order of how to locate the server to connect to. 'auto' uses the mDNS protocol to find the IP address automatically. 'manual' uses the IP address entered in this settings.</description>
+<min>0</min>
+<max>3</max>
+<default>0</default>
+<map><relation><property>0</property><value>Auto, Manual</value></relation><relation><property>1</property><value>Manual, Auto</value></relation><relation><property>2</property><value>Auto Only</value></relation><relation><property>3</property><value>Manual Only</value></relation></map>
+</int>
+<group>
+<name>Manual Address</name>
+<description>Set IP address here if auto-detection does not work.</description>
+<string size='32'>
+<name>IP Address</name>
+<description>Enter the server IP address. Example: 192.168.0.55</description>
+</string>
+<int size='2'>
+<name>Port Number</name>
+<description>TCP port number of the server. Most of the time this does not need to be changed.</description>
+<min>1</min>
+<max>65535</max>
+<default>12090</default>
+</int>
+</group>
+<group>
+<name>Auto Address</name>
+<description>Advanced settings for the server IP address auto-detection (mDNS).</description>
+<string size='48'>
+<name>mDNS Service</name>
+<description>mDNS or Bonjour service name, such as _withrottle._tcp</description>
+</string>
+<string size='48'>
+<name>Only Hostname</name>
+<description>Use when multiple servers provide the same service on the network. If set, selects this specific host name; the connection will fail if none of the servers have this hostname (use correct capitalization!). Example: My JMRI Railroad</description>
+</string>
+</group>
+<int size='1'>
+<name>Reconnect</name>
+<description>If enabled, tries the last known good IP address before searching for the server.</description>
+<min>0</min>
+<max>1</max>
+<default>1</default>
+<map><relation><property>0</property><value>Disabled</value></relation><relation><property>1</property><value>Enabled</value></relation></map>
+</int>
+<group offset='34'/>
+</group>
+<group offset='1'/>
+<group offset='6'/>
+</group>
+<group offset='120'/>
+</group>
+</segment>
+<group offset='4'/>
+</cdi>

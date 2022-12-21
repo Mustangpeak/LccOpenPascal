@@ -1,0 +1,742 @@
+<?xml version="1.0"?>
+<cdi xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://openlcb.org/schema/cdi/1/1/cdi.xsd">
+  <identification>
+    <manufacturer>Train Control Systems (TCS)</manufacturer>
+    <model>CS-105</model>
+    <hardwareVersion>Rev A</hardwareVersion>
+    <softwareVersion>0.0.2:4dfa68b:-d-u</softwareVersion>
+  </identification>
+  <acdi/>
+  <segment space="251" origin="1">
+    <name>User Info Settings</name>
+    <description>Change name and description of this command station for LCC network browsers.</description>
+    <string size="63">
+      <name>User Name</name>
+      <description>This name will appear in network browsers for this device.</description>
+    </string>
+    <string size="64">
+      <name>User Description</name>
+      <description>This description will appear in network browsers for this device.</description>
+    </string>
+  </segment>
+  <segment space="253" origin="128">
+    <name>System Settings</name>
+    <description>Configuration options related to the DCC functionality, including Track Output.</description>
+    <group offset="4"/>
+    <group>
+      <name>Track Output</name>
+      <description>Configuration options for the Command Station's Main Track Output, such as short circuit limits.</description>
+      <int size="2">
+        <name>Booster Trip Current</name>
+        <description>Current limit in milliamps at which the booster will detect an overload and shutdown (1000 to 5000 milliamps).  Inrush current above this threshold is allowed.</description>
+        <min>1000</min>
+        <max>5000</max>
+        <default>4000</default>
+      </int>
+      <int size="2">
+        <name>Booster Trip Inrush Delay</name>
+        <description>This is the delay (10 to 320 milliseconds) to hold off on tripping the booster if the "Booster Trip Current" limit is reached.  This parameter, adjusted along with the "Booster Kill Current", can be useful in preventing a false overload condition due to startup inrush current.</description>
+        <min>10</min>
+        <max>320</max>
+        <default>200</default>
+      </int>
+      <int size="2">
+        <name>Booster Kill Current</name>
+        <description>Current limit in milliamps at which the booster will detect a short circuit and shutdown (2000 to 9000 milliamps).  This is an absolute limit regarless of inrush current.  Typically this value is equal to or larger than the "Booster Trip Current".</description>
+        <min>2000</min>
+        <max>9000</max>
+        <default>6000</default>
+      </int>
+      <int size="2">
+        <name>Booster Kill Delay</name>
+        <description>This is the delay (10 to 55 milliseconds) to hold off on tripping the booster if the "Booster Kill Current" limit is reached.  This parameter, adjusted along with the "Booster Kill Current", can be useful in preventing a false overload condition due to startup inrush current.  This parameter is also useful to adjust when DCC circuit breakers are in use.</description>
+        <min>10</min>
+        <max>65</max>
+        <default>40</default>
+      </int>
+      <int size="1">
+        <name>Upon Short: Send Shared Event</name>
+        <description>Sends well-known events when the track output encounteres a fault condition such as a short circuit.</description>
+        <min>0</min>
+        <max>1</max>
+        <default>1</default>
+        <map>
+          <relation>
+            <property>0</property>
+            <value>disabled</value>
+          </relation>
+          <relation>
+            <property>1</property>
+            <value>enabled</value>
+          </relation>
+        </map>
+      </int>
+      <eventid>
+        <name>Custom Event for Short</name>
+        <description>Sends a configurable Event when the track output encounteres a fault condition such as a short circuit.</description>
+      </eventid>
+      <eventid>
+        <name>Custom Event for Short Clear</name>
+        <description>Sends a configurable Event when the track output recovers from a fault condition.</description>
+      </eventid>
+      <group offset="7"/>
+    </group>
+    <group>
+      <name>Advanced Options</name>
+      <int size="1">
+        <name>Railcom Cutout</name>
+        <description>Should the command station generate a railcom cutout? This can be used for identifying locomotives on the track, and CV reads on the main, without a programming track, if the decoders used support it.</description>
+        <min>0</min>
+        <max>1</max>
+        <default>1</default>
+        <map>
+          <relation>
+            <property>0</property>
+            <value>disabled</value>
+          </relation>
+          <relation>
+            <property>1</property>
+            <value>enabled</value>
+          </relation>
+        </map>
+      </int>
+      <int size="1">
+        <name>Half Zero Resynchronization</name>
+        <description>Some DCC decoders require a half bit following the RailCom cutout and preceding the next preamble in order to resynchronize to the DCC data signal.  If enabled (default), this half bit will be produced.  Disabling this feature will increase DCC data stream bandwidth, but may not be compatible with all DCC decoders.</description>
+        <min>0</min>
+        <max>1</max>
+        <default>1</default>
+        <map>
+          <relation>
+            <property>0</property>
+            <value>disabled</value>
+          </relation>
+          <relation>
+            <property>1</property>
+            <value>enabled</value>
+          </relation>
+        </map>
+      </int>
+      <int size="1">
+        <name>Throttle Heartbeats</name>
+        <description>Requests throttles to provide heartbeats with this period (seconds). If a throttle is controlling a moving train but misses the heartbeat, the train will be stopped. Set to 0 to disable.</description>
+        <min>0</min>
+        <max>240</max>
+        <default>10</default>
+      </int>
+      <group offset="1"/>
+      <int size="1">
+        <name>Drive DCC Accessories</name>
+        <description>If enabled, this command station will listen to the common range for driving DCC accessories and generate accessory packets on the DCC output. Disable when using a separate command station for accy bus.</description>
+        <min>0</min>
+        <max>1</max>
+        <default>1</default>
+        <map>
+          <relation>
+            <property>0</property>
+            <value>disabled</value>
+          </relation>
+          <relation>
+            <property>1</property>
+            <value>enabled</value>
+          </relation>
+        </map>
+      </int>
+      <int size="1">
+        <name>Drive DCC Locomotives</name>
+        <description>Disable when using this CS for specialized purpose (e.g. accessory bus, program track only, or gateway). When disabled, this CS will not communicate with throttles.</description>
+        <min>0</min>
+        <max>1</max>
+        <default>1</default>
+        <map>
+          <relation>
+            <property>0</property>
+            <value>disabled</value>
+          </relation>
+          <relation>
+            <property>1</property>
+            <value>enabled</value>
+          </relation>
+        </map>
+      </int>
+      <int size="1">
+        <name>Program Track Access</name>
+        <description>During programming track operation the boosters are shut down: there is either mainline output or programming track output. The following settings help customizing program track behavior:
+- Set to unavailable to prevent the CS from going into program track mode even if a throttle or computer requests it. This is helpful during operating sessions and shows to prevent accidental shutdowns of the layout.
+- Set to automatic to switch over when a programming request comes in, then switch back once it's completed. - Set to program track only if this command station is dedicated to serving a program track and no mainline is connected. You should also disable 'Drive DCC locomotives' and 'Drive DCC accessories' if there is another command station on the same network with mainline output.</description>
+        <min>0</min>
+        <max>3</max>
+        <default>1</default>
+        <map>
+          <relation>
+            <property>0</property>
+            <value>unavailable (mainline always on)</value>
+          </relation>
+          <relation>
+            <property>1</property>
+            <value>automatic switchover (default)</value>
+          </relation>
+          <relation>
+            <property>3</property>
+            <value>program track only</value>
+          </relation>
+        </map>
+      </int>
+      <int size="1">
+        <name>Program Track Current Limit</name>
+        <description>Selecting lower current limits is safer in case there was a wiring issue in the decoder install. Older sound decoders might fail to program with the standard limit.</description>
+        <min>0</min>
+        <max>1</max>
+        <default>0</default>
+        <map>
+          <relation>
+            <property>0</property>
+            <value>Standard (250mA)</value>
+          </relation>
+          <relation>
+            <property>1</property>
+            <value>High (1A)</value>
+          </relation>
+        </map>
+      </int>
+      <int size="1">
+        <name>NCE Cab Bus</name>
+        <description>Enable to use NCE(R) cabs plugged into the black socket.</description>
+        <min>0</min>
+        <max>1</max>
+        <default>1</default>
+        <map>
+          <relation>
+            <property>0</property>
+            <value>disabled</value>
+          </relation>
+          <relation>
+            <property>1</property>
+            <value>enabled</value>
+          </relation>
+        </map>
+      </int>
+      <group offset="1"/>
+      <group offset="54"/>
+    </group>
+    <group offset="64"/>
+    <group offset="174"/>
+    <group offset="174"/>
+  </segment>
+  <segment space="2">
+    <name>WiFi Settings</name>
+    <int size="1">
+      <name>WiFi Mode</name>
+      <description>You can select here whether you would like the Command Station to connect to an existing WiFi Router as a Client, or act as a WiFi Access Point itself. In Access Point mode maximum 4 WiFi throttles can connect simultaneously. This setting will take effect after the next re-start.</description>
+      <default>2</default>
+      <map>
+        <relation>
+          <property>1</property>
+          <value>Client</value>
+        </relation>
+        <relation>
+          <property>2</property>
+          <value>Access Point</value>
+        </relation>
+      </map>
+    </int>
+    <group>
+      <name>Access Point Configuration</name>
+      <description>Sets parameters of the WiFi when operated in Access Point mode.</description>
+      <string size="33">
+        <name>WiFi Name</name>
+        <description>For Access Point mode, this will be the name of the WiFi Network.</description>
+      </string>
+      <int size="1">
+        <name>Security</name>
+        <description>Sets whether the Access Point should ask for a password.</description>
+        <min>0</min>
+        <max>1</max>
+        <map>
+          <relation>
+            <property>0</property>
+            <value>Open</value>
+          </relation>
+          <relation>
+            <property>2</property>
+            <value>Secure (WPA/WPA2)</value>
+          </relation>
+        </map>
+      </int>
+      <string size="64">
+        <name>Password</name>
+      </string>
+    </group>
+    <group>
+      <name>Add Network</name>
+      <description>To connect to a WiFi Router in Client mode, enter the WiFi name and password here, then set Save to Yes. Make sure to also set the WiFi Mode to Client.</description>
+      <string size="33">
+        <name>WiFi Name</name>
+        <description>Name of the WiFi Network to connect to.</description>
+      </string>
+      <string size="64">
+        <name>Password</name>
+        <description>Password to use when connecting. Leave empty if WiFi uses no security.</description>
+      </string>
+      <int size="1">
+        <name>Save?</name>
+        <description>Set to Yes after saving the Name and Password to add the WiFi network to the stored profiles.</description>
+        <min>0</min>
+        <max>1</max>
+        <map>
+          <relation>
+            <property>0</property>
+            <value>Not Ready</value>
+          </relation>
+          <relation>
+            <property>1</property>
+            <value>Yes</value>
+          </relation>
+        </map>
+      </int>
+    </group>
+    <group replication="7">
+      <name>Saved Networks</name>
+      <repname>Profile</repname>
+      <string size="33">
+        <name>WiFi Name</name>
+        <description>Name of the WiFi Network to connect to.</description>
+      </string>
+      <int size="1">
+        <name>Security</name>
+        <min>0</min>
+        <max>1</max>
+        <map>
+          <relation>
+            <property>0</property>
+            <value>Open</value>
+          </relation>
+          <relation>
+            <property>2</property>
+            <value>Secure (WPA/WPA2)</value>
+          </relation>
+        </map>
+      </int>
+      <int size="1">
+        <name>Remove?</name>
+        <description>Set this to Remove to delete this stored network. This may be needed if you cannot add a new network because all profiles are full.</description>
+        <min>0</min>
+        <max>1</max>
+        <default>0</default>
+        <map>
+          <relation>
+            <property>0</property>
+            <value>Keep</value>
+          </relation>
+          <relation>
+            <property>1</property>
+            <value>Remove</value>
+          </relation>
+        </map>
+      </int>
+    </group>
+    <group>
+      <name>Uplink</name>
+      <description>Connects the Command Station to an LCC Router via WiFi network. This allows using more throttles than the CS has capacity for.</description>
+      <int size="1">
+        <name>Enable Uplink</name>
+        <min>0</min>
+        <max>1</max>
+        <default>1</default>
+        <map>
+          <relation>
+            <property>0</property>
+            <value>disabled</value>
+          </relation>
+          <relation>
+            <property>1</property>
+            <value>enabled</value>
+          </relation>
+        </map>
+      </int>
+      <group offset="7"/>
+      <group>
+        <name>LCC Client</name>
+        <description>Set advanced configuration for connecting to an LCC server on this wifi network.</description>
+        <int size="1">
+          <name>Search Mode</name>
+          <description>Defines the order of how to locate the server to connect to. 'auto' uses the mDNS protocol to find the IP address automatically. 'manual' uses the IP address entered in this settings.</description>
+          <min>0</min>
+          <max>3</max>
+          <default>0</default>
+          <map>
+            <relation>
+              <property>0</property>
+              <value>Auto, Manual</value>
+            </relation>
+            <relation>
+              <property>1</property>
+              <value>Manual, Auto</value>
+            </relation>
+            <relation>
+              <property>2</property>
+              <value>Auto Only</value>
+            </relation>
+            <relation>
+              <property>3</property>
+              <value>Manual Only</value>
+            </relation>
+          </map>
+        </int>
+        <group>
+          <name>Manual Address</name>
+          <description>Set IP address here if auto-detection does not work.</description>
+          <string size="32">
+            <name>IP Address</name>
+            <description>Enter the server IP address. Example: 192.168.0.55</description>
+          </string>
+          <int size="2">
+            <name>Port Number</name>
+            <description>TCP port number of the server. Most of the time this does not need to be changed.</description>
+            <min>1</min>
+            <max>65535</max>
+            <default>12021</default>
+          </int>
+        </group>
+        <group>
+          <name>Auto Address</name>
+          <description>Advanced settings for the server IP address auto-detection (mDNS).</description>
+          <string size="48">
+            <name>mDNS Service</name>
+            <description>mDNS or Bonjour service name, such as _openlcb-can._tcp</description>
+          </string>
+          <string size="48">
+            <name>Only Hostname</name>
+            <description>Use when multiple servers provide the same service on the network. If set, selects this specific host name; the connection will fail if none of the servers have this hostname (use correct capitalization!). Example: My JMRI Railroad</description>
+          </string>
+        </group>
+        <int size="1">
+          <name>Reconnect</name>
+          <description>If enabled, tries the last known good IP address before searching for the server.</description>
+          <min>0</min>
+          <max>1</max>
+          <default>1</default>
+          <map>
+            <relation>
+              <property>0</property>
+              <value>Disabled</value>
+            </relation>
+            <relation>
+              <property>1</property>
+              <value>Enabled</value>
+            </relation>
+          </map>
+        </int>
+        <group offset="34"/>
+      </group>
+    </group>
+  </segment>
+  <segment space="20">
+    <name>Macros</name>
+    <description>A macro automatically executes a sequence of actions when triggered from a throttle or an LCC connected button. The actions could for example line up the turnouts of a yard throat. Macros can also be used to give names to DCC or LCC connected turnouts.</description>
+    <int size="2">
+      <name>Load Macro to Editor</name>
+      <description>Write a macro number here in order to load that macro to the editor panel below. Refresh All in order to see the current definition of the macro.</description>
+      <min>1</min>
+      <max>300</max>
+    </int>
+    <group>
+      <name>Macro Editor</name>
+      <description>Select a Macro Number above, then refresh all of these fields to view; write the fields to change that macro's definition.</description>
+      <string size="64">
+        <name>Macro Name</name>
+        <description>This name will be displayed in the macro list to represent this macro.</description>
+      </string>
+      <int size="2">
+        <name>Macro Number</name>
+        <description>The number of this macro. Can not be modified.</description>
+      </int>
+      <eventid>
+        <name>Standard Trigger</name>
+        <description>The standard trigger of this macro. Can not be modified.</description>
+      </eventid>
+      <eventid>
+        <name>Custom Trigger</name>
+        <description>Sets an additional trigger from a custom Event ID.</description>
+      </eventid>
+      <int size="1">
+        <name>Disable</name>
+        <description>Allows temporarily disabling this macro.</description>
+        <min>0</min>
+        <max>1</max>
+        <default>0</default>
+        <map>
+          <relation>
+            <property>0</property>
+            <value>Allowed To Run</value>
+          </relation>
+          <relation>
+            <property>1</property>
+            <value>Not Allowed To Run</value>
+          </relation>
+        </map>
+      </int>
+      <int size="1">
+        <name>Trigger Now</name>
+        <description>Set to 'Go!' to trigger a test run of this macro.</description>
+        <map>
+          <relation>
+            <property>0</property>
+            <value>No Action</value>
+          </relation>
+          <relation>
+            <property>1</property>
+            <value>Go!</value>
+          </relation>
+        </map>
+      </int>
+      <group replication="10">
+        <name>Steps</name>
+        <description>These steps will be executed when the macro is triggered.</description>
+        <repname>Step</repname>
+        <int size="1">
+          <name>Command</name>
+          <description>Select what this macro step should do:
+- DCC Turnout N/R: Set the Number to the DCC turnout number (1..2044). That turnout will be set to Normal/Reverse in this step.
+- LCC Event: Produces the LCC Event. Can set e.g. an LCC Turnout to Normal or Reversed.
+- Link Macro: Set the Number to another Macro Number. Triggers that Macro.
+</description>
+          <map>
+            <relation>
+              <property>0</property>
+              <value>Unused</value>
+            </relation>
+            <relation>
+              <property>10</property>
+              <value>DCC Turnout Normal</value>
+            </relation>
+            <relation>
+              <property>11</property>
+              <value>DCC Turnout Reversed</value>
+            </relation>
+            <relation>
+              <property>1</property>
+              <value>Send LCC Event</value>
+            </relation>
+            <relation>
+              <property>2</property>
+              <value>Link Macro</value>
+            </relation>
+            <relation>
+              <property>255</property>
+              <value>Invalid Macro</value>
+            </relation>
+          </map>
+        </int>
+        <int size="4">
+          <name>Number</name>
+          <description>The meaning of this number depends on the selected command. Example: DCC turnout number 1 to 2044.</description>
+        </int>
+        <eventid>
+          <name>Event</name>
+          <description>The LCC event for the Command. Some macro commands can be represented as an LCC event, and that event ID can be read out here.</description>
+        </eventid>
+      </group>
+    </group>
+  </segment>
+  <segment space="248" origin="2131755008">
+    <name>Programming Track Operation</name>
+    <description>Use this section only on a computer to read and write CVs on the programming track of the command station. If you are using a throttle, go to the CV Programming Menu instead.</description>
+    <int size="4">
+      <name>Operating Mode</name>
+      <map>
+        <relation>
+          <property>0</property>
+          <value>Disabled</value>
+        </relation>
+        <relation>
+          <property>1</property>
+          <value>Direct mode</value>
+        </relation>
+        <relation>
+          <property>2</property>
+          <value>POM mode</value>
+        </relation>
+        <relation>
+          <property>3</property>
+          <value>Paged mode</value>
+        </relation>
+        <relation>
+          <property>10</property>
+          <value>Advanced mode</value>
+        </relation>
+      </map>
+    </int>
+    <int size="4">
+      <name>CV Number</name>
+      <description>Number of CV to read or write (1..1024).</description>
+      <min>0</min>
+      <max>1024</max>
+      <default>0</default>
+    </int>
+    <int size="4">
+      <name>CV Value</name>
+      <description>Set 'Operating Mode' and 'CV Number' first, then: hit 'Refresh' to read the entire CV, or enter a value and hit 'Write' to set the CV.</description>
+      <min>0</min>
+      <max>255</max>
+      <default>0</default>
+    </int>
+    <int size="4">
+      <name>Bit Change</name>
+      <description>Set 'Operating Mode' and 'CV Number' first, then: write 1064 to set the single bit whose value is 64, or 2064 to clear that bit. Write 100 to 107 to set bit index 0 to 7, or 200 to 207 to clear bit 0 to 7. Values outside of these two ranges do nothing.</description>
+      <min>100</min>
+      <max>2128</max>
+      <default>1000</default>
+    </int>
+    <string size="24">
+      <name>Read Bits Decomposition</name>
+      <description>Hit Refresh on this line after reading a CV value to see which bits are set.</description>
+    </string>
+    <group>
+      <name>Advanced Settings</name>
+      <int size="4">
+        <name>Repeat count for verify packets</name>
+        <description>How many times a direct mode bit verify packet needs to be repeated for an acknowledgement to be generated.</description>
+        <min>0</min>
+        <max>255</max>
+        <default>3</default>
+      </int>
+      <int size="4">
+        <name>Repeat count for reset packets after verify</name>
+        <description>How many reset packets to send after a verify.</description>
+        <min>0</min>
+        <max>255</max>
+        <default>6</default>
+      </int>
+    </group>
+  </segment>
+  <group offset="4"/>
+  <segment space="1">
+    <name>Status</name>
+    <description>This segment shows various measurements and status indicators of the Command Station.</description>
+    <int size="4">
+      <name>Track Voltage</name>
+      <description>Track voltage output in millivolts.  1000 millivolts = 1 V.</description>
+    </int>
+    <int size="4">
+      <name>Track Current</name>
+      <description>Booster current output in milliamps.  1000 milliamps = 1 amp.</description>
+    </int>
+    <int size="1">
+      <name>Track Status</name>
+      <description>Shows the status of the track outputs of the internal booster.</description>
+      <map>
+        <relation>
+          <property>0</property>
+          <value>On</value>
+        </relation>
+        <relation>
+          <property>1</property>
+          <value>E-Stop</value>
+        </relation>
+        <relation>
+          <property>2</property>
+          <value>E-Off</value>
+        </relation>
+        <relation>
+          <property>3</property>
+          <value>Short present</value>
+        </relation>
+        <relation>
+          <property>4</property>
+          <value>Thermal shutdown</value>
+        </relation>
+        <relation>
+          <property>5</property>
+          <value>Programming track</value>
+        </relation>
+        <relation>
+          <property>6</property>
+          <value>Disabled</value>
+        </relation>
+        <relation>
+          <property>7</property>
+          <value>Unknown</value>
+        </relation>
+      </map>
+    </int>
+    <string size="20">
+      <name>Booster Temperature</name>
+    </string>
+    <string size="32">
+      <name>Locomotives</name>
+      <description>Statistics about the active locomotives</description>
+    </string>
+    <string size="64">
+      <name>DCC B/W (10 sec)</name>
+      <description>Statistics about the DCC bandwidth usage over the last 10 seconds.</description>
+    </string>
+    <string size="64">
+      <name>DCC B/W (10 min)</name>
+      <description>Statistics about the DCC bandwidth usage over the last 10 minutes.</description>
+    </string>
+    <int size="4">
+      <name>RailCom Shorts</name>
+      <description>Number of times the CS has aborted a RailCom cutout due to an unexpected short circuit condition. This might happen when you have a locomotive bridge to a neighboring booster district that does not have a RailCom cutout.</description>
+    </int>
+    <int size="1">
+      <name>LCC Cable</name>
+      <description>Shows the status of the LCC cable.</description>
+      <map>
+        <relation>
+          <property>0</property>
+          <value>Not connected</value>
+        </relation>
+        <relation>
+          <property>1</property>
+          <value>Connected</value>
+        </relation>
+      </map>
+    </int>
+    <string size="33">
+      <name>WiFi Name</name>
+      <description>This is the name (SSID) of the WiFi network the Command Station is connected to (in client mode) or creating (in AccessPoint mode).</description>
+    </string>
+    <string size="20">
+      <name>WiFi Signal Strength</name>
+    </string>
+    <int size="1">
+      <name>WiFi AP: number of devices connected</name>
+      <description>When operating the WiFi in Access Point mode, this value shows how many devices are connected to the CS's built-in Access Point. The maximum is 4.</description>
+    </int>
+    <int size="1">
+      <name>WiFi LCC: number of clients connected</name>
+      <description>Shows how many clients are connected to the CS's built-in LCC Server. The maximum is 10.</description>
+    </int>
+    <string size="20">
+      <name>WiFi IP Address</name>
+    </string>
+    <string size="20">
+      <name>WiFi MAC Address</name>
+    </string>
+    <string size="32">
+      <name>WiFi Uplink Address</name>
+      <description>If shown as non-empty, the Command Station is connected to this LCC server via the WiFi network.</description>
+    </string>
+    <string size="10">
+      <name>Free Memory</name>
+    </string>
+    <string size="10">
+      <name>Free Storage</name>
+      <description>The amount of persistent storage free for the purpose of roster entries.</description>
+    </string>
+    <string size="16">
+      <name>Mfg. Date</name>
+    </string>
+    <string size="22">
+      <name>ID</name>
+      <description>Shows the LCC identifier of this device, which also functions as a serial number.</description>
+    </string>
+    <string size="21">
+      <name>Software Version</name>
+    </string>
+    <string size="16">
+      <name>WiFi Version</name>
+    </string>
+  </segment>
+</cdi>
