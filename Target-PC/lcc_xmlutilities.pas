@@ -20,50 +20,52 @@ uses
     Xml.XMLIntf,
   {$ENDIF}
   SysUtils;
+
+
 type
-  LccXmlNode ={$IFDEF FPC}TDOMNode{$ELSE}IXMLNode{$ENDIF};
-  LccXmlDocument = {$IFDEF FPC}TXMLDocument{$ELSE}IXMLDocument{$ENDIF};
-  LccXmlAttribute = {$IFDEF FPC}TDOMAttr{$ELSE}IXMLNode{$ENDIF};
+  TLccXmlNode ={$IFDEF FPC}TDOMNode{$ELSE}IXMLNode{$ENDIF};
+  TLccXmlDocument = {$IFDEF FPC}TXMLDocument{$ELSE}IXMLDocument{$ENDIF};
+  TLccXmlAttribute = {$IFDEF FPC}TDOMAttr{$ELSE}IXMLNode{$ENDIF};
   LccDOMString = {$IFDEF FPC}DOMString{$ELSE}DOMString{$ENDIF};
 
 // Document functions
-function XmlLoadFromFile(FilePath: string): LccXmlDocument;
-function XmlLoadFromStream(Stream: TStream): LccXmlDocument;
-function XmlLoadFromText(XMLText: string): LccXmlDocument;
-function BuildConfigurationDocument(CdiXMLFilePath: string): LccXmlDocument;
-procedure XmlFreeDocument(var XmlDoc: LccXmlDocument);
-function XmlCreateEmptyDocument: LccXmlDocument;
-procedure XmlWriteToFile(FilePath: string; XmlDoc: LccXmlDocument);
-function XmlCreateChildNode(XmlDoc: LccXmlDocument; ParentNode: LccXmlNode; Element, Content: domString): LccXmlNode;
-function XmlCreateRootNode(XmlDoc: LccXmlDocument; Element, Content: domString): LccXmlNode;
+function XmlLoadFromFile(FilePath: string): TLccXmlDocument;
+function XmlLoadFromStream(Stream: TStream): TLccXmlDocument;
+function XmlLoadFromText(XMLText: string): TLccXmlDocument;
+function BuildConfigurationDocument(CdiXMLFilePath: string): TLccXmlDocument;
+procedure XmlFreeDocument(var XmlDoc: TLccXmlDocument);
+function XmlCreateEmptyDocument: TLccXmlDocument;
+procedure XmlWriteToFile(FilePath: string; XmlDoc: TLccXmlDocument);
+function XmlCreateChildNode(XmlDoc: TLccXmlDocument; ParentNode: TLccXmlNode; Element, Content: domString): TLccXmlNode;
+function XmlCreateRootNode(XmlDoc: TLccXmlDocument; Element, Content: domString): TLccXmlNode;
 // Find functions
-function XmlFindChildNode(XmlNode: LccXmlNode; Name: domString): LccXmlNode;
-function XmlFirstChild(XmlNode: LccXmlNode): LccXmlNode;
-function XmlFindRootNode(XmlDoc: LccXmlDocument; RootName: domString): LccXmlNode;
+function XmlFindChildNode(XmlNode: TLccXmlNode; Name: domString): TLccXmlNode;
+function XmlFirstChild(XmlNode: TLccXmlNode): TLccXmlNode;
+function XmlFindRootNode(XmlDoc: TLccXmlDocument; RootName: domString): TLccXmlNode;
 // Element value (name) functions
-function XmlFirstChildValue(XmlNode: LccXmlNode): domString;
-function XmlNextSiblingValue(XmlNode: LccXmlNode): domString;
-function XmlNodeName(XmlNode: LccXmlNode): domString;
+function XmlFirstChildValue(XmlNode: TLccXmlNode): domString;
+function XmlNextSiblingValue(XmlNode: TLccXmlNode): domString;
+function XmlNodeName(XmlNode: TLccXmlNode): domString;
 // Element content (text) functions
-function XmlNodeTextContent(XmlNode: LccXmlNode): domString;
-procedure XmlNodeSetTextContent(XmlNode: LccXmlNode; Text: domString);
-procedure XmlNodeSetFirstLevelTextContent(XMLDoc: LccXmlDocument; RootElement, ChildElement, Content: domString; Force: Boolean); overload;
+function XmlNodeTextContent(XmlNode: TLccXmlNode): domString;
+procedure XmlNodeSetTextContent(XmlNode: TLccXmlNode; Text: domString);
+procedure XmlNodeSetFirstLevelTextContent(XMLDoc: TLccXmlDocument; RootElement, ChildElement, Content: domString; Force: Boolean); overload;
 procedure XmlNodeSetFirstLevelTextContent(FilePath, RootElement, ChildElement, Content: domString; Force: Boolean); overload;
 // Enumerator functions
-function XmlNextSiblingNode(XmlNode: LccXmlNode): LccXmlNode;
+function XmlNextSiblingNode(XmlNode: TLccXmlNode): TLccXmlNode;
 // Attribute functions
-procedure XmlAttributeCreateAndSet(XmlDoc: LccXmlDocument; TargetNode: LccXmlNode; Attribute, Content: domString);
-procedure XmlAttributeForce(XmlDoc: LccXmlDocument; TargetNode: LccXmlNode; Attribute, Content: domString);
-function XmlAttributeRead(TargetNode: LccXmlNode; Attribute: domString): domString;
-function XmlAttributeExists(TargetNode: LccXmlNode; Attribute: domString): Boolean;
-procedure XmlAttributeRemove(TargetNode: LccXmlNode; Attribute: domString);
+procedure XmlAttributeCreateAndSet(XmlDoc: TLccXmlDocument; TargetNode: TLccXmlNode; Attribute, Content: domString);
+procedure XmlAttributeForce(XmlDoc: TLccXmlDocument; TargetNode: TLccXmlNode; Attribute, Content: domString);
+function XmlAttributeRead(TargetNode: TLccXmlNode; Attribute: domString): domString;
+function XmlAttributeExists(TargetNode: TLccXmlNode; Attribute: domString): Boolean;
+procedure XmlAttributeRemove(TargetNode: TLccXmlNode; Attribute: domString);
 
 implementation
 
-procedure XmlAttributeForce(XmlDoc: LccXmlDocument; TargetNode: LccXmlNode; Attribute, Content: domString);
+procedure XmlAttributeForce(XmlDoc: TLccXmlDocument; TargetNode: TLccXmlNode; Attribute, Content: domString);
 {$IFDEF FPC}
 var
-  AttributeNode: LccXmlNode;
+  AttributeNode: TLccXmlNode;
 {$ENDIF}
 begin
   {$IFDEF FPC}
@@ -80,9 +82,9 @@ begin
   {$ENDIF}
 end;
 
-function XmlAttributeRead(TargetNode: LccXmlNode; Attribute: domString): domString;
+function XmlAttributeRead(TargetNode: TLccXmlNode; Attribute: domString): domString;
 var
-  Node: LccXmlNode;
+  Node: TLccXmlNode;
 begin
   Result := '';
   Node := nil;
@@ -96,7 +98,7 @@ begin
   {$ENDIF}
 end;
 
-function XmlAttributeExists(TargetNode: LccXmlNode; Attribute: domString): Boolean;
+function XmlAttributeExists(TargetNode: TLccXmlNode; Attribute: domString): Boolean;
 begin
   {$IFDEF FPC}
   if Assigned( TargetNode.Attributes) then
@@ -106,7 +108,7 @@ begin
   {$ENDIF}
 end;
 
-procedure XmlAttributeRemove(TargetNode: LccXmlNode; Attribute: domString);
+procedure XmlAttributeRemove(TargetNode: TLccXmlNode; Attribute: domString);
 {$IFNDEF FPC}
 var
   Node: IXMLNode;
@@ -123,7 +125,7 @@ begin
   {$ENDIF}
 end;
 
-function XmlLoadFromStream(Stream: TStream): LccXmlDocument;
+function XmlLoadFromStream(Stream: TStream): TLccXmlDocument;
 begin
   Stream.Position := 0;
   {$IFDEF FPC}
@@ -135,7 +137,7 @@ begin
   {$ENDIF}
 end;
 
-function XmlLoadFromText(XMLText: string): LccXmlDocument;
+function XmlLoadFromText(XMLText: string): TLccXmlDocument;
 begin
   {$IFDEF FPC}
   Result := nil;
@@ -148,8 +150,8 @@ begin
   {$ENDIF}
 end;
 
-function BuildConfigurationDocument(CdiXMLFilePath: string): LccXmlDocument;
-  procedure RunCdi(ChildNode: LccXmlNode; var CurrentAddress: Integer);
+function BuildConfigurationDocument(CdiXMLFilePath: string): TLccXmlDocument;
+  procedure RunCdi(ChildNode: TLccXmlNode; var CurrentAddress: Integer);
   var
     Attrib: domString;
     ReplicationCount, i: Integer;
@@ -205,7 +207,7 @@ function BuildConfigurationDocument(CdiXMLFilePath: string): LccXmlDocument;
      end;
   end;
 var
-  RootNode, SegmentNode: LccXmlNode;
+  RootNode, SegmentNode: TLccXmlNode;
   CurrentAddress: Integer;
 begin
   Result := XmlLoadFromFile(CdiXmlFilePath);
@@ -228,7 +230,7 @@ begin
   end;
 end;
 
-procedure XmlFreeDocument(var XmlDoc: LccXmlDocument);
+procedure XmlFreeDocument(var XmlDoc: TLccXmlDocument);
 begin
   {$IFDEF FPC}
   FreeAndNil(XmlDoc)
@@ -237,7 +239,7 @@ begin
   {$ENDIF}
 end;
 
-function XmlCreateEmptyDocument: LccXmlDocument;
+function XmlCreateEmptyDocument: TLccXmlDocument;
 begin
   {$IFDEF FPC}
   Result := TXMLDocument.Create;
@@ -248,7 +250,7 @@ begin
   {$ENDIF}
 end;
 
-procedure XmlWriteToFile(FilePath: string; XmlDoc: LccXmlDocument);
+procedure XmlWriteToFile(FilePath: string; XmlDoc: TLccXmlDocument);
 begin
   {$IFDEF FPC}
   WriteXMLFile(XmlDoc, FilePath);
@@ -257,7 +259,7 @@ begin
   {$ENDIF}
 end;
 
-function XmlCreateChildNode(XmlDoc: LccXmlDocument; ParentNode: LccXmlNode; Element, Content: domString): LccXmlNode;
+function XmlCreateChildNode(XmlDoc: TLccXmlDocument; ParentNode: TLccXmlNode; Element, Content: domString): TLccXmlNode;
 begin
   {$IFDEF FPC}
   Result := XmlDoc.CreateElement(Element);
@@ -271,7 +273,7 @@ begin
   {$ENDIF}
 end;
 
-function XmlCreateRootNode(XmlDoc: LccXmlDocument; Element, Content: domString): LccXmlNode;
+function XmlCreateRootNode(XmlDoc: TLccXmlDocument; Element, Content: domString): TLccXmlNode;
 begin
   {$IFDEF FPC}
   Result := XmlDoc.CreateElement(Element);
@@ -283,7 +285,7 @@ begin
   {$ENDIF}
 end;
 
-function XmlLoadFromFile(FilePath: string): LccXmlDocument;
+function XmlLoadFromFile(FilePath: string): TLccXmlDocument;
 begin
   {$IFDEF FPC}
   Result := nil;
@@ -294,17 +296,17 @@ begin
   {$ENDIF}
 end;
 
-function XmlFindChildNode(XmlNode: LccXmlNode; Name: domString): LccXmlNode;
+function XmlFindChildNode(XmlNode: TLccXmlNode; Name: domString): TLccXmlNode;
 begin
   Result := XmlNode.{$IFNDEF FPC}ChildNodes.{$ENDIF}FindNode(Name);
 end;
 
-function XmlFirstChild(XmlNode: LccXmlNode): LccXmlNode;
+function XmlFirstChild(XmlNode: TLccXmlNode): TLccXmlNode;
 begin
   Result := XmlNode.{$IFDEF FPC}FirstChild{$ELSE}ChildNodes.First{$ENDIF}
 end;
 
-function XmlFirstChildValue(XmlNode: LccXmlNode): domString;
+function XmlFirstChildValue(XmlNode: TLccXmlNode): domString;
 var
   Child: {$IFDEF FPC}TDOMNode{$ELSE}IXMLNode{$ENDIF};
 begin
@@ -314,7 +316,7 @@ begin
     Result := Child.NodeValue;
 end;
 
-function XmlNextSiblingValue(XmlNode: LccXmlNode): domString;
+function XmlNextSiblingValue(XmlNode: TLccXmlNode): domString;
 var
   Sibling: {$IFDEF FPC}TDOMNode{$ELSE}IXMLNode{$ENDIF};
 begin
@@ -324,24 +326,24 @@ begin
     Result := Sibling.NodeValue;
 end;
 
-function XmlNodeName(XmlNode: LccXmlNode): domString;
+function XmlNodeName(XmlNode: TLccXmlNode): domString;
 begin
   Result := XmlNode.NodeName;
 end;
 
-function XmlNodeTextContent(XmlNode: LccXmlNode): domString;
+function XmlNodeTextContent(XmlNode: TLccXmlNode): domString;
 begin
   Result := XmlNode.{$IFDEF FPC}TextContent{$ELSE}Text{$ENDIF}
 end;
 
-procedure XmlNodeSetTextContent(XmlNode: LccXmlNode; Text: domString);
+procedure XmlNodeSetTextContent(XmlNode: TLccXmlNode; Text: domString);
 begin
   XmlNode.{$IFDEF FPC}TextContent{$ELSE}Text{$ENDIF} := Text;
 end;
 
 procedure XmlNodeSetFirstLevelTextContent(FilePath, RootElement, ChildElement, Content: domString; Force: Boolean);
 var
-  XMLDoc: LccXmlDocument;
+  XMLDoc: TLccXmlDocument;
 begin
   // Does not Force the FilePath and and a new XML file
   XMLDoc := XmlLoadFromFile(string( FilePath));
@@ -352,9 +354,9 @@ begin
   end;
 end;
 
-procedure XmlNodeSetFirstLevelTextContent(XMLDoc: LccXmlDocument; RootElement, ChildElement, Content: domString; Force: Boolean);
+procedure XmlNodeSetFirstLevelTextContent(XMLDoc: TLccXmlDocument; RootElement, ChildElement, Content: domString; Force: Boolean);
 var
-  RootNode, ChildNode: LccXmlNode;
+  RootNode, ChildNode: TLccXmlNode;
 begin
   if Assigned(XMLDoc) then
   begin
@@ -372,15 +374,15 @@ begin
   end;
 end;
 
-function XmlNextSiblingNode(XmlNode: LccXmlNode): LccXmlNode;
+function XmlNextSiblingNode(XmlNode: TLccXmlNode): TLccXmlNode;
 begin
   Result := XmlNode.NextSibling;
 end;
 
-procedure XmlAttributeCreateAndSet(XmlDoc: LccXmlDocument; TargetNode: LccXmlNode; Attribute, Content: domString);
+procedure XmlAttributeCreateAndSet(XmlDoc: TLccXmlDocument; TargetNode: TLccXmlNode; Attribute, Content: domString);
 {$IFDEF FPC}
 var
-  AttributeNode: LccXmlAttribute;
+  AttributeNode: TLccXmlAttribute;
 {$ENDIF}
 begin
   {$IFDEF FPC}
@@ -392,7 +394,7 @@ begin
   {$ENDIF}
 end;
 
-function XmlFindRootNode(XmlDoc: LccXmlDocument; RootName: domString): LccXmlNode;
+function XmlFindRootNode(XmlDoc: TLccXmlDocument; RootName: domString): TLccXmlNode;
 begin
   {$IFDEF FPC}
   Result := XmlFindChildNode(XmlDoc, RootName);

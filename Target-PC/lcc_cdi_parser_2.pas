@@ -62,7 +62,7 @@ type
     property StatusLabel: TLccLabel read FStatusLabel write FStatusLabel;
 
 
-    procedure Render_CDI_Interface({AnLccNode: TLccNode;} CdiContainer: TLccCdiContainer; CDI: LccXmlDocument);
+    procedure Render_CDI_Interface({AnLccNode: TLccNode;} CdiContainer: TLccCdiContainer; CDI: TLccXmlDocument);
     procedure Clear_CDI_Interface;
   end;
 
@@ -71,7 +71,7 @@ implementation
 
 
 { TLccCdiParser }
-procedure TLccCdiParser.Render_CDI_Interface(CdiContainer: TLccCdiContainer; CDI: LccXmlDocument);
+procedure TLccCdiParser.Render_CDI_Interface(CdiContainer: TLccCdiContainer; CDI: TLccXmlDocument);
 const
   IDENTIFICATION_INDENT = 16;
 var

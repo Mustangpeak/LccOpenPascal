@@ -582,7 +582,7 @@ end;
 
 procedure TLccThrottleAppForm.RenderCDI(TractionObject: TLccTractionObject);
 var
-  XMLDoc: LccXmlDocument;
+  XMLDoc: TLccXmlDocument;
 begin
   if TractionObject.NodeCDI.Valid then
   begin
@@ -718,8 +718,8 @@ end;
 
 procedure TLccThrottleAppForm.XmlLoadSettingsFromFile;
 var
-  SettingsXML: LccXmlDocument;
-  RootNode, ChildNode: LccXmlNode;
+  SettingsXML: TLccXmlDocument;
+  RootNode, ChildNode: TLccXmlNode;
 begin
   // Read in the Setting File
   SettingsXML := XmlLoadFromFile(PathSettingsFile);
@@ -749,8 +749,8 @@ end;
 
 procedure TLccThrottleAppForm.XmlWriteDefaultFile;
 var
-  SettingsXML: LccXmlDocument;
-  RootNode, ChildNode: LccXmlNode;
+  SettingsXML: TLccXmlDocument;
+  RootNode, ChildNode: TLccXmlNode;
 begin
   if not DirectoryExists(PathApplicationFiles) then
     ForceDirectories(PathApplicationFiles);

@@ -324,11 +324,11 @@ type
     function GetCVBlockRead: Word;
     procedure SetCVBlockRead(AValue: Word);
   protected
-    function AddTab(PageControl: TLccTabControl; ACaption: string): TScrollBox;
+    function AddTabWithScrollBoxClientArea(PageControl: TLccTabControl; ACaption: string): TScrollBox;
     procedure AddLabel(ParentControl: TScrollBox; ACaption: string; var ControlOffset: Integer; ControlMargin, Indent: Integer; Bold: Boolean);
-    procedure AddSpinEdit(ParentControl: TScrollBox; Element: LccXmlNode; var ControlOffset: Integer; ControlMargin, Indent: Integer; MemOffset, MemSize: DWord; DoPrintMemOffset: Boolean; ElementType: string; ShowReadBtn, ShowWriteBtn: Boolean);
-    procedure AddEdit(ParentControl: TScrollBox; Element: LccXmlNode; var ControlOffset: Integer; ControlMargin, Indent: Integer; MemOffset, MemSize: DWord; DoPrintMemOffset: Boolean; ElementType: string; ShowReadBtn, ShowWriteBtn: Boolean);
-    procedure AddComboBoxList(ParentControl: TScrollBox; Element: LccXmlNode; var ControlOffset: Integer; ControlMargin, Indent: Integer; MemOffset, MemSize: DWord; DoPrintMemOffset: Boolean; ElementType: string; ShowReadBtn, ShowWriteBtn: Boolean);
+    procedure AddSpinEdit(ParentControl: TScrollBox; Element: TLccXmlNode; var ControlOffset: Integer; ControlMargin, Indent: Integer; MemOffset, MemSize: DWord; DoPrintMemOffset: Boolean; ElementType: string; ShowReadBtn, ShowWriteBtn: Boolean);
+    procedure AddEdit(ParentControl: TScrollBox; Element: TLccXmlNode; var ControlOffset: Integer; ControlMargin, Indent: Integer; MemOffset, MemSize: DWord; DoPrintMemOffset: Boolean; ElementType: string; ShowReadBtn, ShowWriteBtn: Boolean);
+    procedure AddComboBoxList(ParentControl: TScrollBox; Element: TLccXmlNode; var ControlOffset: Integer; ControlMargin, Indent: Integer; MemOffset, MemSize: DWord; DoPrintMemOffset: Boolean; ElementType: string; ShowReadBtn, ShowWriteBtn: Boolean);
     procedure AddPalletButtons(ParentControl: TLccCdiContainer);
     procedure AddSpeedButtonGlyph(SpeedButton: TLccSpeedButton; ImageListIndex: Integer);
     procedure DoAfterReadPage(Sender: TObject); virtual;
@@ -341,21 +341,21 @@ type
     procedure DoSpeedButtonWriteClick(Sender: TObject); virtual;
     procedure DoClearInterface; virtual;
     procedure DoBuildInterfaceComplete; virtual;
-    function ExtractElementItem(Element: LccXmlNode; Item: string; var ItemStr: string): Boolean;
-    function ExtractElementAttribute(Element: LccXmlNode; AttributeName: string; var AttributeStr: string): Boolean;
+    function ExtractElementItem(Element: TLccXmlNode; Item: string; var ItemStr: string): Boolean;
+    function ExtractElementAttribute(Element: TLccXmlNode; AttributeName: string; var AttributeStr: string): Boolean;
     function FindControlByAddress(Address: DWord): TLccControl;
     function FindActivePage: TLccTabSheet;
-    function IsMemorySpace(Segment: LccXmlNode; MemorySpace: Byte): Boolean;
+    function IsMemorySpace(Segment: TLccXmlNode; MemorySpace: Byte): Boolean;
     procedure Notification(AComponent: TComponent; Operation: TOperation); override;
     procedure OnSpinEditChange(Sender: TObject);
     procedure OnEditChange(Sender: TObject);
     procedure OnComboBoxChange(Sender: TObject);
     procedure OnPageControlChange(Sender: TObject);
     procedure OnSerializerNotification(Sender: TObject; Notify: TParserSerializer);
-    procedure ProcessElementForUI(ParentControl: TScrollBox; Element: LccXmlNode; var MemOffset: DWord; var ControlOffset: Integer; Indent: Integer; DoSuppressNameAndDescription: Boolean; DoPrintMemOffset: Boolean; ShowReadBtn, ShowWriteBtn: Boolean);
+    procedure ProcessElementForUI(ParentControl: TScrollBox; Element: TLccXmlNode; var MemOffset: DWord; var ControlOffset: Integer; Indent: Integer; DoSuppressNameAndDescription: Boolean; DoPrintMemOffset: Boolean; ShowReadBtn, ShowWriteBtn: Boolean);
     function SpeedButtonToConfigInfo(Sender: TObject): TConfigInfo;
-    procedure UpdateMemOffsetJump(Element: LccXmlNode; var MemOffset: DWord);
-    function UpdateMemOffsetSize(Element: LccXmlNode): DWord;
+    procedure UpdateMemOffsetJump(Element: TLccXmlNode; var MemOffset: DWord);
+    function UpdateMemOffsetSize(Element: TLccXmlNode): DWord;
 
     property Pallet: TLccCdiContainer read FPallet;
     property PalletButtons: TLccCdiContainer read FPalletButtons write FPalletButtons;
@@ -369,7 +369,7 @@ type
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
-    function Build_CDI_Interface(AnLccNode: TLccNode; ParentControl: TLccCdiContainer; CDI: LccXMLDocument): TLccTabControl;
+    function Build_CDI_Interface(AnLccNode: TLccNode; ParentControl: TLccCdiContainer; CDI: TLccXmlDocument): TLccTabControl;
     procedure Clear_CDI_Interface(ClearLccNode: Boolean);
     procedure DoConfigMemReadReply(ANode: TObject); override;
     procedure DoConfigMemWriteReply(ANode: TObject); override;
@@ -377,7 +377,6 @@ type
     procedure SetNodeManager(ANodeManager: TObject); override;
 
     property LccNode: TLccNode read FLccNode;
-  published
     property AutoReadOnTabChange: Boolean read FAutoReadOnTabChange write FAutoReadOnTabChange;
     property CVBlockRead: Word read GetCVBlockRead write SetCVBlockRead;
     property ImageList16x16: TLccImageList read FImageList16x16 write FImageList16x16;
@@ -1020,26 +1019,26 @@ begin
   Serializer.SendNext;
 end;
 
-function TLccCdiParser.ExtractElementItem(Element: LccXmlNode; Item: string; var ItemStr: string): Boolean;
+function TLccCdiParser.ExtractElementItem(Element: TLccXmlNode; Item: string; var ItemStr: string): Boolean;
 var
-  Node: LccXmlNode;
+  Node: TLccXmlNode;
 begin
   Result := False;
   ItemStr := '';
-  Node := XmlFindChildNode(Element, Item);
+  Node := XmlFindChildNode(Element, LccDOMString(Item));
   if Assigned(Node) then
   begin
     Result := True;
-    ItemStr := XmlNodeTextContent(Node);
+    ItemStr := String(XmlNodeTextContent(Node));
   end;
 end;
 
-function TLccCdiParser.ExtractElementAttribute(Element: LccXmlNode; AttributeName: string; var AttributeStr: string): Boolean;
+function TLccCdiParser.ExtractElementAttribute(Element: TLccXmlNode; AttributeName: string; var AttributeStr: string): Boolean;
 begin
   AttributeStr := '';
-  Result := XmlAttributeExists(Element, AttributeName);
+  Result := XmlAttributeExists(Element, LccDOMString(AttributeName));
   if Result then
-   AttributeStr := XmlAttributeRead(Element, AttributeName);
+   AttributeStr := String( XmlAttributeRead(Element, LccDOMString(AttributeName)));
 end;
 
 function TLccCdiParser.FindControlByAddress(Address: DWord): TLccControl;
@@ -1104,14 +1103,11 @@ begin
   end;
 end;
 
-function TLccCdiParser.IsMemorySpace(Segment: LccXmlNode; MemorySpace: Byte): Boolean;
-var
-  AttributeStr: string;
+function TLccCdiParser.IsMemorySpace(Segment: TLccXmlNode; MemorySpace: Byte): Boolean;
 begin
   Result := False;
-  AttributeStr := '';
   if XmlAttributeExists(Segment, 'space') then
-    Result := StrToInt(XmlAttributeRead(Segment, 'space')) = MemorySpace;
+    Result := StrToInt( String(XmlAttributeRead(Segment, 'space'))) = MemorySpace;
 end;
 
 procedure TLccCdiParser.Notification(AComponent: TComponent; Operation: TOperation);
@@ -1126,18 +1122,18 @@ begin
   end;
 end;
 
-procedure TLccCdiParser.UpdateMemOffsetJump(Element: LccXmlNode; var MemOffset: DWord);
+procedure TLccCdiParser.UpdateMemOffsetJump(Element: TLccXmlNode; var MemOffset: DWord);
 var
   i: Integer;
 begin
   if XmlAttributeExists(Element, 'origin') then
-    MemOffset := StrToInt64( XmlAttributeRead(Element, 'origin'))
+    MemOffset := StrToInt64( String(XmlAttributeRead(Element, 'origin')))
   else
   if XmlAttributeExists(Element, 'offset') then
-    MemOffset := StrToInt64( XmlAttributeRead(Element, 'offset'));
+    MemOffset := StrToInt64( String(XmlAttributeRead(Element, 'offset')));
 end;
 
-function TLccCdiParser.UpdateMemOffsetSize(Element: LccXmlNode): DWord;
+function TLccCdiParser.UpdateMemOffsetSize(Element: TLccXmlNode): DWord;
 var
   OffsetModified: Boolean;
   TempStr: string;
@@ -1168,7 +1164,7 @@ begin
   end;
 end;
 
-function TLccCdiParser.AddTab(PageControl: TLccTabControl; ACaption: string): TScrollBox;
+function TLccCdiParser.AddTabWithScrollBoxClientArea(PageControl: TLccTabControl; ACaption: string): TScrollBox;
 var
   Tab: TLccTabSheet;
 begin
@@ -1216,6 +1212,7 @@ begin
   ALabel.Left := Indent;
   if Bold then
     ALabel.Font.Style := [fsBold];
+  ALabel.WordWrap := True;
   ALabel.Parent := ParentControl;
   ControlOffset := ControlOffset + ALabel.Height + ControlMargin;
   {$ENDIF}
@@ -1234,7 +1231,6 @@ begin
   PalletButtons := TLccCdiContainer.Create(ParentControl);
   PalletButtons.Align := TAlignLayout.Bottom;
   PalletButtons.Height := STATUS_HEIGHT + BUTTON_HEIGHT + BUTTON_HEIGHT + BUTTON_MARGIN * 4;
-//  PalletButtons.BevelOuter := bvNone;
   PalletButtons.Parent := ParentControl;
 
   ButtonWritePage := TButton.Create(PalletButtons);
@@ -1317,7 +1313,7 @@ begin
 end;
 
 procedure TLccCdiParser.AddSpinEdit(ParentControl: TScrollBox;
-  Element: LccXmlNode; var ControlOffset: Integer; ControlMargin,
+  Element: TLccXmlNode; var ControlOffset: Integer; ControlMargin,
   Indent: Integer; MemOffset, MemSize: DWord; DoPrintMemOffset: Boolean;
   ElementType: string; ShowReadBtn, ShowWriteBtn: Boolean);
 var
@@ -1428,7 +1424,7 @@ begin
   ControlOffset := Round(ControlOffset + ASpinEdit.Height + ControlMargin);
 end;
 
-procedure TLccCdiParser.AddEdit(ParentControl: TScrollBox; Element: LccXmlNode;
+procedure TLccCdiParser.AddEdit(ParentControl: TScrollBox; Element: TLccXmlNode;
   var ControlOffset: Integer; ControlMargin, Indent: Integer; MemOffset,
   MemSize: DWord; DoPrintMemOffset: Boolean; ElementType: string; ShowReadBtn,
   ShowWriteBtn: Boolean);
@@ -1562,13 +1558,13 @@ begin
 end;
 
 procedure TLccCdiParser.AddComboBoxList(ParentControl: TScrollBox;
-  Element: LccXmlNode; var ControlOffset: Integer; ControlMargin,
+  Element: TLccXmlNode; var ControlOffset: Integer; ControlMargin,
   Indent: Integer; MemOffset, MemSize: DWord; DoPrintMemOffset: Boolean;
   ElementType: string; ShowReadBtn, ShowWriteBtn: Boolean);
 var
   AComboBoxList: TLccOpenPascalComboBox;
   TempStr, LongestStr, ValueStr, PropertyStr: string;
-  MapNode, ChildNode: LccXmlNode;
+  MapNode, ChildNode: TLccXmlNode;
   DoIndent: Boolean;
   Size: TSize;
   ButtonLeft: Integer;
@@ -1736,11 +1732,11 @@ begin
 end;
 
 procedure TLccCdiParser.ProcessElementForUI(ParentControl: TScrollBox;
-  Element: LccXmlNode; var MemOffset: DWord; var ControlOffset: Integer;
+  Element: TLccXmlNode; var MemOffset: DWord; var ControlOffset: Integer;
   Indent: Integer; DoSuppressNameAndDescription: Boolean;
   DoPrintMemOffset: Boolean; ShowReadBtn, ShowWriteBtn: Boolean);
 var
-  Group_Child, Map_Child: LccXmlNode;
+  Group_Child, Map_Child: TLccXmlNode;
   TempStr: string;
   ReplicationCount, i: Integer;
   MemSize: DWord;
@@ -1948,11 +1944,11 @@ begin
   inherited Destroy;
 end;
 
-function TLccCdiParser.Build_CDI_Interface(AnLccNode: TLccNode; ParentControl: TLccCdiContainer; CDI: LccXMLDocument): TLccTabControl;
+function TLccCdiParser.Build_CDI_Interface(AnLccNode: TLccNode; ParentControl: TLccCdiContainer; CDI: TLccXmlDocument): TLccTabControl;
 const
   IDENTIFICATION_INDENT = 16;
 var
-  CDI_Root, Cdi_Child, Identification_Root, Identification_Child, Segment_Root, Segment_Child, Map_Child, Relation_Child: LccXmlNode;
+  CDI_Root, Cdi_Child, Identification_Root, Identification_Child, Segment_Root, Segment_Child, Map_Child, Relation_Child: TLccXmlNode;
   ScrollBox: TScrollBox;
   MemOffset: DWord;
   ControlOffset: Integer;
@@ -1962,7 +1958,9 @@ begin
   ItemStr := '';
   FLccNode := AnLccNode;
   FPallet := ParentControl;
-  {$IFNDEF DELPHI}Pallet.Caption := 'Building GUI';{$ENDIF}
+  {$IFNDEF DELPHI}
+  Pallet.Caption := 'Building GUI';
+  {$ENDIF}
   AddPalletButtons(ParentControl);
   Serializer.OnNotification := {$IFNDEF DELPHI}@{$ENDIF}OnSerializerNotification;
   Result := TLccTabControl.Create(ParentControl);
@@ -1980,7 +1978,7 @@ begin
       ControlOffset := 0;
 
       // Add a tab to place the Identification information on
-      ScrollBox := AddTab(Result, 'Identification');
+      ScrollBox := AddTabWithScrollBoxClientArea(Result, 'Identification');
 
       // Space on the Top
       AddLabel(ScrollBox, ' ', ControlOffset, 4, 0, False);
@@ -2067,9 +2065,9 @@ begin
 
           // Add a new Tabsheet for this Segment using it Name Element as the tab title
           if ExtractElementItem(Segment_Root, 'name', ItemStr) then
-            ScrollBox := AddTab(Result, ItemStr)
+            ScrollBox := AddTabWithScrollBoxClientArea(Result, ItemStr)
           else
-            ScrollBox := AddTab(Result, '[Unnamed]');
+            ScrollBox := AddTabWithScrollBoxClientArea(Result, '[Unnamed]');
 
           // Select it to create the window so the size of the Scrollbox is correct
           // Set it back to a simple tab so it builds faster
