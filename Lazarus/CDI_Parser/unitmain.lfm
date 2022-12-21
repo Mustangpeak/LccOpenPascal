@@ -1,21 +1,21 @@
 object Form1: TForm1
-  Left = 638
+  Left = 404
   Height = 452
-  Top = 256
-  Width = 760
+  Top = 189
+  Width = 783
   Caption = 'Form1'
   ClientHeight = 452
-  ClientWidth = 760
+  ClientWidth = 783
   OnCreate = FormCreate
   LCLVersion = '2.2.4.0'
   object Panel1: TPanel
     Left = 0
     Height = 50
     Top = 0
-    Width = 760
+    Width = 783
     Align = alTop
     ClientHeight = 50
-    ClientWidth = 760
+    ClientWidth = 783
     TabOrder = 0
     object Button1: TButton
       Left = 40
@@ -26,12 +26,20 @@ object Form1: TForm1
       OnClick = Button1Click
       TabOrder = 0
     end
+    object Label4: TLabel
+      Left = 300
+      Height = 16
+      Top = 19
+      Width = 41
+      Caption = 'Label4'
+      ParentColor = False
+    end
   end
   object Panel2: TPanel
     Left = 0
     Height = 284
     Top = 168
-    Width = 760
+    Width = 783
     Align = alClient
     Caption = 'Panel2'
     TabOrder = 1
@@ -40,16 +48,16 @@ object Form1: TForm1
     Left = 0
     Height = 113
     Top = 50
-    Width = 760
+    Width = 783
     Align = alTop
     ClientHeight = 113
-    ClientWidth = 760
+    ClientWidth = 783
     TabOrder = 2
     object Label1: TLabel
       Left = 1
       Height = 32
       Top = 1
-      Width = 758
+      Width = 781
       Align = alTop
       Caption = 'Configures the behavior of the red Emergency Stop button. The E-STOP function can be configured to perform multiple stages of'#10'E-STOP. If multiple options are enabled, press the button multiple times to escalate to the next stage. For information on specific stages, press the Help or ? button for the options in the following submenu.'
       ParentColor = False
@@ -58,7 +66,7 @@ object Form1: TForm1
       Left = 1
       Height = 16
       Top = 33
-      Width = 758
+      Width = 781
       Align = alTop
       Caption = 'Label2'
       ParentColor = False
@@ -67,27 +75,29 @@ object Form1: TForm1
       Left = 1
       Height = 63
       Top = 49
-      Width = 758
-      HorzScrollBar.Page = 708
+      Width = 781
+      HorzScrollBar.Page = 713
       VertScrollBar.Page = 61
       Align = alClient
       ClientHeight = 61
-      ClientWidth = 741
+      ClientWidth = 764
       TabOrder = 0
       object Panel4: TPanel
         Left = 8
         Height = 1500
         Top = 8
-        Width = 700
+        Width = 723
+        Anchors = [akTop, akLeft, akRight]
         Caption = 'Panel4'
         ClientHeight = 1500
-        ClientWidth = 700
+        ClientWidth = 723
         TabOrder = 0
+        OnResize = Panel4Resize
         object Label3: TLabel
           Left = 1
           Height = 64
           Top = 1
-          Width = 698
+          Width = 721
           Align = alTop
           Caption = 'Configures the behavior of the red Emergency Stop button. The E-STOP function can be configured to perform multiple stages of'#10'E-STOP. If multiple options are enabled, press the button multiple times to escalate to the next stage. For information on specific stages, press the Help or ? button for the options in the following submenu.'
           ParentColor = False
@@ -101,7 +111,7 @@ object Form1: TForm1
     Left = 0
     Height = 5
     Top = 163
-    Width = 760
+    Width = 783
     Align = alTop
     ResizeAnchor = akTop
   end

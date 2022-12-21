@@ -17,6 +17,7 @@ type
     Label1: TLabel;
     Label2: TLabel;
     Label3: TLabel;
+    Label4: TLabel;
     OpenDialog1: TOpenDialog;
     Panel1: TPanel;
     Panel2: TPanel;
@@ -26,6 +27,7 @@ type
     Splitter1: TSplitter;
     procedure Button1Click(Sender: TObject);
     procedure FormCreate(Sender: TObject);
+    procedure Panel4Resize(Sender: TObject);
   private
 
   public
@@ -55,6 +57,11 @@ end;
 procedure TForm1.FormCreate(Sender: TObject);
 begin
   Parser := TLccCdiParser.Create(Self);
+end;
+
+procedure TForm1.Panel4Resize(Sender: TObject);
+begin
+  Label4.Caption := IntToSTr(Label3.Height);
 end;
 
 end.

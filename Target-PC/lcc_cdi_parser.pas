@@ -2057,7 +2057,7 @@ begin
       begin
         Segment_Root := Cdi_Child;
         // First Find the Config Memory Segment
-        if IsMemorySpace(Segment_Root, 253) then
+     //   if IsMemorySpace(Segment_Root, 253) then
         begin
           ControlOffset := 0;
           MemOffset := 0;
