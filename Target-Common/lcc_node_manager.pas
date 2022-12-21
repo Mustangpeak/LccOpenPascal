@@ -461,7 +461,6 @@ var
   i: Integer;
   LocalSourceNode: TLccNode;
 begin
-  LocalSourceNode := nil;
   if Owner.GridConnect then
     LocalSourceNode := Owner.FindNode(ReceivedMessage.CAN.SourceAlias)
   else

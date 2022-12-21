@@ -358,7 +358,7 @@ end;
 
 function TNodeProtocolBase.DatagramReadChunk(AStream: TStream; LccMessage: TLccMessage): Boolean;
 begin
-
+  Result := False;
 end;
 
 constructor TNodeProtocolBase.Create;

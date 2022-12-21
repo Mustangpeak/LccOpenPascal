@@ -69,16 +69,17 @@ type
     property Valid: Boolean read FValid write FValid;
   end;
 
-  TCDIObject = class
-  private
-    FCDI: TMemoryStream;
-    FValid: Boolean;
-  public
-    property CDI: TMemoryStream read FCDI write FCDI;
-    property Valid: Boolean read FValid write FValid;
+   { TLccNodeCDI }
 
-    constructor Create;
-    destructor Destroy; override;
+  TLccNodeCDI = class
+  private
+    FImplemented: Boolean;   // Flags if we tried and could not get a CDI
+    FCDI: AnsiString;
+    function GetValid: Boolean;
+  public
+    property CDI: AnsiString read FCDI write FCDI;
+    property Implemented: Boolean read FImplemented write FImplemented;
+    property Valid: Boolean read GetValid;
   end;
 
   // Base struture that contains the two types of LCC node identifiers, the long
@@ -3153,7 +3154,7 @@ procedure TLccMessage.LoadConfigMemRead(ASourceID: TNodeID;
   ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; AddressSpace: Byte;
   ConfigMemAddress: DWord; ReadCount: Byte);
 begin
-  Assert(ReadCount > 64, 'TLccMessage.LoadConfigMemRead must be less than 64 bytes');
+  Assert(ReadCount <= 64, 'TLccMessage.LoadConfigMemRead must be less than 64 bytes');
 
   // Really should be a Get Address Space Info message here to make sure the start address is 0.....
   ZeroFields;
@@ -3483,18 +3484,11 @@ begin
   end;
 end;
 
-{ TCDIObject }
+{ TLccNodeCDI }
 
-constructor TCDIObject.Create;
+function TLccNodeCDI.GetValid: Boolean;
 begin
-  inherited;
-  FCDI := TMemoryStream.Create;
-end;
-
-destructor TCDIObject.Destroy;
-begin
-  FreeAndNil(FCDI);
-  inherited;
+  Result := Implemented and (CDI <> '');
 end;
 
 initialization

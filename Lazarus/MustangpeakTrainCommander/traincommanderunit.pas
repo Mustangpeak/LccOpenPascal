@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ComCtrls, ExtCtrls,
-  StdCtrls,
+  StdCtrls, Spin,
   lcc_ethernet_server,
   lcc_defines,
   lcc_node,
@@ -25,7 +25,8 @@ uses
   servervisualunit,
   lcc_alias_server,
   lcc_train_server,
-  lcc_xmlutilities;
+  lcc_xmlutilities,
+  lcc_cdi_parser;
 
 type
 

@@ -21,10 +21,10 @@ uses
   lcc_node_messages,
   lcc_train_server,
   lcc_alias_server,
-  lcc_cdi_parser_2,
+  lcc_cdi_parser,
 
   FMX.Menus, FMX.Platform, FMX.ListBox, FMX.Memo.Types, FMX.ScrollBox, FMX.Memo,
-  FMX.Header;
+  FMX.Header, FMX.EditBox, FMX.SpinBox, System.ImageList, FMX.ImgList;
 
 const
   FILENAME_SETTINGS = 'settings.xml';
@@ -182,11 +182,14 @@ type
     procedure OnClientServerConnectionChange(Sender: TObject; Info: TLccHardwareConnectionInfo);
     procedure OnClientServerErrorMessage(Sender: TObject; Info: TLccHardwareConnectionInfo);
 
+    procedure CallbackOnMemorySpaceRead(MemorySpaceReadEnging: TMemorySpaceReadEngine);
+
     function ValidEditBoxKey(Key: Word): Boolean;
     function ConnectionLogin: Boolean;
     function FindListviewItemByTagObject(AListview: TListView; ATagObject: TObject): TListviewItem;
     function SelectedRosterEqualsTractionObject(TractionObject: TLccTractionObject): Boolean;
     procedure TryUpdateSelectedRosterTrainDetails(TractionObject: TLccTractionObject);
+    procedure RenderCDI(TractionObject: TLccTractionObject);
   end;
 
 var
@@ -361,6 +364,7 @@ begin
   // Lcc library setup
   NodeManager := TLccNodeManager.Create(nil, True);
   EthernetClient := TLccEthernetClient.Create(nil, NodeManager);
+  CdiParserFrame := TLccCdiParser.Create(nil);
 
   EthernetClient.OnConnectionStateChange := OnClientServerConnectionChange;
   EthernetClient.OnErrorMessage := OnClientServerErrorMessage;
@@ -387,6 +391,7 @@ begin
   NodeManager.ReleaseAliasAll;
   FreeAndNil(FEthernetClient);
   FreeAndNil(FNodeManager);
+  FreeAndNil(FCdiParserFrame);
 end;
 
 procedure TLccThrottleAppForm.FormKeyUp(Sender: TObject; var Key: Word; var KeyChar: Char; Shift: TShiftState);
@@ -417,10 +422,6 @@ begin
     MultiViewConsist.Mode := TMultiViewMode.Drawer;
     TabControlTrainRoster.ActiveTab := TabItemTrainRosterSelect;
     TimerLogin.Enabled := True; // Try to connect
-
-
-    CdiParserFrame := TLccCdiParser.Create;
-    CdiParserFrame.Render_CDI_Interface(LayoutTrainRosterEdit, nil);
 
     if FileExists(PathSettingsFile) then
       XmlLoadSettingsFromFile
@@ -544,6 +545,24 @@ procedure TLccThrottleAppForm.OnClientServerErrorMessage(Sender: TObject; Info: 
 begin
 end;
 
+procedure TLccThrottleAppForm.CallbackOnMemorySpaceRead(MemorySpaceReadEnging: TMemorySpaceReadEngine);
+var
+  TractionObject: TLccTractionObject;
+begin
+  TractionObject := MemorySpaceReadEnging.TagObject as TLccTractionObject;
+  if MemorySpaceReadEnging.State = msesComplete then
+  begin
+    TractionObject.NodeCDI.CDI := Controller.MemorySpaceReadEngine.StreamAsString;
+    TractionObject.NodeCDI.Implemented := True;
+    RenderCDI(TractionObject);
+  end else
+  begin
+    TractionObject.NodeCDI.CDI := '';
+    TractionObject.NodeCDI.Implemented := False;
+  end;
+
+end;
+
 procedure TLccThrottleAppForm.OnSNIPChange(TractionObject: TLccTractionObject);
 var
   ListViewItem: TListViewItem;
@@ -559,6 +578,21 @@ end;
 procedure TLccThrottleAppForm.OnTrainSNIPChange(TractionObject: TLccTractionObject);
 begin
 
+end;
+
+procedure TLccThrottleAppForm.RenderCDI(TractionObject: TLccTractionObject);
+var
+  XMLDoc: LccXmlDocument;
+begin
+  if TractionObject.NodeCDI.Valid then
+  begin
+    XMLDoc := XmlLoadFromText(TractionObject.NodeCDI.CDI);
+    try
+    CdiParserFrame.Build_CDI_Interface(Controller, LayoutTrainRosterEdit, XMLDoc);
+    finally
+      XmlFreeDocument(XMLDoc);
+    end;
+  end;
 end;
 
 procedure TLccThrottleAppForm.OnNodeAliasChanged(Sender: TObject; ALccNode: TLccNode);
@@ -663,7 +697,16 @@ begin
     ListBoxItemTrainsDetailsHardwareVersion.ItemData.Detail := TractionObject.SNIP.HardwareVersion;
     ListBoxItemTrainsDetailsUserName.ItemData.Detail := TractionObject.SNIP.UserName;
     ListBoxItemTrainsDetailsUserDescription.ItemData.Detail := TractionObject.SNIP.UserDescription;
-    Controller.ReadConfigurationDefinitionInfo(TractionObject.NodeID, TractionObject.NodeAlias);
+    if TractionObject.NodeCDI.Valid then
+    begin
+      RenderCDI(TractionObject);
+    end else
+    begin
+      Controller.MemorySpaceReadEngine.Reset;
+      Controller.MemorySpaceReadEngine.Assign(MSI_CDI, TractionObject.NodeID, TractionObject.NodeAlias, CallbackOnMemorySpaceRead);
+      Controller.MemorySpaceReadEngine.TagObject := TractionObject;
+      Controller.MemorySpaceReadEngine.Start;
+    end;
   end;
 end;
 
