@@ -94,7 +94,8 @@ begin
   if Assigned(Node) then
     Result := Node.NodeValue;
   {$ELSE}
-  Result := TargetNode.Attributes[Attribute];
+  if TargetNode.HasAttribute(Attribute) then
+    Result := TargetNode.Attributes[Attribute];
   {$ENDIF}
 end;
 
@@ -104,7 +105,7 @@ begin
   if Assigned( TargetNode.Attributes) then
     Result := Assigned(TargetNode.Attributes.GetNamedItem(Attribute));
   {$ELSE}
-  Result := TargetNode.Attributes[Attribute] <> ''
+  Result := TargetNode.HasAttribute(Attribute)
   {$ENDIF}
 end;
 

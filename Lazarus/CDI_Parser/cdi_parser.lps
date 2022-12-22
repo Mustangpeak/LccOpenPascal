@@ -20,6 +20,7 @@
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="unitMain"/>
+        <IsVisibleTab Value="True"/>
         <TopLine Value="42"/>
         <CursorPos X="47" Y="64"/>
         <UsageCount Value="38"/>
@@ -28,7 +29,6 @@
       </Unit>
       <Unit>
         <Filename Value="../../Target-PC/lcc_cdi_parser.pas"/>
-        <IsVisibleTab Value="True"/>
         <EditorIndex Value="1"/>
         <TopLine Value="971"/>
         <CursorPos X="14" Y="980"/>
@@ -127,7 +127,7 @@
         <UsageCount Value="10"/>
       </Unit>
     </Units>
-    <JumpHistory HistoryIndex="29">
+    <JumpHistory HistoryIndex="28">
       <Position>
         <Filename Value="../../Target-PC/lcc_cdi_parser.pas"/>
         <Caret Line="1801" Column="46" TopLine="1782"/>
@@ -135,10 +135,6 @@
       <Position>
         <Filename Value="../../Target-PC/lcc_cdi_parser.pas"/>
         <Caret Line="395" Column="44" TopLine="381"/>
-      </Position>
-      <Position>
-        <Filename Value="../../Target-PC/lcc_cdi_parser.pas"/>
-        <Caret Line="2024" Column="29" TopLine="2027"/>
       </Position>
       <Position>
         <Filename Value="../../Target-PC/lcc_cdi_parser.pas"/>

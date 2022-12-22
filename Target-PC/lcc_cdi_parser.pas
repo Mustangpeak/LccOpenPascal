@@ -812,7 +812,7 @@ end;
 
 function TLccCdiParser.CreateButton(AContainerParent: TLccPanel;
   ACaption: LccDOMString; OnClickFunc: TNotifyEvent; Enable: Boolean;
-  AWidth: single; AnAlign: TAlign): TLccSpeedButton;
+  AWidth: single;  AnAlign: {$IFDEF DELPHI}TAlignLayout{$ELSE}TAlign{$ENDIF}): TLccSpeedButton;
 begin
   Result := TLccSpeedButton.Create(AContainerParent);
   Result.Width := {$IFDEF DELPHI}AWidth{$ELSE}Trunc(AWidth){$ENDIF};
