@@ -53,9 +53,24 @@
       <OtherUnitFiles Value="../../Target-Common;../../Target-PC;../../Target-PC/HardwareConnection;../../Target-PC/HardwareConnection/Indy_Lcc;../../Target-PC/HardwareConnection/Indy_Lcc/System;../../Target-PC/HardwareConnection/Indy_Lcc/Core;../../Target-PC/HardwareConnection/Indy_Lcc/Protocols;../../Target-PC/HardwareConnection/TLazSerial"/>
       <UnitOutputDirectory Value="lib/$(TargetCPU)-$(TargetOS)"/>
     </SearchPaths>
+    <Parsing>
+      <SyntaxOptions>
+        <IncludeAssertionCode Value="True"/>
+      </SyntaxOptions>
+    </Parsing>
+    <CodeGeneration>
+      <Checks>
+        <IOChecks Value="True"/>
+        <RangeChecks Value="True"/>
+        <OverflowChecks Value="True"/>
+        <StackChecks Value="True"/>
+      </Checks>
+      <VerifyObjMethodCallValidity Value="True"/>
+    </CodeGeneration>
     <Linking>
       <Debugging>
         <DebugInfoType Value="dsDwarf2"/>
+        <UseHeaptrc Value="True"/>
       </Debugging>
       <Options>
         <Win32>

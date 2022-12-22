@@ -34,6 +34,15 @@ object Form1: TForm1
       Caption = 'Label4'
       ParentColor = False
     end
+    object Button2: TButton
+      Left = 426
+      Height = 25
+      Top = 17
+      Width = 75
+      Caption = 'Button2'
+      OnClick = Button2Click
+      TabOrder = 1
+    end
   end
   object Panel2: TPanel
     Left = 0
@@ -42,6 +51,7 @@ object Form1: TForm1
     Width = 783
     Align = alClient
     Caption = 'Panel2'
+    ParentColor = False
     TabOrder = 1
   end
   object Panel3: TPanel

@@ -14,6 +14,7 @@ type
 
   TForm1 = class(TForm)
     Button1: TButton;
+    Button2: TButton;
     Label1: TLabel;
     Label2: TLabel;
     Label3: TLabel;
@@ -26,6 +27,7 @@ type
     ScrollBox1: TScrollBox;
     Splitter1: TSplitter;
     procedure Button1Click(Sender: TObject);
+    procedure Button2Click(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure Panel4Resize(Sender: TObject);
   private
@@ -52,6 +54,11 @@ begin
     CDI := XmlLoadFromFile(OpenDialog1.FileName);
     Parser.Build_CDI_Interface(nil, Panel2, CDI);
   end;
+end;
+
+procedure TForm1.Button2Click(Sender: TObject);
+begin
+  Parser.Build_CDI_Interface(nil, Panel2, nil);
 end;
 
 procedure TForm1.FormCreate(Sender: TObject);

@@ -11,7 +11,7 @@
         <WindowIndex Value="-1"/>
         <TopLine Value="-1"/>
         <CursorPos X="-1" Y="-1"/>
-        <UsageCount Value="21"/>
+        <UsageCount Value="32"/>
       </Unit>
       <Unit>
         <Filename Value="unitmain.pas"/>
@@ -20,9 +20,9 @@
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="unitMain"/>
-        <TopLine Value="35"/>
-        <CursorPos X="33" Y="55"/>
-        <UsageCount Value="21"/>
+        <TopLine Value="42"/>
+        <CursorPos X="47" Y="64"/>
+        <UsageCount Value="32"/>
         <Loaded Value="True"/>
         <LoadedDesigner Value="True"/>
       </Unit>
@@ -30,148 +30,200 @@
         <Filename Value="../../Target-PC/lcc_cdi_parser.pas"/>
         <IsVisibleTab Value="True"/>
         <EditorIndex Value="1"/>
-        <TopLine Value="2074"/>
-        <CursorPos Y="2090"/>
-        <UsageCount Value="11"/>
+        <TopLine Value="2091"/>
+        <CursorPos X="3" Y="2123"/>
+        <UsageCount Value="16"/>
         <Loaded Value="True"/>
       </Unit>
       <Unit>
         <Filename Value="../../Target-PC/lcc_xmlutilities.pas"/>
-        <EditorIndex Value="3"/>
+        <EditorIndex Value="9"/>
         <TopLine Value="14"/>
         <CursorPos X="33" Y="37"/>
-        <UsageCount Value="11"/>
+        <UsageCount Value="16"/>
         <Loaded Value="True"/>
       </Unit>
       <Unit>
         <Filename Value="../../Target-Common/lcc_utilities.pas"/>
-        <EditorIndex Value="2"/>
+        <EditorIndex Value="8"/>
         <TopLine Value="12"/>
         <CursorPos X="3" Y="29"/>
-        <UsageCount Value="11"/>
+        <UsageCount Value="16"/>
+        <Loaded Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="/Applications/Lazarus/lcl/comctrls.pp"/>
+        <UnitName Value="ComCtrls"/>
+        <EditorIndex Value="6"/>
+        <TopLine Value="585"/>
+        <CursorPos X="14" Y="601"/>
+        <UsageCount Value="15"/>
+        <Loaded Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="/Applications/Lazarus/lcl/include/pagecontrol.inc"/>
+        <EditorIndex Value="7"/>
+        <TopLine Value="168"/>
+        <CursorPos X="16" Y="193"/>
+        <UsageCount Value="15"/>
+        <Loaded Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="/Applications/Lazarus/lcl/stdctrls.pp"/>
+        <UnitName Value="StdCtrls"/>
+        <EditorIndex Value="3"/>
+        <TopLine Value="1275"/>
+        <CursorPos X="19" Y="1289"/>
+        <UsageCount Value="14"/>
+        <Loaded Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="/Applications/Lazarus/lcl/controls.pp"/>
+        <UnitName Value="Controls"/>
+        <EditorIndex Value="4"/>
+        <TopLine Value="1724"/>
+        <CursorPos X="30" Y="1740"/>
+        <UsageCount Value="14"/>
+        <Loaded Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="/Applications/Lazarus/lcl/extctrls.pp"/>
+        <UnitName Value="ExtCtrls"/>
+        <EditorIndex Value="2"/>
+        <TopLine Value="1162"/>
+        <CursorPos X="19" Y="1176"/>
+        <UsageCount Value="13"/>
+        <Loaded Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="/usr/local/share/fpcsrc/rtl/objpas/classes/classesh.inc"/>
+        <EditorIndex Value="5"/>
+        <TopLine Value="102"/>
+        <CursorPos X="43" Y="118"/>
+        <UsageCount Value="13"/>
         <Loaded Value="True"/>
       </Unit>
     </Units>
     <JumpHistory HistoryIndex="29">
       <Position>
         <Filename Value="../../Target-PC/lcc_cdi_parser.pas"/>
-        <Caret Line="2094" TopLine="2078"/>
+        <Caret Line="2050" Column="15" TopLine="2038"/>
       </Position>
       <Position>
         <Filename Value="../../Target-PC/lcc_cdi_parser.pas"/>
-        <Caret Line="2095" TopLine="2078"/>
+        <Caret Line="389" Column="94" TopLine="373"/>
       </Position>
       <Position>
         <Filename Value="../../Target-PC/lcc_cdi_parser.pas"/>
-        <Caret Line="2091" TopLine="2078"/>
+        <Caret Line="1969" Column="137" TopLine="1981"/>
       </Position>
       <Position>
         <Filename Value="../../Target-PC/lcc_cdi_parser.pas"/>
-        <Caret Line="2093" TopLine="2078"/>
+        <Caret Line="389" Column="127" TopLine="389"/>
       </Position>
       <Position>
         <Filename Value="../../Target-PC/lcc_cdi_parser.pas"/>
-        <Caret Line="2094" TopLine="2078"/>
+        <Caret Line="2121" Column="12" TopLine="2105"/>
       </Position>
       <Position>
         <Filename Value="../../Target-PC/lcc_cdi_parser.pas"/>
-        <Caret Line="2095" TopLine="2078"/>
+        <Caret Line="344" Column="15" TopLine="344"/>
       </Position>
       <Position>
         <Filename Value="../../Target-PC/lcc_cdi_parser.pas"/>
-        <Caret Line="2091" TopLine="2078"/>
+        <Caret Line="2063" Column="36" TopLine="2043"/>
       </Position>
       <Position>
         <Filename Value="../../Target-PC/lcc_cdi_parser.pas"/>
-        <Caret Line="2093" TopLine="2078"/>
+        <Caret Line="2060" Column="30" TopLine="2044"/>
       </Position>
       <Position>
         <Filename Value="../../Target-PC/lcc_cdi_parser.pas"/>
-        <Caret Line="2094" TopLine="2078"/>
+        <Caret Line="2157" Column="39" TopLine="2135"/>
       </Position>
       <Position>
         <Filename Value="../../Target-PC/lcc_cdi_parser.pas"/>
-        <Caret Line="2095" TopLine="2078"/>
+        <Caret Line="2074" Column="42" TopLine="2058"/>
       </Position>
       <Position>
         <Filename Value="../../Target-PC/lcc_cdi_parser.pas"/>
-        <Caret Line="2091" TopLine="2078"/>
+        <Caret Line="2155" Column="95" TopLine="2139"/>
       </Position>
       <Position>
         <Filename Value="../../Target-PC/lcc_cdi_parser.pas"/>
-        <Caret Line="2093" TopLine="2078"/>
+        <Caret Line="2181" Column="31" TopLine="2154"/>
       </Position>
       <Position>
         <Filename Value="../../Target-PC/lcc_cdi_parser.pas"/>
-        <Caret Line="2094" TopLine="2078"/>
+        <Caret Line="2161" Column="45" TopLine="2145"/>
       </Position>
       <Position>
         <Filename Value="../../Target-PC/lcc_cdi_parser.pas"/>
-        <Caret Line="2095" TopLine="2078"/>
+        <Caret Line="2177" Column="10" TopLine="2153"/>
       </Position>
       <Position>
         <Filename Value="../../Target-PC/lcc_cdi_parser.pas"/>
-        <Caret Line="2091" TopLine="2078"/>
+        <Caret Line="2207" Column="28" TopLine="2186"/>
       </Position>
       <Position>
         <Filename Value="../../Target-PC/lcc_cdi_parser.pas"/>
-        <Caret Line="2093" TopLine="2078"/>
+        <Caret Line="2011" Column="41" TopLine="1998"/>
       </Position>
       <Position>
         <Filename Value="../../Target-PC/lcc_cdi_parser.pas"/>
-        <Caret Line="2094" TopLine="2078"/>
+        <Caret Line="2230" Column="24" TopLine="2214"/>
       </Position>
       <Position>
         <Filename Value="../../Target-PC/lcc_cdi_parser.pas"/>
-        <Caret Line="2095" TopLine="2078"/>
+        <Caret Line="2082" Column="135" TopLine="2079"/>
       </Position>
       <Position>
         <Filename Value="../../Target-PC/lcc_cdi_parser.pas"/>
-        <Caret Line="2091" TopLine="2078"/>
+        <Caret Line="2260" Column="25" TopLine="2215"/>
       </Position>
       <Position>
         <Filename Value="../../Target-PC/lcc_cdi_parser.pas"/>
-        <Caret Line="2099" TopLine="2078"/>
+        <Caret Line="2235" Column="27" TopLine="2214"/>
       </Position>
       <Position>
         <Filename Value="../../Target-PC/lcc_cdi_parser.pas"/>
-        <Caret Line="2102" TopLine="2078"/>
+        <Caret Line="2240" Column="44" TopLine="2221"/>
       </Position>
       <Position>
         <Filename Value="../../Target-PC/lcc_cdi_parser.pas"/>
-        <Caret Line="2054" TopLine="2046"/>
+        <Caret Line="2246" Column="6" TopLine="2229"/>
       </Position>
       <Position>
         <Filename Value="../../Target-PC/lcc_cdi_parser.pas"/>
-        <Caret Line="2056" TopLine="2046"/>
+        <Caret Line="2259" Column="9" TopLine="2243"/>
       </Position>
       <Position>
         <Filename Value="../../Target-PC/lcc_cdi_parser.pas"/>
-        <Caret Line="2058" TopLine="2046"/>
+        <Caret Line="2276" Column="15" TopLine="2254"/>
       </Position>
       <Position>
         <Filename Value="../../Target-PC/lcc_cdi_parser.pas"/>
-        <Caret Line="2060" TopLine="2046"/>
+        <Caret Line="1975" Column="16" TopLine="1968"/>
       </Position>
       <Position>
         <Filename Value="../../Target-PC/lcc_cdi_parser.pas"/>
-        <Caret Line="2102" TopLine="2086"/>
+        <Caret Line="57" Column="14" TopLine="39"/>
       </Position>
       <Position>
         <Filename Value="../../Target-PC/lcc_cdi_parser.pas"/>
-        <Caret Line="2054" TopLine="2038"/>
+        <Caret Line="70" Column="14" TopLine="116"/>
       </Position>
       <Position>
         <Filename Value="../../Target-PC/lcc_cdi_parser.pas"/>
-        <Caret Line="2110" TopLine="2094"/>
+        <Caret Line="333" Column="21" TopLine="317"/>
       </Position>
       <Position>
         <Filename Value="../../Target-PC/lcc_cdi_parser.pas"/>
-        <Caret Line="2111" TopLine="2094"/>
+        <Caret Line="2123" Column="21" TopLine="2096"/>
       </Position>
       <Position>
         <Filename Value="../../Target-PC/lcc_cdi_parser.pas"/>
-        <Caret Line="2060" Column="8" TopLine="2050"/>
+        <Caret Line="389" Column="14" TopLine="429"/>
       </Position>
     </JumpHistory>
     <RunParams>
