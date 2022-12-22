@@ -1,0 +1,76 @@
+object Form1: TForm1
+  Left = 0
+  Top = 0
+  Caption = 'Form1'
+  ClientHeight = 480
+  ClientWidth = 640
+  FormFactor.Width = 320
+  FormFactor.Height = 480
+  FormFactor.Devices = [Desktop]
+  OnCreate = FormCreate
+  DesignerMasterStyle = 0
+  object Layout1: TLayout
+    Align = Top
+    Size.Width = 640.000000000000000000
+    Size.Height = 65.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 1
+    object Button1: TButton
+      Position.X = 48.000000000000000000
+      Position.Y = 19.000000000000000000
+      TabOrder = 0
+      Text = 'Open XML'
+      OnClick = Button1Click
+    end
+    object Button2: TButton
+      Position.X = 368.000000000000000000
+      Position.Y = 19.000000000000000000
+      Size.Width = 185.000000000000000000
+      Size.Height = 22.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 1
+      Text = 'Create Dynamically Local'
+      OnClick = Button2Click
+    end
+    object Button3: TButton
+      Position.X = 200.000000000000000000
+      Position.Y = 19.000000000000000000
+      Size.Width = 136.000000000000000000
+      Size.Height = 22.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 2
+      Text = 'Parser with no XML'
+      OnClick = Button3Click
+    end
+    object Label1: TLabel
+      Align = Top
+      StyledSettings = [Family, Size, FontColor]
+      Padding.Left = 20.000000000000000000
+      Margins.Left = 20.000000000000000000
+      Position.X = 20.000000000000000000
+      Size.Width = 620.000000000000000000
+      Size.Height = 17.000000000000000000
+      Size.PlatformDefault = False
+      Text = 'Label1'
+      TabOrder = 3
+    end
+    object Button4: TButton
+      Position.X = 536.000000000000000000
+      Position.Y = 35.000000000000000000
+      TabOrder = 4
+      Text = 'Button4'
+      OnClick = Button4Click
+    end
+  end
+  object OpenDialog1: TOpenDialog
+    Left = 168
+    Top = 104
+  end
+  object Layout2: TLayout
+    Align = Client
+    Size.Width = 640.000000000000000000
+    Size.Height = 415.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 3
+  end
+end

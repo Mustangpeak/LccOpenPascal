@@ -1984,7 +1984,7 @@ function TLccCdiParser.Build_CDI_Interface(AnLccNode: TLccNode; ParentControl: T
       LocalTab.Parent := APageControl;
 
       // Create the ScrollBox and put it in the Tab
-      LocalScrollBox := TScrollBox.Create(Tab);
+      LocalScrollBox := TScrollBox.Create(LocalTab);
       LocalScrollBox.Parent := LocalTab;
       LocalScrollBox.Align := TAlignLayout.Client;
       LocalScrollBox.Padding.Left := 4;
@@ -1992,10 +1992,12 @@ function TLccCdiParser.Build_CDI_Interface(AnLccNode: TLccNode; ParentControl: T
       LocalScrollBox.Padding.Top := 4;
       LocalScrollBox.Padding.Bottom := 4;
 
-      Result := TLccPanel.Create(LocalTab);
-      Result.Anchors := [TAnchorKind.akRight, TAnchorKind.akRight, TAnchorKind.akTop];
-      Result.Position.X;
+
+      Result := TLccPanel.Create(LocalScrollBox);
+      Result.Anchors := [TAnchorKind.akLeft, TAnchorKind.akRight, TAnchorKind.akTop];
+      Result.Position.X := 0;
       Result.Width := LocalScrollBox.Width;
+      Result.Height := 1000; /// TODO: Temp
       Result.Parent := LocalScrollBox;
 
       {$ELSE}
@@ -2013,7 +2015,7 @@ function TLccCdiParser.Build_CDI_Interface(AnLccNode: TLccNode; ParentControl: T
       LocalScrollBox.VertScrollBar.Tracking := True;
       LocalScrollBox.HorzScrollBar.Tracking := True;
 
-      Result := TLccPanel.Create(LocalTab);
+      Result := TLccPanel.Create(LocalScrollBox);
       Result.Anchors := [akLeft, akRight, akTop];
       Result.Left := 0;
       Result.Width := LocalScrollBox.Width;
@@ -2028,12 +2030,13 @@ function TLccCdiParser.Build_CDI_Interface(AnLccNode: TLccNode; ParentControl: T
       OnClickFunc: TNotifyEvent;
       Enable: Boolean;
       AWidth: single;
-      {$IFDEF DELPHI}TAlignLayout{$ELSE}AnAlign: TAlign{$ENDIF}
+      AnAlign: {$IFDEF DELPHI}TAlignLayout{$ELSE}TAlign{$ENDIF}
         ): TLccSpeedButton;
     begin
       Result := TLccSpeedButton.Create(AContainerParent);
       Result.Width := {$IFDEF DELPHI}AWidth{$ELSE}Trunc(AWidth){$ENDIF};
-      Result.Caption := ACaption;
+      Result.{$IFDEF DELPHI}Text{$ELSE}Caption{$ENDIF} := ACaption;
+
       Result.OnClick := OnClickFunc;
       Result.Enabled := Enable;
       Result.Align := AnAlign;
@@ -2056,14 +2059,14 @@ function TLccCdiParser.Build_CDI_Interface(AnLccNode: TLccNode; ParentControl: T
       ): TLccLabel;
     begin
       Result := TLccLabel.Create(ParentControl);
-      Result.{$IFDEF DELPHI}Text{$ELSE}Caption{$ENDIF} := ACaption;
-      Result.Top := ParentControl.Height;   // Make sure it stacks in the right order;
-      Result.Align := {$IFDEF DELPHI}TAlignLayout.Top{$ELSE}alTop{$ENDIF};
       if Bold then
-        Result.Font.Style := {$IFDEF DELPHI}[TFontStyle.fsBold]{$ELSE}[fsBold]{$ENDIF};
+      {$IFDEF DELPHI}Result.TextSettings.Font.Style := [TFontStyle.fsBold]{$ELSE}Result.Font.Style := [fsBold]{$ENDIF};
+      Result.{$IFDEF DELPHI}Text{$ELSE}Caption{$ENDIF} := ACaption;
+      Result.{$IFDEF DELPHI}Position.Y{$ELSE}Top{$ENDIF} := ParentControl.Height;   // Make sure it stacks in the right order;
+      Result.Align := {$IFDEF DELPHI}TAlignLayout.Top{$ELSE}alTop{$ENDIF};
       Result.WordWrap := True;
       {$IFDEF DELPHI}
-      Result.Padding.Left := Indent;
+      Result.Margins.Left := Indent;
       {$ELSE}
       Result.BorderSpacing.Left := Trunc(Indent);
       {$ENDIF}
@@ -2074,7 +2077,7 @@ function TLccCdiParser.Build_CDI_Interface(AnLccNode: TLccNode; ParentControl: T
       ParentControl: TLccPanel
     ): TLccLabel;
     begin
-      Result := CreateLabel(ParentControl, '', 0, False);
+      Result := CreateLabel(ParentControl, ' ', 0, False);
     end;
 
 const
@@ -2125,9 +2128,9 @@ begin
   {$IFNDEF DELPHI}FooterBkGnd.BevelOuter := bvNone;{$ENDIF}
   FooterBkGnd.Parent := ParserBkGnd;
   FooterBkGnd.Height := BUTTON_HEIGHT;
-  CreateButton(FooterBkGnd, 'Read All', @DoButtonReadPageClick, False, (FooterBkGnd.ClientWidth/3)-2, {$IFDEF DELPHI}TAlignLayout.Right{$ELSE}alRight{$ENDIF});
-  CreateButton(FooterBkGnd, 'Write All', @DoButtonWritePageClick, False, (FooterBkGnd.ClientWidth/3)-2, {$IFDEF DELPHI}TAlignLayout.Right{$ELSE}alRight{$ENDIF});
-  CreateButton(FooterBkGnd, 'Abort', @DoButtonStopClick, False, (FooterBkGnd.ClientWidth/3)-2, {$IFDEF DELPHI}TAlignLayout.Right{$ELSE}alRight{$ENDIF});
+  CreateButton(FooterBkGnd, 'Read All', {$IFNDEF DELPHI}@{$ENDIF}DoButtonReadPageClick, False, (FooterBkGnd.Width/3)-2, {$IFDEF DELPHI}TAlignLayout.Right{$ELSE}alRight{$ENDIF});
+  CreateButton(FooterBkGnd, 'Write All', {$IFNDEF DELPHI}@{$ENDIF}DoButtonWritePageClick, False, (FooterBkGnd.Width/3)-2, {$IFDEF DELPHI}TAlignLayout.Right{$ELSE}alRight{$ENDIF});
+  CreateButton(FooterBkGnd, 'Abort', {$IFNDEF DELPHI}@{$ENDIF}DoButtonStopClick, False, (FooterBkGnd.Width/3)-2, {$IFDEF DELPHI}TAlignLayout.Right{$ELSE}alRight{$ENDIF});
 
   // TabControl that is client aligned with the FooterBkGnd
   TabControl := TLccTabControl.Create(ParentControl);
@@ -2152,6 +2155,7 @@ begin
 
       // Handle the manufacturer
       CreateLabel(ScrollBoxBkGnd, 'Manufacturer', IDENTIFICATION_INDENT, True);
+
       Identification_Child := XmlFindChildNode(Identification_Root, 'manufacturer');
       if Assigned(Identification_Child) then
         CreateLabel(ScrollBoxBkGnd, ItemStr + string(XmlNodeTextContent(Identification_Child)), IDENTIFICATION_INDENT + 4, False)
@@ -2228,13 +2232,14 @@ begin
         begin
           ControlOffset := 0;
           MemOffset := 0;
-          CreateSpacer(ScrollBoxBkGnd);     // NOT SURE OF THIS... THIS WILL BE AT THE BOTTOM
 
           // Add a new Tabsheet for this Segment using it Name Element as the tab title
           if ExtractElementItem(Segment_Root, 'name', ItemStr) then
             ScrollBoxBkGnd := CreateTab(TabControl, ItemStr)
           else
             ScrollBoxBkGnd := CreateTab(TabControl, '[Unnamed]');
+
+          CreateSpacer(ScrollBoxBkGnd);
 
           // Select it to create the window so the size of the Scrollbox is correct
           // Set it back to a simple tab so it builds faster

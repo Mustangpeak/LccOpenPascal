@@ -53,6 +53,7 @@ begin
   begin
     CDI := XmlLoadFromFile(OpenDialog1.FileName);
     Parser.Build_CDI_Interface(nil, Panel2, CDI);
+    XmlFreeDocument(CDI);
   end;
 end;
 

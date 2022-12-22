@@ -28,3 +28,10 @@ Dephi/LccThrottleApp/Linux64
 Lazarus/MustangpeakTrainController/Compiled_Binaries
 Lazarus/CDI_Parser/backup
 Lazarus/CDI_Parser/lib
+Lazarus/CDI_Parser/Compiled_Binaries
+Dephi/CDI_Parser/Win32
+cdi_parser.~dsk
+cdi_parser.identcache
+cdi_parser.dsk
+cdi_parser.dproj.local
+LccThrottleApp.~dsk

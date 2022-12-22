@@ -11,7 +11,7 @@
         <WindowIndex Value="-1"/>
         <TopLine Value="-1"/>
         <CursorPos X="-1" Y="-1"/>
-        <UsageCount Value="32"/>
+        <UsageCount Value="34"/>
       </Unit>
       <Unit>
         <Filename Value="unitmain.pas"/>
@@ -21,8 +21,8 @@
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="unitMain"/>
         <TopLine Value="42"/>
-        <CursorPos X="47" Y="64"/>
-        <UsageCount Value="32"/>
+        <CursorPos X="65" Y="51"/>
+        <UsageCount Value="34"/>
         <Loaded Value="True"/>
         <LoadedDesigner Value="True"/>
       </Unit>
@@ -30,9 +30,9 @@
         <Filename Value="../../Target-PC/lcc_cdi_parser.pas"/>
         <IsVisibleTab Value="True"/>
         <EditorIndex Value="1"/>
-        <TopLine Value="2091"/>
-        <CursorPos X="3" Y="2123"/>
-        <UsageCount Value="16"/>
+        <TopLine Value="2046"/>
+        <CursorPos X="89" Y="2063"/>
+        <UsageCount Value="17"/>
         <Loaded Value="True"/>
       </Unit>
       <Unit>
@@ -40,7 +40,7 @@
         <EditorIndex Value="9"/>
         <TopLine Value="14"/>
         <CursorPos X="33" Y="37"/>
-        <UsageCount Value="16"/>
+        <UsageCount Value="17"/>
         <Loaded Value="True"/>
       </Unit>
       <Unit>
@@ -48,7 +48,7 @@
         <EditorIndex Value="8"/>
         <TopLine Value="12"/>
         <CursorPos X="3" Y="29"/>
-        <UsageCount Value="16"/>
+        <UsageCount Value="17"/>
         <Loaded Value="True"/>
       </Unit>
       <Unit>
@@ -57,7 +57,7 @@
         <EditorIndex Value="6"/>
         <TopLine Value="585"/>
         <CursorPos X="14" Y="601"/>
-        <UsageCount Value="15"/>
+        <UsageCount Value="16"/>
         <Loaded Value="True"/>
       </Unit>
       <Unit>
@@ -65,7 +65,7 @@
         <EditorIndex Value="7"/>
         <TopLine Value="168"/>
         <CursorPos X="16" Y="193"/>
-        <UsageCount Value="15"/>
+        <UsageCount Value="16"/>
         <Loaded Value="True"/>
       </Unit>
       <Unit>
@@ -74,7 +74,7 @@
         <EditorIndex Value="3"/>
         <TopLine Value="1275"/>
         <CursorPos X="19" Y="1289"/>
-        <UsageCount Value="14"/>
+        <UsageCount Value="15"/>
         <Loaded Value="True"/>
       </Unit>
       <Unit>
@@ -83,7 +83,7 @@
         <EditorIndex Value="4"/>
         <TopLine Value="1724"/>
         <CursorPos X="30" Y="1740"/>
-        <UsageCount Value="14"/>
+        <UsageCount Value="15"/>
         <Loaded Value="True"/>
       </Unit>
       <Unit>
@@ -92,7 +92,7 @@
         <EditorIndex Value="2"/>
         <TopLine Value="1162"/>
         <CursorPos X="19" Y="1176"/>
-        <UsageCount Value="13"/>
+        <UsageCount Value="14"/>
         <Loaded Value="True"/>
       </Unit>
       <Unit>
@@ -100,11 +100,11 @@
         <EditorIndex Value="5"/>
         <TopLine Value="102"/>
         <CursorPos X="43" Y="118"/>
-        <UsageCount Value="13"/>
+        <UsageCount Value="14"/>
         <Loaded Value="True"/>
       </Unit>
     </Units>
-    <JumpHistory HistoryIndex="29">
+    <JumpHistory HistoryIndex="28">
       <Position>
         <Filename Value="../../Target-PC/lcc_cdi_parser.pas"/>
         <Caret Line="2050" Column="15" TopLine="2038"/>
@@ -112,10 +112,6 @@
       <Position>
         <Filename Value="../../Target-PC/lcc_cdi_parser.pas"/>
         <Caret Line="389" Column="94" TopLine="373"/>
-      </Position>
-      <Position>
-        <Filename Value="../../Target-PC/lcc_cdi_parser.pas"/>
-        <Caret Line="1969" Column="137" TopLine="1981"/>
       </Position>
       <Position>
         <Filename Value="../../Target-PC/lcc_cdi_parser.pas"/>
@@ -211,10 +207,6 @@
       </Position>
       <Position>
         <Filename Value="../../Target-PC/lcc_cdi_parser.pas"/>
-        <Caret Line="70" Column="14" TopLine="116"/>
-      </Position>
-      <Position>
-        <Filename Value="../../Target-PC/lcc_cdi_parser.pas"/>
         <Caret Line="333" Column="21" TopLine="317"/>
       </Position>
       <Position>
@@ -223,7 +215,11 @@
       </Position>
       <Position>
         <Filename Value="../../Target-PC/lcc_cdi_parser.pas"/>
-        <Caret Line="389" Column="14" TopLine="429"/>
+        <Caret Line="2109" Column="63" TopLine="2091"/>
+      </Position>
+      <Position>
+        <Filename Value="../../Target-PC/lcc_cdi_parser.pas"/>
+        <Caret Line="1978" Column="27" TopLine="1961"/>
       </Position>
     </JumpHistory>
     <RunParams>
