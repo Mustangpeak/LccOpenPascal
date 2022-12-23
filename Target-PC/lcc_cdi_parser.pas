@@ -51,9 +51,9 @@ uses
   lcc_xmlutilities;
 
 const
-  CV_BUTTON_WIDTH = 80;
   BASE_EDITOR_HEIGHT = 22;
   BASE_BUTTON_HEIGHT = 22;
+  BASE_BUTTON_WIDTH = 80;
   TAB_RIGHT_MARGIN = 28;
 
 
@@ -83,7 +83,7 @@ type
     TLccTabControl = TTabControl;
     TLccTabSheet = TTabItem;
     TLccControl = TControl;
-    TLccSpeedButton = TSpeedButton;
+    TLccSpeedButton = TButton;
     TLccLabel = TLabel;
     TLccSpinEdit = TSpinBox;
     TLccEdit = TEdit;
@@ -943,9 +943,9 @@ begin
   {$IFNDEF DELPHI}Result.BevelOuter := bvNone;{$ENDIF}
   Result.Parent := ParentControl;
 
-  DataElementInformation.ReadMemorySpaceButton := CreateButton(Result, 'Read', {$IFNDEF DELPHI}@{$ENDIF}DoSpeedButtonReadClick, False, 50, {$IFDEF DELPHI}TAlignLayout.Right{$ELSE}alRight{$ENDIF});
-  DataElementInformation.WriteMemorySpaceButton := CreateButton(Result, 'Write', {$IFNDEF DELPHI}@{$ENDIF}DoSpeedButtonWriteClick, False, 50, {$IFDEF DELPHI}TAlignLayout.Right{$ELSE}alRight{$ENDIF});
-  DataElementInformation.CompareMemorySpaceButton := CreateButton(Result, 'Compare', {$IFNDEF DELPHI}@{$ENDIF}DoSpeedButtonCompareClick, False, 50, {$IFDEF DELPHI}TAlignLayout.Right{$ELSE}alRight{$ENDIF});
+  DataElementInformation.ReadMemorySpaceButton := CreateButton(Result, 'Read', {$IFNDEF DELPHI}@{$ENDIF}DoSpeedButtonReadClick, False, BASE_BUTTON_WIDTH, {$IFDEF DELPHI}TAlignLayout.Right{$ELSE}alRight{$ENDIF});
+  DataElementInformation.WriteMemorySpaceButton := CreateButton(Result, 'Write', {$IFNDEF DELPHI}@{$ENDIF}DoSpeedButtonWriteClick, False, BASE_BUTTON_WIDTH, {$IFDEF DELPHI}TAlignLayout.Right{$ELSE}alRight{$ENDIF});
+  DataElementInformation.CompareMemorySpaceButton := CreateButton(Result, 'Compare', {$IFNDEF DELPHI}@{$ENDIF}DoSpeedButtonCompareClick, False, BASE_BUTTON_WIDTH, {$IFDEF DELPHI}TAlignLayout.Right{$ELSE}alRight{$ENDIF});
 
   DataElementInformation.ReadMemorySpaceButton.Visible := ShowReadBtn;
   DataElementInformation.WriteMemorySpaceButton.Visible := ShowWriteBtn;
@@ -1700,8 +1700,13 @@ procedure TLccCdiParser.ResizeActiveTabScrollingWindowFrame;
 var
   TabSheet: TLccOpenPascalTabSheet;
 begin
+  {$IFDEF DELPHI}
+  TabSheet := TabControl.ActiveTab as TLccOpenPascalTabSheet;
+  TabSheet.ScrollingWindowContentsPanel.Width := TabSheet.TabControl.Width - TAB_RIGHT_MARGIN;
+  {$ELSE}
   TabSheet := TabControl.ActivePage as TLccOpenPascalTabSheet;
   TabSheet.ScrollingWindowContentsPanel.Width := TabSheet.Width - TAB_RIGHT_MARGIN;
+  {$ENDIF}
 end;
 
 constructor TLccCdiParser.Create(AOwner: TComponent);
@@ -1815,21 +1820,28 @@ var
 begin
   Serializer.Clear;
   DoClearInterface;
-  TabControl := nil;
+  if Assigned(TabControl) then
+  begin
+    TabControl.Enabled := False;  // Speed it up
+    TabControl.Visible := False;
+  end;
+
   if Assigned(ApplicationPanel) then
   begin
     {$IFDEF DELPHI}
-    for i := Pallet.ControlsCount - 1 downto 0 do
+    for i := ApplicationPanel.ControlsCount - 1 downto 0 do
     {$ELSE}
     for i := ApplicationPanel.ControlCount - 1 downto 0 do
     {$ENDIF}
       ApplicationPanel.Controls[i].Free;
   end;
-//  StatusPanel := nil;;
   GlobalButtonStop := nil;
   GlobalButtonWritePage := nil;
   GlobalButtonReadPage := nil;
   FApplicationPanel := nil;
+  FParserFrame := nil;
+  FGlobalButtonBkGnd := nil;
+  FTabControl := nil;
   if ClearLccNode then
     FLccNode := nil;
 end;

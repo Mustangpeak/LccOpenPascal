@@ -18,9 +18,6 @@ type
     Button3: TButton;
     Label1: TLabel;
     Button4: TButton;
-    TabControl1: TTabControl;
-    TabItem1: TTabItem;
-    ScrollBox1: TScrollBox;
     procedure Button1Click(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure Button2Click(Sender: TObject);
