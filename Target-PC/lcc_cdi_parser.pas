@@ -54,6 +54,9 @@ const
   CV_BUTTON_WIDTH = 80;
   BASE_EDITOR_HEIGHT = 22;
   BASE_BUTTON_HEIGHT = 22;
+  TAB_RIGHT_MARGIN = 28;
+
+
   // Default Label Left side Margins
   LABEL_MARGIN_INDENT = 4;
   LABEL_DELTA_INDENT = 8;
@@ -188,8 +191,7 @@ type
     property CompareMemorySpaceButton: TLccSpeedButton read FCompareMemorySpaceButton write FCompareMemorySpaceButton;
   end;
 
-  // UI control to edit Integer or bit type Configuration meory
-  { TLccOpenPascalSpinEdit }
+   { TLccOpenPascalSpinEdit }
 
   TLccOpenPascalSpinEdit = class(TLccSpinEdit)
   private
@@ -202,7 +204,6 @@ type
     property DataElementInformation: TDataElementInformation read FDataElementInformation write FDataElementInformation;
  end;
 
-  // UI control to edit String type Configuration meory
   { TLccOpenPascalEdit }
 
   TLccOpenPascalEdit = class(TLccEdit)
@@ -216,7 +217,6 @@ type
     property DataElementInformation: TDataElementInformation read FDataElementInformation write FDataElementInformation;
   end;
 
-  // UI control to edit Max type Configuration meory
   { TLccOpenPascalComboBox }
 
   TLccOpenPascalComboBox = class(TLccComboBox)
@@ -230,17 +230,12 @@ type
     property DataElementInformation: TDataElementInformation read FDataElementInformation write FDataElementInformation;
   end;
 
-  { TLccOpenPascalSegmentContainer }
+  { TLccOpenPascalTabControl }
 
-  TLccOpenPascalSegmentContainer = class(TLccPanel)
-  private
-    FLayoutList: TList;     // visually ordered list of TControls that are shown in this segment
-  public
-    constructor Create(TheOwner: TComponent); override;
-    destructor Destroy; override;
+  TLccOpenPascalTabControl = class(TLccTabControl)
 
-    property LayoutList: TList read FLayoutList write FLayoutList;
   end;
+
 
   { TLccCdiParserSerializer }
 
@@ -311,6 +306,7 @@ type
     FShowReadBtn: Boolean;
     FShowWriteBtn: Boolean;
     FSuppressNameAndDescription: Boolean;
+    FTabControl: TLccTabControl;
     FWorkerMessage: TLccMessage;
     function GetCVBlockRead: Word;
     procedure SetCVBlockRead(AValue: Word);
@@ -328,6 +324,26 @@ type
     procedure CreateSpinEditLayout(ParentControl: TLccPanel; Indent: Integer; DataElementInformation: TDataElementInformation);
     procedure CreateEditLayout(ParentControl: TLccPanel; Indent: Integer; DataElementInformation: TDataElementInformation);
     procedure CreateComboBoxListLayout(ParentControl: TLccPanel; Indent: Integer; DataElementInformation: TDataElementInformation);
+
+    // Top level processes
+    function ProcessIdentificationTab(ATabControl: TLccTabControl; IdentificationElement: TLccXmlNode; Indent: Integer): TLccPanel;
+    function ProcessSegmentTab(ATabControl: TLccTabControl; SegmentElement: TLccXmlNode; Indent: Integer): TLccPanel;
+
+    // Midtier processes that may need to create UI elements or call processes that do
+    procedure ProcessElementForUISegment(ParentControl: TLccPanel; Element: TLccXmlNode; var MemoryAddressPointer: Int64; Indent: Integer; AddressSpace: Byte);
+    procedure ProcessElementForUIGroup(ParentControl: TLccPanel; Element: TLccXmlNode; var MemoryAddressPointer: Int64; Indent: Integer; AddressSpace: Byte);
+    procedure ProcessElementForUIString(ParentControl: TLccPanel; Element: TLccXmlNode; var MemoryAddressPointer: Int64; Indent: Integer; AddressSpace: Byte);
+    procedure ProcessElementForUIInt(ParentControl: TLccPanel; Element: TLccXmlNode; var MemoryAddressPointer: Int64; Indent: Integer; AddressSpace: Byte);
+    procedure ProcessElementForUIEventID(ParentControl: TLccPanel; Element: TLccXmlNode; var MemoryAddressPointer: Int64; Indent: Integer; AddressSpace: Byte);
+    procedure ProcessElementForUIDataElement(ParentControl: TLccPanel; Element: TLccXmlNode; var MemoryAddressPointer: Int64; Indent: Integer; AddressSpace: Byte; DataElementInformation: TDataElementInformation);
+
+    // Lowest level process that does not create UI elements directly
+    procedure ProcessElementForUIMap(Element: TLccXmlNode; var MemoryAddressPointer: Int64; DataElementInformation: TDataElementInformation);
+
+    procedure OnBkGndResize(Sender: TObject);
+
+
+    // Methods to look at below...............
 
     procedure DoAfterReadPage(Sender: TObject); virtual;
     procedure DoAfterWritePage(Sender: TObject); virtual;
@@ -350,30 +366,22 @@ type
     procedure OnComboBoxChange(Sender: TObject);
     procedure OnPageControlChange(Sender: TObject);
     procedure OnSerializerNotification(Sender: TObject; Notify: TParserSerializer);
-    procedure OnBkGndResize(Sender: TObject);
-
-    // Top level processes
-    function ProcessIdentificationTab(ATabControl: TLccTabControl; IdentificationElement: TLccXmlNode; Indent: Integer): TLccPanel;
-    function ProcessSegmentTab(ATabControl: TLccTabControl; SegmentElement: TLccXmlNode; Indent: Integer): TLccPanel;
-
-    // Midtier processes that may need to create UI elements or call processes that do
-    procedure ProcessElementForUISegment(ParentControl: TLccPanel; Element: TLccXmlNode; var MemoryAddressPointer: Int64; Indent: Integer; AddressSpace: Byte);
-    procedure ProcessElementForUIGroup(ParentControl: TLccPanel; Element: TLccXmlNode; var MemoryAddressPointer: Int64; Indent: Integer; AddressSpace: Byte);
-    procedure ProcessElementForUIString(ParentControl: TLccPanel; Element: TLccXmlNode; var MemoryAddressPointer: Int64; Indent: Integer; AddressSpace: Byte);
-    procedure ProcessElementForUIInt(ParentControl: TLccPanel; Element: TLccXmlNode; var MemoryAddressPointer: Int64; Indent: Integer; AddressSpace: Byte);
-    procedure ProcessElementForUIEventID(ParentControl: TLccPanel; Element: TLccXmlNode; var MemoryAddressPointer: Int64; Indent: Integer; AddressSpace: Byte);
-    procedure ProcessElementForUIDataElement(ParentControl: TLccPanel; Element: TLccXmlNode; var MemoryAddressPointer: Int64; Indent: Integer; AddressSpace: Byte; DataElementInformation: TDataElementInformation);
-
-    // Lowest level process that does not create UI elements directly
-    procedure ProcessElementForUIMap(Element: TLccXmlNode; var MemoryAddressPointer: Int64; DataElementInformation: TDataElementInformation);
-
     function SpeedButtonToConfigInfo(Sender: TObject): TDataElementInformation;
+    // ...............
+
+
 
     property Pallet: TLccPanel read FPallet;
     property PalletButtons: TLccPanel read FPalletButtons write FPalletButtons;
     property ButtonReadPage: TButton read FButtonReadPage write FButtonReadPage;
     property ButtonWritePage: TButton read FButtonWritePage write FButtonWritePage;
     property ButtonStop: TButton read FButtonStop write FButtonStop;
+    property TabControl: TLccTabControl read FTabControl write FTabControl;
+
+
+
+    // Methods to look at below...............
+
     property MarkedToStop: Boolean read FMarkedToStop write FMarkedToStop;
     property MarkedToStopIsStopping: Boolean read FMarkedToStopIsStopping write FMarkedToStopIsStopping;
     property Serializer: TLccCdiParserSerializer read FSerializer write FSerializer;
@@ -409,21 +417,6 @@ implementation
 type
   TLccNodeManagerHack = class(TLccNodeManager)
   end;
-
-{ TLccOpenPascalSegmentContainer }
-
-constructor TLccOpenPascalSegmentContainer.Create(TheOwner: TComponent);
-begin
-  inherited Create(TheOwner);
-  FLayoutList := TList.Create;
-end;
-
-destructor TLccOpenPascalSegmentContainer.Destroy;
-begin
-  FreeAndNil(FLayoutList);  // We don't own them
-  inherited Destroy;
-end;
-
 
 
 { TLccCdiParserSerializer }
@@ -777,9 +770,9 @@ begin
 
 
   Result := TLccPanel.Create(LocalScrollBox);
-  Result.Anchors := [TAnchorKind.akLeft, TAnchorKind.akRight, TAnchorKind.akTop];
+ // Result.Anchors := [TAnchorKind.akLeft, TAnchorKind.akRight, TAnchorKind.akTop];
   Result.Position.X := 0;
-  Result.Width := LocalScrollBox.Width;
+  Result.Width := LocalScrollBox.Width - 20;
   Result.Parent := LocalScrollBox;
   Result.Height := 16384; /// TODO: Temp
   {$ELSE}
@@ -799,9 +792,9 @@ begin
   LocalScrollBox.HorzScrollBar.Tracking := True;
 
   Result := TLccPanel.Create(LocalScrollBox);
-  Result.Anchors := [akLeft, akRight, akTop];
+ // Result.Anchors := [akLeft, akRight, akTop];
   Result.Left := 0;
-  Result.Width := LocalScrollBox.Width;
+  Result.Width := LocalScrollBox.Width - TAB_RIGHT_MARGIN;
   Result.Parent := LocalScrollBox;
   Result.Height := 16384;                // TODO: TEMP
   {$ENDIF}
@@ -812,6 +805,7 @@ function TLccCdiParser.ProcessIdentificationTab(ATabControl: TLccTabControl;
 var
   IdentificationElementChild: TLccXmlNode;
   ItemStr: LccDOMString;
+  LastLabel: TLccLabel;
 begin
   ItemStr := '';
   if Assigned(IdentificationElement) then
@@ -864,33 +858,14 @@ begin
     else
       CreateSpacer(Result);
 
-{     IdentificationElementChild := XmlFirstChild(IdentificationElement);
-    while Assigned(IdentificationElementChild) do
-    begin
-      if IdentificationElementChild.NodeName = 'map' then
-      begin
-        Map_Child := XmlFirstChild(IdentificationElementChild);
-        while Assigned(Map_Child) do
-        begin
-          if Map_Child.NodeName = 'relation' then
-          begin
-            Relation_Child := XmlFirstChild(Map_Child);
-            while Assigned(Relation_Child) do
-            begin
-              if (Relation_Child.NodeName = 'value') then
-                CreateLabel(Result, XmlNodeTextContent(Relation_Child), LABEL_DETAILS_DEFAULT_INDENT + 16, False)
-              else
-              if (Relation_Child.NodeName = 'property') then
-                 CreateLabel(Result, XmlNodeTextContent(Relation_Child), LABEL_DETAILS_DEFAULT_INDENT + 8, False);
-              Relation_Child := Relation_Child.NextSibling;
-            end;
-            Map_Child := Map_Child.NextSibling;
-          end
-        end;
-      end;
-      IdentificationElementChild := IdentificationElementChild.NextSibling;
-    end;
-    CreateSpacer(Result);          }
+    // Space on the bottom
+    LastLabel := CreateSpacer(Result);
+    {$IFDEF DELPHI}
+    Result.Height := LastLabel.Position.Y + LastLabel.Height;
+    {$ELSE}
+    Result.Height := LastLabel.Top + LastLabel.Height;
+    {$ENDIF}
+
   end;
 end;
 
@@ -901,7 +876,7 @@ var
   ElementString: LccDOMString;
   AddressSpace: DWord;
   LastLabel: TLccLabel;
-  Temp: TLccOpenPascalSegmentContainer;
+  i: Integer;
 begin
   ElementString := '';
 
@@ -919,13 +894,10 @@ begin
   ExtractElementItem(SegmentElement, 'name', ElementString);
   Result := CreateTab(ATabControl, ElementString);
 
-  Temp := TLccOpenPascalSegmentContainer.Create(Result);
-  // Time to build the UI for this segment
-  ProcessElementForUISegment(Temp, SegmentElement, MemoryAddressPointer, Indent, AddressSpace);
 
-  Temp.Width := Result.Width;
-  Temp.Align:= alClient;
-  Temp.Parent := Result;
+  // Time to build the UI for this segment
+  Result.Visible := False;
+  ProcessElementForUISegment(Result, SegmentElement, MemoryAddressPointer, Indent, AddressSpace);
 
   // Space on the bottom
   LastLabel := CreateSpacer(Result);
@@ -934,6 +906,15 @@ begin
   {$ELSE}
   Result.Height := LastLabel.Top + LastLabel.Height;
   {$ENDIF}
+
+  {$IFDEF FPC}
+  // Quirkiness of FPC...
+  Result.Visible := True;
+  Result.Visible := False;
+  for i := Result.ControlCount - 1 downto 0 do
+    Result.Controls[i].Top := 0;
+  {$ENDIF}
+  Result.Visible := True;
 end;
 
 function TLccCdiParser.CreateBaseEditorLayout(ParentControl: TLccPanel;
@@ -1693,8 +1674,63 @@ begin
 end;
 
 procedure TLccCdiParser.OnBkGndResize(Sender: TObject);
+var
+  iTab, iTabContents, iScrollBoxContents, iLayoutContents: Integer;
+  Tab: TLccTabSheet;
+  ScrollBox: TScrollBox;
+  Layout: TLayout;
+  Name: string;
 begin
 
+  // TODO:  Make a better way to directly access the TPanel in each Tab
+  // Also should only change the width of the active tab then resize during a tab switch
+  // would be much quicker
+
+  if Assigned(TabControl) then
+  begin
+
+    {$IFDEF DELPHI}
+    for iTab := 0 to TabControl.TabCount - 1 do
+    begin
+      if TabControl.Tabs[iTab] is TLccTabSheet then
+      begin
+        Tab := TabControl.Tabs[iTab] as TLccTabSheet;
+        for iTabContents := 0 to Tab.ControlsCount - 1 do
+        begin
+          Name := Tab.Controls[iTabContents].ClassName;
+          if Tab.Controls[iTabContents] is TLayout then
+          begin
+            Layout := Tab.Controls[iTabContents] as TLayout;
+            for iLayoutContents := 0 to Layout.ControlsCount - 1 do
+            begin
+         //     Layout.Controls[iScrollBoxContents].Width := Layout.Width - TAB_RIGHT_MARGIN;
+            end;
+          end;
+        end;
+      end;
+    end;
+    {$ELSE}
+     for iTab := 0 to TabControl.ControlCount - 1 do
+    begin
+      if TabControl.Controls[iTab] is TLccTabSheet then
+      begin
+        Tab := TabControl.Controls[iTab] as TLccTabSheet;
+        for iTabContents := 0 to Tab.ControlCount - 1 do
+        begin
+          if Tab.Controls[iTabContents] is TScrollBox then
+          begin
+            ScrollBox := Tab.Controls[iTabContents] as TScrollBox;
+            for iScrollBoxContents := 0 to ScrollBox.ControlCount - 1 do
+            begin
+              ScrollBox.Controls[iScrollBoxContents].Width := ScrollBox.Width - TAB_RIGHT_MARGIN;
+            end;
+          end;
+        end;
+      end;
+    end;
+
+    {$ENDIF}
+  end;
 end;
 
 constructor TLccCdiParser.Create(AOwner: TComponent);
@@ -1725,7 +1761,6 @@ const
 var
   CdiRootElement, CdiRootElementChild: TLccXmlNode;
   ParserBkGnd, FooterBkGnd: TLccPanel;
-  TabControl: TLccTabControl;
 begin
 
   // - Application Form
@@ -1809,6 +1844,7 @@ var
 begin
   Serializer.Clear;
   DoClearInterface;
+  TabControl := nil;
   if Assigned(Pallet) then
   begin
     {$IFDEF DELPHI}

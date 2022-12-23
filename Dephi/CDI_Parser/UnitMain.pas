@@ -6,7 +6,7 @@ uses
   System.SysUtils, System.Types, System.UITypes, System.Classes, System.Variants,
   FMX.Types, FMX.Controls, FMX.Forms, FMX.Graphics, FMX.Dialogs, FMX.Objects,
   FMX.Controls.Presentation, FMX.StdCtrls, FMX.Layouts,
-  lcc_cdi_parser, lcc_xmlutilities;
+  lcc_cdi_parser, lcc_xmlutilities, FMX.TabControl;
 
 type
   TForm1 = class(TForm)
@@ -18,6 +18,9 @@ type
     Button3: TButton;
     Label1: TLabel;
     Button4: TButton;
+    TabControl1: TTabControl;
+    TabItem1: TTabItem;
+    ScrollBox1: TScrollBox;
     procedure Button1Click(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure Button2Click(Sender: TObject);
