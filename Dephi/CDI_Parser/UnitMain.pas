@@ -76,8 +76,16 @@ begin
 end;
 
 procedure TForm1.Button4Click(Sender: TObject);
+var
+  L: TLabel;
 begin
-  Label1.TextSettings.Font.Style := [TFontStyle.fsBold];
+  Label1.TextSettings.Font.Style := [TFontStyle.fsBold];  // Desiger Dropped Label is Bold
+  L := TLabel.Create(Self);
+  L.Text := 'Testing';
+  L.Align := TAlignLayout.Bottom;
+  L.StyledSettings := L.StyledSettings-[TStyledSetting.Style];
+  L.TextSettings.Font.Style := [TFontStyle.fsBold];  // Dynamically created Label is not Bold
+  L.Parent := Layout1;
 end;
 
 procedure TForm1.FormCreate(Sender: TObject);

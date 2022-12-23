@@ -128,7 +128,7 @@ type
     FWorkerMessage: TLccMessage;
     FTagObject: TObject;
     FTag: Integer;
-    function GetStreamAsString: String;
+    function GetStreamAsString: AnsiString;
   protected
     property AddressLo: DWord read FAddressLo write FAddressLo;
     property AddressHi: DWord read FAddressHi write FAddressHi;
@@ -152,7 +152,7 @@ type
     property PIPHelper: TProtocolSupportedProtocols read FPIPHelper;
     property Tag: Integer read FTag write FTag;
     property TagObject: TObject read FTagObject write FTagObject;
-    property StreamAsString: String read GetStreamAsString;
+    property StreamAsString: AnsiString read GetStreamAsString;
 
     constructor Create(AnOwner: TLccNode);
     destructor Destroy; override;
@@ -541,10 +541,10 @@ begin
   inherited Destroy;
 end;
 
-function TMemorySpaceReadEngine.GetStreamAsString: String;
+function TMemorySpaceReadEngine.GetStreamAsString: AnsiString;
 var
   i: Integer;
-  C: Char;
+  C: AnsiChar;
 begin
   Result := '';
   MemoryStream.Position := 0;

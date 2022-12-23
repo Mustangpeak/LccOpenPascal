@@ -36,7 +36,7 @@ const
 
 type
   TLccThrottleAppForm = class(TForm)
-    TabControl1: TTabControl;
+    TabControlMain: TTabControl;
     TabItemTrains: TTabItem;
     TabItem2: TTabItem;
     ToolBar3: TToolBar;
@@ -418,7 +418,7 @@ begin
     LabelSettingsApplicationDocumentsPath.Text := PathApplicationFiles;
 
     // Setup components to a standard state in case forgotten in the designer
-    TabControl1.ActiveTab := TabItemTrains;    // This defines the default active tab at runtime
+    TabControlMain.ActiveTab := TabItemTrains;    // This defines the default active tab at runtime
     MultiViewConsist.Mode := TMultiViewMode.Drawer;
     TabControlTrainRoster.ActiveTab := TabItemTrainRosterSelect;
     TimerLogin.Enabled := True; // Try to connect
@@ -432,6 +432,8 @@ begin
     EditSettingsPort.Text := IntToStr( CurrentPort);
     EditSettingsNodeID.Text := NodeIDToString(CurrentNodeID, True);
 
+    TabControlTrainRoster.TabPosition := TTabPosition.None;
+
     ButtonSettingsResetConnectionClick(Self)
   end;
 end;
@@ -441,15 +443,15 @@ begin
   case EventInfo.GestureID of
     sgiLeft:
       begin
-        if TabControl1.ActiveTab <> TabControl1.Tabs[TabControl1.TabCount - 1] then
-          TabControl1.ActiveTab := TabControl1.Tabs[TabControl1.TabIndex + 1];
+        if TabControlMain.ActiveTab <> TabControlMain.Tabs[TabControlMain.TabCount - 1] then
+          TabControlMain.ActiveTab := TabControlMain.Tabs[TabControlMain.TabIndex + 1];
         Handled := True;
       end;
 
     sgiRight:
       begin
-        if TabControl1.ActiveTab <> TabControl1.Tabs[0] then
-          TabControl1.ActiveTab := TabControl1.Tabs[TabControl1.TabIndex - 1];
+        if TabControlMain.ActiveTab <> TabControlMain.Tabs[0] then
+          TabControlMain.ActiveTab := TabControlMain.Tabs[TabControlMain.TabIndex - 1];
         Handled := True;
       end;
   end;
@@ -586,7 +588,7 @@ var
 begin
   if TractionObject.NodeCDI.Valid then
   begin
-    XMLDoc := XmlLoadFromText(TractionObject.NodeCDI.CDI);
+    XMLDoc := XmlLoadFromText( LccDOMString( TractionObject.NodeCDI.CDI));
     try
     CdiParserFrame.Build_CDI_Interface(Controller, LayoutTrainRosterEdit, XMLDoc);
     finally

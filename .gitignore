@@ -35,3 +35,7 @@ cdi_parser.identcache
 cdi_parser.dsk
 cdi_parser.dproj.local
 LccThrottleApp.~dsk
+Target-PC/__recovery
+Dephi/CDI_Parser/Linux64
+Dephi/CDI_Parser/OSX64
+Dephi/CDI_Parser/Win64

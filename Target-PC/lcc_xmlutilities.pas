@@ -51,6 +51,7 @@ function XmlNodeTextContent(XmlNode: TLccXmlNode): domString;
 procedure XmlNodeSetTextContent(XmlNode: TLccXmlNode; Text: domString);
 procedure XmlNodeSetFirstLevelTextContent(XMLDoc: TLccXmlDocument; RootElement, ChildElement, Content: domString; Force: Boolean); overload;
 procedure XmlNodeSetFirstLevelTextContent(FilePath, RootElement, ChildElement, Content: domString; Force: Boolean); overload;
+function XmlNodeFindChildNodeTextContent(TopLevelElement: TLccXmlNode; ChildNodeName: LccDOMString): LccDOMString;
 // Enumerator functions
 function XmlNextSiblingNode(XmlNode: TLccXmlNode): TLccXmlNode;
 // Attribute functions
@@ -299,7 +300,9 @@ end;
 
 function XmlFindChildNode(XmlNode: TLccXmlNode; Name: domString): TLccXmlNode;
 begin
-  Result := XmlNode.{$IFNDEF FPC}ChildNodes.{$ENDIF}FindNode(Name);
+  Result := nil;
+  if Assigned(XmlNode) then
+    Result := XmlNode.{$IFNDEF FPC}ChildNodes.{$ENDIF}FindNode(Name)
 end;
 
 function XmlFirstChild(XmlNode: TLccXmlNode): TLccXmlNode;
@@ -334,7 +337,9 @@ end;
 
 function XmlNodeTextContent(XmlNode: TLccXmlNode): domString;
 begin
-  Result := XmlNode.{$IFDEF FPC}TextContent{$ELSE}Text{$ENDIF}
+  Result := '';
+  if Assigned(XmlNode) then
+    Result := XmlNode.{$IFDEF FPC}TextContent{$ELSE}Text{$ENDIF}
 end;
 
 procedure XmlNodeSetTextContent(XmlNode: TLccXmlNode; Text: domString);
@@ -373,6 +378,12 @@ begin
         XmlNodeSetTextContent(ChildNode, Content)
     end;
   end;
+end;
+
+function XmlNodeFindChildNodeTextContent(TopLevelElement: TLccXmlNode;
+  ChildNodeName: LccDOMString): LccDOMString;
+begin
+  Result := XmlNodeTextContent(XmlFindChildNode(TopLevelElement, ChildNodeName));
 end;
 
 function XmlNextSiblingNode(XmlNode: TLccXmlNode): TLccXmlNode;

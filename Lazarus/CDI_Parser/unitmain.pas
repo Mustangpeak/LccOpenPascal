@@ -5,7 +5,7 @@ unit unitMain;
 interface
 
 uses
-  Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, StdCtrls,
+  Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, StdCtrls, ComCtrls,
   lcc_cdi_parser, lcc_xmlutilities;
 
 type
@@ -15,16 +15,11 @@ type
   TForm1 = class(TForm)
     Button1: TButton;
     Button2: TButton;
-    Label1: TLabel;
-    Label2: TLabel;
-    Label3: TLabel;
     Label4: TLabel;
     OpenDialog1: TOpenDialog;
     Panel1: TPanel;
     Panel2: TPanel;
     Panel3: TPanel;
-    Panel4: TPanel;
-    ScrollBox1: TScrollBox;
     Splitter1: TSplitter;
     procedure Button1Click(Sender: TObject);
     procedure Button2Click(Sender: TObject);
@@ -58,8 +53,51 @@ begin
 end;
 
 procedure TForm1.Button2Click(Sender: TObject);
+var
+  L: TLabel;
+var
+  i: Integer;
+  Page: TPageControl;
+  LocalTab: TTabSheet;
+  LocalScrollBox: TScrollBox;
+  ScrollPanel: TPanel;
 begin
-  Parser.Build_CDI_Interface(nil, Panel2, nil);
+
+  Page := TPageControl.Create(Self);
+  Page.Align := alClient;
+
+
+  LocalTab := Page.AddTabSheet;
+  LocalTab.Caption := 'Tab';
+
+   // Create the ScrollBox and put it in the Tab
+   LocalScrollBox := TScrollBox.Create(LocalTab);
+   LocalScrollBox.Parent := LocalTab;
+   LocalScrollBox.Align := alClient;
+   LocalScrollBox.BorderSpacing.Around := 4;
+   LocalScrollBox.AutoScroll := True;
+
+   LocalScrollBox.VertScrollBar.Tracking := True;
+   LocalScrollBox.HorzScrollBar.Tracking := True;
+
+   ScrollPanel := TLccPanel.Create(LocalScrollBox);
+   ScrollPanel.Anchors := [akLeft, akRight, akTop];
+   ScrollPanel.Left := 0;
+   ScrollPanel.Width := LocalScrollBox.Width;
+   ScrollPanel.Height := 20000;                // TODO: TEMP
+   ScrollPanel.Parent := LocalScrollBox;
+
+   Page.Parent := Panel2;
+
+  for i := 0 to 5 do
+  begin
+    L := TLabel.Create(Self);
+    L.Caption := 'Caption: ' + IntToStr(i);
+    L.Align := alTop;
+    L.Top := 40000;
+    L.Parent := ScrollPanel
+  end;
+
 end;
 
 procedure TForm1.FormCreate(Sender: TObject);
@@ -69,7 +107,7 @@ end;
 
 procedure TForm1.Panel4Resize(Sender: TObject);
 begin
-  Label4.Caption := IntToSTr(Label3.Height);
+
 end;
 
 end.

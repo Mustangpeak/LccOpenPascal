@@ -14,7 +14,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
   OnKeyUp = FormKeyUp
   OnShow = FormShow
   DesignerMasterStyle = 0
-  object TabControl1: TTabControl
+  object TabControlMain: TTabControl
     Touch.GestureManager = GestureManager1
     OnGesture = GestureDone
     Align = Client
@@ -617,7 +617,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
     Top = 305
     GestureData = <
       item
-        Control = TabControl1
+        Control = TabControlMain
         Collection = <
           item
             GestureID = sgiLeft

@@ -11,7 +11,7 @@
         <WindowIndex Value="-1"/>
         <TopLine Value="-1"/>
         <CursorPos X="-1" Y="-1"/>
-        <UsageCount Value="38"/>
+        <UsageCount Value="79"/>
       </Unit>
       <Unit>
         <Filename Value="unitmain.pas"/>
@@ -20,103 +20,97 @@
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="unitMain"/>
-        <IsVisibleTab Value="True"/>
-        <TopLine Value="42"/>
-        <CursorPos X="47" Y="64"/>
-        <UsageCount Value="38"/>
+        <TopLine Value="75"/>
+        <CursorPos X="152" Y="79"/>
+        <UsageCount Value="79"/>
         <Loaded Value="True"/>
         <LoadedDesigner Value="True"/>
       </Unit>
       <Unit>
         <Filename Value="../../Target-PC/lcc_cdi_parser.pas"/>
+        <IsVisibleTab Value="True"/>
         <EditorIndex Value="1"/>
-        <TopLine Value="971"/>
-        <CursorPos X="14" Y="980"/>
-        <UsageCount Value="19"/>
+        <TopLine Value="789"/>
+        <CursorPos X="41" Y="800"/>
+        <UsageCount Value="40"/>
         <Loaded Value="True"/>
       </Unit>
       <Unit>
         <Filename Value="../../Target-PC/lcc_xmlutilities.pas"/>
-        <EditorIndex Value="9"/>
-        <TopLine Value="80"/>
-        <CursorPos Y="99"/>
-        <UsageCount Value="19"/>
+        <EditorIndex Value="5"/>
+        <TopLine Value="325"/>
+        <CursorPos Y="343"/>
+        <UsageCount Value="40"/>
         <Loaded Value="True"/>
       </Unit>
       <Unit>
         <Filename Value="../../Target-Common/lcc_utilities.pas"/>
-        <EditorIndex Value="8"/>
+        <EditorIndex Value="-1"/>
         <TopLine Value="12"/>
         <CursorPos X="3" Y="29"/>
-        <UsageCount Value="19"/>
-        <Loaded Value="True"/>
+        <UsageCount Value="29"/>
       </Unit>
       <Unit>
         <Filename Value="/Applications/Lazarus/lcl/comctrls.pp"/>
         <UnitName Value="ComCtrls"/>
-        <EditorIndex Value="6"/>
-        <TopLine Value="585"/>
-        <CursorPos X="14" Y="601"/>
-        <UsageCount Value="18"/>
+        <EditorIndex Value="3"/>
+        <CursorPos X="14" Y="24"/>
+        <UsageCount Value="33"/>
         <Loaded Value="True"/>
       </Unit>
       <Unit>
         <Filename Value="/Applications/Lazarus/lcl/include/pagecontrol.inc"/>
-        <EditorIndex Value="7"/>
+        <EditorIndex Value="-1"/>
         <TopLine Value="168"/>
         <CursorPos X="16" Y="193"/>
-        <UsageCount Value="18"/>
-        <Loaded Value="True"/>
+        <UsageCount Value="28"/>
       </Unit>
       <Unit>
         <Filename Value="/Applications/Lazarus/lcl/stdctrls.pp"/>
         <UnitName Value="StdCtrls"/>
-        <EditorIndex Value="3"/>
-        <TopLine Value="1275"/>
-        <CursorPos X="19" Y="1289"/>
-        <UsageCount Value="17"/>
+        <EditorIndex Value="2"/>
+        <TopLine Value="263"/>
+        <CursorPos X="19" Y="265"/>
+        <UsageCount Value="27"/>
         <Loaded Value="True"/>
       </Unit>
       <Unit>
         <Filename Value="/Applications/Lazarus/lcl/controls.pp"/>
         <UnitName Value="Controls"/>
-        <EditorIndex Value="4"/>
+        <EditorIndex Value="-1"/>
         <TopLine Value="1724"/>
         <CursorPos X="30" Y="1740"/>
-        <UsageCount Value="17"/>
-        <Loaded Value="True"/>
+        <UsageCount Value="27"/>
       </Unit>
       <Unit>
         <Filename Value="/Applications/Lazarus/lcl/extctrls.pp"/>
         <UnitName Value="ExtCtrls"/>
-        <EditorIndex Value="2"/>
+        <EditorIndex Value="-1"/>
         <TopLine Value="1162"/>
         <CursorPos X="19" Y="1176"/>
-        <UsageCount Value="16"/>
-        <Loaded Value="True"/>
+        <UsageCount Value="26"/>
       </Unit>
       <Unit>
         <Filename Value="/usr/local/share/fpcsrc/rtl/objpas/classes/classesh.inc"/>
-        <EditorIndex Value="5"/>
+        <EditorIndex Value="-1"/>
         <TopLine Value="102"/>
         <CursorPos X="43" Y="118"/>
-        <UsageCount Value="16"/>
-        <Loaded Value="True"/>
+        <UsageCount Value="26"/>
       </Unit>
       <Unit>
         <Filename Value="/usr/local/share/fpcsrc/packages/fcl-xml/src/dom.pp"/>
         <UnitName Value="DOM"/>
-        <EditorIndex Value="10"/>
+        <EditorIndex Value="6"/>
         <TopLine Value="101"/>
         <CursorPos X="17" Y="118"/>
-        <UsageCount Value="11"/>
+        <UsageCount Value="32"/>
         <Loaded Value="True"/>
       </Unit>
       <Unit>
         <Filename Value="/usr/local/share/fpcsrc/packages/fcl-xml/src/xmlutils.pp"/>
-        <EditorIndex Value="11"/>
+        <EditorIndex Value="7"/>
         <CursorPos X="3" Y="28"/>
-        <UsageCount Value="11"/>
+        <UsageCount Value="32"/>
         <Loaded Value="True"/>
       </Unit>
       <Unit>
@@ -124,125 +118,144 @@
         <EditorIndex Value="-1"/>
         <TopLine Value="112"/>
         <CursorPos X="33" Y="135"/>
-        <UsageCount Value="10"/>
+        <UsageCount Value="6"/>
+      </Unit>
+      <Unit>
+        <Filename Value="/Applications/Lazarus/lcl/include/control.inc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="4348"/>
+        <CursorPos Y="4370"/>
+        <UsageCount Value="9"/>
+      </Unit>
+      <Unit>
+        <Filename Value="../../Target-Common/lcc_defines.pas"/>
+        <EditorIndex Value="4"/>
+        <TopLine Value="83"/>
+        <CursorPos X="35" Y="98"/>
+        <UsageCount Value="16"/>
+        <Loaded Value="True"/>
       </Unit>
     </Units>
-    <JumpHistory HistoryIndex="28">
+    <JumpHistory HistoryIndex="29">
       <Position>
         <Filename Value="../../Target-PC/lcc_cdi_parser.pas"/>
-        <Caret Line="1801" Column="46" TopLine="1782"/>
+        <Caret Line="358" Column="15" TopLine="358"/>
       </Position>
       <Position>
         <Filename Value="../../Target-PC/lcc_cdi_parser.pas"/>
-        <Caret Line="395" Column="44" TopLine="381"/>
+        <Caret Line="1746" TopLine="1723"/>
       </Position>
       <Position>
         <Filename Value="../../Target-PC/lcc_cdi_parser.pas"/>
-        <Caret Line="151" Column="6" TopLine="151"/>
+        <Caret Line="1744" TopLine="1724"/>
       </Position>
       <Position>
         <Filename Value="../../Target-PC/lcc_cdi_parser.pas"/>
-        <Caret Line="1847" Column="67" TopLine="1836"/>
+        <Caret Line="597" TopLine="582"/>
       </Position>
       <Position>
         <Filename Value="../../Target-PC/lcc_cdi_parser.pas"/>
-        <Caret Line="2082" Column="10" TopLine="2071"/>
+        <Caret Line="119" Column="27" TopLine="115"/>
       </Position>
       <Position>
         <Filename Value="../../Target-PC/lcc_cdi_parser.pas"/>
-        <Caret Line="2121" Column="38" TopLine="2112"/>
+        <Caret Line="608" Column="10" TopLine="593"/>
       </Position>
       <Position>
         <Filename Value="../../Target-PC/lcc_cdi_parser.pas"/>
-        <Caret Line="2152" Column="34" TopLine="2141"/>
+        <Caret Line="1063" Column="26" TopLine="1049"/>
       </Position>
       <Position>
         <Filename Value="../../Target-PC/lcc_cdi_parser.pas"/>
-        <Caret Line="2161" Column="14" TopLine="2160"/>
+        <Caret Line="181" Column="33" TopLine="181"/>
       </Position>
       <Position>
         <Filename Value="../../Target-PC/lcc_cdi_parser.pas"/>
-        <Caret Line="2194" Column="84" TopLine="2182"/>
+        <Caret Line="132" Column="23" TopLine="114"/>
       </Position>
       <Position>
         <Filename Value="../../Target-PC/lcc_cdi_parser.pas"/>
-        <Caret Line="1734" Column="62" TopLine="1723"/>
+        <Caret Line="616" Column="3" TopLine="612"/>
       </Position>
       <Position>
         <Filename Value="../../Target-PC/lcc_cdi_parser.pas"/>
-        <Caret Line="1831" Column="44" TopLine="1819"/>
+        <Caret Line="132" TopLine="117"/>
       </Position>
       <Position>
         <Filename Value="../../Target-PC/lcc_cdi_parser.pas"/>
-        <Caret Line="1253" Column="85" TopLine="1238"/>
+        <Caret Line="610" TopLine="603"/>
       </Position>
       <Position>
         <Filename Value="../../Target-PC/lcc_cdi_parser.pas"/>
-        <Caret Line="1266" Column="43" TopLine="1254"/>
+        <Caret Line="1029" Column="43" TopLine="1017"/>
       </Position>
       <Position>
         <Filename Value="../../Target-PC/lcc_cdi_parser.pas"/>
-        <Caret Line="1398" Column="56" TopLine="1384"/>
+        <Caret Line="133" Column="43" TopLine="107"/>
       </Position>
       <Position>
         <Filename Value="../../Target-PC/lcc_cdi_parser.pas"/>
-        <Caret Line="1396" Column="69" TopLine="1384"/>
+        <Caret Line="573" Column="2" TopLine="571"/>
       </Position>
       <Position>
         <Filename Value="../../Target-PC/lcc_cdi_parser.pas"/>
-        <Caret Line="1509" Column="68" TopLine="1497"/>
+        <Caret Line="1039" Column="67" TopLine="1025"/>
       </Position>
       <Position>
         <Filename Value="../../Target-PC/lcc_cdi_parser.pas"/>
-        <Caret Line="1831" Column="53" TopLine="1826"/>
+        <Caret Line="1719" TopLine="1705"/>
       </Position>
       <Position>
         <Filename Value="../../Target-PC/lcc_cdi_parser.pas"/>
-        <Caret Line="1396" Column="75" TopLine="1384"/>
+        <Caret Line="1721" TopLine="1705"/>
       </Position>
       <Position>
         <Filename Value="../../Target-PC/lcc_cdi_parser.pas"/>
-        <Caret Line="1509" Column="55" TopLine="1497"/>
+        <Caret Line="1718" Column="24" TopLine="1705"/>
       </Position>
       <Position>
         <Filename Value="../../Target-PC/lcc_cdi_parser.pas"/>
-        <Caret Line="1643" Column="49" TopLine="1632"/>
+        <Caret Line="329" Column="23" TopLine="306"/>
+      </Position>
+      <Position>
+        <Filename Value="unitmain.pas"/>
+        <Caret Line="90" Column="27" TopLine="75"/>
+      </Position>
+      <Position>
+        <Filename Value="unitmain.pas"/>
+        <Caret Line="91" Column="27" TopLine="76"/>
+      </Position>
+      <Position>
+        <Filename Value="unitmain.pas"/>
+        <Caret Line="90" Column="27" TopLine="75"/>
       </Position>
       <Position>
         <Filename Value="../../Target-PC/lcc_cdi_parser.pas"/>
-        <Caret Line="1408" Column="85" TopLine="1395"/>
+        <Caret Line="1035" Column="15" TopLine="1022"/>
+      </Position>
+      <Position>
+        <Filename Value="/Applications/Lazarus/lcl/stdctrls.pp"/>
+        <Caret Line="517" Column="18" TopLine="503"/>
+      </Position>
+      <Position>
+        <Filename Value="/Applications/Lazarus/lcl/stdctrls.pp"/>
+        <Caret Line="441" Column="72" TopLine="441"/>
       </Position>
       <Position>
         <Filename Value="../../Target-PC/lcc_cdi_parser.pas"/>
-        <Caret Line="1841" Column="78" TopLine="1838"/>
+        <Caret Line="1034" Column="28" TopLine="1022"/>
       </Position>
       <Position>
         <Filename Value="../../Target-PC/lcc_cdi_parser.pas"/>
-        <Caret Line="1805" Column="25" TopLine="1796"/>
+        <Caret Line="329" Column="19" TopLine="315"/>
       </Position>
       <Position>
         <Filename Value="../../Target-PC/lcc_cdi_parser.pas"/>
-        <Caret Line="841" Column="72" TopLine="829"/>
+        <Caret Line="1022" Column="3" TopLine="1010"/>
       </Position>
       <Position>
         <Filename Value="../../Target-PC/lcc_cdi_parser.pas"/>
-        <Caret Line="890" Column="40" TopLine="878"/>
-      </Position>
-      <Position>
-        <Filename Value="../../Target-PC/lcc_cdi_parser.pas"/>
-        <Caret Line="819" Column="72" TopLine="807"/>
-      </Position>
-      <Position>
-        <Filename Value="../../Target-PC/lcc_cdi_parser.pas"/>
-        <Caret Line="398" Column="37" TopLine="387"/>
-      </Position>
-      <Position>
-        <Filename Value="../../Target-PC/lcc_cdi_parser.pas"/>
-        <Caret Line="1003" Column="3" TopLine="991"/>
-      </Position>
-      <Position>
-        <Filename Value="../../Target-PC/lcc_cdi_parser.pas"/>
-        <Caret Line="1001" Column="3" TopLine="989"/>
+        <Caret Line="322" Column="21" TopLine="311"/>
       </Position>
     </JumpHistory>
     <RunParams>
@@ -250,4 +263,14 @@
       <Modes ActiveMode=""/>
     </RunParams>
   </ProjectSession>
+  <Debugging>
+    <Watches>
+      <Item>
+        <Expression Value="x"/>
+      </Item>
+      <Item>
+        <Expression Value="Replications"/>
+      </Item>
+    </Watches>
+  </Debugging>
 </CONFIG>
