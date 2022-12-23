@@ -134,9 +134,9 @@ type
     property Relations[Index: Integer]: TMapRelation read GetRelation write SetRelation;
   end;
 
-  { TConfigDataType }
+  { TDataElementConfig }
 
-  TConfigDataType = class
+  TDataElementConfig = class
   private
     FDataBit: Byte;
     FDataDirection: TConfigDataDirection;  // Read or Write
@@ -152,11 +152,12 @@ type
   end;
 
   // Contains information that defines what the configuration info for an element
-  { TConfigInfo }
+  { TDataElementInformation }
 
-  TConfigInfo = class
+  TDataElementInformation = class
   private
-    FConfigData: TConfigDataType;                                // What is the Datatype associated with this Memory Configuration location
+    FCompareMemorySpaceButton: TLccSpeedButton;
+    FConfigData: TDataElementConfig;                                // What is the Datatype associated with this Memory Configuration location
     FIntDefault: Int64;                                          // If an Integer Type the default value
     FIntMax: Int64;                                              // If an Integer Type the Max value
     FIntMin: Int64;                                              // If an Integer Type the Min value
@@ -166,11 +167,13 @@ type
     FMapList: TMapRelationList;                                  // Enumeration of the defined values for this data type (may not be any) and the Key associated with each defined value
     FOnMemChangeState: TNotifyEvent;                             // Called when MemState changes in the UI from the user interacting with it
     FMemState: TConfigMemState;                                  // Tracks the state of the actual memory stored in the Node compared to the UI interface for the Element (unknown, saved, unsaved, etc)
+    FReadMemorySpaceButton: TLccSpeedButton;
+    FWriteMemorySpaceButton: TLccSpeedButton;
     procedure SetMemState(AValue: TConfigMemState);
   public
     constructor Create(ADataType: TLccConfigDataType);
     destructor Destroy; override;
-    property ConfigData: TConfigDataType read FConfigData write FConfigData;
+    property ConfigData: TDataElementConfig read FConfigData write FConfigData;
     property IntMin: Int64 read FIntMin write FIntMin;
     property IntMax: Int64 read FIntMax write FIntMax;
     property IntDefault: Int64 read FIntDefault write FIntDefault;
@@ -180,6 +183,9 @@ type
     property DataType: TLccConfigDataType read FDataType write FDataType;
     property MapList: TMapRelationList read FMapList write FMapList;
     property OnMemChangeState: TNotifyEvent read FOnMemChangeState write FOnMemChangeState;
+    property ReadMemorySpaceButton: TLccSpeedButton read FReadMemorySpaceButton write FReadMemorySpaceButton;
+    property WriteMemorySpaceButton: TLccSpeedButton read FWriteMemorySpaceButton write FWriteMemorySpaceButton;
+    property CompareMemorySpaceButton: TLccSpeedButton read FCompareMemorySpaceButton write FCompareMemorySpaceButton;
   end;
 
   // UI control to edit Integer or bit type Configuration meory
@@ -187,19 +193,13 @@ type
 
   TLccOpenPascalSpinEdit = class(TLccSpinEdit)
   private
-    FCompareCVSpeedButton: TLccSpeedButton;
-    FConfigInfo: TConfigInfo;
-    FReadCVSpeedButton: TLccSpeedButton;
-    FWriteCVSpeedButton: TLccSpeedButton;
+    FDataElementInformation: TDataElementInformation;
   protected
     procedure OnDrawImageState(Sender: TObject);
   public
     constructor Create(TheOwner: TComponent); override;
     destructor Destroy; override;
-    property ConfigInfo: TConfigInfo read FConfigInfo write FConfigInfo;
-    property ReadCVSpeedButton: TLccSpeedButton read FReadCVSpeedButton write FReadCVSpeedButton;
-    property WriteCVSpeedButton: TLccSpeedButton read FWriteCVSpeedButton write FWriteCVSpeedButton;
-    property CompareCVSpeedButton: TLccSpeedButton read FCompareCVSpeedButton write FCompareCVSpeedButton;
+    property DataElementInformation: TDataElementInformation read FDataElementInformation write FDataElementInformation;
  end;
 
   // UI control to edit String type Configuration meory
@@ -207,19 +207,13 @@ type
 
   TLccOpenPascalEdit = class(TLccEdit)
   private
-    FCompareCVSpeedButton: TLccSpeedButton;
-    FConfigInfo: TConfigInfo;
-    FReadCVSpeedButton: TLccSpeedButton;
-    FWriteCVSpeedButton: TLccSpeedButton;
+    FDataElementInformation: TDataElementInformation;
   protected
 
   public
     constructor Create(TheOwner: TComponent); override;
     destructor Destroy; override;
-    property ConfigInfo: TConfigInfo read FConfigInfo write FConfigInfo;
-    property ReadCVSpeedButton: TLccSpeedButton read FReadCVSpeedButton write FReadCVSpeedButton;
-    property WriteCVSpeedButton: TLccSpeedButton read FWriteCVSpeedButton write FWriteCVSpeedButton;
-    property CompareCVSpeedButton: TLccSpeedButton read FCompareCVSpeedButton write FCompareCVSpeedButton;
+    property DataElementInformation: TDataElementInformation read FDataElementInformation write FDataElementInformation;
   end;
 
   // UI control to edit Max type Configuration meory
@@ -227,27 +221,33 @@ type
 
   TLccOpenPascalComboBox = class(TLccComboBox)
   private
-    FCompareCVSpeedButton: TLccSpeedButton;
-    FConfigInfo: TConfigInfo;
-    FReadCVSpeedButton: TLccSpeedButton;
-    FWriteCVSpeedButton: TLccSpeedButton;
+    FDataElementInformation: TDataElementInformation;
   protected
 
   public
     constructor Create(TheOwner: TComponent); override;
     destructor Destroy; override;
-    property ConfigInfo: TConfigInfo read FConfigInfo write FConfigInfo;
-    property ReadCVSpeedButton: TLccSpeedButton read FReadCVSpeedButton write FReadCVSpeedButton;
-    property WriteCVSpeedButton: TLccSpeedButton read FWriteCVSpeedButton write FWriteCVSpeedButton;
-    property CompareCVSpeedButton: TLccSpeedButton read FCompareCVSpeedButton write FCompareCVSpeedButton;
+    property DataElementInformation: TDataElementInformation read FDataElementInformation write FDataElementInformation;
+  end;
+
+  { TLccOpenPascalSegmentContainer }
+
+  TLccOpenPascalSegmentContainer = class(TLccPanel)
+  private
+    FLayoutList: TList;     // visually ordered list of TControls that are shown in this segment
+  public
+    constructor Create(TheOwner: TComponent); override;
+    destructor Destroy; override;
+
+    property LayoutList: TList read FLayoutList write FLayoutList;
   end;
 
   { TLccCdiParserSerializer }
 
   TLccCdiParserSerializer = class
   private
-    FConfigInfo: TConfigInfo;
-    FConfigInfoList: TList;
+    FDataElementInformation: TDataElementInformation;
+    FDataElementInformationList: TList;
     FOnNotification: TParserNotificationEvent;
     FOwnerParser: TLccCdiParser;
     FWorkerMessage: TLccMessage;
@@ -257,14 +257,14 @@ type
   public
     constructor Create;
     destructor Destroy; override;
-    procedure AddRead(AConfigInfo: TConfigInfo);    // THIS SHOULD BE ONLY ONE ADD SO THIS STAYS SERIALIZED
-    procedure AddWrite(AConfigInfo: TConfigInfo);
+    procedure AddRead(AConfigInfo: TDataElementInformation);    // THIS SHOULD BE ONLY ONE ADD SO THIS STAYS SERIALIZED
+    procedure AddWrite(AConfigInfo: TDataElementInformation);
     procedure Clear;
     procedure SendNext;
-    procedure Remove(AConfigInfo: TConfigInfo);
+    procedure Remove(AConfigInfo: TDataElementInformation);
 
-    property ConfigInfo: TConfigInfo read FConfigInfo write FConfigInfo;
-    property ConfigInfoList: TList read FConfigInfoList write FConfigInfoList;
+    property DataElementInformation: TDataElementInformation read FDataElementInformation write FDataElementInformation;
+    property DataElementInformationList: TList read FDataElementInformationList write FDataElementInformationList;
     property OwnerParser: TLccCdiParser read FOwnerParser write FOwnerParser;
     property WorkerMessage: TLccMessage read FWorkerMessage write FWorkerMessage;
     property OnNotification: TParserNotificationEvent read FOnNotification write FOnNotification;
@@ -307,6 +307,7 @@ type
     FPalletButtons: TLccPanel;
     FPrintMemOffset: Boolean;
     FSerializer: TLccCdiParserSerializer;
+    FShowCompareBtn: Boolean;
     FShowReadBtn: Boolean;
     FShowWriteBtn: Boolean;
     FSuppressNameAndDescription: Boolean;
@@ -314,19 +315,19 @@ type
     function GetCVBlockRead: Word;
     procedure SetCVBlockRead(AValue: Word);
   protected
-    function CreateButton(AContainerParent: TLccPanel; ACaption: LccDOMString; OnClickFunc: TNotifyEvent; Enable: Boolean; AWidth: single; AnAlign: {$IFDEF DELPHI}TAlignLayout{$ELSE}TAlign{$ENDIF}): TLccSpeedButton;
-    function CreateLabel(ParentControl: TLccPanel; ACaption: LccDOMString; Indent: Single; Bold: Boolean): TLccLabel;
-    function CreateElementNameLabel(ParentControl: TLccPanel; ParentElement: TLccXmlNode; Indent: Single; Bold: Boolean): TLccLabel;
-    function CreateElementDescriptionLabel(ParentControl: TLccPanel; ParentElement: TLccXmlNode; Indent: Single; Bold: Boolean): TLccLabel;
-    function CreateSpacer(ParentControl: TLccPanel): TLccLabel;
+    // Top level Tab
     function CreateTab(ATabControl: TLccTabControl; ACaption: LccDOMString): TLccPanel;
-    function CreateIdentificationTab(ATabControl: TLccTabControl; IdentificationElement: TLccXmlNode; Indent: Integer): TLccPanel;
-    function CreateSegmentTab(ATabControl: TLccTabControl; SegmentElement: TLccXmlNode; Indent: Integer): TLccPanel;
 
-    function CreateBaseEditorLayout(ParentControl: TLccPanel; var ReadButton: TLccSpeedButton; var WriteButton: TLccSpeedButton): TLccPanel;
-    procedure CreateSpinEditLayout(ParentControl: TLccPanel; Element: TLccXmlNode; Indent: Integer; MemoryStartPointer: Int64; MemoryAllocation: DWord; ShowReadBtn, ShowWriteBtn: Boolean);
-    procedure CreateEditLayout(ParentControl: TLccPanel; Element: TLccXmlNode; Indent: Integer; MemoryStartPointer: Int64; MemoryAllocation: DWord; ShowReadBtn, ShowWriteBtn: Boolean);
-    procedure CreateComboBoxListLayout(ParentControl: TLccPanel; Element: TLccXmlNode; Indent: Integer; MemoryStartPointer: Int64; MemoryAllocation: DWord; Info: TConfigInfo; ShowReadBtn, ShowWriteBtn: Boolean);
+    // These are the base elements that need to be alTop aligned in the tabs
+    function CreateBaseEditorLayout(ParentControl: TLccPanel; DataElementInformation: TDataElementInformation): TLccPanel;
+    function CreateLabel(ParentControl: TLccPanel; ACaption: LccDOMString; Indent: Single; Bold: Boolean): TLccLabel;
+    function CreateSpacer(ParentControl: TLccPanel): TLccLabel;
+
+    // These all live within the base elements that need to be alTop aligned
+    function CreateButton(AContainerParent: TLccPanel; ACaption: LccDOMString; OnClickFunc: TNotifyEvent; Enable: Boolean; AWidth: single; AnAlign: {$IFDEF DELPHI}TAlignLayout{$ELSE}TAlign{$ENDIF}): TLccSpeedButton;
+    procedure CreateSpinEditLayout(ParentControl: TLccPanel; Indent: Integer; DataElementInformation: TDataElementInformation);
+    procedure CreateEditLayout(ParentControl: TLccPanel; Indent: Integer; DataElementInformation: TDataElementInformation);
+    procedure CreateComboBoxListLayout(ParentControl: TLccPanel; Indent: Integer; DataElementInformation: TDataElementInformation);
 
     procedure DoAfterReadPage(Sender: TObject); virtual;
     procedure DoAfterWritePage(Sender: TObject); virtual;
@@ -350,15 +351,23 @@ type
     procedure OnPageControlChange(Sender: TObject);
     procedure OnSerializerNotification(Sender: TObject; Notify: TParserSerializer);
     procedure OnBkGndResize(Sender: TObject);
-    procedure ProcessElementForUISegment(ParentControl: TLccPanel; Element: TLccXmlNode; var MemoryAddressPointer: Int64; Indent: Integer; DoSuppressNameAndDescription: Boolean; ShowReadBtn, ShowWriteBtn: Boolean; AddressSpace: Byte);
-    procedure ProcessElementForUIGroup(ParentControl: TLccPanel; Element: TLccXmlNode; var MemoryAddressPointer: Int64; Indent: Integer; DoSuppressNameAndDescription: Boolean; ShowReadBtn, ShowWriteBtn: Boolean; AddressSpace: Byte);
-    procedure ProcessElementForUIString(ParentControl: TLccPanel; Element: TLccXmlNode; var MemoryAddressPointer: Int64; Indent: Integer; DoSuppressNameAndDescription: Boolean; ShowReadBtn, ShowWriteBtn: Boolean; AddressSpace: Byte);
-    procedure ProcessElementForUIInt(ParentControl: TLccPanel; Element: TLccXmlNode; var MemoryAddressPointer: Int64; Indent: Integer; DoSuppressNameAndDescription: Boolean; ShowReadBtn, ShowWriteBtn: Boolean; AddressSpace: Byte);
-    procedure ProcessElementForUIEventID(ParentControl: TLccPanel; Element: TLccXmlNode; var MemoryAddressPointer: Int64; Indent: Integer; DoSuppressNameAndDescription: Boolean; ShowReadBtn, ShowWriteBtn: Boolean; AddressSpace: Byte);
-    procedure ProcessElementForUIMap(ParentControl: TLccPanel; Element: TLccXmlNode; var MemoryAddressPointer: Int64; Indent: Integer; DoSuppressNameAndDescription: Boolean; Info: TConfigInfo; ShowReadBtn, ShowWriteBtn: Boolean; AddressSpace: Byte);
-    procedure ProcessElementForUICommonVariable(ParentControl: TLccPanel; Element: TLccXmlNode; var MemoryAddressPointer: Int64; Indent: Integer; DoSuppressNameAndDescription: Boolean; ShowReadBtn, ShowWriteBtn: Boolean; AddressSpace: Byte; Info: TConfigInfo);
-    function SpeedButtonToConfigInfo(Sender: TObject): TConfigInfo;
-    function ElementAllocatedMemoryLength(Element: TLccXmlNode): Int64;
+
+    // Top level processes
+    function ProcessIdentificationTab(ATabControl: TLccTabControl; IdentificationElement: TLccXmlNode; Indent: Integer): TLccPanel;
+    function ProcessSegmentTab(ATabControl: TLccTabControl; SegmentElement: TLccXmlNode; Indent: Integer): TLccPanel;
+
+    // Midtier processes that may need to create UI elements or call processes that do
+    procedure ProcessElementForUISegment(ParentControl: TLccPanel; Element: TLccXmlNode; var MemoryAddressPointer: Int64; Indent: Integer; AddressSpace: Byte);
+    procedure ProcessElementForUIGroup(ParentControl: TLccPanel; Element: TLccXmlNode; var MemoryAddressPointer: Int64; Indent: Integer; AddressSpace: Byte);
+    procedure ProcessElementForUIString(ParentControl: TLccPanel; Element: TLccXmlNode; var MemoryAddressPointer: Int64; Indent: Integer; AddressSpace: Byte);
+    procedure ProcessElementForUIInt(ParentControl: TLccPanel; Element: TLccXmlNode; var MemoryAddressPointer: Int64; Indent: Integer; AddressSpace: Byte);
+    procedure ProcessElementForUIEventID(ParentControl: TLccPanel; Element: TLccXmlNode; var MemoryAddressPointer: Int64; Indent: Integer; AddressSpace: Byte);
+    procedure ProcessElementForUIDataElement(ParentControl: TLccPanel; Element: TLccXmlNode; var MemoryAddressPointer: Int64; Indent: Integer; AddressSpace: Byte; DataElementInformation: TDataElementInformation);
+
+    // Lowest level process that does not create UI elements directly
+    procedure ProcessElementForUIMap(Element: TLccXmlNode; var MemoryAddressPointer: Int64; DataElementInformation: TDataElementInformation);
+
+    function SpeedButtonToConfigInfo(Sender: TObject): TDataElementInformation;
 
     property Pallet: TLccPanel read FPallet;
     property PalletButtons: TLccPanel read FPalletButtons write FPalletButtons;
@@ -386,6 +395,7 @@ type
     property PrintMemOffset: Boolean read FPrintMemOffset write FPrintMemOffset;
     property ShowReadBtn: Boolean read FShowReadBtn write FShowReadBtn;
     property ShowWriteBtn: Boolean read FShowWriteBtn write FShowWriteBtn;
+    property ShowCompareBtn: Boolean read FShowCompareBtn write FShowCompareBtn;
     property SuppressNameAndDescription: Boolean read FSuppressNameAndDescription write FSuppressNameAndDescription;
     property OnAfterWritePage: TNotifyEvent read FOnAfterWritePage write FOnAfterWritePage;
     property OnAfterReadPage: TNotifyEvent read FOnAfterReadPage write FOnAfterReadPage;
@@ -400,6 +410,20 @@ type
   TLccNodeManagerHack = class(TLccNodeManager)
   end;
 
+{ TLccOpenPascalSegmentContainer }
+
+constructor TLccOpenPascalSegmentContainer.Create(TheOwner: TComponent);
+begin
+  inherited Create(TheOwner);
+  FLayoutList := TList.Create;
+end;
+
+destructor TLccOpenPascalSegmentContainer.Destroy;
+begin
+  FreeAndNil(FLayoutList);  // We don't own them
+  inherited Destroy;
+end;
+
 
 
 { TLccCdiParserSerializer }
@@ -412,7 +436,7 @@ end;
 
 function TLccCdiParserSerializer.PackCVReads(CV_Start: DWord): Byte;
 var
-  Next: TConfigInfo;
+  Next: TDataElementInformation;
   CV_Next: DWord;
   i: Integer;
   Found: Boolean;
@@ -422,9 +446,9 @@ begin
   repeat
     Found := False;
     i := 0; // Index 0 is what is being used at the base address
-    while (i < ConfigInfoList.Count) and not Found do
+    while (i < DataElementInformationList.Count) and not Found do
     begin
-      Next := TConfigInfo( ConfigInfoList[i]);
+      Next := TDataElementInformation( DataElementInformationList[i]);
       if Next.MemoryAddressPointer = CV_Next then
       begin
         Inc(Result);
@@ -435,7 +459,7 @@ begin
     end;
 
     if Found then
-      ConfigInfoList.Delete(i);            // We don't own these, they belong to the Controls
+      DataElementInformationList.Delete(i);            // We don't own these, they belong to the Controls
 
   until not Found or (Result = OwnerParser.CVBlockRead);
 end;
@@ -443,34 +467,34 @@ end;
 constructor TLccCdiParserSerializer.Create;
 begin
   inherited Create;
-  FConfigInfo := nil;
-  FConfigInfoList := TList.Create;
+  FDataElementInformation := nil;
+  FDataElementInformationList := TList.Create;
   FWorkerMessage := TLccMessage.Create;
 end;
 
 destructor TLccCdiParserSerializer.Destroy;
 begin
-  FreeAndNil(FConfigInfoList);
+  FreeAndNil(FDataElementInformationList);
   FreeAndNil(FWorkerMessage);
   inherited Destroy;
 end;
 
-procedure TLccCdiParserSerializer.AddRead(AConfigInfo: TConfigInfo);
+procedure TLccCdiParserSerializer.AddRead(AConfigInfo: TDataElementInformation);
 begin
   if Assigned(AConfigInfo) then
   begin
     AConfigInfo.ConfigData.DataDirection := cdd_Read;
-    ConfigInfoList.Add(AConfigInfo);
+    DataElementInformationList.Add(AConfigInfo);
     DoNotification(ps_InsertRead);
   end;
 end;
 
-procedure TLccCdiParserSerializer.AddWrite(AConfigInfo: TConfigInfo);
+procedure TLccCdiParserSerializer.AddWrite(AConfigInfo: TDataElementInformation);
 begin
   if Assigned(AConfigInfo) then
   begin
     AConfigInfo.ConfigData.DataDirection := cdd_Write;
-    ConfigInfoList.Add(AConfigInfo);
+    DataElementInformationList.Add(AConfigInfo);
     DoNotification(ps_InsertWrite);
   end;
 end;
@@ -479,15 +503,15 @@ procedure TLccCdiParserSerializer.Clear;
 var
   i: Integer;
 begin
-  for i := 0 to ConfigInfoList.Count - 1 do
+  for i := 0 to DataElementInformationList.Count - 1 do
   begin
-    if TConfigInfo(ConfigInfoList[i]).ConfigData.DataDirection = cdd_Read then
+    if TDataElementInformation(DataElementInformationList[i]).ConfigData.DataDirection = cdd_Read then
       DoNotification(ps_RemoveRead)
     else
       DoNotification(ps_RemoveWrite);
   end;
-  ConfigInfoList.Clear;
-  ConfigInfo := nil;
+  DataElementInformationList.Clear;
+  DataElementInformation := nil;
 end;
 
 procedure TLccCdiParserSerializer.SendNext;
@@ -496,40 +520,40 @@ var
 begin
 
   {
-  if (ConfigInfoList.Count > 0) and not Assigned(ConfigInfo) and Assigned(OwnerParser.NodeManager.RootNode) then
+  if (DataElementInformationList.Count > 0) and not Assigned(DataElementInformation) and Assigned(OwnerParser.NodeManager.RootNode) then
   begin
-    ConfigInfo := TConfigInfo( ConfigInfoList[0]);
-    ConfigInfoList.Delete(0);
+    DataElementInformation := TDataElementInformation( DataElementInformationList[0]);
+    DataElementInformationList.Delete(0);
     if Assigned(OwnerParser) then
     begin
-      if ConfigInfo.ConfigData.DataDirection = cdd_Read then
+      if DataElementInformation.ConfigData.DataDirection = cdd_Read then
       begin    // Reply will return on OwnerParser.DoConfigMemReadReply(...);
-        if (ConfigInfo.MemoryAddressPointer and $FF000000 = $FF000000) and (OwnerParser.CVBlockRead > 1) then
+        if (DataElementInformation.MemoryAddressPointer and $FF000000 = $FF000000) and (OwnerParser.CVBlockRead > 1) then
         begin
-           SequencialCVReads := PackCVReads(ConfigInfo.MemoryAddressPointer);
-           OwnerParser.LccNode.ConfigurationMem.Initialize(ConfigInfo.MemoryAddressPointer, MSI_CONFIG, SequencialCVReads, ConfigInfo.DataType);
-           WorkerMessage.LoadConfigMemRead(OwnerParser.NodeManager.RootNode.NodeID, OwnerParser.NodeManager.RootNode.AliasID, OwnerParser.LccNode.NodeID, OwnerParser.LccNode.AliasID, MSI_CONFIG, ConfigInfo.MemoryAddressPointer, SequencialCVReads);
+           SequencialCVReads := PackCVReads(DataElementInformation.MemoryAddressPointer);
+           OwnerParser.LccNode.ConfigurationMem.Initialize(DataElementInformation.MemoryAddressPointer, MSI_CONFIG, SequencialCVReads, DataElementInformation.DataType);
+           WorkerMessage.LoadConfigMemRead(OwnerParser.NodeManager.RootNode.NodeID, OwnerParser.NodeManager.RootNode.AliasID, OwnerParser.LccNode.NodeID, OwnerParser.LccNode.AliasID, MSI_CONFIG, DataElementInformation.MemoryAddressPointer, SequencialCVReads);
            TLccNodeManagerHack( OwnerParser.NodeManager).DoRequestMessageSend(WorkerMessage);
         end else
         begin
-          OwnerParser.LccNode.ConfigurationMem.Initialize(ConfigInfo.MemoryAddressPointer, MSI_CONFIG, ConfigInfo.MemoryAllocation, ConfigInfo.DataType);
-          WorkerMessage.LoadConfigMemRead(OwnerParser.NodeManager.RootNode.NodeID, OwnerParser.NodeManager.RootNode.AliasID, OwnerParser.LccNode.NodeID, OwnerParser.LccNode.AliasID, MSI_CONFIG, ConfigInfo.MemoryAddressPointer, ConfigInfo.MemoryAllocation);
+          OwnerParser.LccNode.ConfigurationMem.Initialize(DataElementInformation.MemoryAddressPointer, MSI_CONFIG, DataElementInformation.MemoryAllocation, DataElementInformation.DataType);
+          WorkerMessage.LoadConfigMemRead(OwnerParser.NodeManager.RootNode.NodeID, OwnerParser.NodeManager.RootNode.AliasID, OwnerParser.LccNode.NodeID, OwnerParser.LccNode.AliasID, MSI_CONFIG, DataElementInformation.MemoryAddressPointer, DataElementInformation.MemoryAllocation);
           TLccNodeManagerHack( OwnerParser.NodeManager).DoRequestMessageSend(WorkerMessage);
         end;
       end else
-      if ConfigInfo.ConfigData.DataDirection = cdd_Write then
+      if DataElementInformation.ConfigData.DataDirection = cdd_Write then
       begin    // Reply MIGHT return on OwnerParser.DoConfigMemWriteReply(...);  Nodes are NOT required to send this
-        case ConfigInfo.DataType of
+        case DataElementInformation.DataType of
           cdt_Int :
             begin
-              OwnerParser.LccNode.ConfigurationMem.Initialize(ConfigInfo.MemoryAddressPointer, MSI_CONFIG, ConfigInfo.MemoryAllocation, ConfigInfo.DataType);
-              WorkerMessage.LoadConfigMemWriteInteger(OwnerParser.NodeManager.RootNode.NodeID, OwnerParser.NodeManager.RootNode.AliasID, OwnerParser.LccNode.NodeID, OwnerParser.LccNode.AliasID, MSI_CONFIG, ConfigInfo.MemoryAddressPointer, ConfigInfo.MemoryAllocation, ConfigInfo.ConfigData.DataInteger);
+              OwnerParser.LccNode.ConfigurationMem.Initialize(DataElementInformation.MemoryAddressPointer, MSI_CONFIG, DataElementInformation.MemoryAllocation, DataElementInformation.DataType);
+              WorkerMessage.LoadConfigMemWriteInteger(OwnerParser.NodeManager.RootNode.NodeID, OwnerParser.NodeManager.RootNode.AliasID, OwnerParser.LccNode.NodeID, OwnerParser.LccNode.AliasID, MSI_CONFIG, DataElementInformation.MemoryAddressPointer, DataElementInformation.MemoryAllocation, DataElementInformation.ConfigData.DataInteger);
               TLccNodeManagerHack( OwnerParser.NodeManager).DoRequestMessageSend(WorkerMessage);
             end;
           cdt_String :
             begin
-              OwnerParser.LccNode.ConfigurationMem.Initialize(ConfigInfo.MemoryAddressPointer, MSI_CONFIG, ConfigInfo.MemoryAllocation, ConfigInfo.DataType);
-              WorkerMessage.LoadConfigMemWriteString(OwnerParser.NodeManager.RootNode.NodeID, OwnerParser.NodeManager.RootNode.AliasID, OwnerParser.LccNode.NodeID, OwnerParser.LccNode.AliasID, MSI_CONFIG, ConfigInfo.MemoryAddressPointer, ConfigInfo.ConfigData.DataString);
+              OwnerParser.LccNode.ConfigurationMem.Initialize(DataElementInformation.MemoryAddressPointer, MSI_CONFIG, DataElementInformation.MemoryAllocation, DataElementInformation.DataType);
+              WorkerMessage.LoadConfigMemWriteString(OwnerParser.NodeManager.RootNode.NodeID, OwnerParser.NodeManager.RootNode.AliasID, OwnerParser.LccNode.NodeID, OwnerParser.LccNode.AliasID, MSI_CONFIG, DataElementInformation.MemoryAddressPointer, DataElementInformation.ConfigData.DataString);
               TLccNodeManagerHack( OwnerParser.NodeManager).DoRequestMessageSend(WorkerMessage);
             end;
         end;
@@ -538,11 +562,11 @@ begin
   end;       }
 end;
 
-procedure TLccCdiParserSerializer.Remove(AConfigInfo: TConfigInfo);
+procedure TLccCdiParserSerializer.Remove(AConfigInfo: TDataElementInformation);
 begin
-  if AConfigInfo = ConfigInfo then
+  if AConfigInfo = DataElementInformation then
   begin
-    ConfigInfo := nil;
+    DataElementInformation := nil;
     if AConfigInfo.ConfigData.DataDirection = cdd_Read then
       DoNotification(ps_RemoveRead)
     else
@@ -619,15 +643,12 @@ end;
 constructor TLccOpenPascalComboBox.Create(TheOwner: TComponent);
 begin
   inherited Create(TheOwner);
-  FConfigInfo := nil;
-  ReadCVSpeedButton := TLccSpeedButton.Create(Self);
-  WriteCVSpeedButton := TLccSpeedButton.Create(Self);
-  CompareCVSpeedButton := TLccSpeedButton.Create(Self);
+  FDataElementInformation := nil;
 end;
 
 destructor TLccOpenPascalComboBox.Destroy;
 begin
-  FreeAndNil( FConfigInfo);
+  FreeAndNil( FDataElementInformation);
   inherited Destroy;
 end;
 
@@ -636,15 +657,12 @@ end;
 constructor TLccOpenPascalEdit.Create(TheOwner: TComponent);
 begin
   inherited Create(TheOwner);
-  FConfigInfo := nil;
-  ReadCVSpeedButton := TLccSpeedButton.Create(Self);
-  WriteCVSpeedButton := TLccSpeedButton.Create(Self);
-  CompareCVSpeedButton := TLccSpeedButton.Create(Self);
+  FDataElementInformation := nil;
 end;
 
 destructor TLccOpenPascalEdit.Destroy;
 begin
-  FreeAndNil( FConfigInfo);
+  FreeAndNil( FDataElementInformation);
   inherited Destroy;
 end;
 
@@ -655,7 +673,7 @@ var
   ImageIndex: Integer;
   Bitmap: TLccBitmap;
 begin
- { case ConfigInfo.MemState of
+ { case DataElementInformation.MemState of
     ocs_Current :
       begin
         ImageIndex := ImageIndexStateCurrent;
@@ -677,15 +695,12 @@ end;
 constructor TLccOpenPascalSpinEdit.Create(TheOwner: TComponent);
 begin
   inherited Create(TheOwner);
-  FConfigInfo := nil;
-  ReadCVSpeedButton := TLccSpeedButton.Create(Self);
-  WriteCVSpeedButton := TLccSpeedButton.Create(Self);
-  CompareCVSpeedButton := TLccSpeedButton.Create(Self);
+  FDataElementInformation := nil;  // created during building of window as we don't know what control we need (if the element has a map or not) early enough
 end;
 
 destructor TLccOpenPascalSpinEdit.Destroy;
 begin
-  FreeAndNil( FConfigInfo);
+  FreeAndNil( FDataElementInformation);
   inherited Destroy;
 end;
 
@@ -730,28 +745,6 @@ begin
     {$IFDEF DELPHI}Result.Margins.Left := Indent;{$ELSE}Result.BorderSpacing.Left := Trunc(Indent);{$ENDIF}
     Result.Parent := ParentControl;
   end;
-end;
-
-function TLccCdiParser.CreateElementNameLabel(ParentControl: TLccPanel;
-  ParentElement: TLccXmlNode; Indent: Single; Bold: Boolean): TLccLabel;
-var
-  ElementString: LccDOMString;
-begin
-  Result := nil;
-  ElementString := '';
-  if ExtractElementItem(ParentElement, 'name', ElementString) then
-    Result := CreateLabel(ParentControl, ElementString, Indent, Bold);
-end;
-
-function TLccCdiParser.CreateElementDescriptionLabel(ParentControl: TLccPanel;
-  ParentElement: TLccXmlNode; Indent: Single; Bold: Boolean): TLccLabel;
-var
-  ElementString: LccDOMString;
-begin
-  Result := nil;
-  ElementString := '';
-  if ExtractElementItem(ParentElement, 'description', ElementString) then
-    Result := CreateLabel(ParentControl, ElementString, Indent, Bold);
 end;
 
 function TLccCdiParser.CreateSpacer(ParentControl: TLccPanel): TLccLabel;
@@ -814,7 +807,7 @@ begin
   {$ENDIF}
 end;
 
-function TLccCdiParser.CreateIdentificationTab(ATabControl: TLccTabControl;
+function TLccCdiParser.ProcessIdentificationTab(ATabControl: TLccTabControl;
   IdentificationElement: TLccXmlNode; Indent: Integer): TLccPanel;
 var
   IdentificationElementChild: TLccXmlNode;
@@ -830,8 +823,11 @@ begin
     // Space on the Top
     CreateSpacer(Result);
 
-    CreateElementNameLabel(Result, IdentificationElement, Indent, True);
-    CreateElementDescriptionLabel(Result, IdentificationElement, Indent, False);
+    if ExtractElementItem(IdentificationElement, 'name', ItemStr) then
+      CreateLabel(Result, ItemStr, Indent, True);
+
+    if ExtractElementItem(IdentificationElement, 'description', ItemStr) then
+      CreateLabel(Result, ItemStr, Indent + LABEL_DELTA_INDENT, False);
 
 
     // Handle the manufacturer
@@ -898,13 +894,14 @@ begin
   end;
 end;
 
-function TLccCdiParser.CreateSegmentTab(ATabControl: TLccTabControl;
+function TLccCdiParser.ProcessSegmentTab(ATabControl: TLccTabControl;
   SegmentElement: TLccXmlNode; Indent: Integer): TLccPanel;
 var
   MemoryAddressPointer: Int64;
   ElementString: LccDOMString;
   AddressSpace: DWord;
   LastLabel: TLccLabel;
+  Temp: TLccOpenPascalSegmentContainer;
 begin
   ElementString := '';
 
@@ -922,8 +919,13 @@ begin
   ExtractElementItem(SegmentElement, 'name', ElementString);
   Result := CreateTab(ATabControl, ElementString);
 
+  Temp := TLccOpenPascalSegmentContainer.Create(Result);
   // Time to build the UI for this segment
-  ProcessElementForUISegment(Result, SegmentElement, MemoryAddressPointer, Indent, SuppressNameAndDescription, ShowReadBtn, ShowWriteBtn, AddressSpace);
+  ProcessElementForUISegment(Temp, SegmentElement, MemoryAddressPointer, Indent, AddressSpace);
+
+  Temp.Width := Result.Width;
+  Temp.Align:= alClient;
+  Temp.Parent := Result;
 
   // Space on the bottom
   LastLabel := CreateSpacer(Result);
@@ -934,7 +936,8 @@ begin
   {$ENDIF}
 end;
 
-function TLccCdiParser.CreateBaseEditorLayout(ParentControl: TLccPanel;var ReadButton: TLccSpeedButton; var WriteButton: TLccSpeedButton): TLccPanel;
+function TLccCdiParser.CreateBaseEditorLayout(ParentControl: TLccPanel;
+  DataElementInformation: TDataElementInformation): TLccPanel;
 begin
   Result := TLccPanel.Create(ParentControl);
   {$IFNDEF DELPHI}Result.Caption := '';{$ENDIF};
@@ -943,33 +946,31 @@ begin
   {$IFNDEF DELPHI}Result.BevelOuter := bvNone;{$ENDIF}
   Result.Parent := ParentControl;
 
-  ReadButton := CreateButton(Result, 'Read', {$IFNDEF DELPHI}@{$ENDIF}DoSpeedButtonReadClick, False, 50, {$IFDEF DELPHI}TAlignLayout.Right{$ELSE}alRight{$ENDIF});
-  WriteButton := CreateButton(Result, 'Write', {$IFNDEF DELPHI}@{$ENDIF}DoSpeedButtonWriteClick, False, 50, {$IFDEF DELPHI}TAlignLayout.Right{$ELSE}alRight{$ENDIF});
+  DataElementInformation.ReadMemorySpaceButton := CreateButton(Result, 'Read', {$IFNDEF DELPHI}@{$ENDIF}DoSpeedButtonReadClick, False, 50, {$IFDEF DELPHI}TAlignLayout.Right{$ELSE}alRight{$ENDIF});
+  DataElementInformation.WriteMemorySpaceButton := CreateButton(Result, 'Write', {$IFNDEF DELPHI}@{$ENDIF}DoSpeedButtonWriteClick, False, 50, {$IFDEF DELPHI}TAlignLayout.Right{$ELSE}alRight{$ENDIF});
+  DataElementInformation.CompareMemorySpaceButton := CreateButton(Result, 'Compare', {$IFNDEF DELPHI}@{$ENDIF}DoSpeedButtonCompareClick, False, 50, {$IFDEF DELPHI}TAlignLayout.Right{$ELSE}alRight{$ENDIF});
+
+  DataElementInformation.ReadMemorySpaceButton.Visible := ShowReadBtn;
+  DataElementInformation.WriteMemorySpaceButton.Visible := ShowWriteBtn;
+  DataElementInformation.CompareMemorySpaceButton.Visible := ShowCompareBtn;
 
   Result.Height := BASE_EDITOR_HEIGHT;          ;
 end;
 
 procedure TLccCdiParser.CreateSpinEditLayout(ParentControl: TLccPanel;
-  Element: TLccXmlNode; Indent: Integer; MemoryStartPointer: Int64;
-  MemoryAllocation: DWord; ShowReadBtn, ShowWriteBtn: Boolean);
+  Indent: Integer; DataElementInformation: TDataElementInformation);
 var
-  SpinEdit: TLccSpinEdit;
-  ReadButton: TLccSpeedButton;
-  WriteButton: TLccSpeedButton;
+  SpinEdit: TLccOpenPascalEdit;
   ContainerPanel: TLccPanel;
 begin
   {$IFDEF PRINT_MEM_LOCATIONS}
     CreateLabel(ParentControl, 'Offset: ' + LccDOMString( IntToStr(MemoryStartPointer)), Indent, False);
-    CreateLabel(ParentControl, 'Size: ' + LccDOMString( IntToStr(MemoryAllocation)), Indent, False);
+    CreateLabel(ParentControl, 'Size: ' + LccDOMString( IntToStr(DataElementInformation.MemoryAllocation)), Indent, False);
   {$ENDIF}
 
-  ReadButton := nil;
-  WriteButton := nil;
-  ContainerPanel := CreateBaseEditorLayout(ParentControl, ReadButton, WriteButton);
-  ReadButton.Visible := ShowReadBtn;
-  WriteButton.Visible := ShowWriteBtn;
+  ContainerPanel := CreateBaseEditorLayout(ParentControl, DataElementInformation);
 
-  SpinEdit := TLccSpinEdit.Create(ContainerPanel);
+  SpinEdit := TLccOpenPascalEdit.Create(ContainerPanel);
   SpinEdit.Parent := ContainerPanel;
   SpinEdit.Align := {$IFDEF DELPHI}TAlignLayout.Client{$ELSE}alClient{$ENDIF};
   {$IFDEF DELPHI}SpinEdit.Margins.Left := Indent;{$ELSE}SpinEdit.BorderSpacing.Left := Trunc(Indent);{$ENDIF}
@@ -982,26 +983,19 @@ begin
 end;
 
 procedure TLccCdiParser.CreateEditLayout(ParentControl: TLccPanel;
-  Element: TLccXmlNode; Indent: Integer; MemoryStartPointer: Int64;
-  MemoryAllocation: DWord; ShowReadBtn, ShowWriteBtn: Boolean);
+  Indent: Integer; DataElementInformation: TDataElementInformation);
 var
-  EditBox: TLccEdit;
-  ReadButton: TLccSpeedButton;
-  WriteButton: TLccSpeedButton;
+  EditBox: TLccOpenPascalEdit;
   ContainerPanel: TLccPanel;
 begin
   {$IFDEF PRINT_MEM_LOCATIONS}
     CreateLabel(ParentControl, 'Offset: ' + LccDOMString( IntToStr(MemoryStartPointer)), Indent, False);
-    CreateLabel(ParentControl, 'Size: ' + LccDOMString( IntToStr(MemoryAllocation)), Indent, False);
+    CreateLabel(ParentControl, 'Size: ' + LccDOMString( IntToStr(DataElementInformation.MemoryAllocation)), Indent, False);
   {$ENDIF}
 
-  ReadButton := nil;
-  WriteButton := nil;
-  ContainerPanel := CreateBaseEditorLayout(ParentControl, ReadButton, WriteButton);
-  ReadButton.Visible := ShowReadBtn;
-  WriteButton.Visible := ShowWriteBtn;
+  ContainerPanel := CreateBaseEditorLayout(ParentControl, DataElementInformation);
 
-  EditBox := TLccEdit.Create(ContainerPanel);
+  EditBox := TLccOpenPascalEdit.Create(ContainerPanel);
   EditBox.Parent := ContainerPanel;
   EditBox.Align := {$IFDEF DELPHI}TAlignLayout.Client{$ELSE}alClient{$ENDIF};
   {$IFDEF DELPHI}EditBox.Margins.Left := Indent;{$ELSE}EditBox.BorderSpacing.Left := Trunc(Indent);{$ENDIF}
@@ -1009,36 +1003,30 @@ begin
 end;
 
 procedure TLccCdiParser.CreateComboBoxListLayout(ParentControl: TLccPanel;
-  Element: TLccXmlNode; Indent: Integer; MemoryStartPointer: Int64;
-  MemoryAllocation: DWord; Info: TConfigInfo; ShowReadBtn, ShowWriteBtn: Boolean
-  );
+  Indent: Integer; DataElementInformation: TDataElementInformation);
 var
-  ReadButton: TLccSpeedButton;
-  WriteButton: TLccSpeedButton;
   ContainerPanel: TLccPanel;
-  ComboBox: TLccComboBox;
+  ComboBox: TLccOpenPascalComboBox;
   i: Integer;
 begin
   {$IFDEF PRINT_MEM_LOCATIONS}
     CreateLabel(ParentControl, 'Offset: ' + LccDOMString( IntToStr(MemoryStartPointer)), Indent, False);
-    CreateLabel(ParentControl, 'Size: ' + LccDOMString( IntToStr(MemoryAllocation)), Indent, False);
+    CreateLabel(ParentControl, 'Size: ' + LccDOMString( IntToStr(DataElementInformation.MemoryAllocation)), Indent, False);
   {$ENDIF}
 
-  ReadButton := nil;
-  WriteButton := nil;
-  ContainerPanel := CreateBaseEditorLayout(ParentControl, ReadButton, WriteButton);
-  ReadButton.Visible := ShowReadBtn;
-  WriteButton.Visible := ShowWriteBtn;
+  ContainerPanel := CreateBaseEditorLayout(ParentControl, DataElementInformation);
 
-  ComboBox := TLccComboBox.Create(ContainerPanel);
+  ComboBox := TLccOpenPascalComboBox.Create(ContainerPanel);
   ComboBox.Parent := ContainerPanel;
   {$IFNDEF DELPHI}ComboBox.Style := csDropDownList;{$ENDIF}
   ComboBox.Align := {$IFDEF DELPHI}TAlignLayout.Client{$ELSE}alClient{$ENDIF};
   {$IFDEF DELPHI}ComboBox.Margins.Left := Indent;{$ELSE}ComboBox.BorderSpacing.Left := Trunc(Indent);{$ENDIF}
   {$IFDEF DELPHI}ComboBox.Margins.Right := Indent;{$ELSE}ComboBox.BorderSpacing.Right := Trunc(Indent);{$ENDIF}
-  for i := 0 to Info.MapList.Count - 1 do
-    ComboBox.Items.Add(string( TMapRelation(Info.MapList.Relations[i]).Value));
+  for i := 0 to DataElementInformation.MapList.Count - 1 do
+    ComboBox.Items.Add(string( TMapRelation(DataElementInformation.MapList.Relations[i]).Value));
   ComboBox.ItemIndex := 0;
+
+  ComboBox.DataElementInformation := DataElementInformation;
 end;
 
 procedure TLccCdiParser.DoAfterReadPage(Sender: TObject);
@@ -1065,7 +1053,7 @@ procedure TLccCdiParser.DoConfigMemReadReply(ANode: TObject);
 
     procedure LoadConfigMemToControl(TempNode: TLccOwnedNode; Control: TComponent; DataOffset: Integer);
     var
-      TempConfigInfo: TConfigInfo;
+      TempConfigInfo: TDataElementInformation;
     begin
       if Assigned(Control) then
       begin
@@ -1079,7 +1067,7 @@ procedure TLccCdiParser.DoConfigMemReadReply(ANode: TObject);
             else
               TLccOpenPascalSpinEdit(Control).Value := TempNode.ConfigurationMem.DataTypeInteger;
             TLccOpenPascalSpinEdit(Control).OnChange(TLccOpenPascalSpinEdit(Control));
-            TempConfigInfo := TLccOpenPascalSpinEdit(Control).ConfigInfo;
+            TempConfigInfo := TLccOpenPascalSpinEdit(Control).DataElementInformation;
             TempConfigInfo.MemState := ocs_Current;
             Serializer.Remove(TempConfigInfo);
           end;
@@ -1090,7 +1078,7 @@ procedure TLccCdiParser.DoConfigMemReadReply(ANode: TObject);
           begin
             TLccOpenPascalEdit(Control).Text := TempNode.ConfigurationMem.DataTypeString;
             TLccOpenPascalEdit(Control).OnChange(TLccOpenPascalEdit(Control));
-            TempConfigInfo := TLccOpenPascalEdit(Control).ConfigInfo;
+            TempConfigInfo := TLccOpenPascalEdit(Control).DataElementInformation;
             TempConfigInfo.MemState := ocs_Current;
             Serializer.Remove(TempConfigInfo);
           end;
@@ -1101,7 +1089,7 @@ procedure TLccCdiParser.DoConfigMemReadReply(ANode: TObject);
           begin
             TLccOpenPascalComboBox(Control).ItemIndex := TempNode.ConfigurationMem.DataTypeInteger;
             TLccOpenPascalComboBox(Control).OnChange(TLccOpenPascalComboBox(Control));
-            TempConfigInfo := TLccOpenPascalComboBox(Control).ConfigInfo;
+            TempConfigInfo := TLccOpenPascalComboBox(Control).DataElementInformation;
             TempConfigInfo.MemState := ocs_Current;
             Serializer.Remove(TempConfigInfo);
           end;
@@ -1133,7 +1121,7 @@ procedure TLccCdiParser.DoConfigMemWriteReply(ANode: TObject);
 var
   Control: TLccControl;
  // TempNode: TLccOwnedNode;
-  TempConfigInfo: TConfigInfo;
+  TempConfigInfo: TDataElementInformation;
 begin
 
   {
@@ -1150,24 +1138,24 @@ begin
       begin
         if TempNode.ConfigurationMem.DataType = cdt_Int then
         begin
-          TLccOpenPascalSpinEdit(Control).ConfigInfo.MemState := ocs_Current;
-          TempConfigInfo := TLccOpenPascalSpinEdit(Control).ConfigInfo;
+          TLccOpenPascalSpinEdit(Control).DataElementInformation.MemState := ocs_Current;
+          TempConfigInfo := TLccOpenPascalSpinEdit(Control).DataElementInformation;
         end;
       end else
       if Control is TLccOpenPascalEdit then
       begin
         if TempNode.ConfigurationMem.DataType = cdt_String then
         begin
-          TLccOpenPascalEdit(Control).ConfigInfo.MemState := ocs_Current;
-          TempConfigInfo := TLccOpenPascalEdit(Control).ConfigInfo;
+          TLccOpenPascalEdit(Control).DataElementInformation.MemState := ocs_Current;
+          TempConfigInfo := TLccOpenPascalEdit(Control).DataElementInformation;
         end;
       end else
       if Control is TLccOpenPascalComboBox then
       begin
         if TempNode.ConfigurationMem.DataType = cdt_Int then
         begin
-          TLccOpenPascalComboBox(Control).ConfigInfo.MemState := ocs_Current;
-          TempConfigInfo := TLccOpenPascalComboBox(Control).ConfigInfo;
+          TLccOpenPascalComboBox(Control).DataElementInformation.MemState := ocs_Current;
+          TempConfigInfo := TLccOpenPascalComboBox(Control).DataElementInformation;
         end;
       end;
     end;
@@ -1177,7 +1165,7 @@ end;
 
 procedure TLccCdiParser.DoSpeedButtonCompareClick(Sender: TObject);
 var
-  ConfigInfo: TConfigInfo;
+  ConfigInfo: TDataElementInformation;
 begin
   if Assigned(FLccNode) then
   begin
@@ -1223,13 +1211,13 @@ procedure TLccCdiParser.DoButtonReadPageClick(Sender: TObject);
       RunSheet(Component.Components[i]);
 
     if Component is TLccOpenPascalSpinEdit then
-      Serializer.AddRead(TLccOpenPascalSpinEdit( Component).ConfigInfo)
+      Serializer.AddRead(TLccOpenPascalSpinEdit( Component).DataElementInformation)
     else
     if Component is TLccOpenPascalEdit then
-      Serializer.AddRead(TLccOpenPascalEdit( Component).ConfigInfo)
+      Serializer.AddRead(TLccOpenPascalEdit( Component).DataElementInformation)
     else
     if Component is TLccOpenPascalComboBox then
-      Serializer.AddRead(TLccOpenPascalComboBox( Component).ConfigInfo)
+      Serializer.AddRead(TLccOpenPascalComboBox( Component).DataElementInformation)
   end;
 
 var
@@ -1255,13 +1243,13 @@ procedure TLccCdiParser.DoButtonWritePageClick(Sender: TObject);
       RunSheet(Component.Components[i]);
 
     if Component is TLccOpenPascalSpinEdit then
-      Serializer.AddWrite(TLccOpenPascalSpinEdit( Component).ConfigInfo)
+      Serializer.AddWrite(TLccOpenPascalSpinEdit( Component).DataElementInformation)
     else
     if Component is TLccOpenPascalEdit then
-      Serializer.AddWrite(TLccOpenPascalEdit( Component).ConfigInfo)
+      Serializer.AddWrite(TLccOpenPascalEdit( Component).DataElementInformation)
     else
     if Component is TLccOpenPascalComboBox then
-      Serializer.AddWrite(TLccOpenPascalComboBox( Component).ConfigInfo)
+      Serializer.AddWrite(TLccOpenPascalComboBox( Component).DataElementInformation)
   end;
 
 var
@@ -1314,17 +1302,17 @@ function TLccCdiParser.FindControlByAddress(Address: DWord): TLccControl;
     begin
       if AComponent is TLccOpenPascalSpinEdit then
       begin
-        if TLccOpenPascalSpinEdit( AComponent).ConfigInfo.MemoryAddressPointer = Address then
+        if TLccOpenPascalSpinEdit( AComponent).DataElementInformation.MemoryAddressPointer = Address then
           Result := AComponent
       end else
       if AComponent is TLccOpenPascalEdit then
       begin
-        if TLccOpenPascalEdit( AComponent).ConfigInfo.MemoryAddressPointer = Address then
+        if TLccOpenPascalEdit( AComponent).DataElementInformation.MemoryAddressPointer = Address then
           Result := AComponent
       end else
       if AComponent is TLccOpenPascalComboBox then
       begin
-        if TLccOpenPascalComboBox( AComponent).ConfigInfo.MemoryAddressPointer = Address then
+        if TLccOpenPascalComboBox( AComponent).DataElementInformation.MemoryAddressPointer = Address then
           Result := AComponent
       end
     end
@@ -1379,42 +1367,9 @@ begin
   end;
 end;
 
-function TLccCdiParser.ElementAllocatedMemoryLength(Element: TLccXmlNode): Int64;
-var
-  OffsetModified: Boolean;
-  TempStr: LccDOMString;
-begin
-  Result := 0;
-  OffsetModified := False;
-  TempStr := '';
-
-  if ExtractElementAttribute(Element, 'size', TempStr) then
-  begin
-    Result := StrToInt64(string( TempStr));
-    if Element.NodeName = 'bit' then
-    begin
-      Result := (Result div 8);
-      if Result mod 8 <> 0 then
-        Inc(Result);
-    end;
-    OffsetModified := True;
-  end;
-
-  if not OffsetModified then
-  begin
-    if Element.NodeName = 'int' then
-      Result := 1
-    else
-    if Element.NodeName = 'eventid' then
-      Result := 8
-    else
-  end;
-end;
-
 procedure TLccCdiParser.ProcessElementForUISegment(ParentControl: TLccPanel;
-  Element: TLccXmlNode; var MemoryAddressPointer: Int64;
-  Indent: Integer; DoSuppressNameAndDescription: Boolean;
-  ShowReadBtn, ShowWriteBtn: Boolean; AddressSpace: Byte);
+  Element: TLccXmlNode; var MemoryAddressPointer: Int64; Indent: Integer;
+  AddressSpace: Byte);
 var
   Group_Child, Map_Child: TLccXmlNode;
   TempStr: LccDOMString;
@@ -1441,120 +1396,24 @@ begin
        CreateLabel(ParentControl, XmlNodeTextContent(ChildElement), Indent + LABEL_DELTA_INDENT_DOUBLE, False)
      else
      if ChildElement.NodeName = 'group' then
-       ProcessElementForUIGroup(ParentControl, ChildElement, MemoryAddressPointer, Indent + LABEL_DELTA_INDENT_DOUBLE, DoSuppressNameAndDescription, ShowReadBtn, ShowWriteBtn, AddressSpace)
+       ProcessElementForUIGroup(ParentControl, ChildElement, MemoryAddressPointer, Indent + LABEL_DELTA_INDENT_DOUBLE, AddressSpace)
      else
      if ChildElement.NodeName = 'string' then
-       ProcessElementForUIString(ParentControl, ChildElement, MemoryAddressPointer, Indent + LABEL_DELTA_INDENT_DOUBLE, DoSuppressNameAndDescription, ShowReadBtn, ShowWriteBtn, AddressSpace)
+       ProcessElementForUIString(ParentControl, ChildElement, MemoryAddressPointer, Indent + LABEL_DELTA_INDENT_DOUBLE, AddressSpace)
      else
      if ChildElement.NodeName = 'int' then
-       ProcessElementForUIInt(ParentControl, ChildElement, MemoryAddressPointer, Indent + LABEL_DELTA_INDENT_DOUBLE, DoSuppressNameAndDescription, ShowReadBtn, ShowWriteBtn, AddressSpace)
+       ProcessElementForUIInt(ParentControl, ChildElement, MemoryAddressPointer, Indent + LABEL_DELTA_INDENT_DOUBLE, AddressSpace)
      else
      if ChildElement.NodeName = 'eventid' then
-       ProcessElementForUIEventID(ParentControl, ChildElement, MemoryAddressPointer, Indent + LABEL_DELTA_INDENT_DOUBLE, DoSuppressNameAndDescription, ShowReadBtn, ShowWriteBtn, AddressSpace) ;
+       ProcessElementForUIEventID(ParentControl, ChildElement, MemoryAddressPointer, Indent + LABEL_DELTA_INDENT_DOUBLE, AddressSpace) ;
 
      ChildElement := ChildElement.NextSibling;
    end;
-
-
-  (*
-
-   // Test for a Group segment
-   if Element.NodeName = 'group' then
-   begin
-     // If it is a group then run into the group
-     Inc(Indent, 8);
-
-     // Group may override the Offset
-  //   TryUpdateMemoryAddressPointer(Element, MemoryAddressPointer);
-
-     // Look for descripive names and descriptions to print
-     if ExtractElementItem(Element, 'name', TempStr) then
-       CreateLabel(ParentControl, TempStr, Indent, True);
-     if ExtractElementItem(Element, 'description', TempStr) then
-       CreateLabel(ParentControl, TempStr, Indent + 4, False);
-
-     // Look for replications
-     if ExtractElementAttribute(Element, 'replication', TempStr) then
-       ReplicationCount := StrToInt(string( TempStr))
-     else
-       ReplicationCount := 1;
-     ExtractElementItem(Element, 'repname', TempStr);   // Is only one repeated name allowed?  Appears to be with the XML tool.
-
-     // Run through the replicated group (if there was no replication then this is set to 1)
-     for i := 1 to ReplicationCount do
-     begin
-       // TempStr contains the repeated name so print it with the iteration number
-       if TempStr <> '' then
-         CreateLabel(ParentControl, TempStr + ' ' + LccDOMString( IntToStr(i)), Indent + 8, False);
-
-       // Run through each of the children of the group calling this method to process them
-       Group_Child := XmlFirstChild(Element);
-        while Group_Child <> nil do
-       begin
-      //   ProcessElementForUI(ParentControl, Group_Child, MemoryAddressPointer, Indent + 16, True, ShowReadBtn, ShowWriteBtn, AddressSpace);
-     //    Group_Child := Group_Child.NextSibling;
-       end;
-     end;
-   end else
-   begin   // It is not a group
-     if (Element.NodeName = 'name') or (Element.NodeName = 'description') then
-     begin
-       // It is a descriptive block so print it
-       if not DoSuppressNameAndDescription then
-         CreateLabel(ParentControl, XmlNodeTextContent(Element), Indent, False);
-     end else
-     if Element.NodeName = 'int' then
-     begin
-       // It is an Integer which may have a memory modifier as well as a size
- //      TryUpdateMemoryAddressPointer(Element, MemoryAddressPointer);
-       ElementMemoryAllocated := ElementAllocatedMemoryLength(Element);
-
-       // If it has a map then create a ComboListBox to handle it else use a Spin Edit
-       Map_Child := XmlFindChildNode(Element, 'map');
-       if Map_Child = nil then
-         CreateSpinEditLayout(ParentControl, Element, Indent + 4, MemoryAddressPointer, ElementMemoryAllocated, Element.NodeName, ShowReadBtn, ShowWriteBtn)
-       else
-         CreateComboBoxListLayout(ParentControl, Element, Indent + 4, MemoryAddressPointer, ElementMemoryAllocated, Element.NodeName, ShowReadBtn, ShowWriteBtn);
-
-       // Update the Control Offset
-       Inc(MemoryAddressPointer, ElementMemoryAllocated);
-     end else
-     if Element.NodeName = 'bit' then
-     begin
-       // It is an Bit which may have a memory modifier as well as a size
-  //     TryUpdateMemoryAddressPointer(Element, MemoryAddressPointer);
-       ElementMemoryAllocated := ElementAllocatedMemoryLength(Element);
-
-       // Think a bit MUST have a map, not sure what the alternative would look like
-       Map_Child := XmlFindChildNode(Element, 'map');
-       if Map_Child = nil then
-         CreateSpinEditLayout(ParentControl, Element, Indent + 4, MemoryAddressPointer, ElementMemoryAllocated, Element.NodeName, ShowReadBtn, ShowWriteBtn)
-       else
-         CreateComboBoxListLayout(ParentControl, Element, Indent + 4, MemoryAddressPointer, ElementMemoryAllocated, Element.NodeName, ShowReadBtn, ShowWriteBtn);
-
-       // Update the Control Offset
-       Inc(MemoryAddressPointer, ElementMemoryAllocated);
-     end else
-     if (Element.NodeName = 'string') or (Element.NodeName = 'eventid') then
-     begin
-  //     TryUpdateMemoryAddressPointer(Element, MemoryAddressPointer);
-       ElementMemoryAllocated := ElementAllocatedMemoryLength(Element);
-       Map_Child := XmlFindChildNode(Element, 'map');
-    {   if Map_Child = nil then
-         AddEdit(ParentControl, Element, ControlOffset, 4, Indent + 4, MemoryAddressPointer, ElementMemoryAllocated, DoPrintMemOffset, string(Element.NodeName), ShowReadBtn, ShowWriteBtn)
-       else
-         AddComboBoxList(ParentControl, Element, ControlOffset, 4, Indent + 4, MemoryAddressPointer, ElementMemoryAllocated, DoPrintMemOffset, string(Element.NodeName), ShowReadBtn, ShowWriteBtn);
-     }
-       // Update the Control Offset
-       Inc(MemoryAddressPointer, ElementMemoryAllocated);
-     end else
-   end;        *)
  end;
 end;
 
 procedure TLccCdiParser.ProcessElementForUIGroup(ParentControl: TLccPanel;
   Element: TLccXmlNode; var MemoryAddressPointer: Int64; Indent: Integer;
-  DoSuppressNameAndDescription: Boolean; ShowReadBtn, ShowWriteBtn: Boolean;
   AddressSpace: Byte);
 var
   Replications, i: Integer;
@@ -1600,16 +1459,16 @@ begin
           CreateLabel(ParentControl, XmlNodeTextContent(ChildElement) + ' ' + LccDOMString(IntToStr(i)), Indent, False)
         else
         if ChildElement.NodeName = 'group' then
-          ProcessElementForUIGroup(ParentControl, ChildElement, MemoryAddressPointer, Indent + LABEL_DELTA_INDENT_DOUBLE, DoSuppressNameAndDescription, ShowReadBtn, ShowWriteBtn, AddressSpace)
+          ProcessElementForUIGroup(ParentControl, ChildElement, MemoryAddressPointer, Indent + LABEL_DELTA_INDENT_DOUBLE, AddressSpace)
         else
         if ChildElement.NodeName = 'string' then
-          ProcessElementForUIString(ParentControl, ChildElement, MemoryAddressPointer, Indent + LABEL_DELTA_INDENT_DOUBLE, DoSuppressNameAndDescription, ShowReadBtn, ShowWriteBtn, AddressSpace)
+          ProcessElementForUIString(ParentControl, ChildElement, MemoryAddressPointer, Indent + LABEL_DELTA_INDENT_DOUBLE, AddressSpace)
         else
         if ChildElement.NodeName = 'int' then
-          ProcessElementForUIInt(ParentControl, ChildElement, MemoryAddressPointer, Indent + LABEL_DELTA_INDENT_DOUBLE, DoSuppressNameAndDescription, ShowReadBtn, ShowWriteBtn, AddressSpace)
+          ProcessElementForUIInt(ParentControl, ChildElement, MemoryAddressPointer, Indent + LABEL_DELTA_INDENT_DOUBLE, AddressSpace)
         else
          if ChildElement.NodeName = 'eventid' then
-           ProcessElementForUIEventID(ParentControl, ChildElement, MemoryAddressPointer, Indent + LABEL_DELTA_INDENT_DOUBLE, DoSuppressNameAndDescription, ShowReadBtn, ShowWriteBtn, AddressSpace);
+           ProcessElementForUIEventID(ParentControl, ChildElement, MemoryAddressPointer, Indent + LABEL_DELTA_INDENT_DOUBLE, AddressSpace);
 
         ChildElement := ChildElement.NextSibling;
       end;
@@ -1619,90 +1478,80 @@ end;
 
 procedure TLccCdiParser.ProcessElementForUIString(ParentControl: TLccPanel;
   Element: TLccXmlNode; var MemoryAddressPointer: Int64; Indent: Integer;
-  DoSuppressNameAndDescription: Boolean; ShowReadBtn, ShowWriteBtn: Boolean;
   AddressSpace: Byte);
 var
-  Info: TConfigInfo;
+  DataElementInformation: TDataElementInformation;
 begin
   if Assigned(Element) then
   begin
-    Info := TConfigInfo.Create(cdt_String);
-    ProcessElementForUICommonVariable(ParentControl, Element, MemoryAddressPointer, Indent, DoSuppressNameAndDescription, ShowReadBtn, ShowWriteBtn, AddressSpace, Info);
-    if Info.MapList.Count > 0 then
-    begin
-      CreateComboBoxListLayout(ParentControl, Element, Indent, MemoryAddressPointer, Info.MemoryAllocation, Info, ShowReadBtn, ShowWriteBtn);
-
-      // Need to fill in the choices...
-    end else
-      CreateEditLayout(ParentControl, Element, Indent, MemoryAddressPointer, Info.MemoryAllocation, ShowReadBtn, ShowWriteBtn);
+    DataElementInformation := TDataElementInformation.Create(cdt_String);
+    ProcessElementForUIDataElement(ParentControl, Element, MemoryAddressPointer, Indent, AddressSpace, DataElementInformation);
+    if DataElementInformation.MapList.Count > 0 then
+      CreateComboBoxListLayout(ParentControl, Indent, DataElementInformation)
+    else
+      CreateEditLayout(ParentControl, Indent, DataElementInformation);
   end;
 end;
 
 procedure TLccCdiParser.ProcessElementForUIInt(ParentControl: TLccPanel;
   Element: TLccXmlNode; var MemoryAddressPointer: Int64; Indent: Integer;
-  DoSuppressNameAndDescription: Boolean; ShowReadBtn, ShowWriteBtn: Boolean;
   AddressSpace: Byte);
 var
-  Info: TConfigInfo;
+  DataElementInformation: TDataElementInformation;
   ChildElement: TLccXmlNode;
 begin
   if Assigned(Element) then
   begin
-    Info := TConfigInfo.Create(cdt_Int);
-    ProcessElementForUICommonVariable(ParentControl, Element, MemoryAddressPointer, Indent, DoSuppressNameAndDescription, ShowReadBtn, ShowWriteBtn, AddressSpace, Info);
+    DataElementInformation := TDataElementInformation.Create(cdt_Int);
+    ProcessElementForUIDataElement(ParentControl, Element, MemoryAddressPointer, Indent, AddressSpace, DataElementInformation);
 
     ChildElement := XmlFirstChild(Element);
     while Assigned(ChildElement) do
     begin
       if ChildElement.NodeName = 'min' then
-        Info.IntMin := StrToInt64(string( XmlNodeTextContent(ChildElement)))
+        DataElementInformation.IntMin := StrToInt64(string( XmlNodeTextContent(ChildElement)))
       else
       if ChildElement.NodeName = 'max' then
-        Info.IntMax := StrToInt64(string( XmlNodeTextContent(ChildElement)))
+        DataElementInformation.IntMax := StrToInt64(string( XmlNodeTextContent(ChildElement)))
       else
       if ChildElement.NodeName = 'default' then
-        Info.IntDefault := StrToInt64(string( XmlNodeTextContent(ChildElement)));
+        DataElementInformation.IntDefault := StrToInt64(string( XmlNodeTextContent(ChildElement)));
 
       ChildElement := ChildElement.NextSibling;
     end;
 
 
-    if Info.MapList.Count > 0 then
-      CreateComboBoxListLayout(ParentControl, Element, Indent, MemoryAddressPointer, Info.MemoryAllocation, Info, ShowReadBtn, ShowWriteBtn)
+    if DataElementInformation.MapList.Count > 0 then
+      CreateComboBoxListLayout(ParentControl, Indent, DataElementInformation)
     else
-      CreateSpinEditLayout(ParentControl, Element, Indent, MemoryAddressPointer, Info.MemoryAllocation, ShowReadBtn, ShowWriteBtn)
+      CreateSpinEditLayout(ParentControl, Indent, DataElementInformation)
   end;
 end;
 
 procedure TLccCdiParser.ProcessElementForUIEventID(ParentControl: TLccPanel;
   Element: TLccXmlNode; var MemoryAddressPointer: Int64; Indent: Integer;
-  DoSuppressNameAndDescription: Boolean; ShowReadBtn, ShowWriteBtn: Boolean;
   AddressSpace: Byte);
 var
-  Info: TConfigInfo;
+  DataElementInformation: TDataElementInformation;
 begin
   if Assigned(Element) then
   begin
-    Info := TConfigInfo.Create(cdt_EventID);
-    ProcessElementForUICommonVariable(ParentControl, Element, MemoryAddressPointer, Indent, DoSuppressNameAndDescription, ShowReadBtn, ShowWriteBtn, AddressSpace, Info);
+    DataElementInformation := TDataElementInformation.Create(cdt_EventID);
+    ProcessElementForUIDataElement(ParentControl, Element, MemoryAddressPointer, Indent, AddressSpace, DataElementInformation);
 
-    if Info.MapList.Count > 0 then
-      CreateComboBoxListLayout(ParentControl, Element, Indent, MemoryAddressPointer, Info.MemoryAllocation, Info, ShowReadBtn, ShowWriteBtn)
+    if DataElementInformation.MapList.Count > 0 then
+      CreateComboBoxListLayout(ParentControl, Indent, DataElementInformation)
     else
-      CreateEditLayout(ParentControl, Element, Indent, MemoryAddressPointer, Info.MemoryAllocation, ShowReadBtn, ShowWriteBtn);
+      CreateEditLayout(ParentControl, Indent, DataElementInformation);
   end;
 end;
 
-procedure TLccCdiParser.ProcessElementForUIMap(ParentControl: TLccPanel;
-  Element: TLccXmlNode; var MemoryAddressPointer: Int64; Indent: Integer;
-  DoSuppressNameAndDescription: Boolean; Info: TConfigInfo; ShowReadBtn,
-  ShowWriteBtn: Boolean; AddressSpace: Byte);
+procedure TLccCdiParser.ProcessElementForUIMap(Element: TLccXmlNode;
+  var MemoryAddressPointer: Int64;
+  DataElementInformation: TDataElementInformation);
 var
   ChildElement: TLccXmlNode;
   PropertyStr, ValueStr: LccDOMString;
-
-  i: Integer;
-
 begin
    if Assigned(Element) then
    begin
@@ -1717,7 +1566,7 @@ begin
        begin
          PropertyStr := XmlNodeFindChildNodeTextContent(ChildElement, 'property');
          ValueStr := XmlNodeFindChildNodeTextContent(ChildElement, 'value');
-         Info.MapList.AddRelation(ValueStr, PropertyStr);
+         DataElementInformation.MapList.AddRelation(ValueStr, PropertyStr);
        end;
        ChildElement := ChildElement.NextSibling;
      end;
@@ -1725,27 +1574,25 @@ begin
    end;
 end;
 
-procedure TLccCdiParser.ProcessElementForUICommonVariable(
+procedure TLccCdiParser.ProcessElementForUIDataElement(
   ParentControl: TLccPanel; Element: TLccXmlNode;
-  var MemoryAddressPointer: Int64; Indent: Integer;
-  DoSuppressNameAndDescription: Boolean; ShowReadBtn, ShowWriteBtn: Boolean;
-  AddressSpace: Byte; Info: TConfigInfo);
+  var MemoryAddressPointer: Int64; Indent: Integer; AddressSpace: Byte;
+  DataElementInformation: TDataElementInformation);
 var
   ChildElement: TLccXmlNode;
-  AllocatedSize: DWord;
 begin
-  AllocatedSize := 0;
   if Assigned(Element) then
   begin
+    // Update the DataElement Information on Memory Size (valid for Strings and Integers only, EventIDs will not have this)
     if XmlAttributeExists(Element, 'size') then
-      AllocatedSize := StrToInt(string( XmlAttributeRead(Element, 'size')));
+      DataElementInformation.MemoryAllocation := StrToInt(string( XmlAttributeRead(Element, 'size')));
 
-    // Update the Address Offset if necessary
+    // Update the Address Offset if necessary and update the DataElement Information for this Data Element
     if XmlAttributeExists(Element, 'offset') then
       MemoryAddressPointer := MemoryAddressPointer + StrToInt64(string( XmlAttributeRead(Element, 'offset')));
 
-    Info.MemoryAllocation := AllocatedSize;
-    Info.MemoryAddressPointer := MemoryAddressPointer;
+    // At this point the Memory pointer is valid for the DataElement
+    DataElementInformation.MemoryAddressPointer := MemoryAddressPointer;
 
     ChildElement := XmlFirstChild(Element);
     while Assigned(ChildElement) do
@@ -1757,7 +1604,7 @@ begin
         CreateLabel(ParentControl, XmlNodeTextContent(ChildElement), Indent + LABEL_DELTA_INDENT_DOUBLE, False)
       else
       if ChildElement.NodeName = 'map' then
-        ProcessElementForUIMap(ParentControl, ChildElement, MemoryAddressPointer, Indent + LABEL_DELTA_INDENT_DOUBLE, DoSuppressNameAndDescription, Info, ShowReadBtn, ShowWriteBtn, AddressSpace);
+        ProcessElementForUIMap(ChildElement, MemoryAddressPointer, DataElementInformation);
       ChildElement := ChildElement.NextSibling;
     end;
 
@@ -1774,36 +1621,36 @@ begin
   NodeManager := ANodeManager as TLccNodeManager;
 end;
 
-function TLccCdiParser.SpeedButtonToConfigInfo(Sender: TObject): TConfigInfo;
+function TLccCdiParser.SpeedButtonToConfigInfo(Sender: TObject): TDataElementInformation;
 begin
   if TLccSpeedButton(Sender).Owner is TLccOpenPascalSpinEdit then
-    Result := TLccOpenPascalSpinEdit( TLccSpeedButton(Sender).Owner).ConfigInfo
+    Result := TLccOpenPascalSpinEdit( TLccSpeedButton(Sender).Owner).DataElementInformation
   else
   if TLccSpeedButton(Sender).Owner is TLccOpenPascalEdit then
-    Result := TLccOpenPascalEdit( TLccSpeedButton(Sender).Owner).ConfigInfo
+    Result := TLccOpenPascalEdit( TLccSpeedButton(Sender).Owner).DataElementInformation
   else
   if TLccSpeedButton(Sender).Owner is TLccOpenPascalComboBox then
-    Result := TLccOpenPascalComboBox( TLccSpeedButton(Sender).Owner).ConfigInfo
+    Result := TLccOpenPascalComboBox( TLccSpeedButton(Sender).Owner).DataElementInformation
   else
    Result := nil;
 end;
 
 procedure TLccCdiParser.OnSpinEditChange(Sender: TObject);
 begin
-  (Sender as TLccOpenPascalSpinEdit).ConfigInfo.MemState := ocs_Unknown;
-  (Sender as TLccOpenPascalSpinEdit).ConfigInfo.ConfigData.DataInteger := Round((Sender as TLccOpenPascalSpinEdit).Value);
+  (Sender as TLccOpenPascalSpinEdit).DataElementInformation.MemState := ocs_Unknown;
+  (Sender as TLccOpenPascalSpinEdit).DataElementInformation.ConfigData.DataInteger := Round((Sender as TLccOpenPascalSpinEdit).Value);
 end;
 
 procedure TLccCdiParser.OnEditChange(Sender: TObject);
 begin
-  (Sender as TLccOpenPascalEdit).ConfigInfo.MemState := ocs_Unknown;
-  (Sender as TLccOpenPascalEdit).ConfigInfo.ConfigData.DataString := AnsiString( (Sender as TLccOpenPascalEdit).Text);
+  (Sender as TLccOpenPascalEdit).DataElementInformation.MemState := ocs_Unknown;
+  (Sender as TLccOpenPascalEdit).DataElementInformation.ConfigData.DataString := AnsiString( (Sender as TLccOpenPascalEdit).Text);
 end;
 
 procedure TLccCdiParser.OnComboBoxChange(Sender: TObject);
 begin
- (Sender as TLccOpenPascalComboBox).ConfigInfo.MemState := ocs_Unknown;
- (Sender as TLccOpenPascalComboBox).ConfigInfo.ConfigData.DataInteger := (Sender as TLccOpenPascalComboBox).ItemIndex;
+ (Sender as TLccOpenPascalComboBox).DataElementInformation.MemState := ocs_Unknown;
+ (Sender as TLccOpenPascalComboBox).DataElementInformation.ConfigData.DataInteger := (Sender as TLccOpenPascalComboBox).ItemIndex;
 end;
 
 procedure TLccCdiParser.OnPageControlChange(Sender: TObject);
@@ -1824,7 +1671,7 @@ begin
       Serializer.Clear;
     end;
 
-    if Serializer.ConfigInfoList.Count > 0 then
+    if Serializer.DataElementInformationList.Count > 0 then
     begin
       ButtonReadPage.Enabled := False;
       ButtonWritePage.Enabled := False;
@@ -1841,7 +1688,7 @@ begin
       else
         DoAfterWritePage(Self);
     end;
-//    StatusPanel.Text := 'Remaining: ' + IntToStr(Serializer.ConfigInfoList.Count);
+//    StatusPanel.Text := 'Remaining: ' + IntToStr(Serializer.DataElementInformationList.Count);
   end;
 end;
 
@@ -1932,10 +1779,10 @@ begin
     while Assigned(CdiRootElementChild) do
     begin
       if CdiRootElementChild.NodeName = 'segment' then
-        CreateSegmentTab(TabControl, CdiRootElementChild, LABEL_MARGIN_INDENT)
+        ProcessSegmentTab(TabControl, CdiRootElementChild, LABEL_MARGIN_INDENT)
       else
       if CdiRootElementChild.NodeName = 'identification' then  // Handle the Identification block
-        CreateIdentificationTab(TabControl, CdiRootElementChild, LABEL_MARGIN_INDENT);
+        ProcessIdentificationTab(TabControl, CdiRootElementChild, LABEL_MARGIN_INDENT);
 
       CdiRootElementChild := CdiRootElementChild.NextSibling;
     end;
@@ -1987,9 +1834,9 @@ begin
 end;
 
 
-{ TConfigInfo }
+{ TDataElementInformation }
 
-procedure TConfigInfo.SetMemState(AValue: TConfigMemState);
+procedure TDataElementInformation.SetMemState(AValue: TConfigMemState);
 begin
   if AValue <> FMemState then
   begin
@@ -1999,16 +1846,16 @@ begin
   end;
 end;
 
-constructor TConfigInfo.Create(ADataType: TLccConfigDataType);
+constructor TDataElementInformation.Create(ADataType: TLccConfigDataType);
 begin
   inherited Create;
   FMemState := ocs_Unknown;
   FDataType := ADataType;
   MapList := TMapRelationList.Create;
-  FConfigData := TConfigDataType.Create;
+  FConfigData := TDataElementConfig.Create;
 end;
 
-destructor TConfigInfo.Destroy;
+destructor TDataElementInformation.Destroy;
 begin
    FreeAndNil( FMapList);
    FreeAndNil(FConfigData);
