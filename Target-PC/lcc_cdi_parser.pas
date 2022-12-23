@@ -771,7 +771,7 @@ begin
   LocalTab := TLccTabSheet.Create(ATabControl);
   LocalTab.Text := ACaption;
   LocalTab.Parent := ATabControl;
- // ATabControl.ActiveTab := LocalTab;   // Need to select the Tab so all components are dropped when created so the Align work right (alTop)
+  ATabControl.ActiveTab := LocalTab;   // Need to select the Tab so all components are dropped when created so the Align work right (alTop)
 
   // Create the ScrollBox and put it in the Tab
   LocalScrollBox := TScrollBox.Create(LocalTab);
