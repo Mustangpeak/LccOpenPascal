@@ -70,7 +70,7 @@ type
     TLccTabControl = TPageControl;
     TLccTabSheet = TTabSheet;
     TLccControl = TControl;
-    TLccSpeedButton = TSpeedButton;
+    TLccSpeedButton = TButton;
     TLccLabel = TLabel;
     TLccSpinEdit = TSpinEdit;
     TLccEdit = TEdit;
@@ -230,10 +230,14 @@ type
     property DataElementInformation: TDataElementInformation read FDataElementInformation write FDataElementInformation;
   end;
 
-  { TLccOpenPascalTabControl }
 
-  TLccOpenPascalTabControl = class(TLccTabControl)
+  { TLccOpenPascalTabSheet }
 
+  TLccOpenPascalTabSheet = class(TLccTabSheet)
+  private
+    FScrollingWindowContentsPanel: TLccPanel;
+  public
+    property ScrollingWindowContentsPanel: TLccPanel read FScrollingWindowContentsPanel write FScrollingWindowContentsPanel;
   end;
 
 
@@ -286,9 +290,10 @@ type
   TLccCdiParser = class(TLccCdiParserBase)
   private
     FAutoReadOnTabChange: Boolean;
-    FButtonReadPage: TButton;
-    FButtonStop: TButton;
-    FButtonWritePage: TButton;
+    FFooterBkGnd: TLccPanel;
+    FGlobalButtonReadPage: TButton;
+    FGlobalButtonStop: TButton;
+    FGlobalButtonWritePage: TButton;
     FCVBlockRead: Word;
     FMarkedToStop: Boolean;
     FMarkedToStopIsStopping: Boolean;
@@ -298,8 +303,9 @@ type
     FOnAfterWritePage: TNotifyEvent;
     FOnBuildInterfaceComplete: TNotifyEvent;
     FOnClearInterface: TNotifyEvent;
-    FPallet: TLccPanel;
-    FPalletButtons: TLccPanel;
+    FApplicationPanel: TLccPanel;
+    FGlobalButtonBkGnd: TLccPanel;
+    FParserFrame: TLccPanel;
     FPrintMemOffset: Boolean;
     FSerializer: TLccCdiParserSerializer;
     FShowCompareBtn: Boolean;
@@ -340,7 +346,8 @@ type
     // Lowest level process that does not create UI elements directly
     procedure ProcessElementForUIMap(Element: TLccXmlNode; var MemoryAddressPointer: Int64; DataElementInformation: TDataElementInformation);
 
-    procedure OnBkGndResize(Sender: TObject);
+    procedure OnParserFrameResize(Sender: TObject);
+    procedure ResizeActiveTabScrollingWindowFrame;
 
 
     // Methods to look at below...............
@@ -371,13 +378,15 @@ type
 
 
 
-    property Pallet: TLccPanel read FPallet;
-    property PalletButtons: TLccPanel read FPalletButtons write FPalletButtons;
-    property ButtonReadPage: TButton read FButtonReadPage write FButtonReadPage;
-    property ButtonWritePage: TButton read FButtonWritePage write FButtonWritePage;
-    property ButtonStop: TButton read FButtonStop write FButtonStop;
-    property TabControl: TLccTabControl read FTabControl write FTabControl;
+    property ApplicationPanel: TLccPanel read FApplicationPanel;     // Application Passed Control to build in
+    property ParserFrame: TLccPanel read FParserFrame write FParserFrame;  // alClient aligned to the Application Panel used as our drawing canvas
+    property GlobalButtonBkGnd: TLccPanel read FGlobalButtonBkGnd write FGlobalButtonBkGnd; // alBottom aligned to the Parser Frame
+    property TabControl: TLccTabControl read FTabControl write FTabControl; // alClient aligned in the Parser Frame, sibling to the GlobalButtonBkgnd
 
+    // In the GlobalButtonBkGnd
+    property GlobalButtonReadPage: TButton read FGlobalButtonReadPage write FGlobalButtonReadPage;
+    property GlobalButtonWritePage: TButton read FGlobalButtonWritePage write FGlobalButtonWritePage;
+    property GlobalButtonStop: TButton read FGlobalButtonStop write FGlobalButtonStop;
 
 
     // Methods to look at below...............
@@ -747,14 +756,14 @@ end;
 
 function TLccCdiParser.CreateTab(ATabControl: TLccTabControl; ACaption: LccDOMString): TLccPanel;
 var
-  LocalTab: TLccTabSheet;
+  LocalTab: TLccOpenPascalTabSheet;
   LocalScrollBox: TScrollBox;
 begin
   if ACaption = '' then
     ACaption := 'Unknown';
   {$IFDEF DELPHI}
   // Create new Tab and connect it to the TabControl
-  LocalTab := TLccTabSheet.Create(ATabControl);
+  LocalTab := TLccOpenPascalTabSheet.Create(ATabControl);
   LocalTab.Text := ACaption;
   LocalTab.Parent := ATabControl;
   ATabControl.ActiveTab := LocalTab;   // Need to select the Tab so all components are dropped when created so the Align work right (alTop)
@@ -775,9 +784,13 @@ begin
   Result.Width := LocalScrollBox.Width - 20;
   Result.Parent := LocalScrollBox;
   Result.Height := 16384; /// TODO: Temp
+  LocalTab.ScrollingWindowContentsPanel := Result;
   {$ELSE}
   // Create new Tab and connect it to the TabControl
-  LocalTab := ATabControl.AddTabSheet;
+
+  LocalTab := TLccOpenPascalTabSheet.Create(Self);
+  LocalTab.PageControl := ATabControl;
+
   LocalTab.Caption := string( ACaption);
   ATabControl.ActivePage := LocalTab;   // Need to select the Tab so all components are dropped when created so the Align work right (alTop)
 
@@ -797,6 +810,7 @@ begin
   Result.Width := LocalScrollBox.Width - TAB_RIGHT_MARGIN;
   Result.Parent := LocalScrollBox;
   Result.Height := 16384;                // TODO: TEMP
+  LocalTab.ScrollingWindowContentsPanel := Result;
   {$ENDIF}
 end;
 
@@ -903,18 +917,20 @@ begin
   LastLabel := CreateSpacer(Result);
   {$IFDEF DELPHI}
   Result.Height := LastLabel.Position.Y + LastLabel.Height;
+  Result.Visible := True;
   {$ELSE}
-  Result.Height := LastLabel.Top + LastLabel.Height;
-  {$ENDIF}
-
-  {$IFDEF FPC}
   // Quirkiness of FPC...
   Result.Visible := True;
   Result.Visible := False;
   for i := Result.ControlCount - 1 downto 0 do
     Result.Controls[i].Top := 0;
-  {$ENDIF}
   Result.Visible := True;
+
+  if Result.ControlCount > 0 then
+    Result.Height := Result.Controls[Result.ControlCount - 1].Top + Result.Controls[Result.ControlCount - 1].Height;
+  {$ENDIF}
+
+
 end;
 
 function TLccCdiParser.CreateBaseEditorLayout(ParentControl: TLccPanel;
@@ -1301,8 +1317,8 @@ function TLccCdiParser.FindControlByAddress(Address: DWord): TLccControl;
 
 begin
   Result := nil;
-  if Assigned(Pallet) then
-    Result := SearchComponents(Pallet) as TLccControl;
+  if Assigned(ApplicationPanel) then
+    Result := SearchComponents(ApplicationPanel) as TLccControl;
 end;
 
 function TLccCdiParser.GetCVBlockRead: Word;
@@ -1316,13 +1332,13 @@ var
   PageControl: TLccTabControl;
 begin
   Result := nil;
-  if Assigned(Pallet) then
+  if Assigned(ApplicationPanel) then
   begin
-    for i := 0 to Pallet.ComponentCount - 1 do
+    for i := 0 to ApplicationPanel.ComponentCount - 1 do
     begin
-      if Pallet.Components[i] is TLccTabControl then
+      if ApplicationPanel.Components[i] is TLccTabControl then
       begin
-        PageControl := TLccTabControl( Pallet.Components[i]);
+        PageControl := TLccTabControl( ApplicationPanel.Components[i]);
         Result := PageControl.{$IFDEF DELPHI}ActiveTab{$ELSE}ActivePage{$ENDIF};
       end;
     end;
@@ -1636,6 +1652,8 @@ end;
 
 procedure TLccCdiParser.OnPageControlChange(Sender: TObject);
 begin
+  ResizeActiveTabScrollingWindowFrame;
+
   Serializer.Clear;
   if AutoReadOnTabChange then
     DoButtonReadPageClick(Sender);
@@ -1643,7 +1661,7 @@ end;
 
 procedure TLccCdiParser.OnSerializerNotification(Sender: TObject; Notify: TParserSerializer);
 begin
-  if Assigned(Pallet) then
+  if Assigned(ApplicationPanel) then
   begin
 
     if MarkedToStop and not MarkedToStopIsStopping then
@@ -1654,14 +1672,14 @@ begin
 
     if Serializer.DataElementInformationList.Count > 0 then
     begin
-      ButtonReadPage.Enabled := False;
-      ButtonWritePage.Enabled := False;
-      ButtonStop.Enabled := True;
+      GlobalButtonReadPage.Enabled := False;
+      GlobalButtonWritePage.Enabled := False;
+      GlobalButtonStop.Enabled := True;
     end else
     begin
-      ButtonReadPage.Enabled := True;
-      ButtonWritePage.Enabled := True;
-      ButtonStop.Enabled := False;
+      GlobalButtonReadPage.Enabled := True;
+      GlobalButtonWritePage.Enabled := True;
+      GlobalButtonStop.Enabled := False;
       MarkedToStop := False;
       MarkedToStopIsStopping := False;
       if Notify = ps_RemoveRead then
@@ -1673,64 +1691,17 @@ begin
   end;
 end;
 
-procedure TLccCdiParser.OnBkGndResize(Sender: TObject);
-var
-  iTab, iTabContents, iScrollBoxContents, iLayoutContents: Integer;
-  Tab: TLccTabSheet;
-  ScrollBox: TScrollBox;
-  Layout: TLayout;
-  Name: string;
+procedure TLccCdiParser.OnParserFrameResize(Sender: TObject);
 begin
+  ResizeActiveTabScrollingWindowFrame;
+end;
 
-  // TODO:  Make a better way to directly access the TPanel in each Tab
-  // Also should only change the width of the active tab then resize during a tab switch
-  // would be much quicker
-
-  if Assigned(TabControl) then
-  begin
-
-    {$IFDEF DELPHI}
-    for iTab := 0 to TabControl.TabCount - 1 do
-    begin
-      if TabControl.Tabs[iTab] is TLccTabSheet then
-      begin
-        Tab := TabControl.Tabs[iTab] as TLccTabSheet;
-        for iTabContents := 0 to Tab.ControlsCount - 1 do
-        begin
-          Name := Tab.Controls[iTabContents].ClassName;
-          if Tab.Controls[iTabContents] is TLayout then
-          begin
-            Layout := Tab.Controls[iTabContents] as TLayout;
-            for iLayoutContents := 0 to Layout.ControlsCount - 1 do
-            begin
-         //     Layout.Controls[iScrollBoxContents].Width := Layout.Width - TAB_RIGHT_MARGIN;
-            end;
-          end;
-        end;
-      end;
-    end;
-    {$ELSE}
-     for iTab := 0 to TabControl.ControlCount - 1 do
-    begin
-      if TabControl.Controls[iTab] is TLccTabSheet then
-      begin
-        Tab := TabControl.Controls[iTab] as TLccTabSheet;
-        for iTabContents := 0 to Tab.ControlCount - 1 do
-        begin
-          if Tab.Controls[iTabContents] is TScrollBox then
-          begin
-            ScrollBox := Tab.Controls[iTabContents] as TScrollBox;
-            for iScrollBoxContents := 0 to ScrollBox.ControlCount - 1 do
-            begin
-              ScrollBox.Controls[iScrollBoxContents].Width := ScrollBox.Width - TAB_RIGHT_MARGIN;
-            end;
-          end;
-        end;
-      end;
-    end;
-
-    {$ENDIF}
-  end;
+procedure TLccCdiParser.ResizeActiveTabScrollingWindowFrame;
+var
+  TabSheet: TLccOpenPascalTabSheet;
+begin
+  TabSheet := TabControl.ActivePage as TLccOpenPascalTabSheet;
+  TabSheet.ScrollingWindowContentsPanel.Width := TabSheet.Width - TAB_RIGHT_MARGIN;
 end;
 
 constructor TLccCdiParser.Create(AOwner: TComponent);
@@ -1738,6 +1709,7 @@ begin
   inherited Create(AOwner);
   FShowReadBtn := True;
   FShowWriteBtn := True;
+  FShowCompareBtn := True;
   FSuppressNameAndDescription := False;
   FPrintMemOffset := False;
   FWorkerMessage := TLccMessage.Create;
@@ -1760,7 +1732,6 @@ const
   BUTTON_HEIGHT = 40;
 var
   CdiRootElement, CdiRootElementChild: TLccXmlNode;
-  ParserBkGnd, FooterBkGnd: TLccPanel;
 begin
 
   // - Application Form
@@ -1781,31 +1752,31 @@ begin
 
 
   FLccNode := AnLccNode;
-  FPallet := ParentControl;
+  FApplicationPanel := ParentControl;
   Serializer.OnNotification := {$IFNDEF DELPHI}@{$ENDIF}OnSerializerNotification;
   Clear_CDI_Interface(False);
 
   // Background that holds everything and is passed back as the child of the ParentControl
-  ParserBkGnd := TLccPanel.Create(ParentControl);
-  ParserBkGnd.Parent := ParentControl;
-  ParserBkGnd.Align := {$IFDEF DELPHI}TAlignLayout.Client{$ELSE}alClient{$ENDIF};
-  ParserBkGnd.OnResize := {$IFNDEF DELPHI}@{$ENDIF}OnBkGndResize;
-  Result := ParserBkGnd;
+  ParserFrame := TLccPanel.Create(ParentControl);
+  ParserFrame.Parent := ParentControl;
+  ParserFrame.Align := {$IFDEF DELPHI}TAlignLayout.Client{$ELSE}alClient{$ENDIF};
+  ParserFrame.OnResize := {$IFNDEF DELPHI}@{$ENDIF}OnParserFrameResize;
+  Result := ParserFrame;
 
   // Bottom aligned Panel to hold the Read/Write all Buttons
-  FooterBkGnd := TLccPanel.Create(ParserBkGnd);
-  FooterBkGnd.Align := {$IFDEF DELPHI}TAlignLayout.Bottom{$ELSE}alBottom{$ENDIF};
-  {$IFNDEF DELPHI}FooterBkGnd.BevelOuter := bvNone;{$ENDIF}
-  FooterBkGnd.Parent := ParserBkGnd;
-  FooterBkGnd.Height := BUTTON_HEIGHT;
-  CreateButton(FooterBkGnd, 'Read All', {$IFNDEF DELPHI}@{$ENDIF}DoButtonReadPageClick, False, (FooterBkGnd.Width/3)-2, {$IFDEF DELPHI}TAlignLayout.Right{$ELSE}alRight{$ENDIF});
-  CreateButton(FooterBkGnd, 'Write All', {$IFNDEF DELPHI}@{$ENDIF}DoButtonWritePageClick, False, (FooterBkGnd.Width/3)-2, {$IFDEF DELPHI}TAlignLayout.Right{$ELSE}alRight{$ENDIF});
-  CreateButton(FooterBkGnd, 'Abort', {$IFNDEF DELPHI}@{$ENDIF}DoButtonStopClick, False, (FooterBkGnd.Width/3)-2, {$IFDEF DELPHI}TAlignLayout.Right{$ELSE}alRight{$ENDIF});
+  GlobalButtonBkGnd := TLccPanel.Create(ParserFrame);
+  GlobalButtonBkGnd.Align := {$IFDEF DELPHI}TAlignLayout.Bottom{$ELSE}alBottom{$ENDIF};
+  {$IFNDEF DELPHI}GlobalButtonBkGnd.BevelOuter := bvNone;{$ENDIF}
+  GlobalButtonBkGnd.Parent := ParserFrame;
+  GlobalButtonBkGnd.Height := BUTTON_HEIGHT;
+  CreateButton(GlobalButtonBkGnd, 'Read All', {$IFNDEF DELPHI}@{$ENDIF}DoButtonReadPageClick, False, (GlobalButtonBkGnd.Width/3)-2, {$IFDEF DELPHI}TAlignLayout.Right{$ELSE}alRight{$ENDIF});
+  CreateButton(GlobalButtonBkGnd, 'Write All', {$IFNDEF DELPHI}@{$ENDIF}DoButtonWritePageClick, False, (GlobalButtonBkGnd.Width/3)-2, {$IFDEF DELPHI}TAlignLayout.Right{$ELSE}alRight{$ENDIF});
+  CreateButton(GlobalButtonBkGnd, 'Abort', {$IFNDEF DELPHI}@{$ENDIF}DoButtonStopClick, False, (GlobalButtonBkGnd.Width/3)-2, {$IFDEF DELPHI}TAlignLayout.Right{$ELSE}alRight{$ENDIF});
 
   // TabControl that is client aligned with the FooterBkGnd
   TabControl := TLccTabControl.Create(ParentControl);
   TabControl.Align := {$IFDEF DELPHI}TAlignLayout.Client{$ELSE}alClient{$ENDIF};
-  TabControl.Parent := ParserBkGnd;
+  TabControl.Parent := ParserFrame;
 
   CdiRootElement := XmlFindRootNode(CDI, 'cdi');
   if Assigned(CdiRootElement) then
@@ -1845,20 +1816,20 @@ begin
   Serializer.Clear;
   DoClearInterface;
   TabControl := nil;
-  if Assigned(Pallet) then
+  if Assigned(ApplicationPanel) then
   begin
     {$IFDEF DELPHI}
     for i := Pallet.ControlsCount - 1 downto 0 do
     {$ELSE}
-    for i := Pallet.ControlCount - 1 downto 0 do
+    for i := ApplicationPanel.ControlCount - 1 downto 0 do
     {$ENDIF}
-      Pallet.Controls[i].Free;
+      ApplicationPanel.Controls[i].Free;
   end;
 //  StatusPanel := nil;;
-  ButtonStop := nil;
-  ButtonWritePage := nil;
-  ButtonReadPage := nil;
-  FPallet := nil;
+  GlobalButtonStop := nil;
+  GlobalButtonWritePage := nil;
+  GlobalButtonReadPage := nil;
+  FApplicationPanel := nil;
   if ClearLccNode then
     FLccNode := nil;
 end;
