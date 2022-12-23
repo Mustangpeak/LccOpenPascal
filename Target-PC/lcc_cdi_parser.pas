@@ -8,7 +8,7 @@ interface
 
 {$I ../lcc_compilers.inc}
 
-{$DEFINE PRINT_MEM_LOCATIONS}
+{.$DEFINE PRINT_MEM_LOCATIONS}
 
 uses
   Classes,
@@ -974,11 +974,6 @@ var
   SpinEdit: TLccOpenPascalEdit;
   ContainerPanel: TLccPanel;
 begin
-  {$IFDEF PRINT_MEM_LOCATIONS}
-    CreateLabel(ParentControl, 'Offset: ' + LccDOMString( IntToStr(DataElementInformation.MemoryAddressPointer)), Indent, False);
-    CreateLabel(ParentControl, 'Size: ' + LccDOMString( IntToStr(DataElementInformation.MemoryAllocation)), Indent, False);
-  {$ENDIF}
-
   ContainerPanel := CreateBaseEditorLayout(ParentControl, DataElementInformation);
 
   SpinEdit := TLccOpenPascalEdit.Create(ContainerPanel);
@@ -999,11 +994,6 @@ var
   EditBox: TLccOpenPascalEdit;
   ContainerPanel: TLccPanel;
 begin
-  {$IFDEF PRINT_MEM_LOCATIONS}
-    CreateLabel(ParentControl, 'Offset: ' + LccDOMString( IntToStr(DataElementInformation.MemoryAddressPointer)), Indent, False);
-    CreateLabel(ParentControl, 'Size: ' + LccDOMString( IntToStr(DataElementInformation.MemoryAllocation)), Indent, False);
-  {$ENDIF}
-
   ContainerPanel := CreateBaseEditorLayout(ParentControl, DataElementInformation);
 
   EditBox := TLccOpenPascalEdit.Create(ContainerPanel);
@@ -1020,11 +1010,6 @@ var
   ComboBox: TLccOpenPascalComboBox;
   i: Integer;
 begin
-  {$IFDEF PRINT_MEM_LOCATIONS}
-    CreateLabel(ParentControl, 'Offset: ' + LccDOMString( IntToStr(DataElementInformation.MemoryAddressPointer)), Indent, False);
-    CreateLabel(ParentControl, 'Size: ' + LccDOMString( IntToStr(DataElementInformation.MemoryAllocation)), Indent, False);
-  {$ENDIF}
-
   ContainerPanel := CreateBaseEditorLayout(ParentControl, DataElementInformation);
 
   ComboBox := TLccOpenPascalComboBox.Create(ContainerPanel);
@@ -1572,16 +1557,38 @@ var
 begin
   if Assigned(Element) then
   begin
-    // Update the DataElement Information on Memory Size (valid for Strings and Integers only, EventIDs will not have this)
-    if XmlAttributeExists(Element, 'size') then
-      DataElementInformation.MemoryAllocation := StrToInt(string( XmlAttributeRead(Element, 'size')));
-
     // Update the Address Offset if necessary and update the DataElement Information for this Data Element
     if XmlAttributeExists(Element, 'offset') then
       MemoryAddressPointer := MemoryAddressPointer + StrToInt64(string( XmlAttributeRead(Element, 'offset')));
 
-    // At this point the Memory pointer is valid for the DataElement
+    // Done updating it with 'offset' (if available)...
     DataElementInformation.MemoryAddressPointer := MemoryAddressPointer;
+
+    case DataElementInformation.DataType of
+      cdt_String,
+      cdt_Int :
+        begin
+          // Update the DataElement Information on Memory Size (valid for Strings and Integers only, EventIDs will not have this)
+          if XmlAttributeExists(Element, 'size') then
+            DataElementInformation.MemoryAllocation := StrToInt(string( XmlAttributeRead(Element, 'size')));
+        end;
+      cdt_EventID :
+        begin
+          DataElementInformation.MemoryAllocation := 8;
+        end;
+      cdt_Bit :
+        begin
+          // Not defined in the released standard yet
+        end;
+    end;
+
+    {$IFDEF PRINT_MEM_LOCATIONS}
+      CreateLabel(ParentControl, 'Address: ' + LccDOMString( IntToStr(DataElementInformation.MemoryAddressPointer)), Indent, False);
+      CreateLabel(ParentControl, 'Size: ' + LccDOMString( IntToStr(DataElementInformation.MemoryAllocation)), Indent, False);
+    {$ENDIF}
+
+    // Jump past this memeory space
+    Inc(MemoryAddressPointer, DataElementInformation.MemoryAllocation);
 
     ChildElement := XmlFirstChild(Element);
     while Assigned(ChildElement) do
