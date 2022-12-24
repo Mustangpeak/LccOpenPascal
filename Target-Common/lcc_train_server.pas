@@ -101,7 +101,6 @@ type
     function GetItem(Index: Integer): TLccTractionObject;
   protected
     property WorkerMessage: TLccMessage read FWorkerMessage write FWorkerMessage;
-    procedure DoCDIReadReply(TractionObject: TLccTractionObject);
     procedure DoRegisterChange(TractionObject: TLccTractionObject; IsRegistered: Boolean);
     procedure DoSNIPChange(TractionObject: TLccTractionObject);
     procedure DoTrainSNIPChange(TractionObject: TLccTractionObject);
@@ -147,7 +146,6 @@ type
     property AutoGatherInformation: Boolean read FAutoGatherInformation write FAutoGatherInformation;   // When a train is detected send out SNIP/TRAINSNIP, etc messages
     property Enabled: Boolean read FEnabled write FEnabled;
     property Item[Index: Integer]: TLccTractionObject read GetItem; default;
-    property OnCDIReadReply: TOnLccServerChange read FOnCDIReadReply write FOnCDIReadReply;
     property OnRegisterChange: TOnLccServerRegisterChange read FOnRegisterChange write FOnRegisterChange;
     property OnSNIPChange: TOnLccServerChange read FOnSNIPChange write FOnSNIPChange;
     property OnTrainSNIPChange: TOnLccServerChange read FOnTrainSNIPChange write FOnTrainSNIPChange;
@@ -280,12 +278,6 @@ procedure TLccTractionServer.DoFunctionChange(TractionObject: TLccTractionObject
 begin
   if Assigned(OnFunctionChange) then
     OnFunctionChange(TractionObject);
-end;
-
-procedure TLccTractionServer.DoCDIReadReply(TractionObject: TLccTractionObject);
-begin
-  if Assigned(OnCDIReadReply) then
-   OnCDIReadReply(TractionObject);
 end;
 
 procedure TLccTractionServer.DoEmergencyStopChange(TractionObject: TLccTractionObject);
@@ -656,42 +648,6 @@ begin
           case SourceMessage.DataArray[0] of
             DATAGRAM_PROTOCOL_CONFIGURATION :
             begin
-                              // Figure out where the Memory space to work on is located, encoded in the header or in the first databyte slot.
-               case SourceMessage.DataArray[1] and $03 of
-                 MCP_NONE          : AddressSpace := SourceMessage.DataArray[6];
-                 MCP_CDI           : AddressSpace := MSI_CDI;
-                 MCP_ALL           : AddressSpace := MSI_ALL;
-                 MCP_CONFIGURATION : AddressSpace := MSI_CONFIG;
-               end;
-
-             //  case SourceMessage.DataArray[1] and $F0 of
-             {    MCP_WRITE_REPLY :
-                   begin
-                     case AddressSpace of
-                       MSI_CDI                      : HandleCDI_MemorySpaceWrite(SourceMessage);
-                       MSI_ALL                      : HandleAll_MemorySpaceWrite(SourceMessage);
-                       MSI_CONFIG                   : HandleConfiguration_MemorySpaceWrite(SourceMessage); // Configuration Memory through the CDI protocol
-                       MSI_ACDI_MFG                 : HandleACDI_Manufacturer_MemorySpaceWrite(SourceMessage);
-                       MSI_ACDI_USER                : HandleACDI_UserMemorySpaceWrite(SourceMessage);            // Configuration Memory through the Abbreviated CDI protocol
-                       MSI_TRACTION_FDI             : HandleTractionFDI_MemorySpaceWrite(SourceMessage);
-                       MSI_TRACTION_FUNCTION_CONFIG : HandleTractionFDI_ConfigurationMemorySpaceWrite(SourceMessage); // Traction Function Configuration Memory
-                     end;
-                   end; }
-              //   MCP_READ_REPLY :
-              //     begin
-             //        case AddressSpace of
-             //          MSI_CDI                      : HandleCDIReadReply(SourceMessage);
-                 //      MSI_ALL                      : HandleAll_MemorySpaceRead(SourceMessage);
-                 //      MSI_CONFIG                   : HandleConfiguration_MemorySpaceRead(SourceMessage);
-                 //      MSI_ACDI_MFG                 : HandleACDI_Manufacturer_MemorySpaceRead(SourceMessage);
-                 //      MSI_ACDI_USER                : HandleACDI_User_MemorySpaceRead(SourceMessage);
-                 //      MSI_TRACTION_FDI             : HandleTractionFDI_MemorySpaceRead(SourceMessage);
-                 //      MSI_TRACTION_FUNCTION_CONFIG : HandleTractionFDI_ConfigurationMemorySpaceRead(SourceMessage);
-              ////       end;
-               //    end;
-             //  end;
-
-
             end;
           end;
         end;

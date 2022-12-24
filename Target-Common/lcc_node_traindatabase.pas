@@ -36,6 +36,8 @@ type
   TLccTractionServerNode = class(TLccNode)
   private
     FTractionServer: TLccTractionServer;
+  protected
+    procedure DoMemorySpaceReadEngineDone(MemoryReadEngine: TLccMemorySpaceReadEngine); override;
   public
     property TractionServer: TLccTractionServer read FTractionServer;
 
@@ -49,6 +51,19 @@ implementation
 
 
 { TLccTractionServerNode }
+
+procedure TLccTractionServerNode.DoMemorySpaceReadEngineDone(MemoryReadEngine: TLccMemorySpaceReadEngine);
+var
+  TractionObject: TLccTractionObject;
+begin
+  inherited DoMemorySpaceReadEngineDone(MemoryReadEngine);
+  if TractionServer.Enabled then
+  begin
+    TractionObject := TractionServer.Find(MemoryReadEngine.TargetNode);
+    if Assigned(TractionObject) then
+      TractionObject.NodeCDI.CDI := MemoryReadEngine.StreamAsString;
+  end;
+end;
 
 constructor TLccTractionServerNode.Create(ANodeManager: {$IFDEF DELPHI}TComponent{$ELSE}TObject{$ENDIF}; CdiXML: string; GridConnectLink: Boolean);
 begin

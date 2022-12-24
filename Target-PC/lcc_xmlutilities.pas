@@ -140,10 +140,21 @@ begin
 end;
 
 function XmlLoadFromText(XMLText: string): TLccXmlDocument;
+var
+  Stream: TMemoryStream;
+  i: Integer;
 begin
   {$IFDEF FPC}
   Result := nil;
-  ReadXMLFile(Result, XMLText);
+  Stream := TMemoryStream.Create;
+  try
+    for i := 1 to Length(XMLText) do
+      Stream.Write(AnsiChar(XMLText[i]), 1);
+    Stream.Position := 0;
+    ReadXMLFile(Result, Stream);
+  finally
+    Stream.Free
+  end;
   {$ELSE}
   Result := XmlCreateEmptyDocument;
   Result.LoadFromXML(XMLText);

@@ -415,7 +415,8 @@ type
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
-    function Build_CDI_Interface(AnLccNode: TLccNode; ParentControl: TLccPanel; CDI: TLccXmlDocument): TLccPanel;
+    function Build_CDI_Interface(AnLccNode: TLccNode; ParentControl: TLccPanel; CDI: TLccXmlDocument): TLccPanel; overload;
+    function Build_CDI_Interface(AnLccNode: TLccNode; ParentControl: TLccPanel; CDI: String): TLccPanel; overload;
     procedure Clear_CDI_Interface(ClearLccNode: Boolean);
     procedure DoConfigMemReadReply(ANode: TObject); override;
     procedure DoConfigMemWriteReply(ANode: TObject); override;
@@ -1811,6 +1812,22 @@ begin
   TabControl.OnChange := {$IFNDEF DELPHI}@{$ENDIF}OnPageControlChange;
   OnPageControlChange(Result);
   DoBuildInterfaceComplete;
+end;
+
+function TLccCdiParser.Build_CDI_Interface(AnLccNode: TLccNode; ParentControl: TLccPanel; CDI: String): TLccPanel;
+var
+  XML: TLccXmlDocument;
+begin
+  Result := nil;
+  if CDI <> '' then
+  begin
+    XML := XmlLoadFromText(CDI);
+    try
+      Result := Build_CDI_Interface(AnLccNode, ParentControl, XML);
+    finally
+      XmlFreeDocument(XML);
+    end;
+  end;
 end;
 
 procedure TLccCdiParser.Clear_CDI_Interface(ClearLccNode: Boolean);
