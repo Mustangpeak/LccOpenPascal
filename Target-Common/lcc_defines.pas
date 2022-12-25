@@ -74,6 +74,7 @@ type
 
   TFunctionStatesArray = array[0..28] of Word;
   TLccDynamicByteArray = array of Byte;
+  PLccDynamicByteArray = ^TLccDynamicByteArray;
 
 type
   TDatagramArray = array[0..MAX_DATAGRAM_LENGTH-1] of Byte;

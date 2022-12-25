@@ -70,13 +70,7 @@ type
   { TLccBaseEthernetThread }
 
   TLccBaseEthernetThread = class(TLccConnectionThread)
-  private
-    FGridConnectMessageAssembler: TLccGridConnectMessageAssembler;
-    FTryReceiveWorkerMessage: TLccMessage;
   protected
-    property GridConnectMessageAssembler: TLccGridConnectMessageAssembler read FGridConnectMessageAssembler write FGridConnectMessageAssembler;
-    property TryReceiveWorkerMessage: TLccMessage read FTryReceiveWorkerMessage write FTryReceiveWorkerMessage;
-
     procedure OnConnectionStateChange; virtual;
     procedure OnErrorMessageReceive; virtual;
     procedure RequestErrorMessageSent; override;
@@ -224,14 +218,10 @@ end;
 constructor TLccBaseEthernetThread.Create(CreateSuspended: Boolean; AnOwner: TLccHardwareConnectionManager; AConnectionInfo: TLccHardwareConnectionInfo);
 begin
   inherited Create(CreateSuspended, AnOwner, AConnectionInfo);
-  GridConnectMessageAssembler := TLccGridConnectMessageAssembler.Create;
-  FTryReceiveWorkerMessage := TLccMessage.Create;
 end;
 
 destructor TLccBaseEthernetThread.Destroy;
 begin
-  FreeAndNil(FGridConnectMessageAssembler);
-  FreeAndNil(FTryReceiveWorkerMessage);
   inherited Destroy;
 end;
 

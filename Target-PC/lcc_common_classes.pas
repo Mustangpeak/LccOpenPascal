@@ -91,9 +91,6 @@ type
 
     procedure SetConnecting(AValue: Boolean); virtual;
 
-    // Link back to the ConnectionManager that owns the thread
-    property TcpDecodeStateMachine: TOPStackcoreTcpDecodeStateMachine read FTcpDecodeStateMachine write FTcpDecodeStateMachine;
-
     procedure HandleErrorAndDisconnect(SuppressMessage: Boolean); virtual;
     procedure HandleSendConnectionNotification(NewConnectionState: TLccConnectionState); virtual;
 
@@ -108,12 +105,13 @@ type
     property ConnectionInfo: TLccHardwareConnectionInfo read FConnectionInfo;
     property Connecting: Boolean read FConnecting write SetConnecting;
     property GridConnectHelper: TGridConnectHelper read FGridConnectHelper;
-    property GridConnectMessageAssembler: TLccGridConnectMessageAssembler read FGridConnectMessageAssembler write FGridConnectMessageAssembler;
     property OutgoingGridConnect: TThreadStringList read FOutgoingGridConnect write FOutgoingGridConnect;
     property OutgoingCircularArray: TThreadedCircularArray read FOutgoingCircularArray write FOutgoingCircularArray;
     property Owner: TLccHardwareConnectionManager read FOwner;
     property Running: Boolean read FRunning write FRunning;
     property IsTerminated: Boolean read GetIsTerminated;
+    property GridConnectMessageAssembler: TLccGridConnectMessageAssembler read FGridConnectMessageAssembler write FGridConnectMessageAssembler;
+    property TcpDecodeStateMachine: TOPStackcoreTcpDecodeStateMachine read FTcpDecodeStateMachine write FTcpDecodeStateMachine;
     // Holds the next message received in a thread is Syncronize is called so the main thread can
     property WorkerMessage: TLccMessage read FWorkerMessage write FWorkerMessage;
   end;

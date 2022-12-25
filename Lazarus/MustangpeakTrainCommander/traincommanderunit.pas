@@ -28,6 +28,10 @@ uses
   lcc_xmlutilities,
   lcc_cdi_parser;
 
+
+const
+  IS_GRIDCONNECT = True;
+
 type
 
   { TFormTrainCommander }
@@ -79,6 +83,7 @@ type
     procedure FormShow(Sender: TObject);
     procedure ToggleBoxServerFormChange(Sender: TObject);
   private
+    FAutoCreateTrainAddress: Word;
     FCommandStationNode: TLccCommandStationNode;
     FComPort: TLccComPort;
  //   FLccHTTPServer: TLccHTTPServer;
@@ -148,6 +153,8 @@ type
     property ComPort: TLccComPort read FComPort write FComPort;
 
     property CommandStationNode: TLccCommandStationNode read FCommandStationNode write FCommandStationNode;
+
+    property AutoCreateTrainAddress: Word read FAutoCreateTrainAddress write FAutoCreateTrainAddress;
   end;
 
 var
@@ -174,7 +181,8 @@ var
 begin
   for i := 0 to StrToInt(Edit1.Text) - 1 do
   begin
-    Train := CommandStationNode.AddTrain(i + 100, True, ldssDefault);
+    Train := CommandStationNode.AddTrain( AutoCreateTrainAddress, True, ldssDefault);
+    Inc(FAutoCreateTrainAddress);
     Train.Login(NULL_NODE_ID);
   end;
 end;
@@ -246,7 +254,7 @@ begin
     LocalInfo.AutoResolveIP := not CheckBoxLoopBackIP.Checked;
     LocalInfo.ListenerIP := '127.0.0.1';
     LocalInfo.ListenerPort := 12021;
-    LocalInfo.GridConnect := True;
+    LocalInfo.GridConnect := IS_GRIDCONNECT;
     LocalInfo.Hub := True;
     Result := LccServer.OpenConnection(LocalInfo) <> nil;
   finally
@@ -268,7 +276,7 @@ begin
     LocalInfo.AutoResolveIP := not CheckBoxLoopBackIP.Checked;
     LocalInfo.ListenerIP := '127.0.0.1';
     LocalInfo.ListenerPort := 12022;
-    LocalInfo.GridConnect := True;
+    LocalInfo.GridConnect := IS_GRIDCONNECT;
     LocalInfo.Hub := True;
   finally
     LocalInfo.Free;
@@ -312,7 +320,7 @@ begin
     LocalInfo.Baud := 9600;
     LocalInfo.StopBits := 8;
     LocalInfo.Parity := 'N';
-    LocalInfo.GridConnect := True;
+    LocalInfo.GridConnect := IS_GRIDCONNECT;
     Result := Assigned(ComPort.OpenConnection(LocalInfo))
   finally
     LocalInfo.Free;
@@ -335,7 +343,7 @@ end;
 
 procedure TFormTrainCommander.FormCreate(Sender: TObject);
 begin
-  NodeManager := TLccNodeManager.Create(nil, True);
+  NodeManager := TLccNodeManager.Create(nil, IS_GRIDCONNECT);
   NodeManager.OnNodeAliasIDChanged := @OnNodeManagerAliasIDChanged;
   NodeManager.OnNodeIDChanged := @OnNodeManagerIDChanged;
   NodeManager.OnNodeLogin := @OnNodeManagerNodeLogin;
@@ -367,6 +375,7 @@ begin
   ComPort.RawData := True;
 
   Max_Allowed_Buffers := 1;
+  AutoCreateTrainAddress := 1;
 
   FWorkerMessage := TLccMessage.Create;
 end;
@@ -406,7 +415,7 @@ begin
         ButtonEthernetConnect.Caption := 'Disconnect Ethernet';
         StatusBarMain.Panels[0].Text := 'Ethernet: Command Station Connected at: ' + (Info as TLccEthernetConnectionInfo).ListenerIP + ':' + IntToStr((Info as TLccEthernetConnectionInfo).ListenerPort);
         if NodeManager.Nodes.Count = 0 then
-          CommandStationNode := NodeManager.AddNodeByClass('', TLccCommandStationNode , True, NULL_NODE_ID) as TLccCommandStationNode;
+          CommandStationNode := NodeManager.AddNodeByClass('', TLccCommandStationNode, True, NULL_NODE_ID) as TLccCommandStationNode;
         if Assigned(CommandStationNode) then
         begin
           CommandStationNode.TractionServer.OnSpeedChange := @OnTractionNotify;
@@ -798,15 +807,25 @@ begin
 end;
 
 procedure TFormTrainCommander.OnCommandStationServerReceiveMessage(Sender: TObject; LccMessage: TLccMessage);
+var
+  ByteArray: TLccDynamicByteArray;
 begin
   if CheckBoxLogMessages.Checked then
   begin
     MemoLog.Lines.BeginUpdate;
     try
-      if CheckBoxDetailedLog.Checked then
-        MemoLog.Lines.Add('R: ' + MessageToDetailedMessage(LccMessage))
-      else
-        MemoLog.Lines.Add('R: ' + LccMessage.ConvertToGridConnectStr('', False));
+      if IS_GRIDCONNECT then
+      begin
+        if CheckBoxDetailedLog.Checked then
+          MemoLog.Lines.Add('R: ' + MessageToDetailedMessage(LccMessage))
+        else
+          MemoLog.Lines.Add('R: ' + LccMessage.ConvertToGridConnectStr('', False));
+      end else
+      begin
+        LccMessage.ConvertToLccTcp(ByteArray);
+        MemoLog.Lines.Add('R: ' + LccMessage.ConvertToLccTcpString(ByteArray));
+      end;
+
       MemoLog.SelStart := Length(MemoLog.Lines.Text);
     finally
       MemoLog.Lines.EndUpdate;
@@ -815,15 +834,24 @@ begin
 end;
 
 procedure TFormTrainCommander.OnCommandStationServerSendMessage(Sender: TObject; LccMessage: TLccMessage);
+var
+  ByteArray: TLccDynamicByteArray;
 begin
   if CheckBoxLogMessages.Checked then
   begin
     MemoLog.Lines.BeginUpdate;
     try
-      if CheckBoxDetailedLog.Checked then
-        MemoLog.Lines.Add('S: ' + MessageToDetailedMessage(LccMessage))
-      else
-        MemoLog.Lines.Add('S: ' + LccMessage.ConvertToGridConnectStr('', False));
+      if IS_GRIDCONNECT then
+      begin
+        if CheckBoxDetailedLog.Checked then
+          MemoLog.Lines.Add('S: ' + MessageToDetailedMessage(LccMessage))
+        else
+          MemoLog.Lines.Add('S: ' + LccMessage.ConvertToGridConnectStr('', False));
+      end else
+      begin
+        LccMessage.ConvertToLccTcp(ByteArray);
+        MemoLog.Lines.Add('S: ' + LccMessage.ConvertToLccTcpString(ByteArray));
+      end;
       MemoLog.SelStart := Length(MemoLog.Lines.Text);
     finally
       MemoLog.Lines.EndUpdate;

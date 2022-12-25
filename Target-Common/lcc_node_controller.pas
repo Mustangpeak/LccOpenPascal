@@ -266,8 +266,7 @@ begin
     AssignedTrain.AcceptSearchCriteriaPending;
     if GridConnect then
     begin
-      AliasMapping := AliasServer.FindMapping(
-        SourceMessage.CAN.SourceAlias);
+      AliasMapping := AliasServer.FindMapping(SourceMessage.CAN.SourceAlias);
       Assert(Assigned(AliasMapping), 'TLccTrainController.' +'ProcessMessageLCC: Alias Mapping was nil');
       WorkerMessage.LoadTractionControllerAssign(NodeID, AliasID, AliasMapping.NodeID, AliasMapping.NodeAlias, NodeID);
     end else

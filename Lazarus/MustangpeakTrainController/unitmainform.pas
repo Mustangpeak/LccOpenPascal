@@ -34,6 +34,10 @@ uses
   lcc_cdi_parser;
 
 const
+  IS_GRIDCONNECT = True;
+
+
+const
   MAX_LED_SEGMENTS = 100;
   LED_TAPER = 0.010;
   MAX_DCC_ADDRESS = 10239;
@@ -225,7 +229,7 @@ implementation
 
 procedure TFormTrainController.FormCreate(Sender: TObject);
 begin
-  NodeManager := TLccNodeManager.Create(nil, True);
+  NodeManager := TLccNodeManager.Create(nil, IS_GRIDCONNECT);
   EthernetClient := TLccEthernetClient.Create(nil, NodeManager);
   BitmapDetails := TBitmap.Create;
   CDIParser := TLccCdiParser.Create(nil);
@@ -258,7 +262,7 @@ begin
   begin
     Info.ListenerIP := EditSettingsIP.Text;
     Info.ListenerPort := StrToInt(EditSettingsPort.Text);
-    Info.GridConnect := True;
+    Info.GridConnect := IS_GRIDCONNECT;
     Info.Hub := False;
     Info.SuppressErrorMessages := False;
     EthernetClient.OpenConnection(Info);
@@ -438,6 +442,7 @@ begin
         begin
           if not DetailsTractionObject.NodeCDI.Valid then
           begin
+            PanelRosterEditorConfigurationBkGnd.Caption := 'Reading Configuration Data......';
             Controller.MemorySpaceReadEngine.Reset;
             Controller.MemorySpaceReadEngine.Assign(MSI_CDI, DetailsTractionObject.NodeID, DetailsTractionObject.NodeAlias, @OnCDIReadCallback);
             Controller.MemorySpaceReadEngine.Start;
@@ -648,15 +653,25 @@ begin
 end;
 
 procedure TFormTrainController.OnMessageReceive(Sender: TObject; LccMessage: TLccMessage);
+var
+  ByteArray: TLccDynamicByteArray;
 begin
   if ToggleBoxLogEnable.Checked then
   begin
     MemoLog.Lines.BeginUpdate;
     try
-      if ToggleBoxLogDetailed.Checked then
-        MemoLog.Lines.Add('R: ' + MessageToDetailedMessage(LccMessage))
-      else
-        MemoLog.Lines.Add('R: ' + LccMessage.ConvertToGridConnectStr('', False));
+      if IS_GRIDCONNECT then
+      begin
+        if ToggleBoxLogDetailed.Checked then
+          MemoLog.Lines.Add('R: ' + MessageToDetailedMessage(LccMessage))
+        else
+          MemoLog.Lines.Add('R: ' + LccMessage.ConvertToGridConnectStr('', False));
+      end else
+      begin
+        LccMessage.ConvertToLccTcp(ByteArray);
+        MemoLog.Lines.Add('R: ' + LccMessage.ConvertToLccTcpString(ByteArray));
+      end;
+
       MemoLog.SelStart := Length(MemoLog.Lines.Text);
     finally
       MemoLog.Lines.EndUpdate;
@@ -665,15 +680,24 @@ begin
 end;
 
 procedure TFormTrainController.OnMessageSend(Sender: TObject; LccMessage: TLccMessage);
+var
+  ByteArray: TLccDynamicByteArray;
 begin
   if ToggleBoxLogEnable.Checked then
   begin
     MemoLog.Lines.BeginUpdate;
     try
-      if ToggleBoxLogDetailed.Checked then
-        MemoLog.Lines.Add('S: ' + MessageToDetailedMessage(LccMessage))
-      else
-        MemoLog.Lines.Add('S: ' + LccMessage.ConvertToGridConnectStr('', False));
+      if IS_GRIDCONNECT then
+      begin
+        if ToggleBoxLogDetailed.Checked then
+          MemoLog.Lines.Add('S: ' + MessageToDetailedMessage(LccMessage))
+        else
+          MemoLog.Lines.Add('S: ' + LccMessage.ConvertToGridConnectStr('', False));
+      end else
+      begin
+        LccMessage.ConvertToLccTcp(ByteArray);
+        MemoLog.Lines.Add('S: ' + LccMessage.ConvertToLccTcpString(ByteArray));
+      end;
       MemoLog.SelStart := Length(MemoLog.Lines.Text);
     finally
       MemoLog.Lines.EndUpdate;
@@ -906,7 +930,9 @@ procedure TFormTrainController.LoadCDIUserInterface;
 begin
   if Assigned(DetailsTractionObject) then
   begin
+    PanelRosterEditorConfigurationBkGnd.Caption := 'Building User Interface......';
     CDIParser.Build_CDI_Interface(nil, PanelRosterEditorConfigurationBkGnd, DetailsTractionObject.NodeCDI.CDI);
+    PanelRosterEditorConfigurationBkGnd.Caption := '';
   end;
 end;
 

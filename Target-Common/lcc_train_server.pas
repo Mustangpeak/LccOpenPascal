@@ -324,7 +324,6 @@ begin
     if GridConnect then
     begin
       LocalAliasMapping := AliasServer.FindMapping(SourceMessage.CAN.SourceAlias);
-      Assert(Assigned(LocalAliasMapping), 'Could not Assign Node AliasMapping in TLccTrainDatabaseNode.ProcessMessageLCC');
       LocalTractionNodeID := LocalAliasMapping.NodeID;
     end else
       LocalTractionNodeID := SourceMessage.SourceID;
@@ -536,7 +535,7 @@ begin
   FList := TObjectList.Create(False);
   {$ENDIF}
   FWorkerMessage := TLccMessage.Create;
-  FGridConnect := True;
+  FGridConnect := IsGridConnect;
 end;
 
 destructor TLccTractionServer.Destroy;

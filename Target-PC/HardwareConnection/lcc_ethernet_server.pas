@@ -38,6 +38,7 @@ uses
   lcc_node_manager,
   lcc_ethernet_common,
   lcc_gridconnect,
+  lcc_ethernet_tcp,
   lcc_node,
   lcc_alias_server;
 
@@ -54,12 +55,14 @@ type
     FGridConnectHelper: TGridConnectHelper;
     FGridConnectMessageAssembler: TLccGridConnectMessageAssembler;
     FStringList: TStringList;
+    FTcpDecodeStateMachine: TOPStackcoreTcpDecodeStateMachine;
   public
     property Context: TIdContext read FContext write FContext;
     property StringList: TStringList read FStringList write FStringList;
     property CircularArray: TCircularArray read FCircularArray write FCircularArray;
     property GridConnectHelper: TGridConnectHelper read FGridConnectHelper;
     property GridConnectMessageAssembler: TLccGridConnectMessageAssembler read FGridConnectMessageAssembler write FGridConnectMessageAssembler;
+    property TcpDecodeStateMachine: TOPStackcoreTcpDecodeStateMachine read FTcpDecodeStateMachine write FTcpDecodeStateMachine;
 
     constructor Create(AContext: TIdContext);
     destructor Destroy; override;
@@ -84,6 +87,7 @@ type
     destructor Destroy; override;
     function AddContext(AContext: TIdContext): TLccServerContexts;
     procedure AddGridConnectStringByContext(AContext: TIdContext; AString: string; NodeManager: TLccNodeManager);
+    procedure AddTcpDataByContext(AContext: TIdContext; ADataArray: TLccDynamicByteArray; NodeManager: TLccNodeManager);
     procedure Clear;
     function RemoveContext(AContext: TIdContext): Boolean;
   end;
@@ -313,6 +317,44 @@ begin
   end;
 end;
 
+procedure TLccContextsList.AddTcpDataByContext(AContext: TIdContext; ADataArray: TLccDynamicByteArray; NodeManager: TLccNodeManager);
+var
+  ContextList:  TList;
+  iContext, iDataArray: Integer;
+  ServerContext: TLccServerContexts;
+  LocalDataArray: TLccDynamicByteArray;
+begin
+  LocalDataArray := nil;
+  ContextList := LockList;
+  try
+    // Contexts are adding/removed in IdTCPServerConnect/IdTCPServerDisconnectConnect
+    for iContext := 0 to ContextList.Count - 1 do
+    begin
+      ServerContext := TLccServerContexts(ContextList[iContext]);
+      if ServerContext.Context = AContext then
+      begin
+        for iDataArray := 0 to Length(ADataArray) - 1 do
+        begin
+          if ServerContext.TcpDecodeStateMachine.OPStackcoreTcp_DecodeMachine(ADataArray[iDataArray], LocalDataArray) then
+          begin
+            if WorkerMessage.LoadByLccTcp(LocalDataArray) then
+            begin
+              NodeManager.ReceiveMessageServerThread.ReceiveMessageServerAddMessage(WorkerMessage);
+              try
+                Owner.Synchronize({$IFDEF FPC}@{$ENDIF}Owner.ReceiveMessage);
+              except
+              end;
+            end
+          end;
+        end;
+        Break;
+      end;
+    end;
+  finally
+    UnlockList;
+  end;
+end;
+
 { TLccServerContexts }
 
 constructor TLccServerContexts.Create(AContext: TIdContext);
@@ -322,6 +364,7 @@ begin
   FCircularArray := TCircularArray.Create;
   FGridConnectHelper := TGridConnectHelper.Create;
   FGridConnectMessageAssembler := TLccGridConnectMessageAssembler.Create;
+  FTcpDecodeStateMachine := TOPStackcoreTcpDecodeStateMachine.Create;
 end;
 
 destructor TLccServerContexts.Destroy;
@@ -331,6 +374,7 @@ begin
   FreeAndNil(FCircularArray);
   FreeAndNil(FGridConnectHelper);
   FreeAndNil(FGridConnectMessageAssembler);
+  FreeAndNil(FTcpDecodeStateMachine);
 end;
 
 { TLccEthernetListener }
@@ -513,44 +557,78 @@ var
   List: TList;
   iContext, iByte: Integer;
   OtherContext: TIdContext;
+  AByte: Byte;
+  TcpMessage: TLccDynamicByteArray;
 begin
   // Messages sent to the Listener from all the Connections (Contexts)
 
+  if (ConnectionInfo as TLccEthernetConnectionInfo).GridConnect then
+  begin
   // Well well this just got more complicated... Need to have a separate buffer for each Context...
-  AString := '';
-  while not AContext.Connection.IOHandler.InputBufferIsEmpty and AContext.Connection.IOHandler.Connected do
-  begin
-    AChar := AnsiChar(AContext.Connection.IOHandler.ReadByte);
-    AString := AString + string(AChar);
-  end;
-
-  // Put the string in the correct context (each context is a connection to the server so keep the messages sorted per context)... do I need to do this?  Unsure.
-  // the main Execute method will pick this up and pass them along... another reason is to allow this thread to be a hub and relay the messages from one context
-  // to another...
-  if AString <> '' then
-  begin
-    if Owner.NodeManager.GridConnect then
-      GridConnectContextList.AddGridConnectStringByContext(AContext, AString, Owner.NodeManager)
-    else begin
-      // TCP Here
+    AString := '';
+    while not AContext.Connection.IOHandler.InputBufferIsEmpty and AContext.Connection.IOHandler.Connected do
+    begin
+      AChar := AnsiChar(AContext.Connection.IOHandler.ReadByte);
+      AString := AString + string(AChar);
     end;
 
-    if Owner.Hub then
+    // Put the string in the correct context (each context is a connection to the server so keep the messages sorted per context)... do I need to do this?  Unsure.
+    // the main Execute method will pick this up and pass them along... another reason is to allow this thread to be a hub and relay the messages from one context
+    // to another...
+    if AString <> '' then
     begin
-      List := IdTCPServer.Contexts.LockList;
-      try
-        for iContext := 0 to List.Count - 1 do
-        begin
-          OtherContext := TIdContext(List[iContext]);
-          if OtherContext <> AContext then
-            if OtherContext.Connection.Connected then
-            begin
-              for iByte := 1 to Length(AString) do
-                OtherContext.Connection.IOHandler.Write(Ord( AString[iByte]));
-            end;
+      GridConnectContextList.AddGridConnectStringByContext(AContext, AString, Owner.NodeManager);
+
+      if Owner.Hub then
+      begin
+        List := IdTCPServer.Contexts.LockList;
+        try
+          for iContext := 0 to List.Count - 1 do
+          begin
+            OtherContext := TIdContext(List[iContext]);
+            if OtherContext <> AContext then
+              if OtherContext.Connection.Connected then
+              begin
+                for iByte := 1 to Length(AString) do
+                  OtherContext.Connection.IOHandler.Write(Ord( AString[iByte]));
+              end;
+          end;
+        finally
+          IdTCPServer.Contexts.UnlockList;
         end;
-      finally
-        IdTCPServer.Contexts.UnlockList;
+      end;
+    end;
+  end else
+  begin
+    TcpMessage := nil;
+    while not AContext.Connection.IOHandler.InputBufferIsEmpty and AContext.Connection.IOHandler.Connected do
+    begin
+      // Slow but simple
+      SetLength(TcpMessage, Length(TcpMessage) + 1);
+      TcpMessage[Length(TcpMessage)-1] := AContext.Connection.IOHandler.ReadByte;
+    end;
+
+    if Length(TcpMessage) > 0 then
+    begin
+      GridConnectContextList.AddTcpDataByContext(AContext, TcpMessage, Owner.NodeManager);
+
+      if Owner.Hub then
+      begin
+        List := IdTCPServer.Contexts.LockList;
+        try
+          for iContext := 0 to List.Count - 1 do
+          begin
+            OtherContext := TIdContext(List[iContext]);
+            if OtherContext <> AContext then
+              if OtherContext.Connection.Connected then
+              begin
+                for iByte := 0 to Length(TcpMessage) - 1 do
+                  OtherContext.Connection.IOHandler.Write(TcpMessage[iByte]);
+              end;
+          end;
+        finally
+          IdTCPServer.Contexts.UnlockList;
+        end;
       end;
     end;
   end;

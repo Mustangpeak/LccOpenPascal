@@ -29,7 +29,7 @@ uses
   IdException,
   lcc_node_messages_can_assembler_disassembler,
   lcc_gridconnect,
-
+  lcc_ethernet_tcp,
   lcc_defines,
   lcc_node,
   lcc_node_messages,
@@ -325,52 +325,78 @@ var
   iString: Integer;
   GridConnectStrPtr: PGridConnectString;
   MessageStr: String;
+  AByte: Byte;
+  TcpMessage: TLccDynamicByteArray;
 begin
-  AString := '';
-  while not IdTCPClient.IOHandler.InputBufferIsEmpty and IdTCPClient.IOHandler.Connected do
-  begin
-    AChar := AnsiChar(idTCPClient.IOHandler.ReadByte);
-    AString := AString + string(AChar);
-  end;
 
-  if AString <> '' then
+  if (ConnectionInfo as TLccEthernetConnectionInfo).GridConnect then
   begin
-    for iString := 1 to Length(AString) do
+    AString := '';
+    while not IdTCPClient.IOHandler.InputBufferIsEmpty and IdTCPClient.IOHandler.Connected do
     begin
-      // Take the incoming characters and try to make a valid gridconnect message
-      GridConnectStrPtr := nil;
-      if GridConnectHelper.GridConnect_DecodeMachine(Ord(AString[iString]), GridConnectStrPtr) then
+      AChar := AnsiChar(idTCPClient.IOHandler.ReadByte);
+      AString := AString + string(AChar);
+    end;
+
+    if AString <> '' then
+    begin
+      for iString := 1 to Length(AString) do
       begin
-        // Have a valid gridconnect message
-        MessageStr := GridConnectBufferToString(GridConnectStrPtr^);
-        WorkerMessage.LoadByGridConnectStr(MessageStr);
+        // Take the incoming characters and try to make a valid gridconnect message
+        GridConnectStrPtr := nil;
+        if GridConnectHelper.GridConnect_DecodeMachine(Ord(AString[iString]), GridConnectStrPtr) then
+        begin
+          // Have a valid gridconnect message
+          MessageStr := GridConnectBufferToString(GridConnectStrPtr^);
+          WorkerMessage.LoadByGridConnectStr(MessageStr);
 
-        // Message may only be part of a larger string of messages to make up a full LCC message.
-        // This call will concatinate these partial Lcc message and return with a fully qualified
-        // Lcc message.
-        case GridConnectMessageAssembler.IncomingMessageGridConnect(WorkerMessage) of
-          imgcr_True :
-            begin
-              Owner.NodeManager.ReceiveMessageServerThread.ReceiveMessageServerAddMessage(WorkerMessage);
-              try
-                Synchronize({$IFDEF FPC}@{$ENDIF}ReceiveMessage);  // WorkerMessage contains the message
-              except
+          // Message may only be part of a larger string of messages to make up a full LCC message.
+          // This call will concatinate these partial Lcc message and return with a fully qualified
+          // Lcc message.
+          case GridConnectMessageAssembler.IncomingMessageGridConnect(WorkerMessage) of
+            imgcr_True :
+              begin
+                Owner.NodeManager.ReceiveMessageServerThread.ReceiveMessageServerAddMessage(WorkerMessage);
+                try
+                  Synchronize({$IFDEF FPC}@{$ENDIF}ReceiveMessage);  // WorkerMessage contains the message
+                except
+                end;
               end;
-            end;
-          imgcr_ErrorToSend :
-            begin
-     //         ConnectionInfo.LccMessage.CopyToTarget(WorkerMessage);
-     //         Synchronize({$IFDEF FPC}@{$ENDIF}RequestErrorMessageSent);
-            end;
-          imgcr_False,
-          imgcr_UnknownError :
-            begin
+            imgcr_ErrorToSend :
+              begin
+       //         ConnectionInfo.LccMessage.CopyToTarget(WorkerMessage);
+       //         Synchronize({$IFDEF FPC}@{$ENDIF}RequestErrorMessageSent);
+              end;
+            imgcr_False,
+            imgcr_UnknownError :
+              begin
 
-            end;
+              end;
+          end;
         end;
       end;
     end;
+  end else
+  begin
+    while not IdTCPClient.IOHandler.InputBufferIsEmpty and IdTCPClient.IOHandler.Connected do
+    begin
+      TcpMessage := nil;
+      AByte := idTCPClient.IOHandler.ReadByte;
+      if TcpDecodeStateMachine.OPStackcoreTcp_DecodeMachine(AByte, TcpMessage) then
+      begin
+        if WorkerMessage.LoadByLccTcp(TcpMessage) then
+        begin
+          Owner.NodeManager.ReceiveMessageServerThread.ReceiveMessageServerAddMessage(WorkerMessage);
+          try
+            Synchronize({$IFDEF FPC}@{$ENDIF}ReceiveMessage);  // WorkerMessage contains the message
+          except
+          end;
+        end
+      end;
+    end;
   end;
+
+
     // https://stackoverflow.com/questions/64593756/delphi-rio-indy-tcpserver-high-cpu-usage
     // There is another way to do this but with this simple program this is fine
   IndySleep(50);
