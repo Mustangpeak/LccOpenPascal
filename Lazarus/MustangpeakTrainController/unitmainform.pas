@@ -14,6 +14,7 @@ uses
   ComCtrls,
   StdCtrls,
   ExtCtrls,
+  LCLINTF,
   Types,
   LCLType,
   ActnList,
@@ -33,8 +34,13 @@ uses
   lcc_utilities,
   lcc_cdi_parser;
 
+
 const
   IS_GRIDCONNECT = True;
+
+const
+  OBJID_VSCROLL =   $FFFFFFFB;
+  OBJID_HSCROLL =   $FFFFFFFA;
 
 
 const
@@ -373,8 +379,7 @@ begin
   UpdateRosterHeaderScrolledRight;
 end;
 
-procedure TFormTrainController.ListBoxRosterDetailsDrawItem(
-  Control: TWinControl; Index: Integer; ARect: TRect; State: TOwnerDrawState);
+procedure TFormTrainController.ListBoxRosterDetailsDrawItem(Control: TWinControl; Index: Integer; ARect: TRect; State: TOwnerDrawState);
 var
   aColor: TColor;                       //Background color
   TextRect, ImageRect: TRect;
@@ -425,6 +430,7 @@ var
   Point: TPoint;
   HitItemIndex: Integer;
   DetailsRect: TRect;
+  YScroll: TScrollInfo;
 begin
   if PageControlRoster.PageIndex = 1 then
   begin
@@ -435,6 +441,16 @@ begin
     begin
       DetailsRect := ListBoxRosterDetails.ItemRect(HitItemIndex);
       DetailsRect.Left := DetailsRect.Right - DetailsRect.Height;
+
+      // No idea how or why this works....
+    //    LclIntF.GetScrollInfo(ListBoxRoster.Handle, Integer(OBJID_VSCROLL), YScroll);
+    //    LclIntF.GetScrollInfo(ListBoxRoster.Handle, 0, YScroll);
+      LclIntF.GetScrollInfo(ListBoxRosterDetails.Handle, 1, YScroll);
+
+      DetailsRect := ListBoxRosterDetails.ItemRect(HitItemIndex);
+      DetailsRect.Left := DetailsRect.Right - DetailsRect.Height;
+      OffsetRect(DetailsRect, 0, -YScroll.nPos);
+
       if PtInRect(DetailsRect, Point) then
       begin
         UpdateRosterHeaderScrolledRight;
@@ -479,11 +495,15 @@ begin
 
 end;
 
+type
+  THackListBox = class(TListBox);
+
 procedure TFormTrainController.ListBoxRosterMouseUp(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 var
   Point: TPoint;
   HitItemIndex: Integer;
   DetailsRect: TRect;
+  YScroll: TScrollInfo;
 begin
   if PageControlRoster.PageIndex = 0 then
   begin
@@ -492,8 +512,17 @@ begin
     HitItemIndex := ListBoxRoster.ItemAtPos(Point, True);
     if HitItemIndex > -1 then
     begin
+      FillChar(YScroll, SizeOf(YScroll), #0);
+
+    // No idea how or why this works....
+  //    LclIntF.GetScrollInfo(ListBoxRoster.Handle, Integer(OBJID_VSCROLL), YScroll);
+  //    LclIntF.GetScrollInfo(ListBoxRoster.Handle, 0, YScroll);
+      LclIntF.GetScrollInfo(ListBoxRoster.Handle, 1, YScroll);
+
       DetailsRect := ListBoxRoster.ItemRect(HitItemIndex);
       DetailsRect.Left := DetailsRect.Right - DetailsRect.Height;
+      OffsetRect(DetailsRect, 0, -YScroll.nPos);
+
       if PtInRect(DetailsRect, Point) then
       begin
         DetailsTractionObject := ListBoxRoster.Items.Objects[HitItemIndex] as TLccTractionObject;

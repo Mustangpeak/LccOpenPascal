@@ -518,9 +518,9 @@ object FormTrainController: TFormTrainController
           Height = 415
           Top = 37
           Width = 413
-          ActivePage = TabSheetRosterEditor
+          ActivePage = TabSheetRosterList
           Align = alClient
-          TabIndex = 2
+          TabIndex = 0
           TabOrder = 0
           OnChange = PageControlRosterChange
           OnChanging = PageControlRosterChanging
