@@ -1,10 +1,10 @@
 object FormTrainController: TFormTrainController
   Left = 704
-  Height = 483
+  Height = 542
   Top = 134
   Width = 421
   Caption = 'Mustangpeak TrainController'
-  ClientHeight = 483
+  ClientHeight = 542
   ClientWidth = 421
   OnCloseQuery = FormCloseQuery
   OnCreate = FormCreate
@@ -15,7 +15,7 @@ object FormTrainController: TFormTrainController
   object PageControlMain: TPageControl
     Tag = 4
     Left = 0
-    Height = 483
+    Height = 542
     Top = 0
     Width = 421
     ActivePage = TabSheetRoster
@@ -24,7 +24,7 @@ object FormTrainController: TFormTrainController
     TabOrder = 0
     object TabSheetThrottle: TTabSheet
       Caption = 'Throttle'
-      ClientHeight = 453
+      ClientHeight = 512
       ClientWidth = 415
       object PanelThrottleHeader: TPanel
         Left = 0
@@ -130,17 +130,17 @@ object FormTrainController: TFormTrainController
       end
       object PanelThrottle: TPanel
         Left = 154
-        Height = 389
+        Height = 448
         Top = 64
         Width = 261
         Align = alClient
-        ClientHeight = 389
+        ClientHeight = 448
         ClientWidth = 261
         TabOrder = 1
         object PanelThrottleFooter: TPanel
           Left = 1
           Height = 45
-          Top = 343
+          Top = 402
           Width = 259
           Align = alBottom
           ClientHeight = 45
@@ -180,16 +180,16 @@ object FormTrainController: TFormTrainController
         end
         object PanelThrottleContainer: TPanel
           Left = 1
-          Height = 342
+          Height = 401
           Top = 1
           Width = 132
           Align = alLeft
-          ClientHeight = 342
+          ClientHeight = 401
           ClientWidth = 132
           TabOrder = 1
           object PanelThrottleLever: TPanel
             Left = 56
-            Height = 340
+            Height = 399
             Top = 1
             Width = 75
             Align = alClient
@@ -198,16 +198,16 @@ object FormTrainController: TFormTrainController
           end
           object PanelThrottleSlider: TPanel
             Left = 1
-            Height = 340
+            Height = 399
             Top = 1
             Width = 55
             Align = alLeft
-            ClientHeight = 340
+            ClientHeight = 399
             ClientWidth = 55
             TabOrder = 1
             object TrackBarThrottle: TTrackBar
               Left = 1
-              Height = 338
+              Height = 397
               Top = 1
               Width = 53
               Frequency = 5
@@ -222,13 +222,13 @@ object FormTrainController: TFormTrainController
         end
         object ScrollBoxFunctions: TScrollBox
           Left = 133
-          Height = 342
+          Height = 401
           Top = 1
           Width = 127
           HorzScrollBar.Page = 57
-          VertScrollBar.Page = 340
+          VertScrollBar.Page = 399
           Align = alClient
-          ClientHeight = 340
+          ClientHeight = 399
           ClientWidth = 110
           TabOrder = 2
           object ToggleBoxF0: TToggleBox
@@ -493,7 +493,7 @@ object FormTrainController: TFormTrainController
       end
       object PanelRosterSlider: TPanel
         Left = 0
-        Height = 389
+        Height = 448
         Top = 64
         Width = 154
         Align = alLeft
@@ -502,35 +502,35 @@ object FormTrainController: TFormTrainController
     end
     object TabSheetRoster: TTabSheet
       Caption = 'Roster'
-      ClientHeight = 453
+      ClientHeight = 512
       ClientWidth = 415
       object PanelMainRosterBackground: TPanel
         Left = 0
-        Height = 453
+        Height = 512
         Top = 0
         Width = 415
         Align = alClient
-        ClientHeight = 453
+        ClientHeight = 512
         ClientWidth = 415
         TabOrder = 0
         object PageControlRoster: TPageControl
           Left = 1
-          Height = 415
+          Height = 474
           Top = 37
           Width = 413
-          ActivePage = TabSheetRosterList
+          ActivePage = TabSheetRosterDetails
           Align = alClient
-          TabIndex = 0
+          TabIndex = 1
           TabOrder = 0
           OnChange = PageControlRosterChange
           OnChanging = PageControlRosterChanging
           object TabSheetRosterList: TTabSheet
             Caption = 'Roster'
-            ClientHeight = 385
+            ClientHeight = 444
             ClientWidth = 407
             object ListBoxRoster: TListBox
               Left = 0
-              Height = 385
+              Height = 444
               Top = 0
               Width = 407
               Align = alClient
@@ -543,11 +543,11 @@ object FormTrainController: TFormTrainController
           end
           object TabSheetRosterDetails: TTabSheet
             Caption = 'Details'
-            ClientHeight = 385
+            ClientHeight = 444
             ClientWidth = 407
             object ListBoxRosterDetails: TListBox
               Left = 0
-              Height = 385
+              Height = 444
               Top = 0
               Width = 407
               Align = alClient
@@ -558,6 +558,10 @@ object FormTrainController: TFormTrainController
                 'Software Version'
                 'User Name'
                 'User Description'
+                '-'
+                'Multiple Unit (MU) Info'
+                'Train Details'
+                'Node Details'
               )
               ItemHeight = 40
               OnDrawItem = ListBoxRosterDetailsDrawItem
@@ -568,11 +572,11 @@ object FormTrainController: TFormTrainController
           end
           object TabSheetRosterEditor: TTabSheet
             Caption = 'Editor'
-            ClientHeight = 385
+            ClientHeight = 444
             ClientWidth = 407
             object PanelRosterEditorConfigurationBkGnd: TPanel
               Left = 0
-              Height = 385
+              Height = 444
               Top = 0
               Width = 407
               Align = alClient
@@ -658,7 +662,7 @@ object FormTrainController: TFormTrainController
     end
     object TabSheetLog: TTabSheet
       Caption = 'Log'
-      ClientHeight = 453
+      ClientHeight = 512
       ClientWidth = 415
       object PanelLogHeader: TPanel
         Left = 0
@@ -701,7 +705,7 @@ object FormTrainController: TFormTrainController
       end
       object MemoLog: TMemo
         Left = 0
-        Height = 413
+        Height = 472
         Top = 40
         Width = 415
         Align = alClient
@@ -711,7 +715,7 @@ object FormTrainController: TFormTrainController
     end
     object TabSheetSettings: TTabSheet
       Caption = 'Settings'
-      ClientHeight = 453
+      ClientHeight = 512
       ClientWidth = 415
       object LabelSettings1: TLabel
         Left = 0

@@ -81,7 +81,6 @@ type
     FAutoGatherInformation: Boolean;
     FEnabled: Boolean;
     FGridConnect: Boolean;
-    FOnCDIReadReply: TOnLccServerChange;
     FOnEmergencyStopChange: TOnLccServerChange;
     FOnFunctionChange: TOnLccServerChange;
     FOnListenerAttach: TOnLccServerChange;
@@ -596,12 +595,9 @@ begin
 end;
 
 procedure TLccTractionServer.ProcessMessageLCC(ALccNode: TObject; SourceMessage: TLccMessage);
-var
-  AddressSpace: Byte;
 begin
   if Enabled then
   begin
-    AddressSpace := 0;
     case SourceMessage.MTI of
       MTI_TRACTION_SIMPLE_TRAIN_INFO_REPLY : HandleTractionSimpleTrainInfoReply(SourceMessage);
       MTI_SIMPLE_NODE_INFO_REPLY           : HandleSimpleNodeInfoReply(SourceMessage);

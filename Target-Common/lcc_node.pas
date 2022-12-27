@@ -74,7 +74,7 @@ const
 
 type
   TLccNode = class;
-  TLccMemorySpaceReadEngine = class;
+  TLccEngineMemorySpaceRead = class;
 
     { TDatagramQueue }
 
@@ -107,34 +107,50 @@ type
   end;
 
   TMemorySpaceEngineState = (msesIdle, msesRunning, msesComplete, msesError, msesErrorValidateAddressSpace, msesErrorProtocolsUnsupported);
-  TOnMemorySpaceReadCallback = procedure(MemorySpaceReadEnging: TLccMemorySpaceReadEngine) of object;
+  TOnEngineMemorySpaceReadCallback = procedure(EngineMemorySpaceRead: TLccEngineMemorySpaceRead) of object;
 
-  { TLccMemorySpaceReadEngine }
 
-  TLccMemorySpaceReadEngine = class
+  { TLccEngineBase }
+
+  TLccEngineBase = class
+  private
+    FOwnerNode: TLccNode;
+    FTag: Integer;
+    FTagObject: TObject;
+    FWorkerMessage: TLccMessage;
+  protected
+    property WorkerMessage: TLccMessage read FWorkerMessage write FWorkerMessage;
+
+  public
+    property OwnerNode: TLccNode read FOwnerNode;
+    property Tag: Integer read FTag write FTag;
+    property TagObject: TObject read FTagObject write FTagObject;
+
+    constructor Create(AnOwner: TLccNode); virtual;
+    destructor Destroy; override;
+  end;
+
+  { TLccEngineMemorySpaceRead }
+
+  TLccEngineMemorySpaceRead = class(TLccEngineBase)
   private
     FAddressHi: DWord;
     FAddressLo: DWord;
     FBytesToRead: Integer;
-    FCallback: TOnMemorySpaceReadCallback;
+    FCallback: TOnEngineMemorySpaceReadCallback;
     FCurrentAddress: DWord;
     FMemorySpace: Byte;
     FMemoryStream: TMemoryStream;
-    FOwnerNode: TLccNode;
     FPIPHelper: TProtocolSupportedProtocols;
     FState: TMemorySpaceEngineState;
     FTargetAlias: Word;
     FTargetNode: TNodeID;
-    FWorkerMessage: TLccMessage;
-    FTagObject: TObject;
-    FTag: Integer;
     function GetStreamAsString: AnsiString;
   protected
     property AddressLo: DWord read FAddressLo write FAddressLo;
     property AddressHi: DWord read FAddressHi write FAddressHi;
-    property CallBack: TOnMemorySpaceReadCallback read FCallback write FCallback;
+    property CallBack: TOnEngineMemorySpaceReadCallback read FCallback write FCallback;
     property CurrentAddress: DWord read FCurrentAddress write FCurrentAddress;
-    property WorkerMessage: TLccMessage read FWorkerMessage write FWorkerMessage;
 
     procedure HandleRead(SourceMessage: TLccMessage; DataStartIndex: Integer; IsString: Boolean);
     procedure ReadNextChunk;
@@ -148,18 +164,15 @@ type
     property State: TMemorySpaceEngineState read FState;
     property TargetNode: TNodeID read FTargetNode;
     property TargetAlias: Word read FTargetAlias;
-    property OwnerNode: TLccNode read FOwnerNode;
     property PIPHelper: TProtocolSupportedProtocols read FPIPHelper;
-    property Tag: Integer read FTag write FTag;
-    property TagObject: TObject read FTagObject write FTagObject;
     property StreamAsString: AnsiString read GetStreamAsString;
 
-    constructor Create(AnOwner: TLccNode);
+    constructor Create(AnOwner: TLccNode); override;
     destructor Destroy; override;
     procedure Start;
     procedure Reset;
     procedure Process(SourceMessage: TLccMessage);
-    procedure Assign(AMemorySpace: Byte; ATargetNodeID: TNodeID; ATargetAliasID: Word; ACallback: TOnMemorySpaceReadCallback); // AMemorySpace = MSI_xxxx constants
+    procedure Assign(AMemorySpace: Byte; ATargetNodeID: TNodeID; ATargetAliasID: Word; ACallback: TOnEngineMemorySpaceReadCallback); // AMemorySpace = MSI_xxxx constants
   end;
 
   { TLccNode }
@@ -206,7 +219,7 @@ type
     FStreamTractionConfig: TMemoryStream;          // Stream containing the writable configuration memory for a Traction node where the Address = Offset in the stream
     FStreamTractionFdi: TMemoryStream;             // Stream containing the XML string for the FDI (Function Definition Info)
     FWorkerMessage: TLccMessage;
-    FMemorySpaceReadEngine: TLccMemorySpaceReadEngine;
+    FEngineMemorySpaceRead: TLccEngineMemorySpaceRead;
 
     function GetAliasIDStr: String;
     function GetNodeIDStr: String;
@@ -214,7 +227,7 @@ type
   protected
     FNodeID: TNodeID;
 
-    procedure DoMemorySpaceReadEngineDone(MemoryReadEngine: TLccMemorySpaceReadEngine); virtual;
+    procedure DoMemorySpaceReadEngineDone(MemoryReadEngine: TLccEngineMemorySpaceRead); virtual;
 
     // Datagram Message Handlers
     //**************************************************************************
@@ -364,7 +377,7 @@ type
     property Initialized: Boolean read FInitialized;
     property SendMessageFunc: TOnMessageEvent read FSendMessageFunc write SetSendMessageFunc;
 
-    property MemorySpaceReadEngine: TLccMemorySpaceReadEngine read FMemorySpaceReadEngine write FMemorySpaceReadEngine;
+    property EngineMemorySpaceRead: TLccEngineMemorySpaceRead read FEngineMemorySpaceRead write FEngineMemorySpaceRead;
     property ProtocolSupportedProtocols: TProtocolSupportedProtocols read FProtocolSupportedProtocols write FProtocolSupportedProtocols;
     property ProtocolEventConsumed: TProtocolEvents read FProtocolEventConsumed write FProtocolEventConsumed;
     property ProtocolEventsProduced: TProtocolEvents read FProtocolEventsProduced write FProtocolEventsProduced;
@@ -411,9 +424,23 @@ implementation
 uses
   lcc_node_manager;
 
-{ TLccMemorySpaceReadEngine }
+{ TLccEngineBase }
 
-procedure TLccMemorySpaceReadEngine.HandleRead(SourceMessage: TLccMessage; DataStartIndex: Integer; IsString: Boolean);
+constructor TLccEngineBase.Create(AnOwner: TLccNode);
+begin
+  FOwnerNode := AnOwner;
+  FWorkerMessage := TLccMessage.Create;
+end;
+
+destructor TLccEngineBase.Destroy;
+begin
+  FreeAndNil(FWorkerMessage);
+  inherited Destroy;
+end;
+
+{ TLccEngineMemorySpaceRead }
+
+procedure TLccEngineMemorySpaceRead.HandleRead(SourceMessage: TLccMessage; DataStartIndex: Integer; IsString: Boolean);
 var
   i: Integer;
   NullFound: Boolean;
@@ -441,7 +468,7 @@ begin
   end
 end;
 
-procedure TLccMemorySpaceReadEngine.ReadNextChunk;
+procedure TLccEngineMemorySpaceRead.ReadNextChunk;
 var
   ReadCount: Integer;
 begin
@@ -454,7 +481,7 @@ begin
   end;
 end;
 
-procedure TLccMemorySpaceReadEngine.ValidatePIPAndProceed;
+procedure TLccEngineMemorySpaceRead.ValidatePIPAndProceed;
 var
   ProtocolsSupported: Boolean;
 begin
@@ -484,7 +511,7 @@ begin
   end;
 end;
 
-procedure TLccMemorySpaceReadEngine.ValidateAddressSpaceAndProceed(SourceMessage: TLccMessage);
+procedure TLccEngineMemorySpaceRead.ValidateAddressSpaceAndProceed(SourceMessage: TLccMessage);
 begin
   if Assigned(SourceMessage) then
   begin
@@ -511,7 +538,7 @@ begin
   end;
 end;
 
-procedure TLccMemorySpaceReadEngine.Assign(AMemorySpace: Byte; ATargetNodeID: TNodeID; ATargetAliasID: Word; ACallback: TOnMemorySpaceReadCallback);
+procedure TLccEngineMemorySpaceRead.Assign(AMemorySpace: Byte; ATargetNodeID: TNodeID; ATargetAliasID: Word; ACallback: TOnEngineMemorySpaceReadCallback);
 begin
   Assert(State = msesIdle, 'TMemorySpaceReadEngine.Assign is running');
   FTargetNode := ATargetNodeID;
@@ -520,7 +547,7 @@ begin
   FMemorySpace := AMemorySpace;
 end;
 
-function TLccMemorySpaceReadEngine.CalculateNextReadCount: Integer;
+function TLccEngineMemorySpaceRead.CalculateNextReadCount: Integer;
 begin
   if CurrentAddress + 64 > AddressHi then
     Result := AddressHi - CurrentAddress
@@ -528,24 +555,21 @@ begin
     Result := 64
 end;
 
-constructor TLccMemorySpaceReadEngine.Create(AnOwner: TLccNode);
+constructor TLccEngineMemorySpaceRead.Create(AnOwner: TLccNode);
 begin
-  inherited Create;
-  FOwnerNode := AnOwner;
-  FWorkerMessage := TLccMessage.Create;
+  inherited Create(AnOwner);
   FPIPHelper := TProtocolSupportedProtocols.Create;
   FMemoryStream := TMemoryStream.Create;
 end;
 
-destructor TLccMemorySpaceReadEngine.Destroy;
+destructor TLccEngineMemorySpaceRead.Destroy;
 begin
-  FreeAndNil(FWorkerMessage);
   FreeAndNil(FPIPHelper);
   FreeAndNil(FMemoryStream);
   inherited Destroy;
 end;
 
-function TLccMemorySpaceReadEngine.GetStreamAsString: AnsiString;
+function TLccEngineMemorySpaceRead.GetStreamAsString: AnsiString;
 var
   i: Integer;
   C: AnsiChar;
@@ -560,7 +584,7 @@ begin
   end;
 end;
 
-procedure TLccMemorySpaceReadEngine.Start;
+procedure TLccEngineMemorySpaceRead.Start;
 begin
   Assert(not NullNodeID(FTargetNode), 'TMemorySpaceReadEngine, NodeID not set');
 
@@ -575,7 +599,7 @@ begin
   FState := msesRunning;
 end;
 
-procedure TLccMemorySpaceReadEngine.Reset;
+procedure TLccEngineMemorySpaceRead.Reset;
 begin
   FState := msesIdle;
   FAddressHi := 0;
@@ -591,7 +615,7 @@ begin
   MemoryStream.Clear;
 end;
 
-procedure TLccMemorySpaceReadEngine.Process(SourceMessage: TLccMessage);
+procedure TLccEngineMemorySpaceRead.Process(SourceMessage: TLccMessage);
 var
   AddressSpace: Byte;
 begin
@@ -796,7 +820,7 @@ begin
   DatagramResendQueue.SendMessageFunc := AValue;
 end;
 
-procedure TLccNode.DoMemorySpaceReadEngineDone(MemoryReadEngine: TLccMemorySpaceReadEngine);
+procedure TLccNode.DoMemorySpaceReadEngineDone(MemoryReadEngine: TLccEngineMemorySpaceRead);
 begin
 
 end;
@@ -1207,7 +1231,7 @@ begin
   FWorkerMessage := TLccMessage.Create;
   FNodeManager := ANodeManager;
   FGridConnect := GridConnectLink;
-  FMemorySpaceReadEngine := TLccMemorySpaceReadEngine.Create(Self);
+  FEngineMemorySpaceRead := TLccEngineMemorySpaceRead.Create(Self);
  // FMessageIdentificationList := TLccMessageWithNodeIdentificationList.Create;
  // FMessageDestinationsWaitingForReply := TLccNodeIdentificationObjectList.Create(False);
 
@@ -1375,7 +1399,7 @@ begin
       Exit;
   end;
 
-  MemorySpaceReadEngine.Process(SourceMessage);
+  EngineMemorySpaceRead.Process(SourceMessage);
 
   case SourceMessage.MTI of
     MTI_OPTIONAL_INTERACTION_REJECTED : HandleOptionalInteractionRejected(SourceMessage);
@@ -1805,7 +1829,7 @@ begin
   FreeAndNil(FStreamManufacturerData);
   FreeAndNil(FStreamTractionConfig);
   FreeAndNil(FStreamTractionFdi);
-  FreeAndNil(FMemorySpaceReadEngine);
+  FreeAndNil(FEngineMemorySpaceRead);
   FProtocolMemoryConfiguration.Free;
   inherited;
 end;

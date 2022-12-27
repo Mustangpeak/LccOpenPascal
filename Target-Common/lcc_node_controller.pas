@@ -415,7 +415,7 @@ procedure TLccTrainController.AssignTrainByOpenLCB(SearchString: string; TrackPr
 var
   LocalSearchCriteria: DWORD;
 begin
-  ReleaseTrain;
+ // ReleaseTrain;
   LocalSearchCriteria := 0;
   WorkerMessage.TractionSearchEncodeSearchString(SearchString, TrackProtocolFlags, LocalSearchCriteria);
   AssignedTrain.SearchCriteriaPending := LocalSearchCriteria;

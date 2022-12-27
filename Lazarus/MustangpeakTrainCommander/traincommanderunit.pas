@@ -38,6 +38,7 @@ type
 
   TFormTrainCommander = class(TForm)
     Button1: TButton;
+    ButtonCreateConsist: TButton;
     ButtonHTTPServer: TButton;
     ButtonWebserverConnect: TButton;
     ButtonManualConnectComPort: TButton;
@@ -51,6 +52,7 @@ type
     CheckBoxAutoConnect: TCheckBox;
     ComboBoxComPorts: TComboBox;
     Edit1: TEdit;
+    EditCreateConsist: TEdit;
     ImageListMain: TImageList;
     LabelNodeID: TLabel;
     LabelAliasID: TLabel;
@@ -70,6 +72,7 @@ type
     ToggleBoxServerForm: TToggleBox;
     TreeViewTrains: TTreeView;
     procedure Button1Click(Sender: TObject);
+    procedure ButtonCreateConsistClick(Sender: TObject);
     procedure ButtonHTTPServerClick(Sender: TObject);
     procedure ButtonWebserverConnectClick(Sender: TObject);
     procedure ButtonManualConnectComPortClick(Sender: TObject);
@@ -184,6 +187,19 @@ begin
     Train := CommandStationNode.AddTrain( AutoCreateTrainAddress, True, ldssDefault);
     Inc(FAutoCreateTrainAddress);
     Train.Login(NULL_NODE_ID);
+  end;
+end;
+
+procedure TFormTrainCommander.ButtonCreateConsistClick(Sender: TObject);
+var
+  ConsistCount, i: Integer;
+begin
+  if TryStrToInt(EditCreateConsist.Text, ConsistCount) then
+  begin
+    for i := 0 to ConsistCount - 1 do
+    begin
+
+    end;
   end;
 end;
 

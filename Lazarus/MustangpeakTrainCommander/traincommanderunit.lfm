@@ -1,7 +1,7 @@
 object FormTrainCommander: TFormTrainCommander
-  Left = 198
+  Left = 135
   Height = 565
-  Top = 140
+  Top = 248
   Width = 1241
   Align = alBottom
   Caption = 'Train Commander [LccOpenPascal]'
@@ -169,19 +169,36 @@ object FormTrainCommander: TFormTrainCommander
     object Button1: TButton
       Left = 904
       Height = 25
-      Top = 56
-      Width = 88
+      Top = 38
+      Width = 120
       Caption = 'Create Trains'
       OnClick = Button1Click
       TabOrder = 12
     end
     object Edit1: TEdit
-      Left = 1000
+      Left = 1032
       Height = 22
-      Top = 58
+      Top = 41
       Width = 80
       TabOrder = 13
       Text = '1'
+    end
+    object ButtonCreateConsist: TButton
+      Left = 904
+      Height = 25
+      Top = 65
+      Width = 120
+      Caption = 'Create a Consist'
+      OnClick = ButtonCreateConsistClick
+      TabOrder = 14
+    end
+    object EditCreateConsist: TEdit
+      Left = 1032
+      Height = 22
+      Top = 68
+      Width = 80
+      TabOrder = 15
+      Text = '2'
     end
   end
   object PanelConnections: TPanel
