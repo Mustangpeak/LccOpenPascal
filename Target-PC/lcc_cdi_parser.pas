@@ -729,6 +729,7 @@ end;
 function TLccCdiParser.CreateLabel(ParentControl: TLccPanel;
   ACaption: LccDOMString; Indent: Single; Bold: Boolean): TLccLabel;
 begin
+  Result := nil;
   if ACaption <> '' then
   begin
     Result := TLccLabel.Create(ParentControl);
@@ -817,65 +818,63 @@ var
   LastLabel: TLccLabel;
 begin
   ItemStr := '';
-  if Assigned(IdentificationElement) then
-  begin
+  Result := nil;
 
-    // Add a tab to place the Identification information on
-    Result := CreateTab(ATabControl, 'Identification');
+  // Add a tab to place the Identification information on
+  Result := CreateTab(ATabControl, 'Identification');
 
-    // Space on the Top
+  // Space on the Top
+  CreateSpacer(Result);
+
+  if ExtractElementItem(IdentificationElement, 'name', ItemStr) then
+    CreateLabel(Result, ItemStr, Indent, True);
+
+  if ExtractElementItem(IdentificationElement, 'description', ItemStr) then
+    CreateLabel(Result, ItemStr, Indent + LABEL_DELTA_INDENT, False);
+
+
+  // Handle the manufacturer
+  CreateLabel(Result, 'Manufacturer', 0, True);
+
+  IdentificationElementChild := XmlFindChildNode(IdentificationElement, 'manufacturer');
+  if Assigned(IdentificationElementChild) then
+    CreateLabel(Result, ItemStr + XmlNodeTextContent(IdentificationElementChild), Indent + LABEL_DELTA_INDENT, False)
+  else
     CreateSpacer(Result);
 
-    if ExtractElementItem(IdentificationElement, 'name', ItemStr) then
-      CreateLabel(Result, ItemStr, Indent, True);
 
-    if ExtractElementItem(IdentificationElement, 'description', ItemStr) then
-      CreateLabel(Result, ItemStr, Indent + LABEL_DELTA_INDENT, False);
+  // Handle the model number
+  CreateLabel(Result, 'Model: ', 0, True);
+  IdentificationElementChild := XmlFindChildNode(IdentificationElement, 'model');
+  if Assigned(IdentificationElementChild) then
+    CreateLabel(Result, ItemStr + XmlNodeTextContent(IdentificationElementChild), Indent + LABEL_DELTA_INDENT, False)
+  else
+    CreateSpacer(Result);
 
+  // Handle the Hardware Version
+  CreateLabel(Result, 'Hardware Version: ', 0, True);
+  IdentificationElementChild := XmlFindChildNode(IdentificationElement, 'hardwareVersion');
+  if Assigned(IdentificationElementChild) then
+    CreateLabel(Result, ItemStr + XmlNodeTextContent(IdentificationElementChild), Indent + LABEL_DELTA_INDENT, False)
+  else
+    CreateSpacer(Result);
 
-    // Handle the manufacturer
-    CreateLabel(Result, 'Manufacturer', 0, True);
+  // Handle the Software Version
+  CreateLabel(Result, 'Software Version: ', 0, True);
+  IdentificationElementChild := XmlFindChildNode(IdentificationElement, 'softwareVersion');
+  if Assigned(IdentificationElementChild) then
+    CreateLabel(Result, ItemStr + XmlNodeTextContent(IdentificationElementChild), Indent + LABEL_DELTA_INDENT, False)
+  else
+    CreateSpacer(Result);
 
-    IdentificationElementChild := XmlFindChildNode(IdentificationElement, 'manufacturer');
-    if Assigned(IdentificationElementChild) then
-      CreateLabel(Result, ItemStr + XmlNodeTextContent(IdentificationElementChild), Indent + LABEL_DELTA_INDENT, False)
-    else
-      CreateSpacer(Result);
+  // Space on the bottom
+  LastLabel := CreateSpacer(Result);
+  {$IFDEF DELPHI}
+  Result.Height := LastLabel.Position.Y + LastLabel.Height;
+  {$ELSE}
+  Result.Height := LastLabel.Top + LastLabel.Height;
+  {$ENDIF}
 
-
-    // Handle the model number
-    CreateLabel(Result, 'Model: ', 0, True);
-    IdentificationElementChild := XmlFindChildNode(IdentificationElement, 'model');
-    if Assigned(IdentificationElementChild) then
-      CreateLabel(Result, ItemStr + XmlNodeTextContent(IdentificationElementChild), Indent + LABEL_DELTA_INDENT, False)
-    else
-      CreateSpacer(Result);
-
-    // Handle the Hardware Version
-    CreateLabel(Result, 'Hardware Version: ', 0, True);
-    IdentificationElementChild := XmlFindChildNode(IdentificationElement, 'hardwareVersion');
-    if Assigned(IdentificationElementChild) then
-      CreateLabel(Result, ItemStr + XmlNodeTextContent(IdentificationElementChild), Indent + LABEL_DELTA_INDENT, False)
-    else
-      CreateSpacer(Result);
-
-    // Handle the Software Version
-    CreateLabel(Result, 'Software Version: ', 0, True);
-    IdentificationElementChild := XmlFindChildNode(IdentificationElement, 'softwareVersion');
-    if Assigned(IdentificationElementChild) then
-      CreateLabel(Result, ItemStr + XmlNodeTextContent(IdentificationElementChild), Indent + LABEL_DELTA_INDENT, False)
-    else
-      CreateSpacer(Result);
-
-    // Space on the bottom
-    LastLabel := CreateSpacer(Result);
-    {$IFDEF DELPHI}
-    Result.Height := LastLabel.Position.Y + LastLabel.Height;
-    {$ELSE}
-    Result.Height := LastLabel.Top + LastLabel.Height;
-    {$ENDIF}
-
-  end;
 end;
 
 function TLccCdiParser.ProcessSegmentTab(ATabControl: TLccTabControl;
@@ -884,8 +883,11 @@ var
   MemoryAddressPointer: Int64;
   ElementString: LccDOMString;
   AddressSpace: DWord;
-  {$IFDEF DELPHI}LastLabel: TLccLabel;{$ENDIF}
+  {$IFDEF DELPHI}
+  LastLabel: TLccLabel;
+  {$ELSE}
   i: Integer;
+  {$ENDIF}
 begin
   ElementString := '';
 
@@ -896,6 +898,7 @@ begin
     MemoryAddressPointer := 0;
 
   // Read in the Address Space.. this is required
+  AddressSpace := 0;
   if XmlAttributeExists(SegmentElement, 'space') then
     AddressSpace := StrToUInt(string( XmlAttributeRead(SegmentElement, 'space')));
 

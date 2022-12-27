@@ -182,7 +182,7 @@ type
     procedure OnClientServerConnectionChange(Sender: TObject; Info: TLccHardwareConnectionInfo);
     procedure OnClientServerErrorMessage(Sender: TObject; Info: TLccHardwareConnectionInfo);
 
-    procedure CallbackOnMemorySpaceRead(MemorySpaceReadEnging: TMemorySpaceReadEngine);
+    procedure CallbackOnMemorySpaceRead(MemorySpaceReadEnging: TLccEngineMemorySpaceRead);
 
     function ValidEditBoxKey(Key: Word): Boolean;
     function ConnectionLogin: Boolean;
@@ -547,14 +547,14 @@ procedure TLccThrottleAppForm.OnClientServerErrorMessage(Sender: TObject; Info: 
 begin
 end;
 
-procedure TLccThrottleAppForm.CallbackOnMemorySpaceRead(MemorySpaceReadEnging: TMemorySpaceReadEngine);
+procedure TLccThrottleAppForm.CallbackOnMemorySpaceRead(MemorySpaceReadEnging: TLccEngineMemorySpaceRead);
 var
   TractionObject: TLccTractionObject;
 begin
   TractionObject := MemorySpaceReadEnging.TagObject as TLccTractionObject;
   if MemorySpaceReadEnging.State = msesComplete then
   begin
-    TractionObject.NodeCDI.CDI := Controller.MemorySpaceReadEngine.StreamAsString;
+    TractionObject.NodeCDI.CDI := Controller.EngineMemorySpaceRead.StreamAsString;
     TractionObject.NodeCDI.Implemented := True;
     RenderCDI(TractionObject);
   end else
@@ -704,10 +704,10 @@ begin
       RenderCDI(TractionObject);
     end else
     begin
-      Controller.MemorySpaceReadEngine.Reset;
-      Controller.MemorySpaceReadEngine.Assign(MSI_CDI, TractionObject.NodeID, TractionObject.NodeAlias, CallbackOnMemorySpaceRead);
-      Controller.MemorySpaceReadEngine.TagObject := TractionObject;
-      Controller.MemorySpaceReadEngine.Start;
+      Controller.EngineMemorySpaceRead.Reset;
+      Controller.EngineMemorySpaceRead.Assign(MSI_CDI, TractionObject.NodeID, TractionObject.NodeAlias, CallbackOnMemorySpaceRead);
+      Controller.EngineMemorySpaceRead.TagObject := TractionObject;
+      Controller.EngineMemorySpaceRead.Start;
     end;
   end;
 end;

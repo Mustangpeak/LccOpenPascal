@@ -160,7 +160,6 @@ function TLccAliasServer.Count: Integer;
 var
   List: TList;
 begin
-  Result := 0;
   List := MappingList.LockList;
   try
     Result := List.Count;
@@ -240,11 +239,6 @@ end;
 
 function TLccAliasServer.AddMapping(ANodeID: TNodeID; AnAlias: Word): TLccAliasMapping;
 begin
-  Result := nil;
-
-  if AnAlias = 0 then
-    beep;
-
   Assert(AnAlias <> 0, 'Alias = 0 in TLccAliasServer.AddMapping');
   Assert(not NullNodeID(ANodeID), 'NodeID = NULL_ID in TLccAliasServer.AddMapping');
 

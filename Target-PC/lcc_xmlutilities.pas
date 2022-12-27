@@ -140,9 +140,11 @@ begin
 end;
 
 function XmlLoadFromText(XMLText: string): TLccXmlDocument;
+{$IFDEF FPC}
 var
   Stream: TMemoryStream;
   i: Integer;
+{$ENDIF}
 begin
   {$IFDEF FPC}
   Result := nil;

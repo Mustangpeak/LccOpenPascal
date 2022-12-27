@@ -332,8 +332,8 @@ object LccThrottleAppForm: TLccThrottleAppForm
           Size.Height = 437.000000000000000000
           Size.PlatformDefault = False
           TabOrder = 1
-          Viewport.Width = 401.000000000000000000
-          Viewport.Height = 433.000000000000000000
+          Viewport.Width = 405.000000000000000000
+          Viewport.Height = 437.000000000000000000
         end
       end
     end
