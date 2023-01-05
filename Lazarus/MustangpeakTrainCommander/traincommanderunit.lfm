@@ -1,7 +1,7 @@
 object FormTrainCommander: TFormTrainCommander
-  Left = 135
+  Left = 249
   Height = 565
-  Top = 248
+  Top = 250
   Width = 1241
   Align = alBottom
   Caption = 'Train Commander [LccOpenPascal]'
@@ -92,7 +92,7 @@ object FormTrainCommander: TFormTrainCommander
     object CheckBoxLogMessages: TCheckBox
       Left = 520
       Height = 18
-      Top = 70
+      Top = 41
       Width = 104
       Caption = 'Log Messages'
       Checked = True
@@ -119,9 +119,9 @@ object FormTrainCommander: TFormTrainCommander
       TabOrder = 6
     end
     object CheckBoxDetailedLog: TCheckBox
-      Left = 648
+      Left = 520
       Height = 18
-      Top = 72
+      Top = 70
       Width = 94
       Caption = 'Detailed Log'
       ParentShowHint = False
@@ -129,18 +129,18 @@ object FormTrainCommander: TFormTrainCommander
       TabOrder = 7
     end
     object ButtonWebserverConnect: TButton
-      Left = 720
+      Left = 672
       Height = 23
-      Top = 38
+      Top = 32
       Width = 152
       Caption = 'Webserver Connect'
       OnClick = ButtonWebserverConnectClick
       TabOrder = 8
     end
     object ButtonHTTPServer: TButton
-      Left = 720
+      Left = 672
       Height = 22
-      Top = 7
+      Top = 8
       Width = 147
       Caption = 'HTTP Connect'
       OnClick = ButtonHTTPServerClick
@@ -187,18 +187,10 @@ object FormTrainCommander: TFormTrainCommander
       Left = 904
       Height = 25
       Top = 65
-      Width = 120
-      Caption = 'Create a Consist'
+      Width = 208
+      Caption = 'Create a Consist from Selected'
       OnClick = ButtonCreateConsistClick
       TabOrder = 14
-    end
-    object EditCreateConsist: TEdit
-      Left = 1032
-      Height = 22
-      Top = 68
-      Width = 80
-      TabOrder = 15
-      Text = '2'
     end
   end
   object PanelConnections: TPanel
@@ -303,7 +295,10 @@ object FormTrainCommander: TFormTrainCommander
       Width = 265
       Align = alClient
       Images = ImageListMain
+      MultiSelect = True
+      RowSelect = True
       TabOrder = 1
+      Options = [tvoAllowMultiselect, tvoAutoItemHeight, tvoHideSelection, tvoKeepCollapsedNodes, tvoRowSelect, tvoShowButtons, tvoShowLines, tvoShowRoot, tvoToolTips, tvoThemedDraw]
     end
   end
   object MemoLog: TMemo

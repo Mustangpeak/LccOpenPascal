@@ -80,6 +80,7 @@ type
     TLccImageList = TImageList;
     TLccImage = TImage;
     TLccBitmap = TBitmap;
+    TLccTextBox = TPanel;
   {$ELSE}
     TLccPanel = TLayout;
     TLccTabControl = TTabControl;
@@ -93,6 +94,7 @@ type
     TLccImageList = TImageList;
     TLccImage = TImage;
     TLccBitmap = TBitmap;
+    TLccTextBox = TLabel;
   {$ENDIF}
 
 
@@ -304,7 +306,7 @@ type
     FOnAfterWritePage: TNotifyEvent;
     FOnBuildInterfaceComplete: TNotifyEvent;
     FOnClearInterface: TNotifyEvent;
-    FApplicationPanel: TLccPanel;
+    FApplicationPanel: TLccTextBox;
     FGlobalButtonBkGnd: TLccPanel;
     FParserFrame: TLccPanel;
     FPrintMemOffset: Boolean;
@@ -394,7 +396,7 @@ type
 
 
 
-    property ApplicationPanel: TLccPanel read FApplicationPanel;     // Application Passed Control to build in
+    property ApplicationPanel: TLccTextBox read FApplicationPanel;     // Application Passed Control to build in
     property ParserFrame: TLccPanel read FParserFrame write FParserFrame;  // alClient aligned to the Application Panel used as our drawing canvas
     property GlobalButtonBkGnd: TLccPanel read FGlobalButtonBkGnd write FGlobalButtonBkGnd; // alBottom aligned to the Parser Frame
     property TabControl: TLccTabControl read FTabControl write FTabControl; // alClient aligned in the Parser Frame, sibling to the GlobalButtonBkgnd
@@ -415,8 +417,8 @@ type
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
-    function Build_CDI_Interface(AnLccNode: TLccNode; ParentControl: TLccPanel; CDI: TLccXmlDocument): TLccPanel; overload;
-    function Build_CDI_Interface(AnLccNode: TLccNode; ParentControl: TLccPanel; CDI: String): TLccPanel; overload;
+    function Build_CDI_Interface(AnLccNode: TLccNode; ParentControl: TLccTextBox; CDI: TLccXmlDocument): TLccPanel; overload;
+    function Build_CDI_Interface(AnLccNode: TLccNode; ParentControl: TLccTextBox; CDI: String): TLccPanel; overload;
     procedure Clear_CDI_Interface(ClearLccNode: Boolean);
     procedure DoConfigMemReadReply(ANode: TObject); override;
     procedure DoConfigMemWriteReply(ANode: TObject); override;
@@ -535,8 +537,8 @@ begin
 end;
 
 procedure TLccCdiParserSerializer.SendNext;
-var
-  SequencialCVReads: Byte;
+//var
+//  SequencialCVReads: Byte;
 begin
 
   {
@@ -981,6 +983,7 @@ begin
   ContainerPanel := CreateBaseEditorLayout(ParentControl, DataElementInformation);
 
   SpinEdit := TLccOpenPascalEdit.Create(ContainerPanel);
+  SpinEdit.DataElementInformation := DataElementInformation;
   SpinEdit.Parent := ContainerPanel;
   SpinEdit.Align := {$IFDEF DELPHI}TAlignLayout.Client{$ELSE}alClient{$ENDIF};
   {$IFDEF DELPHI}SpinEdit.Margins.Left := Indent;{$ELSE}SpinEdit.BorderSpacing.Left := Trunc(Indent);{$ENDIF}
@@ -1001,6 +1004,7 @@ begin
   ContainerPanel := CreateBaseEditorLayout(ParentControl, DataElementInformation);
 
   EditBox := TLccOpenPascalEdit.Create(ContainerPanel);
+  EditBox.DataElementInformation := DataElementInformation;
   EditBox.Parent := ContainerPanel;
   EditBox.Align := {$IFDEF DELPHI}TAlignLayout.Client{$ELSE}alClient{$ENDIF};
   {$IFDEF DELPHI}EditBox.Margins.Left := Indent;{$ELSE}EditBox.BorderSpacing.Left := Trunc(Indent);{$ENDIF}
@@ -1017,6 +1021,7 @@ begin
   ContainerPanel := CreateBaseEditorLayout(ParentControl, DataElementInformation);
 
   ComboBox := TLccOpenPascalComboBox.Create(ContainerPanel);
+  ComboBox.DataElementInformation := DataElementInformation;
   ComboBox.Parent := ContainerPanel;
   {$IFNDEF DELPHI}ComboBox.Style := csDropDownList;{$ENDIF}
   ComboBox.Align := {$IFDEF DELPHI}TAlignLayout.Client{$ELSE}alClient{$ENDIF};
@@ -1097,10 +1102,10 @@ procedure TLccCdiParser.DoConfigMemReadReply(ANode: TObject);
       end;
     end;        }
 
-var
+//var
 //  TempNode: TLccOwnedNode;
 
-  i: Integer;
+ // i: Integer;
 
 begin
 {  Assert(not (ANode is TLccOwnedNode), 'Not a TLccNode');
@@ -1118,10 +1123,10 @@ begin
 end;
 
 procedure TLccCdiParser.DoConfigMemWriteReply(ANode: TObject);
-var
-  Control: TLccControl;
+//var
+ // Control: TLccControl;
  // TempNode: TLccOwnedNode;
-  TempConfigInfo: TDataElementInformation;
+ // TempConfigInfo: TDataElementInformation;
 begin
 
   {
@@ -1735,7 +1740,7 @@ begin
   inherited Destroy;
 end;
 
-function TLccCdiParser.Build_CDI_Interface(AnLccNode: TLccNode; ParentControl: TLccPanel; CDI: TLccXmlDocument): TLccPanel;
+function TLccCdiParser.Build_CDI_Interface(AnLccNode: TLccNode; ParentControl: TLccTextBox; CDI: TLccXmlDocument): TLccPanel;
 const
   BUTTON_HEIGHT = 40;
 var
@@ -1759,10 +1764,10 @@ begin
   //           - TButton (Cancel)
 
 
+  Clear_CDI_Interface(False);
   FLccNode := AnLccNode;
   FApplicationPanel := ParentControl;
   Serializer.OnNotification := {$IFNDEF DELPHI}@{$ENDIF}OnSerializerNotification;
-  Clear_CDI_Interface(False);
 
   // Background that holds everything and is passed back as the child of the ParentControl
   ParserFrame := TLccPanel.Create(ParentControl);
@@ -1777,9 +1782,9 @@ begin
   {$IFNDEF DELPHI}GlobalButtonBkGnd.BevelOuter := bvNone;{$ENDIF}
   GlobalButtonBkGnd.Parent := ParserFrame;
   GlobalButtonBkGnd.Height := BUTTON_HEIGHT;
-  CreateButton(GlobalButtonBkGnd, 'Read All', {$IFNDEF DELPHI}@{$ENDIF}DoButtonReadPageClick, False, (GlobalButtonBkGnd.Width/3)-2, {$IFDEF DELPHI}TAlignLayout.Right{$ELSE}alRight{$ENDIF});
-  CreateButton(GlobalButtonBkGnd, 'Write All', {$IFNDEF DELPHI}@{$ENDIF}DoButtonWritePageClick, False, (GlobalButtonBkGnd.Width/3)-2, {$IFDEF DELPHI}TAlignLayout.Right{$ELSE}alRight{$ENDIF});
-  CreateButton(GlobalButtonBkGnd, 'Abort', {$IFNDEF DELPHI}@{$ENDIF}DoButtonStopClick, False, (GlobalButtonBkGnd.Width/3)-2, {$IFDEF DELPHI}TAlignLayout.Right{$ELSE}alRight{$ENDIF});
+  GlobalButtonReadPage := CreateButton(GlobalButtonBkGnd, 'Read All', {$IFNDEF DELPHI}@{$ENDIF}DoButtonReadPageClick, False, (GlobalButtonBkGnd.Width/3)-2, {$IFDEF DELPHI}TAlignLayout.Right{$ELSE}alRight{$ENDIF});
+  GlobalButtonWritePage := CreateButton(GlobalButtonBkGnd, 'Write All', {$IFNDEF DELPHI}@{$ENDIF}DoButtonWritePageClick, False, (GlobalButtonBkGnd.Width/3)-2, {$IFDEF DELPHI}TAlignLayout.Right{$ELSE}alRight{$ENDIF});
+  GlobalButtonStop := CreateButton(GlobalButtonBkGnd, 'Abort', {$IFNDEF DELPHI}@{$ENDIF}DoButtonStopClick, False, (GlobalButtonBkGnd.Width/3)-2, {$IFDEF DELPHI}TAlignLayout.Right{$ELSE}alRight{$ENDIF});
 
   // TabControl that is client aligned with the FooterBkGnd
   TabControl := TLccTabControl.Create(ParentControl);
@@ -1817,7 +1822,7 @@ begin
   DoBuildInterfaceComplete;
 end;
 
-function TLccCdiParser.Build_CDI_Interface(AnLccNode: TLccNode; ParentControl: TLccPanel; CDI: String): TLccPanel;
+function TLccCdiParser.Build_CDI_Interface(AnLccNode: TLccNode; ParentControl: TLccTextBox; CDI: String): TLccPanel;
 var
   XML: TLccXmlDocument;
 begin
@@ -1845,15 +1850,12 @@ begin
     TabControl.Visible := False;
   end;
 
-  if Assigned(ApplicationPanel) then
+  if Assigned(ParserFrame) then
   begin
-    {$IFDEF DELPHI}
-    for i := ApplicationPanel.ControlsCount - 1 downto 0 do
-    {$ELSE}
-    for i := ApplicationPanel.ControlCount - 1 downto 0 do
-    {$ENDIF}
-      ApplicationPanel.Controls[i].Free;
+    ParserFrame.Parent := nil;
+    FreeAndNil(FParserFrame);
   end;
+
   GlobalButtonStop := nil;
   GlobalButtonWritePage := nil;
   GlobalButtonReadPage := nil;

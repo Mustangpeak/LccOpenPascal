@@ -4,7 +4,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
   ActiveControl = TabItemTrains
   Caption = 'Form56'
   ClientHeight = 536
-  ClientWidth = 405
+  ClientWidth = 416
   FormFactor.Width = 320
   FormFactor.Height = 480
   FormFactor.Devices = [Desktop]
@@ -19,7 +19,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
     OnGesture = GestureDone
     Align = Client
     FullSize = True
-    Size.Width = 405.000000000000000000
+    Size.Width = 416.000000000000000000
     Size.Height = 536.000000000000000000
     Size.PlatformDefault = False
     TabHeight = 49.000000000000000000
@@ -27,20 +27,20 @@ object LccThrottleAppForm: TLccThrottleAppForm
     TabOrder = 0
     TabPosition = PlatformDefault
     Sizes = (
-      405s
+      416s
       487s
-      405s
+      416s
       487s
-      405s
+      416s
       487s
-      405s
+      416s
       487s)
     object TabItemTrains: TTabItem
       CustomIcon = <
         item
         end>
       IsSelected = True
-      Size.Width = 100.000000000000000000
+      Size.Width = 103.000000000000000000
       Size.Height = 49.000000000000000000
       Size.PlatformDefault = False
       StyleLookup = 'tabitemfavorites'
@@ -48,23 +48,574 @@ object LccThrottleAppForm: TLccThrottleAppForm
       Text = 'Trains'
       ExplicitSize.cx = 101.000000000000000000
       ExplicitSize.cy = 49.000000000000000000
-      object Layout1: TLayout
+      object LayoutTrains: TLayout
         Align = Client
-        Size.Width = 405.000000000000000000
+        Size.Width = 416.000000000000000000
         Size.Height = 439.000000000000000000
         Size.PlatformDefault = False
         TabOrder = 1
-        object MultiViewConsist: TMultiView
-          MasterButton = SpeedButtonTab2Hamburger
+        object LayoutTrainsThrottle: TLayout
+          Align = Client
+          Size.Width = 166.000000000000000000
+          Size.Height = 439.000000000000000000
+          Size.PlatformDefault = False
+          TabOrder = 3
+          object VertScrollBoxFunctions: TVertScrollBox
+            Align = Right
+            Margins.Right = 2.000000000000000000
+            Position.X = -9.000000000000000000
+            Size.Width = 173.000000000000000000
+            Size.Height = 439.000000000000000000
+            Size.PlatformDefault = False
+            TabOrder = 0
+            Viewport.Width = 157.000000000000000000
+            Viewport.Height = 439.000000000000000000
+            object ButtonF0: TButton
+              Align = Top
+              Margins.Left = 2.000000000000000000
+              Margins.Right = 2.000000000000000000
+              Margins.Bottom = 2.000000000000000000
+              Position.X = 2.000000000000000000
+              Size.Width = 153.000000000000000000
+              Size.Height = 33.000000000000000000
+              Size.PlatformDefault = False
+              TabOrder = 27
+              Text = 'F0'
+              OnClick = ButtonFnClick
+            end
+            object ButtonF19: TButton
+              Tag = 19
+              Align = Top
+              Margins.Left = 2.000000000000000000
+              Margins.Right = 2.000000000000000000
+              Margins.Bottom = 2.000000000000000000
+              Position.X = 2.000000000000000000
+              Position.Y = 665.000000000000000000
+              Size.Width = 153.000000000000000000
+              Size.Height = 33.000000000000000000
+              Size.PlatformDefault = False
+              TabOrder = 24
+              Text = 'F19'
+              OnClick = ButtonFnClick
+            end
+            object ButtonF18: TButton
+              Tag = 18
+              Align = Top
+              Margins.Left = 2.000000000000000000
+              Margins.Right = 2.000000000000000000
+              Margins.Bottom = 2.000000000000000000
+              Position.X = 2.000000000000000000
+              Position.Y = 630.000000000000000000
+              Size.Width = 153.000000000000000000
+              Size.Height = 33.000000000000000000
+              Size.PlatformDefault = False
+              TabOrder = 23
+              Text = 'F18'
+              OnClick = ButtonFnClick
+            end
+            object ButtonF17: TButton
+              Tag = 17
+              Align = Top
+              Margins.Left = 2.000000000000000000
+              Margins.Right = 2.000000000000000000
+              Margins.Bottom = 2.000000000000000000
+              Position.X = 2.000000000000000000
+              Position.Y = 595.000000000000000000
+              Size.Width = 153.000000000000000000
+              Size.Height = 33.000000000000000000
+              Size.PlatformDefault = False
+              TabOrder = 22
+              Text = 'F17'
+              OnClick = ButtonFnClick
+            end
+            object ButtonF16: TButton
+              Tag = 16
+              Align = Top
+              Margins.Left = 2.000000000000000000
+              Margins.Right = 2.000000000000000000
+              Margins.Bottom = 2.000000000000000000
+              Position.X = 2.000000000000000000
+              Position.Y = 560.000000000000000000
+              Size.Width = 153.000000000000000000
+              Size.Height = 33.000000000000000000
+              Size.PlatformDefault = False
+              TabOrder = 21
+              Text = 'F16'
+              OnClick = ButtonFnClick
+            end
+            object ButtonF15: TButton
+              Tag = 15
+              Align = Top
+              Margins.Left = 2.000000000000000000
+              Margins.Right = 2.000000000000000000
+              Margins.Bottom = 2.000000000000000000
+              Position.X = 2.000000000000000000
+              Position.Y = 525.000000000000000000
+              Size.Width = 153.000000000000000000
+              Size.Height = 33.000000000000000000
+              Size.PlatformDefault = False
+              TabOrder = 20
+              Text = 'F15'
+              OnClick = ButtonFnClick
+            end
+            object ButtonF14: TButton
+              Tag = 14
+              Align = Top
+              Margins.Left = 2.000000000000000000
+              Margins.Right = 2.000000000000000000
+              Margins.Bottom = 2.000000000000000000
+              Position.X = 2.000000000000000000
+              Position.Y = 490.000000000000000000
+              Size.Width = 153.000000000000000000
+              Size.Height = 33.000000000000000000
+              Size.PlatformDefault = False
+              TabOrder = 19
+              Text = 'F14'
+              OnClick = ButtonFnClick
+            end
+            object ButtonF13: TButton
+              Tag = 13
+              Align = Top
+              Margins.Left = 2.000000000000000000
+              Margins.Right = 2.000000000000000000
+              Margins.Bottom = 2.000000000000000000
+              Position.X = 2.000000000000000000
+              Position.Y = 455.000000000000000000
+              Size.Width = 153.000000000000000000
+              Size.Height = 33.000000000000000000
+              Size.PlatformDefault = False
+              TabOrder = 18
+              Text = 'F13'
+              OnClick = ButtonFnClick
+            end
+            object ButtonF12: TButton
+              Tag = 12
+              Align = Top
+              Margins.Left = 2.000000000000000000
+              Margins.Right = 2.000000000000000000
+              Margins.Bottom = 2.000000000000000000
+              Position.X = 2.000000000000000000
+              Position.Y = 420.000000000000000000
+              Size.Width = 153.000000000000000000
+              Size.Height = 33.000000000000000000
+              Size.PlatformDefault = False
+              TabOrder = 17
+              Text = 'F12'
+              OnClick = ButtonFnClick
+            end
+            object ButtonF11: TButton
+              Tag = 11
+              Align = Top
+              Margins.Left = 2.000000000000000000
+              Margins.Right = 2.000000000000000000
+              Margins.Bottom = 2.000000000000000000
+              Position.X = 2.000000000000000000
+              Position.Y = 385.000000000000000000
+              Size.Width = 153.000000000000000000
+              Size.Height = 33.000000000000000000
+              Size.PlatformDefault = False
+              TabOrder = 16
+              Text = 'F11'
+              OnClick = ButtonFnClick
+            end
+            object ButtonF10: TButton
+              Tag = 10
+              Align = Top
+              Margins.Left = 2.000000000000000000
+              Margins.Right = 2.000000000000000000
+              Margins.Bottom = 2.000000000000000000
+              Position.X = 2.000000000000000000
+              Position.Y = 350.000000000000000000
+              Size.Width = 153.000000000000000000
+              Size.Height = 33.000000000000000000
+              Size.PlatformDefault = False
+              TabOrder = 26
+              Text = 'F10'
+              OnClick = ButtonFnClick
+            end
+            object ButtonF1: TButton
+              Tag = 1
+              Align = Top
+              Margins.Left = 2.000000000000000000
+              Margins.Right = 2.000000000000000000
+              Margins.Bottom = 2.000000000000000000
+              Position.X = 2.000000000000000000
+              Position.Y = 35.000000000000000000
+              Size.Width = 153.000000000000000000
+              Size.Height = 33.000000000000000000
+              Size.PlatformDefault = False
+              TabOrder = 0
+              Text = 'F1'
+              OnClick = ButtonFnClick
+            end
+            object ButtonF2: TButton
+              Tag = 2
+              Align = Top
+              Margins.Left = 2.000000000000000000
+              Margins.Right = 2.000000000000000000
+              Margins.Bottom = 2.000000000000000000
+              Position.X = 2.000000000000000000
+              Position.Y = 70.000000000000000000
+              Size.Width = 153.000000000000000000
+              Size.Height = 33.000000000000000000
+              Size.PlatformDefault = False
+              TabOrder = 1
+              Text = 'F2'
+              OnClick = ButtonFnClick
+            end
+            object ButtonF3: TButton
+              Tag = 3
+              Align = Top
+              Margins.Left = 2.000000000000000000
+              Margins.Right = 2.000000000000000000
+              Margins.Bottom = 2.000000000000000000
+              Position.X = 2.000000000000000000
+              Position.Y = 105.000000000000000000
+              Size.Width = 153.000000000000000000
+              Size.Height = 33.000000000000000000
+              Size.PlatformDefault = False
+              TabOrder = 2
+              Text = 'F3'
+              OnClick = ButtonFnClick
+            end
+            object ButtonF4: TButton
+              Tag = 4
+              Align = Top
+              Margins.Left = 2.000000000000000000
+              Margins.Right = 2.000000000000000000
+              Margins.Bottom = 2.000000000000000000
+              Position.X = 2.000000000000000000
+              Position.Y = 140.000000000000000000
+              Size.Width = 153.000000000000000000
+              Size.Height = 33.000000000000000000
+              Size.PlatformDefault = False
+              TabOrder = 3
+              Text = 'F4'
+              OnClick = ButtonFnClick
+            end
+            object ButtonF5: TButton
+              Tag = 5
+              Align = Top
+              Margins.Left = 2.000000000000000000
+              Margins.Right = 2.000000000000000000
+              Margins.Bottom = 2.000000000000000000
+              Position.X = 2.000000000000000000
+              Position.Y = 175.000000000000000000
+              Size.Width = 153.000000000000000000
+              Size.Height = 33.000000000000000000
+              Size.PlatformDefault = False
+              TabOrder = 4
+              Text = 'F5'
+              OnClick = ButtonFnClick
+            end
+            object ButtonF6: TButton
+              Tag = 6
+              Align = Top
+              Margins.Left = 2.000000000000000000
+              Margins.Right = 2.000000000000000000
+              Margins.Bottom = 2.000000000000000000
+              Position.X = 2.000000000000000000
+              Position.Y = 210.000000000000000000
+              Size.Width = 153.000000000000000000
+              Size.Height = 33.000000000000000000
+              Size.PlatformDefault = False
+              TabOrder = 5
+              Text = 'F6'
+              OnClick = ButtonFnClick
+            end
+            object ButtonF7: TButton
+              Tag = 7
+              Align = Top
+              Margins.Left = 2.000000000000000000
+              Margins.Right = 2.000000000000000000
+              Margins.Bottom = 2.000000000000000000
+              Position.X = 2.000000000000000000
+              Position.Y = 245.000000000000000000
+              Size.Width = 153.000000000000000000
+              Size.Height = 33.000000000000000000
+              Size.PlatformDefault = False
+              TabOrder = 6
+              Text = 'F7'
+              OnClick = ButtonFnClick
+            end
+            object ButtonF8: TButton
+              Tag = 8
+              Align = Top
+              Margins.Left = 2.000000000000000000
+              Margins.Right = 2.000000000000000000
+              Margins.Bottom = 2.000000000000000000
+              Position.X = 2.000000000000000000
+              Position.Y = 280.000000000000000000
+              Size.Width = 153.000000000000000000
+              Size.Height = 33.000000000000000000
+              Size.PlatformDefault = False
+              TabOrder = 7
+              Text = 'F8'
+              OnClick = ButtonFnClick
+            end
+            object ButtonF9: TButton
+              Tag = 9
+              Align = Top
+              Margins.Left = 2.000000000000000000
+              Margins.Right = 2.000000000000000000
+              Margins.Bottom = 2.000000000000000000
+              Position.X = 2.000000000000000000
+              Position.Y = 315.000000000000000000
+              Size.Width = 153.000000000000000000
+              Size.Height = 33.000000000000000000
+              Size.PlatformDefault = False
+              TabOrder = 8
+              Text = 'F9'
+              OnClick = ButtonFnClick
+            end
+            object ButtonF20: TButton
+              Tag = 20
+              Align = Top
+              Margins.Left = 2.000000000000000000
+              Margins.Right = 2.000000000000000000
+              Margins.Bottom = 2.000000000000000000
+              Position.X = 2.000000000000000000
+              Position.Y = 700.000000000000000000
+              Size.Width = 153.000000000000000000
+              Size.Height = 33.000000000000000000
+              Size.PlatformDefault = False
+              TabOrder = 25
+              Text = 'F20'
+              OnClick = ButtonFnClick
+            end
+            object ButtonF21: TButton
+              Tag = 21
+              Align = Top
+              Margins.Left = 2.000000000000000000
+              Margins.Right = 2.000000000000000000
+              Margins.Bottom = 2.000000000000000000
+              Position.X = 2.000000000000000000
+              Position.Y = 735.000000000000000000
+              Size.Width = 153.000000000000000000
+              Size.Height = 33.000000000000000000
+              Size.PlatformDefault = False
+              TabOrder = 9
+              Text = 'F21'
+              OnClick = ButtonFnClick
+            end
+            object ButtonF22: TButton
+              Tag = 22
+              Align = Top
+              Margins.Left = 2.000000000000000000
+              Margins.Right = 2.000000000000000000
+              Margins.Bottom = 2.000000000000000000
+              Position.X = 2.000000000000000000
+              Position.Y = 770.000000000000000000
+              Size.Width = 153.000000000000000000
+              Size.Height = 33.000000000000000000
+              Size.PlatformDefault = False
+              TabOrder = 10
+              Text = 'F22'
+              OnClick = ButtonFnClick
+            end
+            object ButtonF23: TButton
+              Tag = 23
+              Align = Top
+              Margins.Left = 2.000000000000000000
+              Margins.Right = 2.000000000000000000
+              Margins.Bottom = 2.000000000000000000
+              Position.X = 2.000000000000000000
+              Position.Y = 805.000000000000000000
+              Size.Width = 153.000000000000000000
+              Size.Height = 33.000000000000000000
+              Size.PlatformDefault = False
+              TabOrder = 11
+              Text = 'F23'
+              OnClick = ButtonFnClick
+            end
+            object ButtonF24: TButton
+              Tag = 24
+              Align = Top
+              Margins.Left = 2.000000000000000000
+              Margins.Right = 2.000000000000000000
+              Margins.Bottom = 2.000000000000000000
+              Position.X = 2.000000000000000000
+              Position.Y = 840.000000000000000000
+              Size.Width = 153.000000000000000000
+              Size.Height = 33.000000000000000000
+              Size.PlatformDefault = False
+              TabOrder = 12
+              Text = 'F24'
+              OnClick = ButtonFnClick
+            end
+            object ButtonF25: TButton
+              Tag = 25
+              Align = Top
+              Margins.Left = 2.000000000000000000
+              Margins.Right = 2.000000000000000000
+              Margins.Bottom = 2.000000000000000000
+              Position.X = 2.000000000000000000
+              Position.Y = 875.000000000000000000
+              Size.Width = 153.000000000000000000
+              Size.Height = 33.000000000000000000
+              Size.PlatformDefault = False
+              TabOrder = 13
+              Text = 'F25'
+              OnClick = ButtonFnClick
+            end
+            object ButtonF26: TButton
+              Tag = 26
+              Align = Top
+              Margins.Left = 2.000000000000000000
+              Margins.Right = 2.000000000000000000
+              Margins.Bottom = 2.000000000000000000
+              Position.X = 2.000000000000000000
+              Position.Y = 910.000000000000000000
+              Size.Width = 153.000000000000000000
+              Size.Height = 33.000000000000000000
+              Size.PlatformDefault = False
+              TabOrder = 14
+              Text = 'F26'
+              OnClick = ButtonFnClick
+            end
+            object ButtonF27: TButton
+              Tag = 27
+              Align = Top
+              Margins.Left = 2.000000000000000000
+              Margins.Right = 2.000000000000000000
+              Margins.Bottom = 2.000000000000000000
+              Position.X = 2.000000000000000000
+              Position.Y = 945.000000000000000000
+              Size.Width = 153.000000000000000000
+              Size.Height = 33.000000000000000000
+              Size.PlatformDefault = False
+              TabOrder = 15
+              Text = 'F27'
+              OnClick = ButtonFnClick
+            end
+          end
+          object LayoutTrainsThrottleLever: TLayout
+            Align = Client
+            Size.Width = 0.000000000000000000
+            Size.Height = 439.000000000000000000
+            Size.PlatformDefault = False
+            TabOrder = 1
+            object Layout1: TLayout
+              Align = Bottom
+              Position.Y = 389.000000000000000000
+              Size.Width = 241.000000000000000000
+              Size.Height = 50.000000000000000000
+              Size.PlatformDefault = False
+              TabOrder = 0
+              object SpeedButtonTrainsRev: TSpeedButton
+                StaysPressed = True
+                Align = Right
+                Position.X = 161.000000000000000000
+                Size.Width = 80.000000000000000000
+                Size.Height = 50.000000000000000000
+                Size.PlatformDefault = False
+                Text = 'Rev'
+                OnClick = SpeedButtonTrainsRevClick
+              end
+              object SpeedButtonTrainsFwd: TSpeedButton
+                StaysPressed = True
+                Align = Right
+                IsPressed = True
+                Position.X = 81.000000000000000000
+                Size.Width = 80.000000000000000000
+                Size.Height = 50.000000000000000000
+                Size.PlatformDefault = False
+                Text = 'Fwd'
+                OnClick = SpeedButtonTrainsFwdClick
+              end
+              object SpeedButtonTrainsStop: TSpeedButton
+                Align = Client
+                Size.Width = 81.000000000000000000
+                Size.Height = 50.000000000000000000
+                Size.PlatformDefault = False
+                Text = 'Stop'
+                OnClick = SpeedButtonTrainsStopClick
+              end
+            end
+            object LayoutTrainsThrottleLeverBkgnd: TLayout
+              Align = Client
+              Size.Width = 241.000000000000000000
+              Size.Height = 389.000000000000000000
+              Size.PlatformDefault = False
+              TabOrder = 1
+              object TrackBarTrainsThrottleLever: TTrackBar
+                Align = Client
+                CanParentFocus = True
+                Frequency = 2.000000000000000000
+                Orientation = Vertical
+                Margins.Left = 4.000000000000000000
+                Margins.Top = 4.000000000000000000
+                Margins.Bottom = 4.000000000000000000
+                Scale.X = 3.000000000000000000
+                Scale.Y = 3.000000000000000000
+                Size.Width = 19.000000000000000000
+                Size.Height = 121.666671752929700000
+                Size.PlatformDefault = False
+                TabOrder = 0
+                Value = 100.000000000000000000
+                OnChange = TrackBarTrainsThrottleLeverChange
+              end
+              object LayoutTrainsThrottleInfo: TLayout
+                Align = Right
+                Position.X = 128.000000000000000000
+                Size.Width = 113.000000000000000000
+                Size.Height = 389.000000000000000000
+                Size.PlatformDefault = False
+                TabOrder = 1
+                object LabelTrainsSpeedHeader: TLabel
+                  Align = Top
+                  AutoSize = True
+                  StyledSettings = [Family, FontColor]
+                  Margins.Left = 4.000000000000000000
+                  Margins.Top = 4.000000000000000000
+                  Margins.Right = 4.000000000000000000
+                  Margins.Bottom = 4.000000000000000000
+                  Position.X = 4.000000000000000000
+                  Position.Y = 4.000000000000000000
+                  Size.Width = 105.000000000000000000
+                  Size.Height = 19.000000000000000000
+                  Size.PlatformDefault = False
+                  TextSettings.Font.Size = 14.000000000000000000
+                  TextSettings.Font.StyleExt = {00070000000000000004000000}
+                  TextSettings.HorzAlign = Center
+                  Text = 'Speed'
+                  TabOrder = 1
+                end
+                object LabelTrainsSpeed: TLabel
+                  Align = Top
+                  AutoSize = True
+                  StyledSettings = [Family, FontColor]
+                  Margins.Left = 4.000000000000000000
+                  Margins.Top = 4.000000000000000000
+                  Margins.Right = 4.000000000000000000
+                  Margins.Bottom = 4.000000000000000000
+                  Position.X = 4.000000000000000000
+                  Position.Y = 31.000000000000000000
+                  Size.Width = 105.000000000000000000
+                  Size.Height = 32.000000000000000000
+                  Size.PlatformDefault = False
+                  TextSettings.Font.Size = 24.000000000000000000
+                  TextSettings.Font.StyleExt = {00070000000000000004000000}
+                  TextSettings.HorzAlign = Center
+                  Text = '0'
+                  TabOrder = 0
+                end
+              end
+            end
+          end
+        end
+        object MultiViewRoster: TMultiView
+          MasterButton = SpeedButtonTrainsRoster
+          Mode = Panel
           NavigationPaneOptions.CollapsedWidth = 190.000000000000000000
-          OnHidden = MultiViewConsistHidden
+          OnHidden = MultiViewRosterHidden
           Size.Width = 250.000000000000000000
-          Size.Height = 50.000000000000000000
+          Size.Height = 439.000000000000000000
           Size.PlatformDefault = False
           TabOrder = 1
           object TabControlTrainRoster: TTabControl
             Align = Client
-            Size.Width = 190.000000000000000000
+            Size.Width = 250.000000000000000000
             Size.Height = 439.000000000000000000
             Size.PlatformDefault = False
             TabIndex = 2
@@ -72,11 +623,11 @@ object LccThrottleAppForm: TLccThrottleAppForm
             TabPosition = PlatformDefault
             OnChange = TabControlTrainRosterChange
             Sizes = (
-              190s
+              250s
               413s
-              190s
+              250s
               413s
-              190s
+              250s
               413s)
             object TabItemTrainRosterSelect: TTabItem
               CustomIcon = <
@@ -92,16 +643,15 @@ object LccThrottleAppForm: TLccThrottleAppForm
               ExplicitSize.cx = 54.000000000000000000
               ExplicitSize.cy = 26.000000000000000000
               object ListViewTrainRoster: TListView
-                ItemAppearanceClassName = 'TListItemAppearance'
-                ItemEditAppearanceClassName = 'TListItemDeleteAppearance'
+                ItemAppearanceClassName = 'TImageListItemBottomDetailAppearance'
+                ItemEditAppearanceClassName = 'TImageListItemBottomDetailShowCheckAppearance'
                 HeaderAppearanceClassName = 'TListHeaderObjects'
                 FooterAppearanceClassName = 'TListHeaderObjects'
                 Align = Client
-                Size.Width = 190.000000000000000000
+                Size.Width = 250.000000000000000000
                 Size.Height = 413.000000000000000000
                 Size.PlatformDefault = False
                 TabOrder = 0
-                ItemAppearanceObjects.ItemObjects.Accessory.AccessoryType = Detail
                 OnItemClickEx = ListViewTrainRosterItemClickEx
                 SearchVisible = True
               end
@@ -121,7 +671,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
               ExplicitSize.cy = 26.000000000000000000
               object ListBoxTrainRosterItem: TListBox
                 Align = Client
-                Size.Width = 190.000000000000000000
+                Size.Width = 250.000000000000000000
                 Size.Height = 373.000000000000000000
                 Size.PlatformDefault = False
                 TabOrder = 0
@@ -129,7 +679,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
                 DefaultItemStyles.ItemStyle = ''
                 DefaultItemStyles.GroupHeaderStyle = ''
                 DefaultItemStyles.GroupFooterStyle = ''
-                Viewport.Width = 186.000000000000000000
+                Viewport.Width = 246.000000000000000000
                 Viewport.Height = 369.000000000000000000
                 object ListBoxGroupHeaderTrainDetails: TListBoxGroupHeader
                   StyleLookup = 'listboxplainheader'
@@ -138,7 +688,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
                 end
                 object ListBoxItemTrainsDetailsManufacturer: TListBoxItem
                   Position.Y = 19.000000000000000000
-                  Size.Width = 186.000000000000000000
+                  Size.Width = 246.000000000000000000
                   Size.Height = 36.000000000000000000
                   Size.PlatformDefault = False
                   StyleLookup = 'listboxitembottomdetail'
@@ -147,7 +697,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
                 end
                 object ListBoxItemTrainsDetailsModel: TListBoxItem
                   Position.Y = 55.000000000000000000
-                  Size.Width = 186.000000000000000000
+                  Size.Width = 246.000000000000000000
                   Size.Height = 36.000000000000000000
                   Size.PlatformDefault = False
                   StyleLookup = 'listboxitembottomdetail'
@@ -156,7 +706,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
                 end
                 object ListBoxItemTrainsDetailsSofwareVersion: TListBoxItem
                   Position.Y = 91.000000000000000000
-                  Size.Width = 186.000000000000000000
+                  Size.Width = 246.000000000000000000
                   Size.Height = 36.000000000000000000
                   Size.PlatformDefault = False
                   StyleLookup = 'listboxitembottomdetail'
@@ -165,7 +715,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
                 end
                 object ListBoxItemTrainsDetailsHardwareVersion: TListBoxItem
                   Position.Y = 127.000000000000000000
-                  Size.Width = 186.000000000000000000
+                  Size.Width = 246.000000000000000000
                   Size.Height = 36.000000000000000000
                   Size.PlatformDefault = False
                   StyleLookup = 'listboxitembottomdetail'
@@ -175,7 +725,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
                 object ListBoxItemTrainsDetailsUserName: TListBoxItem
                   ItemData.Accessory = aMore
                   Position.Y = 163.000000000000000000
-                  Size.Width = 186.000000000000000000
+                  Size.Width = 246.000000000000000000
                   Size.Height = 36.000000000000000000
                   Size.PlatformDefault = False
                   StyleLookup = 'listboxitembottomdetail'
@@ -186,7 +736,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
                 object ListBoxItemTrainsDetailsUserDescription: TListBoxItem
                   ItemData.Accessory = aMore
                   Position.Y = 199.000000000000000000
-                  Size.Width = 186.000000000000000000
+                  Size.Width = 246.000000000000000000
                   Size.Height = 36.000000000000000000
                   Size.PlatformDefault = False
                   StyleLookup = 'listboxitembottomdetail'
@@ -194,15 +744,30 @@ object LccThrottleAppForm: TLccThrottleAppForm
                   Text = 'User Description :'
                   OnClick = ListBoxItemTrainsDetailsUserDescriptionClick
                 end
+                object ListBoxGroupHeaderConsists: TListBoxGroupHeader
+                  Position.Y = 235.000000000000000000
+                  TabOrder = 8
+                  Text = 'Consist (MU) Info'
+                end
+                object ListBoxItemTrainsDetailsConsists: TListBoxItem
+                  ItemData.Accessory = aMore
+                  Position.Y = 254.000000000000000000
+                  Size.Width = 246.000000000000000000
+                  Size.Height = 36.000000000000000000
+                  Size.PlatformDefault = False
+                  StyleLookup = 'listboxitembottomdetail'
+                  TabOrder = 7
+                  Text = 'Edit Consist'
+                end
               end
               object ToolBarTrainRosterDetails: TToolBar
-                Size.Width = 190.000000000000000000
+                Size.Width = 250.000000000000000000
                 Size.Height = 40.000000000000000000
                 Size.PlatformDefault = False
                 TabOrder = 1
                 object LabelTrainRosterHeader: TLabel
                   Align = Client
-                  Size.Width = 190.000000000000000000
+                  Size.Width = 250.000000000000000000
                   Size.Height = 40.000000000000000000
                   Size.PlatformDefault = False
                   TextSettings.HorzAlign = Center
@@ -234,13 +799,13 @@ object LccThrottleAppForm: TLccThrottleAppForm
               ExplicitSize.cx = 41.000000000000000000
               ExplicitSize.cy = 26.000000000000000000
               object ToolBarTrainRosterEdit: TToolBar
-                Size.Width = 190.000000000000000000
+                Size.Width = 250.000000000000000000
                 Size.Height = 40.000000000000000000
                 Size.PlatformDefault = False
                 TabOrder = 1
                 object LabelTrainRosterEdit: TLabel
                   Align = Client
-                  Size.Width = 190.000000000000000000
+                  Size.Width = 250.000000000000000000
                   Size.Height = 40.000000000000000000
                   Size.PlatformDefault = False
                   TextSettings.HorzAlign = Center
@@ -257,64 +822,161 @@ object LccThrottleAppForm: TLccThrottleAppForm
                   end
                 end
               end
-              object LayoutTrainRosterEdit: TLayout
+              object LabelTrainRosterEditContainer: TLabel
                 Align = Client
-                Size.Width = 190.000000000000000000
+                Size.Width = 250.000000000000000000
                 Size.Height = 373.000000000000000000
                 Size.PlatformDefault = False
+                TextSettings.HorzAlign = Center
+                Text = 'Loading.....'
                 TabOrder = 2
               end
             end
           end
         end
+        object MultiViewConsists: TMultiView
+          DrawerOptions.Placement = Right
+          DrawerOptions.TouchAreaSize = 2.000000000000000000
+          MasterButton = SpeedButtonTrainsConsist
+          Mode = Drawer
+          NavigationPaneOptions.CollapsedWidth = 33.000000000000000000
+          Size.Width = 250.000000000000000000
+          Size.Height = 400.000000000000000000
+          Size.PlatformDefault = False
+          Visible = False
+          TabOrder = 2
+          object TabControlTrainConsists: TTabControl
+            Align = Client
+            Size.Width = 250.000000000000000000
+            Size.Height = 400.000000000000000000
+            Size.PlatformDefault = False
+            TabIndex = 0
+            TabOrder = 0
+            TabPosition = Top
+            Sizes = (
+              250s
+              374s
+              250s
+              374s)
+            object TabItemTrainConsists: TTabItem
+              CustomIcon = <
+                item
+                end>
+              IsSelected = True
+              Size.Width = 64.000000000000000000
+              Size.Height = 26.000000000000000000
+              Size.PlatformDefault = False
+              StyleLookup = ''
+              TabOrder = 0
+              Text = 'Consists'
+              ExplicitSize.cx = 64.000000000000000000
+              ExplicitSize.cy = 26.000000000000000000
+              object LayoutConsistConsists: TLayout
+                Align = Client
+                Size.Width = 250.000000000000000000
+                Size.Height = 374.000000000000000000
+                Size.PlatformDefault = False
+                TabOrder = 0
+                object ToolBarConsistConsists: TToolBar
+                  Size.Width = 250.000000000000000000
+                  Size.Height = 40.000000000000000000
+                  Size.PlatformDefault = False
+                  TabOrder = 0
+                  object LabelConsistConsists: TLabel
+                    Align = Client
+                    Size.Width = 250.000000000000000000
+                    Size.Height = 40.000000000000000000
+                    Size.PlatformDefault = False
+                    TextSettings.HorzAlign = Center
+                    Text = 'Consist Editor'
+                    TabOrder = 0
+                  end
+                end
+                object TreeViewConsistConsists: TTreeView
+                  Align = Client
+                  Size.Width = 250.000000000000000000
+                  Size.Height = 334.000000000000000000
+                  Size.PlatformDefault = False
+                  TabOrder = 1
+                  Viewport.Width = 246.000000000000000000
+                  Viewport.Height = 330.000000000000000000
+                end
+              end
+            end
+            object TabItem2: TTabItem
+              CustomIcon = <
+                item
+                end>
+              IsSelected = False
+              Size.Width = 69.000000000000000000
+              Size.Height = 26.000000000000000000
+              Size.PlatformDefault = False
+              StyleLookup = ''
+              TabOrder = 0
+              Text = 'TabItem2'
+              ExplicitSize.cx = 69.000000000000000000
+              ExplicitSize.cy = 26.000000000000000000
+            end
+          end
+        end
       end
-      object ToolBar3: TToolBar
-        Size.Width = 405.000000000000000000
+      object ToolBarMain: TToolBar
+        Size.Width = 416.000000000000000000
         Size.Height = 48.000000000000000000
         Size.PlatformDefault = False
         TabOrder = 0
-        object lblTitle3: TLabel
-          Align = Contents
-          Size.Width = 405.000000000000000000
+        object lblTitleMain: TLabel
+          Align = Client
+          Size.Width = 367.000000000000000000
           Size.Height = 48.000000000000000000
           Size.PlatformDefault = False
           StyleLookup = 'toollabel'
           TextSettings.HorzAlign = Center
           Text = 'Title'
         end
-        object SpeedButtonTab2Hamburger: TSpeedButton
+        object SpeedButtonTrainsRoster: TSpeedButton
           Align = Left
           Size.Width = 49.000000000000000000
           Size.Height = 48.000000000000000000
           Size.PlatformDefault = False
           StyleLookup = 'detailstoolbutton'
-          Text = 'SpeedButtonTab2Hamburger'
+          Text = 'Roster'
+          Visible = False
+        end
+        object SpeedButtonTrainsConsist: TSpeedButton
+          Align = Right
+          Position.X = 367.000000000000000000
+          Size.Width = 49.000000000000000000
+          Size.Height = 48.000000000000000000
+          Size.PlatformDefault = False
+          StyleLookup = 'detailstoolbutton'
+          Text = 'Roster'
         end
       end
     end
-    object TabItem2: TTabItem
+    object TabItemLog: TTabItem
       CustomIcon = <
         item
         end>
       IsSelected = False
-      Size.Width = 100.000000000000000000
+      Size.Width = 103.000000000000000000
       Size.Height = 49.000000000000000000
       Size.PlatformDefault = False
       StyleLookup = 'tabitemcontacts'
       TabOrder = 0
-      Text = 'TabItem2'
+      Text = 'Log'
       ExplicitSize.cx = 102.000000000000000000
       ExplicitSize.cy = 49.000000000000000000
       object LayoutLog: TLayout
         Align = Client
-        Size.Width = 405.000000000000000000
+        Size.Width = 416.000000000000000000
         Size.Height = 487.000000000000000000
         Size.PlatformDefault = False
         TabOrder = 0
         object HeaderLogHeader: THeader
           Sides = [Top, Left, Bottom, Right]
           Align = Top
-          Size.Width = 405.000000000000000000
+          Size.Width = 416.000000000000000000
           Size.Height = 50.000000000000000000
           Size.PlatformDefault = False
           TabOrder = 0
@@ -328,36 +990,36 @@ object LccThrottleAppForm: TLccThrottleAppForm
           Touch.InteractiveGestures = [Pan, LongTap, DoubleTap]
           DataDetectorTypes = []
           Align = Client
-          Size.Width = 405.000000000000000000
+          Size.Width = 416.000000000000000000
           Size.Height = 437.000000000000000000
           Size.PlatformDefault = False
           TabOrder = 1
-          Viewport.Width = 405.000000000000000000
-          Viewport.Height = 437.000000000000000000
+          Viewport.Width = 412.000000000000000000
+          Viewport.Height = 433.000000000000000000
         end
       end
     end
-    object TabItemLog: TTabItem
+    object TabItem3: TTabItem
       CustomIcon = <
         item
         end>
       IsSelected = False
-      Size.Width = 100.000000000000000000
+      Size.Width = 103.000000000000000000
       Size.Height = 49.000000000000000000
       Size.PlatformDefault = False
       StyleLookup = 'tabitemsearch'
       TabOrder = 0
-      Text = 'Log'
+      Text = 'TabItem3'
       ExplicitSize.cx = 101.000000000000000000
       ExplicitSize.cy = 49.000000000000000000
       object ToolBar4: TToolBar
-        Size.Width = 405.000000000000000000
+        Size.Width = 416.000000000000000000
         Size.Height = 48.000000000000000000
         Size.PlatformDefault = False
         TabOrder = 0
         object lblTitle4: TLabel
           Align = Contents
-          Size.Width = 405.000000000000000000
+          Size.Width = 416.000000000000000000
           Size.Height = 48.000000000000000000
           Size.PlatformDefault = False
           StyleLookup = 'toollabel'
@@ -371,7 +1033,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
         item
         end>
       IsSelected = False
-      Size.Width = 103.000000000000000000
+      Size.Width = 105.000000000000000000
       Size.Height = 49.000000000000000000
       Size.PlatformDefault = False
       StyleLookup = 'tabitembookmarks'
@@ -380,13 +1042,13 @@ object LccThrottleAppForm: TLccThrottleAppForm
       ExplicitSize.cx = 99.000000000000000000
       ExplicitSize.cy = 49.000000000000000000
       object ToolBarSettingsTop: TToolBar
-        Size.Width = 405.000000000000000000
+        Size.Width = 416.000000000000000000
         Size.Height = 48.000000000000000000
         Size.PlatformDefault = False
         TabOrder = 0
         object LabelSettingsHeader: TLabel
           Align = Contents
-          Size.Width = 405.000000000000000000
+          Size.Width = 416.000000000000000000
           Size.Height = 48.000000000000000000
           Size.PlatformDefault = False
           StyleLookup = 'toollabel'
@@ -396,7 +1058,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
       end
       object LayoutSettingsTab: TLayout
         Align = Client
-        Size.Width = 405.000000000000000000
+        Size.Width = 416.000000000000000000
         Size.Height = 439.000000000000000000
         Size.PlatformDefault = False
         TabOrder = 1
@@ -404,7 +1066,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
           Anchors = [akLeft, akTop, akRight]
           Position.X = 8.000000000000000000
           Position.Y = 209.000000000000000000
-          Size.Width = 389.000000000000000000
+          Size.Width = 400.000000000000000000
           Size.Height = 22.000000000000000000
           Size.PlatformDefault = False
           TabOrder = 6
@@ -419,7 +1081,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
           Anchors = [akLeft, akRight, akBottom]
           Position.X = 8.000000000000000000
           Position.Y = 407.000000000000000000
-          Size.Width = 326.000000000000000000
+          Size.Width = 337.000000000000000000
           Size.Height = 19.000000000000000000
           Size.PlatformDefault = False
           TabOrder = 7
@@ -432,7 +1094,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
           Text = '02.02.04.05.0A.0B'
           Position.X = 208.000000000000000000
           Position.Y = 96.000000000000000000
-          Size.Width = 189.000000000000000000
+          Size.Width = 200.000000000000000000
           Size.Height = 32.000000000000000000
           Size.PlatformDefault = False
           OnKeyDown = EditSettingsNodeIDKeyDown
@@ -463,7 +1125,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
           Text = '12021'
           Position.X = 208.000000000000000000
           Position.Y = 48.000000000000000000
-          Size.Width = 81.000000000000000000
+          Size.Width = 92.000000000000000000
           Size.Height = 31.000000000000000000
           Size.PlatformDefault = False
           OnKeyDown = EditSettingsPortKeyDown
@@ -476,7 +1138,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
           Text = '10.0.3.137'
           Position.X = 208.000000000000000000
           Position.Y = 8.000000000000000000
-          Size.Width = 189.000000000000000000
+          Size.Width = 200.000000000000000000
           Size.Height = 32.000000000000000000
           Size.PlatformDefault = False
           OnKeyDown = EditSettingsIpAddressKeyDown
@@ -497,7 +1159,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
           PopupMenu = PopupMenuLabelPath
           Position.X = 8.000000000000000000
           Position.Y = 340.000000000000000000
-          Size.Width = 389.000000000000000000
+          Size.Width = 400.000000000000000000
           Size.Height = 17.000000000000000000
           Size.PlatformDefault = False
           Text = 'LabelSystemDocumentsPath'
@@ -507,7 +1169,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
           Anchors = [akLeft, akTop, akRight]
           Position.X = 8.000000000000000000
           Position.Y = 176.000000000000000000
-          Size.Width = 389.000000000000000000
+          Size.Width = 400.000000000000000000
           Size.Height = 25.000000000000000000
           Size.PlatformDefault = False
         end
@@ -515,7 +1177,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
           Anchors = [akLeft, akTop, akRight]
           Position.X = 8.000000000000000000
           Position.Y = 272.000000000000000000
-          Size.Width = 389.000000000000000000
+          Size.Width = 400.000000000000000000
           Size.Height = 22.000000000000000000
           Size.PlatformDefault = False
           TabOrder = 16
@@ -526,7 +1188,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
           Anchors = [akLeft, akTop, akRight]
           Position.X = 8.000000000000000000
           Position.Y = 293.000000000000000000
-          Size.Width = 389.000000000000000000
+          Size.Width = 400.000000000000000000
           Size.Height = 22.000000000000000000
           Size.PlatformDefault = False
           TabOrder = 15
@@ -539,7 +1201,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
           PopupMenu = PopupMenuLabelPath
           Position.X = 8.000000000000000000
           Position.Y = 323.000000000000000000
-          Size.Width = 389.000000000000000000
+          Size.Width = 400.000000000000000000
           Size.Height = 17.000000000000000000
           Size.PlatformDefault = False
           Text = 'System Documents Path'
@@ -551,7 +1213,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
           PopupMenu = PopupMenuLabelPath
           Position.X = 8.000000000000000000
           Position.Y = 364.000000000000000000
-          Size.Width = 389.000000000000000000
+          Size.Width = 400.000000000000000000
           Size.Height = 17.000000000000000000
           Size.PlatformDefault = False
           Text = 'Application Documents Path'
@@ -563,7 +1225,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
           PopupMenu = PopupMenuLabelPath
           Position.X = 8.000000000000000000
           Position.Y = 382.000000000000000000
-          Size.Width = 389.000000000000000000
+          Size.Width = 400.000000000000000000
           Size.Height = 17.000000000000000000
           Size.PlatformDefault = False
           Text = 'LabelDocumentsPath'
@@ -600,12 +1262,12 @@ object LccThrottleAppForm: TLccThrottleAppForm
   object TimerLogin: TTimer
     Enabled = False
     OnTimer = TimerLoginTimer
-    Left = 320
-    Top = 304
+    Left = 64
+    Top = 256
   end
   object PopupMenuLabelPath: TPopupMenu
-    Left = 320
-    Top = 361
+    Left = 72
+    Top = 393
     object MenuItemSettingsLabelPath: TMenuItem
       Text = 'Copy To Clipboard'
       OnClick = MenuItemSettingsLabelPathClick
@@ -613,8 +1275,8 @@ object LccThrottleAppForm: TLccThrottleAppForm
   end
   object GestureManager1: TGestureManager
     Sensitivity = 80.000000000000000000
-    Left = 240
-    Top = 305
+    Left = 208
+    Top = 137
     GestureData = <
       item
         Control = TabControlMain
@@ -628,19 +1290,21 @@ object LccThrottleAppForm: TLccThrottleAppForm
       end>
   end
   object ActionList1: TActionList
-    Left = 224
-    Top = 360
-    object NextTabAction1: TNextTabAction
+    Left = 144
+    Top = 256
+    object ActionTabMainNext: TNextTabAction
       Category = 'Tab'
+      TabControl = TabControlMain
     end
-    object PreviousTabAction1: TPreviousTabAction
+    object ActionTabMainPrev: TPreviousTabAction
       Category = 'Tab'
+      TabControl = TabControlMain
     end
-    object ActionTrainRosterTabNext: TNextTabAction
+    object ActionTabTrainRosterNext: TNextTabAction
       Category = 'Tab'
       TabControl = TabControlTrainRoster
     end
-    object ActionTrainRosterTabPrev: TPreviousTabAction
+    object ActionTabTrainRosterPrev: TPreviousTabAction
       Category = 'Tab'
       TabControl = TabControlTrainRoster
     end

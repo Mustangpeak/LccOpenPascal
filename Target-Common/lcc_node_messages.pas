@@ -14,6 +14,7 @@ uses
   lcc_math_float16,
   lcc_defines,
   lcc_utilities,
+  lcc_base_classes,
   lcc_alias_server;
 
 type
@@ -80,72 +81,6 @@ type
     property CDI: AnsiString read FCDI write FCDI;
     property Implemented: Boolean read FImplemented write FImplemented;
     property Valid: Boolean read GetValid;
-  end;
-
-  // Base struture that contains the two types of LCC node identifiers, the long
-  // globally unique ID or NodeID and the local Alias (if running CAN/Gridconnect)
-
-  { TLccNodeIdentificationObject }
-
-  TLccNodeIdentificationObject = class
-  private
-    FActive: Boolean;
-    FAlias: Word;
-    FNodeID: TNodeID;
-    FAbandonCount: Integer;
-  public
-    property NodeID: TNodeID read FNodeID write FNodeID;
-    property Alias: Word read FAlias write FAlias;
-    property Active: Boolean read FActive write FActive;
-    property AbandonCount: Integer read FAbandonCount write FAbandonCount;
-
-    procedure AssignID(ANodeID: TNodeID; AnAlias: Word);
-    function Clone: TLccNodeIdentificationObject;
-    function Compare(TestObject: TLccNodeIdentificationObject): Boolean; overload;
-    function Compare(TestMapping: TLccAliasMapping): Boolean overload;
-    function CompareEitherOr(TestObject: TLccNodeIdentificationObject): Boolean; overload;
-    function CompareEitherOr(TestMapping: TLccAliasMapping): Boolean; overload;
-    function Valid: Boolean;  // Valid means one or the other is non zero, not that is is mapped
-  end;
-
-
-
-  // List that manages multiple Node Identification IDs
-
-    { TLccNodeIdentificationObjectList }
-
-  TLccNodeIdentificationObjectList = class(TList)
-  private
-    function GetDestination: TLccNodeIdentificationObject;
-    function GetIdentification(Index: Integer): TLccNodeIdentificationObject;
-    function GetSource: TLccNodeIdentificationObject;
-    procedure SetIdentification(Index: Integer; AValue: TLccNodeIdentificationObject);
-  public
-    property NodeIdentification[Index: Integer]: TLccNodeIdentificationObject read GetIdentification write SetIdentification; default;
-    property Source: TLccNodeIdentificationObject read GetSource;
-    property Destination: TLccNodeIdentificationObject read GetDestination;
-
-    constructor Create(AutoCreateSourceDestination: Boolean = True);
-    destructor Destroy; override;
-    procedure Clear; override;
-
-    // Returns true if all the Identifications have been filled in or are not active anyway
-    function IdentificationsValid: Boolean;
-    // Tests if the passed Identification is already in the list
-    function IsDuplicate(DestinationObject: TLccNodeIdentificationObject): Boolean; overload;
-    function IsDuplicate(ANodeID: TNodeID; AnAlias: Word): Boolean; overload;
-    // Updates the list with the new mapping that is passed
-    function ProcessNewMapping(NewMapping: TLccAliasMapping): Boolean;
-    // Removes any Identification objects that match the mapping
-    procedure RemoveIdentification(AliasMapping: TLccAliasMapping);
-    // Clears the list other than the first 2 (source/destination) which it just zeros and sets to defaults
-    procedure ClearIdentifications(AutoCreateSourceDestination: Boolean = True);
-    // Returns True if the mapping that is going away is associated with any alias in this list
-    function LogOut(AnAlias: Word): Boolean;
-    // Adds and sets the properities of a TLccNodeIdentificationObject
-    function AddNodeIdentificationObject(ANodeID: TNodeID; AnAlias: Word): TLccNodeIdentificationObject;
-    //
-    function RetryCountMaxedOut(ATestCount: Integer): Boolean;
   end;
 
 
@@ -274,8 +209,7 @@ public
   procedure LoadTractionControllerRelease(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; ANodeID: TNodeID; AnAlias: Word);
   procedure LoadTractionControllerQuery(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word);
   procedure LoadTractionControllerQueryReply(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; AControllerID: TNodeID);
-  procedure LoadTractionControllerChangingNotify(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; AControllerNodeID: TNodeID);
-  procedure LoadTractionControllerChangingReply(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; Allow: Boolean);
+  procedure LoadTractionControllerChangedNotify(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; AControllerNodeID: TNodeID);
   procedure LoadTractionListenerAttach(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; ListenerFlags: Byte; AListenerNodeID: TNodeID);
   procedure LoadTractionListenerAttachReply(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; AListenerNodeID: TNodeID; ReplyCode: Word);
   procedure LoadTractionListenerDetach(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; ListenerFlags: Byte; AListenerNodeID: TNodeID);
@@ -634,7 +568,7 @@ begin
                 begin
                   Result := Result + ' Controller Config Query';
                 end;
-              TRACTION_CONTROLLER_CONFIG_CHANGING_NOTIFY :
+              TRACTION_CONTROLLER_CONFIG_CHANGED_NOTIFY :
                 begin
                   if AMessage.ExtractDataBytesAsInt(2, 2) and TRACTION_FLAGS_ALIAS_INCLUDED <> 0 then
                     Result := Result + ' Controller Config Notify - Flags: ' + AMessage.ExtractDataBytesAsHex(2, 2) + ' Controller ID ' + AMessage.ExtractDataBytesAsHex(3, 6) + AMessage.ExtractDataBytesAsHex(7, 8) + ' [Alias: ' + AMessage.ExtractDataBytesAsHex(9, 10) + ']'
@@ -643,12 +577,12 @@ begin
                 end
             end
           end;
-        TRACTION_LISTENER :
+        TRACTION_LISTENER_CONFIG :
           begin
             case AMessage.DataArray[1] of
-              TRACTION_LISTENER_ATTACH : Result := Result + 'Consist Listener Attach';
-              TRACTION_LISTENER_DETACH : Result := Result + 'Consist Listener Detach';
-              TRACTION_LISTENER_QUERY : Result := Result + 'Consit Listener Query';
+              TRACTION_LISTENER_CONFIG_ATTACH : Result := Result + 'Consist Listener Attach';
+              TRACTION_LISTENER_CONFIG_DETACH : Result := Result + 'Consist Listener Detach';
+              TRACTION_LISTENER_CONFIG_QUERY : Result := Result + 'Consit Listener Query';
             end
           end;
         TRACTION_MANAGE :
@@ -746,12 +680,12 @@ begin
                 end;
             end
           end;
-        TRACTION_LISTENER :
+        TRACTION_LISTENER_CONFIG :
           begin
             case AMessage.DataArray[1] of
-              TRACTION_LISTENER_ATTACH : Result := Result + 'Consist Listener Attach Reply';
-              TRACTION_LISTENER_DETACH : Result := Result + 'Consist Listener Detach Reply';
-              TRACTION_LISTENER_QUERY : Result := Result + 'Consit Listener Query Reply';
+              TRACTION_LISTENER_CONFIG_ATTACH : Result := Result + 'Consist Listener Attach Reply';
+              TRACTION_LISTENER_CONFIG_DETACH : Result := Result + 'Consist Listener Detach Reply';
+              TRACTION_LISTENER_CONFIG_QUERY : Result := Result + 'Consit Listener Query Reply';
             end
           end;
         TRACTION_MANAGE :
@@ -762,238 +696,6 @@ begin
           end
     else
       Result := Result + 'Unknown Traction Reply Operation';
-    end;
-  end;
-end;
-
-{ TLccNodeIdentificationObject }
-
-procedure TLccNodeIdentificationObject.AssignID(ANodeID: TNodeID; AnAlias: Word);
-begin
-  Alias := AnAlias;
-  NodeID := ANodeID;
-  FActive := True;
-end;
-
-function TLccNodeIdentificationObject.Clone: TLccNodeIdentificationObject;
-begin
-  Result := TLccNodeIdentificationObject.Create;
-  Result.NodeID := NodeID;
-  Result.Alias := Alias;
-  Result.Active := Active;
-  Result.AbandonCount := 0;
-end;
-
-function TLccNodeIdentificationObject.Compare(TestObject: TLccNodeIdentificationObject): Boolean;
-begin
-  Result := (TestObject.Alias = Alias) and (TestObject.NodeID[0] = NodeID[0]) and (TestObject.NodeID[0] = NodeID[0])
-end;
-
-function TLccNodeIdentificationObject.Compare(TestMapping: TLccAliasMapping): Boolean;
-begin
-  Result := (TestMapping.NodeAlias = Alias) and (TestMapping.NodeID[0] = NodeID[0]) and (TestMapping.NodeID[0] = NodeID[0])
-end;
-
-function TLccNodeIdentificationObject.CompareEitherOr(TestObject: TLccNodeIdentificationObject): Boolean;
-begin
-  Result := (TestObject.Alias = Alias) or ((TestObject.NodeID[0] = NodeID[0]) and (TestObject.NodeID[0] = NodeID[0]))
-end;
-
-function TLccNodeIdentificationObject.CompareEitherOr(TestMapping: TLccAliasMapping): Boolean;
-begin
-  Result := (TestMapping.NodeAlias = Alias) or ((TestMapping.NodeID[0] = NodeID[0]) and (TestMapping.NodeID[0] = NodeID[0]))
-end;
-
-function TLccNodeIdentificationObject.Valid: Boolean;
-begin
-  Result := (Alias <> 0) or ((NodeID[0] <> 0) or (NodeID[1] <> 0))
-end;
-
-{ TLccNodeIdentificationObjectList }
-
-function TLccNodeIdentificationObjectList.GetDestination: TLccNodeIdentificationObject;
-begin
-  Result := TLccNodeIdentificationObject(Items[1]);
-end;
-
-function TLccNodeIdentificationObjectList.GetIdentification(Index: Integer): TLccNodeIdentificationObject;
-begin
-  Result := nil;
-  if Index < Count then
-    Result := TLccNodeIdentificationObject(Items[Index]);
-end;
-
-function TLccNodeIdentificationObjectList.GetSource: TLccNodeIdentificationObject;
-begin
-  Result := TLccNodeIdentificationObject(Items[0]);
-end;
-
-procedure TLccNodeIdentificationObjectList.SetIdentification(Index: Integer; AValue: TLccNodeIdentificationObject);
-begin
-  if Index < Count then
-  begin
-    TObject(Items[Index]).Free;
-    Items[Index] := AValue;
-  end;
-end;
-
-constructor TLccNodeIdentificationObjectList.Create(AutoCreateSourceDestination: Boolean);
-begin
-  inherited Create;
-  if AutoCreateSourceDestination then
-  begin
-    Add(TLccNodeIdentificationObject.Create);  // Create the Source
-    Add(TLccNodeIdentificationObject.Create);  // Create the Destination
-  end
-end;
-
-destructor TLccNodeIdentificationObjectList.Destroy;
-begin
-  Clear;
-  inherited Destroy;
-end;
-
-procedure TLccNodeIdentificationObjectList.Clear;
-var
-  i: Integer;
-begin
-  try
-    for i := 0 to Count - 1 do
-    begin
-      TObject(Items[i]).Free
-    end;
-  finally
-    inherited Clear;
-  end;
-end;
-
-function TLccNodeIdentificationObjectList.IdentificationsValid: Boolean;
-var
-  i: Integer;
-  TempValid: Boolean;
-begin
-  TempValid := True;
-  for i := 0 to Count - 1 do
-  begin
-    if NodeIdentification[i].Active then
-      if not NodeIdentification[i].Valid then
-      begin
-        TempValid := False;
-        Break
-      end;
-  end;
-  Result := TempValid;
-end;
-
-function TLccNodeIdentificationObjectList.IsDuplicate(DestinationObject: TLccNodeIdentificationObject): Boolean;
-var
-  i: Integer;
-begin
-  Result := False;
-  for i := 0 to Count - 1 do
-  begin
-    if DestinationObject.CompareEitherOr(NodeIdentification[i]) then
-    begin
-      Result := True;
-      Break
-    end;
-  end;
-end;
-
-function TLccNodeIdentificationObjectList.IsDuplicate(ANodeID: TNodeID; AnAlias: Word): Boolean;
-var
-  i: Integer;
-  NodeIdentificationObject: TLccNodeIdentificationObject;
-begin
-  Result := False;
-  for i := 0 to Count - 1 do
-  begin
-    NodeIdentificationObject := TLccNodeIdentificationObject( Items[i]);
-    if (NodeIdentificationObject.NodeID[0] = ANodeID[0]) and (NodeIdentificationObject.NodeID[1] = ANodeID[1]) and (NodeIdentificationObject.Alias = AnAlias) then
-    begin
-      Result := True;
-      Break
-    end;
-  end;
-end;
-
-function TLccNodeIdentificationObjectList.ProcessNewMapping(NewMapping: TLccAliasMapping): Boolean;
-var
-  i: Integer;
-begin
-  Result := False;
-  if Assigned(NewMapping) then
-    begin
-    for i := 0 to Count - 1 do
-    begin
-      if NodeIdentification[i].Active and NodeIdentification[i].CompareEitherOr(NewMapping) then
-        NodeIdentification[i].AssignID(NewMapping.NodeID, NewMapping.NodeAlias);
-    end;
-    Result := IdentificationsValid;  // This is the cheap and easy way... may update
-  end;
-end;
-
-procedure TLccNodeIdentificationObjectList.RemoveIdentification(
-  AliasMapping: TLccAliasMapping);
-var
-  i: Integer;
-begin
-  for i := 0 to Count - 1 do
-  begin
-    if NodeIdentification[i].Compare(AliasMapping) then
-    begin
-      NodeIdentification[i].Free;
-      Delete(i);
-      Break
-    end;
-  end;
-end;
-
-procedure TLccNodeIdentificationObjectList.ClearIdentifications(AutoCreateSourceDestination: Boolean);
-begin
-  Clear;
-  if AutoCreateSourceDestination then
-  begin
-    Add(TLccNodeIdentificationObject.Create);  // Create the Source
-    Add(TLccNodeIdentificationObject.Create);  // Create the Destination
-  end;
-end;
-
-function TLccNodeIdentificationObjectList.LogOut(AnAlias: Word): Boolean;
-var
-  i: Integer;
-begin
-  Result := False;
-  for i := 0 to Count - 1 do
-  begin
-    Result := TLccNodeIdentificationObject(Items[i]).Alias = AnAlias;
-    if Result then
-      Break
-  end;
-end;
-
-function TLccNodeIdentificationObjectList.AddNodeIdentificationObject(ANodeID: TNodeID; AnAlias: Word): TLccNodeIdentificationObject;
-begin
-  Result := TLccNodeIdentificationObject.Create;
-  Result.AssignID(ANodeID, AnAlias);
-  Add(Result)
-end;
-
-function TLccNodeIdentificationObjectList.RetryCountMaxedOut(ATestCount: Integer): Boolean;
-var
-  i: Integer;
-begin
-  Result := True;
-
-  for i := 0 to Count - 1 do
-  begin
-    if TLccNodeIdentificationObject( Items[i]).Valid then
-    begin
-      if TLccNodeIdentificationObject( Items[i]).AbandonCount < ATestCount then
-      begin
-        Result := False;
-        Break
-      end;
     end;
   end;
 end;
@@ -1674,14 +1376,14 @@ begin
                 case DataArray[1] of
                   TRACTION_CONTROLLER_CONFIG_ASSIGN,
                   TRACTION_CONTROLLER_CONFIG_RELEASE,
-                  TRACTION_CONTROLLER_CONFIG_CHANGING_NOTIFY : NewIdentificationItem(ExtractDataBytesAsNodeID(3, ANodeID));
+                  TRACTION_CONTROLLER_CONFIG_CHANGED_NOTIFY : NewIdentificationItem(ExtractDataBytesAsNodeID(3, ANodeID));
                 end
               end;
-            TRACTION_LISTENER :
+            TRACTION_LISTENER_CONFIG :
               begin
                 case DataArray[1] of
-                  TRACTION_LISTENER_ATTACH,
-                  TRACTION_LISTENER_DETACH : NewIdentificationItem(ExtractDataBytesAsNodeID(3, ANodeID));
+                  TRACTION_LISTENER_CONFIG_ATTACH,
+                  TRACTION_LISTENER_CONFIG_DETACH : NewIdentificationItem(ExtractDataBytesAsNodeID(3, ANodeID));
                 end;
               end
           end
@@ -1700,10 +1402,10 @@ begin
                   end
               end;
 
-             TRACTION_LISTENER :
+             TRACTION_LISTENER_CONFIG :
                case DataArray[1] of
-                  TRACTION_LISTENER_ATTACH,
-                  TRACTION_LISTENER_DETACH : NewIdentificationItem(ExtractDataBytesAsNodeID(2, ANodeID));
+                  TRACTION_LISTENER_CONFIG_ATTACH,
+                  TRACTION_LISTENER_CONFIG_DETACH : NewIdentificationItem(ExtractDataBytesAsNodeID(2, ANodeID));
                 end;
           end;
         end;
@@ -1768,14 +1470,14 @@ begin
               case DataArray[1] of
                 TRACTION_CONTROLLER_CONFIG_ASSIGN,
                 TRACTION_CONTROLLER_CONFIG_RELEASE,
-                TRACTION_CONTROLLER_CONFIG_CHANGING_NOTIFY : IdentifyIdentificationItem(ExtractDataBytesAsNodeID(3, ANodeID), 0, Result);
+                TRACTION_CONTROLLER_CONFIG_CHANGED_NOTIFY : IdentifyIdentificationItem(ExtractDataBytesAsNodeID(3, ANodeID), 0, Result);
               end
             end;
-          TRACTION_LISTENER :
+          TRACTION_LISTENER_CONFIG :
             begin
               case DataArray[1] of
-                TRACTION_LISTENER_ATTACH,
-                TRACTION_LISTENER_DETACH : IdentifyIdentificationItem(ExtractDataBytesAsNodeID(3, ANodeID), 0, Result);
+                TRACTION_LISTENER_CONFIG_ATTACH,
+                TRACTION_LISTENER_CONFIG_DETACH : IdentifyIdentificationItem(ExtractDataBytesAsNodeID(3, ANodeID), 0, Result);
               end;
             end
         end
@@ -1790,10 +1492,10 @@ begin
                 end
             end;
 
-           TRACTION_LISTENER :
+           TRACTION_LISTENER_CONFIG :
              case DataArray[1] of
-                TRACTION_LISTENER_ATTACH,
-                TRACTION_LISTENER_DETACH : IdentifyIdentificationItem(ExtractDataBytesAsNodeID(2, ANodeID), 0, Result);
+                TRACTION_LISTENER_CONFIG_ATTACH,
+                TRACTION_LISTENER_CONFIG_DETACH : IdentifyIdentificationItem(ExtractDataBytesAsNodeID(2, ANodeID), 0, Result);
               end;
         end;
       end;
@@ -2705,7 +2407,7 @@ begin
   MTI := MTI_TRACTION_REPLY;
 end;
 
-procedure TLccMessage.LoadTractionControllerChangingNotify(ASourceID: TNodeID;
+procedure TLccMessage.LoadTractionControllerChangedNotify(ASourceID: TNodeID;
   ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; AControllerNodeID: TNodeID);
 begin
   ZeroFields;
@@ -2715,28 +2417,10 @@ begin
   CAN.DestAlias := ADestAlias;
   DataCount := 9;
   FDataArray[0] := TRACTION_CONTROLLER_CONFIG;
-  FDataArray[1] := TRACTION_CONTROLLER_CONFIG_CHANGING_NOTIFY;
+  FDataArray[1] := TRACTION_CONTROLLER_CONFIG_CHANGED_NOTIFY;
   FDataArray[2] := 0;
   InsertNodeID(3, AControllerNodeID);
   MTI := MTI_TRACTION_REQUEST;
-end;
-
-procedure TLccMessage.LoadTractionControllerChangingReply(ASourceID: TNodeID;
-  ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; Allow: Boolean);
-begin
-  ZeroFields;
-  SourceID := ASourceID;
-  DestID := ADestID;
-  CAN.SourceAlias := ASourceAlias;
-  CAN.DestAlias := ADestAlias;
-  MTI := MTI_TRACTION_REPLY;
-  DataCount := 3;
-  FDataArray[0] := TRACTION_CONTROLLER_CONFIG;
-  FDataArray[1] := TRACTION_CONTROLLER_CONFIG_CHANGED_NOTIFY;
-  if Allow then
-    FDataArray[2] := 0
-  else
-    FDataArray[2] := TRACTION_CONTROLLER_CONFIG_ASSIGN_REPLY_REFUSE_ASSIGNED_CONTROLLER
 end;
 
 procedure TLccMessage.LoadTractionListenerAttach(ASourceID: TNodeID;
@@ -2749,8 +2433,8 @@ begin
   CAN.SourceAlias := ASourceAlias;
   CAN.DestAlias := ADestAlias;
   DataCount := 9;
-  FDataArray[0] := TRACTION_LISTENER;
-  FDataArray[1] := TRACTION_LISTENER_ATTACH;
+  FDataArray[0] := TRACTION_LISTENER_CONFIG;
+  FDataArray[1] := TRACTION_LISTENER_CONFIG_ATTACH;
   FDataArray[2] := ListenerFlags;
   InsertNodeID(3, AListenerNodeID);
   MTI := MTI_TRACTION_REQUEST;
@@ -2766,8 +2450,8 @@ begin
   CAN.SourceAlias := ASourceAlias;
   CAN.DestAlias := ADestAlias;
   DataCount := 10;
-  FDataArray[0] := TRACTION_LISTENER;
-  FDataArray[1] := TRACTION_LISTENER_ATTACH;
+  FDataArray[0] := TRACTION_LISTENER_CONFIG;
+  FDataArray[1] := TRACTION_LISTENER_CONFIG_ATTACH;
   InsertNodeID(2, AListenerNodeID);
   FDataArray[8] := Hi(ReplyCode);
   FDataArray[9] := Lo(ReplyCode);
@@ -2784,8 +2468,8 @@ begin
   CAN.SourceAlias := ASourceAlias;
   CAN.DestAlias := ADestAlias;
   DataCount := 9;
-  FDataArray[0] := TRACTION_LISTENER;
-  FDataArray[1] := TRACTION_LISTENER_DETACH;
+  FDataArray[0] := TRACTION_LISTENER_CONFIG;
+  FDataArray[1] := TRACTION_LISTENER_CONFIG_DETACH;
   FDataArray[2] := ListenerFlags;
   InsertNodeID(3, AListenerNodeID);
   MTI := MTI_TRACTION_REQUEST;
@@ -2801,8 +2485,8 @@ begin
   CAN.SourceAlias := ASourceAlias;
   CAN.DestAlias := ADestAlias;
   DataCount := 10;
-  FDataArray[0] := TRACTION_LISTENER;
-  FDataArray[1] := TRACTION_LISTENER_DETACH;
+  FDataArray[0] := TRACTION_LISTENER_CONFIG;
+  FDataArray[1] := TRACTION_LISTENER_CONFIG_DETACH;
   InsertNodeID(2, AListenerNodeID);
   FDataArray[8] := Hi(ReplyCode);
   FDataArray[9] := Lo(ReplyCode);
@@ -2818,8 +2502,8 @@ begin
   CAN.SourceAlias := ASourceAlias;
   CAN.DestAlias := ADestAlias;
   DataCount := 3;
-  FDataArray[0] := TRACTION_LISTENER;
-  FDataArray[1] := TRACTION_LISTENER_QUERY;
+  FDataArray[0] := TRACTION_LISTENER_CONFIG;
+  FDataArray[1] := TRACTION_LISTENER_CONFIG_QUERY;
   FDataArray[2] := Index;
   MTI := MTI_TRACTION_REQUEST;
 end;
@@ -2832,8 +2516,8 @@ begin
   CAN.SourceAlias := ASourceAlias;
   CAN.DestAlias := ADestAlias;
   DataCount := 2;
-  FDataArray[0] := TRACTION_LISTENER;
-  FDataArray[1] := TRACTION_LISTENER_QUERY;
+  FDataArray[0] := TRACTION_LISTENER_CONFIG;
+  FDataArray[1] := TRACTION_LISTENER_CONFIG_QUERY;
   MTI := MTI_TRACTION_REQUEST;
 end;
 
@@ -2849,14 +2533,14 @@ begin
   if NullNodeID(AListenerNodeID) then
   begin           // Invalid Index the reply is no data other than the message codes
     DataCount := 3;
-    FDataArray[0] := TRACTION_LISTENER;
-    FDataArray[1] := TRACTION_LISTENER_QUERY;
+    FDataArray[0] := TRACTION_LISTENER_CONFIG;
+    FDataArray[1] := TRACTION_LISTENER_CONFIG_QUERY;
     FDataArray[2] := ListenerCount
   end else
   begin          // Valid index so sent the full gamit of info
     DataCount := 11;
-    FDataArray[0] := TRACTION_LISTENER;
-    FDataArray[1] := TRACTION_LISTENER_QUERY;
+    FDataArray[0] := TRACTION_LISTENER_CONFIG;
+    FDataArray[1] := TRACTION_LISTENER_CONFIG_QUERY;
     FDataArray[2] := ListenerCount;
     FDataArray[3] := ListenerNodeIndex;
     FDataArray[4] := ListenerFlags;

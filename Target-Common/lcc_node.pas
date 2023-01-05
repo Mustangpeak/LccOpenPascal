@@ -26,6 +26,7 @@ uses
   {$ENDIF}
   lcc_protocol_utilities,
   lcc_defines,
+  lcc_base_classes,
   lcc_node_messages,
   lcc_utilities,
   lcc_alias_server,
@@ -106,28 +107,37 @@ type
     procedure TickTimeout;
   end;
 
-  TMemorySpaceEngineState = (msesIdle, msesRunning, msesComplete, msesError, msesErrorValidateAddressSpace, msesErrorProtocolsUnsupported);
+
   TOnEngineMemorySpaceReadCallback = procedure(EngineMemorySpaceRead: TLccEngineMemorySpaceRead) of object;
 
+  TLccEngineState = (lesIdle, lesRunning, lesStopped, lesComplete, lesError);
 
   { TLccEngineBase }
 
   TLccEngineBase = class
   private
+    FEngineState: TLccEngineState;
+    FErrorCode: Word;
     FOwnerNode: TLccNode;
     FTag: Integer;
     FTagObject: TObject;
     FWorkerMessage: TLccMessage;
   protected
     property WorkerMessage: TLccMessage read FWorkerMessage write FWorkerMessage;
-
+    procedure EngineStateComplete;
+    procedure EngineStateError;
   public
     property OwnerNode: TLccNode read FOwnerNode;
     property Tag: Integer read FTag write FTag;
     property TagObject: TObject read FTagObject write FTagObject;
+    property EngineState: TLccEngineState read FEngineState;
+    property ErrorCode: Word read FErrorCode write FErrorCode;
 
     constructor Create(AnOwner: TLccNode); virtual;
     destructor Destroy; override;
+    procedure Start; virtual;
+    procedure Stop; virtual;
+    procedure Reset; virtual;
   end;
 
   { TLccEngineMemorySpaceRead }
@@ -142,7 +152,6 @@ type
     FMemorySpace: Byte;
     FMemoryStream: TMemoryStream;
     FPIPHelper: TProtocolSupportedProtocols;
-    FState: TMemorySpaceEngineState;
     FTargetAlias: Word;
     FTargetNode: TNodeID;
     function GetStreamAsString: AnsiString;
@@ -161,16 +170,15 @@ type
     property MemoryStream: TMemoryStream read FMemoryStream;
     property BytesToRead: Integer read FBytesToRead write FBytesToRead;          // -1 means read to the end
     property MemorySpace: Byte read FMemorySpace;                               // MSI_xxxx constants
-    property State: TMemorySpaceEngineState read FState;
-    property TargetNode: TNodeID read FTargetNode;
+    property TargetNodeID: TNodeID read FTargetNode;
     property TargetAlias: Word read FTargetAlias;
     property PIPHelper: TProtocolSupportedProtocols read FPIPHelper;
     property StreamAsString: AnsiString read GetStreamAsString;
 
     constructor Create(AnOwner: TLccNode); override;
     destructor Destroy; override;
-    procedure Start;
-    procedure Reset;
+    procedure Start; override;
+    procedure Reset; override;
     procedure Process(SourceMessage: TLccMessage);
     procedure Assign(AMemorySpace: Byte; ATargetNodeID: TNodeID; ATargetAliasID: Word; ACallback: TOnEngineMemorySpaceReadCallback); // AMemorySpace = MSI_xxxx constants
   end;
@@ -310,7 +318,7 @@ type
     procedure HandleTractionControllerAssign(var SourceMessage: TLccMessage);  virtual;
     procedure HandleTractionControllerRelease(var SourceMessage: TLccMessage);  virtual;
     procedure HandleTractionControllerQuery(var SourceMessage: TLccMessage);  virtual;
-    procedure HandleTractionControllerChanging(var SourceMessage: TLccMessage);  virtual;  // Sent from Train To currently Assigned Controller if it has one
+    procedure HandleTractionControllerChangedNotify(var SourceMessage: TLccMessage);  virtual;  // Sent from Train To currently Assigned Controller if it has one
     procedure HandleTractionEStop(var SourceMessage: TLccMessage);  virtual;
     procedure HandleTractionListenerAttach(var SourceMessage: TLccMessage); virtual;
     procedure HandleTractionListenerDetach(var SourceMessage: TLccMessage); virtual;
@@ -325,7 +333,6 @@ type
 
     procedure HandleTractionControllerAssignReply(var SourceMessage: TLccMessage); virtual;
     procedure HandleTractionControllerQueryReply(var SourceMessage: TLccMessage); virtual;
-    procedure HandleTractionControllerChangingReply(var SourceMessage: TLccMessage); virtual;  // Sent from Controller to the Train to tell it if it's willing to release control of the train
     procedure HandleTractionListenerAttachReply(var SourceMessage: TLccMessage); virtual;
     procedure HandleTractionListenerDetachReply(var SourceMessage: TLccMessage); virtual;
     procedure HandleTractionListenerQueryReply(var SourceMessage: TLccMessage); virtual;
@@ -438,6 +445,31 @@ begin
   inherited Destroy;
 end;
 
+procedure TLccEngineBase.EngineStateComplete;
+begin
+  FEngineState := lesComplete;
+end;
+
+procedure TLccEngineBase.EngineStateError;
+begin
+  FEngineState := lesError;
+end;
+
+procedure TLccEngineBase.Start;
+begin
+  FEngineState := lesRunning;
+end;
+
+procedure TLccEngineBase.Stop;
+begin
+  FEngineState := lesStopped;
+end;
+
+procedure TLccEngineBase.Reset;
+begin
+  FEngineState := lesIdle;
+end;
+
 { TLccEngineMemorySpaceRead }
 
 procedure TLccEngineMemorySpaceRead.HandleRead(SourceMessage: TLccMessage; DataStartIndex: Integer; IsString: Boolean);
@@ -445,7 +477,7 @@ var
   i: Integer;
   NullFound: Boolean;
 begin
-  if State = msesRunning then
+  if EngineState = lesRunning then
   begin
     NullFound := False;
     for i := DataStartIndex to SourceMessage.DataCount - 1 do
@@ -461,7 +493,7 @@ begin
     if not NullFound and (CurrentAddress < (AddressHi-AddressLo)) then
       ReadNextChunk
     else begin
-      FState := msesComplete;
+      EngineStateComplete;
       OwnerNode.DoMemorySpaceReadEngineDone(Self);
       Callback(Self);
     end;
@@ -472,10 +504,10 @@ procedure TLccEngineMemorySpaceRead.ReadNextChunk;
 var
   ReadCount: Integer;
 begin
-  if State = msesRunning then
+  if EngineState = lesRunning then
   begin
     ReadCount := CalculateNextReadCount;
-    WorkerMessage.LoadConfigMemRead(OwnerNode.NodeID, OwnerNode.AliasID, TargetNode, TargetAlias, MemorySpace, CurrentAddress, ReadCount);
+    WorkerMessage.LoadConfigMemRead(OwnerNode.NodeID, OwnerNode.AliasID, TargetNodeID, TargetAlias, MemorySpace, CurrentAddress, ReadCount);
     OwnerNode.SendMessageFunc(OwnerNode, WorkerMessage);
     Inc(FCurrentAddress, ReadCount)
   end;
@@ -502,11 +534,12 @@ begin
   end;
   if ProtocolsSupported then
   begin
-    WorkerMessage.LoadConfigMemAddressSpaceInfo(OwnerNode.NodeID, OwnerNode.AliasID, TargetNode, TargetAlias, MemorySpace);
+    WorkerMessage.LoadConfigMemAddressSpaceInfo(OwnerNode.NodeID, OwnerNode.AliasID, TargetNodeID, TargetAlias, MemorySpace);
     OwnerNode.SendMessageFunc(OwnerNode, WorkerMessage);
   end else
   begin
-    FState := msesErrorProtocolsUnsupported;
+    ErrorCode := ENGINE_ERROR_MEMORY_SPACE_UNSUPPORTED_PROTOCOL;
+    EngineStateError;
     Callback(Self)
   end;
 end;
@@ -528,19 +561,21 @@ begin
       ReadNextChunk;
     end else
     begin
-      FState := msesErrorValidateAddressSpace;
+      ErrorCode := ENGINE_ERROR_MEMORY_SPACE_UNSUPPORTED_MEMORYSPACE;
+      EngineStateError;
       Callback(Self)
     end;
   end else
   begin
-    FState := msesErrorValidateAddressSpace;
+    ErrorCode := ENGINE_ERROR_MEMORY_SPACE_UNSUPPORTED_MEMORYSPACE;
+    EngineStateError;
     Callback(Self)
   end;
 end;
 
 procedure TLccEngineMemorySpaceRead.Assign(AMemorySpace: Byte; ATargetNodeID: TNodeID; ATargetAliasID: Word; ACallback: TOnEngineMemorySpaceReadCallback);
 begin
-  Assert(State = msesIdle, 'TMemorySpaceReadEngine.Assign is running');
+  Assert(EngineState = lesIdle, 'TMemorySpaceReadEngine.Assign is running');
   FTargetNode := ATargetNodeID;
   FTargetAlias := ATargetAliasID;
   FCallback := ACallback;
@@ -586,22 +621,21 @@ end;
 
 procedure TLccEngineMemorySpaceRead.Start;
 begin
+  inherited Start;
   Assert(not NullNodeID(FTargetNode), 'TMemorySpaceReadEngine, NodeID not set');
 
   if not PIPHelper.Valid then
   begin
     // Get what protocols are supported
-    WorkerMessage.LoadProtocolIdentifyInquiry(OwnerNode.NodeID, OwnerNode.AliasID, TargetNode, TargetAlias);
+    WorkerMessage.LoadProtocolIdentifyInquiry(OwnerNode.NodeID, OwnerNode.AliasID, TargetNodeID, TargetAlias);
     OwnerNode.SendMessageFunc(OwnerNode, WorkerMessage);
   end else
     ValidatePIPAndProceed;
-
-  FState := msesRunning;
 end;
 
 procedure TLccEngineMemorySpaceRead.Reset;
 begin
-  FState := msesIdle;
+  inherited Reset;
   FAddressHi := 0;
   FAddressLo := 0;
   FBytesToRead := 0;
@@ -619,9 +653,9 @@ procedure TLccEngineMemorySpaceRead.Process(SourceMessage: TLccMessage);
 var
   AddressSpace: Byte;
 begin
-  if State = msesRunning then
+  if EngineState = lesRunning then
   begin
-    if EqualNodeID(TargetNode, SourceMessage.SourceID, False) then
+    if EqualNodeID(TargetNodeID, SourceMessage.SourceID, False) then
     begin
       AddressSpace := 0;
       case SourceMessage.MTI of
@@ -666,7 +700,8 @@ begin
                        MCP_READ_REPLY_FAILURE_ALL,
                        MCP_READ_REPLY_FAILURE_CDI                  :
                            begin
-                             FState := msesError;
+                             ErrorCode := ENGINE_ERROR_MEMORY_SPACE_READ_ERROR;
+                             EngineStateError;
                              Callback(Self);
                            end;
                        MCP_OP_GET_CONFIG_OPTIONS_REPLY             : begin end;
@@ -1098,7 +1133,7 @@ procedure TLccNode.HandleTractionControllerRelease(var SourceMessage: TLccMessag
 
 procedure TLccNode.HandleTractionControllerQuery(var SourceMessage: TLccMessage); begin end;
 
-procedure TLccNode.HandleTractionControllerChanging(var SourceMessage: TLccMessage); begin end;
+procedure TLccNode.HandleTractionControllerChangedNotify(var SourceMessage: TLccMessage); begin end;
 
 procedure TLccNode.HandleTractionEStop(var SourceMessage: TLccMessage); begin end;
 
@@ -1125,8 +1160,6 @@ procedure TLccNode.HandleTractionQueryFunction(var SourceMessage: TLccMessage); 
 procedure TLccNode.HandleTractionControllerAssignReply(var SourceMessage: TLccMessage); begin end;
 
 procedure TLccNode.HandleTractionControllerQueryReply(var SourceMessage: TLccMessage); begin end;
-
-procedure TLccNode.HandleTractionControllerChangingReply(var SourceMessage: TLccMessage); begin end;
 
 procedure TLccNode.HandleTractionListenerAttachReply(var SourceMessage: TLccMessage); begin end;
 
@@ -1461,24 +1494,22 @@ begin
             begin
               case SourceMessage.DataArray[1] of
                 TRACTION_CONTROLLER_CONFIG_ASSIGN  : HandleTractionControllerAssignReply(SourceMessage);
-        //        TRACTION_CONTROLLER_CONFIG_RELEASE : HandleTractionControllerReleaseReply(SourceMessage);
                 TRACTION_CONTROLLER_CONFIG_QUERY   : HandleTractionControllerQueryReply(SourceMessage);
-                TRACTION_CONTROLLER_CONFIG_CHANGED_NOTIFY : HandleTractionControllerChangingReply(SourceMessage);
               end;
             end;
-          TRACTION_LISTENER :
+          TRACTION_LISTENER_CONFIG :
             begin
               case SourceMessage.DataArray[1] of
-                TRACTION_LISTENER_ATTACH : HandleTractionListenerAttachReply(SourceMessage);
-                TRACTION_LISTENER_DETACH : HandleTractionListenerDetachReply(SourceMessage);
-                TRACTION_LISTENER_QUERY  : HandleTractionListenerQueryReply(SourceMessage);
+                TRACTION_LISTENER_CONFIG_ATTACH : HandleTractionListenerAttachReply(SourceMessage);
+                TRACTION_LISTENER_CONFIG_DETACH : HandleTractionListenerDetachReply(SourceMessage);
+                TRACTION_LISTENER_CONFIG_QUERY  : HandleTractionListenerQueryReply(SourceMessage);
               end;
             end;
           TRACTION_MANAGE :
             begin
               case SourceMessage.DataArray[1] of
                 TRACTION_MANAGE_RESERVE : HandleTractionManageReserveReply(SourceMessage);
-        //        TRACTION_MANAGE_RELEASE : HandleTractionManageReleaseReply(SourceMessage);
+                TRACTION_MANANGE_HEARTBEAT_REPLY : begin end;  // TODO
               end
             end;
         end
@@ -1497,15 +1528,15 @@ begin
                 TRACTION_CONTROLLER_CONFIG_ASSIGN  : HandleTractionControllerAssign(SourceMessage);
                 TRACTION_CONTROLLER_CONFIG_RELEASE : HandleTractionControllerRelease(SourceMessage);
                 TRACTION_CONTROLLER_CONFIG_QUERY   : HandleTractionControllerQuery(SourceMessage);
-                TRACTION_CONTROLLER_CONFIG_CHANGING_NOTIFY : HandleTractionControllerChanging(SourceMessage);
+                TRACTION_CONTROLLER_CONFIG_CHANGED_NOTIFY : HandleTractionControllerChangedNotify(SourceMessage);
               end
             end;
-          TRACTION_LISTENER :
+          TRACTION_LISTENER_CONFIG :
             begin
               case SourceMessage.DataArray[1] of
-                TRACTION_LISTENER_ATTACH : HandleTractionListenerAttach(SourceMessage);
-                TRACTION_LISTENER_DETACH : HandleTractionListenerDetach(SourceMessage);
-                TRACTION_LISTENER_QUERY  : HandleTractionListenerQuery(SourceMessage);
+                TRACTION_LISTENER_CONFIG_ATTACH : HandleTractionListenerAttach(SourceMessage);
+                TRACTION_LISTENER_CONFIG_DETACH : HandleTractionListenerDetach(SourceMessage);
+                TRACTION_LISTENER_CONFIG_QUERY  : HandleTractionListenerQuery(SourceMessage);
               end;
             end;
           TRACTION_MANAGE :
@@ -2078,7 +2109,6 @@ begin
   WorkerMessage.LoadSimpleTrainNodeIdentInfoRequest(NodeID, AliasID, TargetNodeID, TargetAlias);
   SendMessageFunc(Self, WorkerMessage);
 end;
-
 
 initialization
   Randomize;

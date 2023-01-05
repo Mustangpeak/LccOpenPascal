@@ -52,7 +52,6 @@ type
     CheckBoxAutoConnect: TCheckBox;
     ComboBoxComPorts: TComboBox;
     Edit1: TEdit;
-    EditCreateConsist: TEdit;
     ImageListMain: TImageList;
     LabelNodeID: TLabel;
     LabelAliasID: TLabel;
@@ -192,14 +191,11 @@ end;
 
 procedure TFormTrainCommander.ButtonCreateConsistClick(Sender: TObject);
 var
-  ConsistCount, i: Integer;
+  i: Integer;
 begin
-  if TryStrToInt(EditCreateConsist.Text, ConsistCount) then
+  for i := 0 to TreeViewTrains.SelectionCount - 1 do
   begin
-    for i := 0 to ConsistCount - 1 do
-    begin
 
-    end;
   end;
 end;
 
@@ -828,6 +824,7 @@ var
 begin
   if CheckBoxLogMessages.Checked then
   begin
+    ByteArray := nil;
     MemoLog.Lines.BeginUpdate;
     try
       if IS_GRIDCONNECT then
@@ -855,6 +852,7 @@ var
 begin
   if CheckBoxLogMessages.Checked then
   begin
+    ByteArray := nil;
     MemoLog.Lines.BeginUpdate;
     try
       if IS_GRIDCONNECT then

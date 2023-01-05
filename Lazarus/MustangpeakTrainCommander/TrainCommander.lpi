@@ -144,7 +144,7 @@ if TargetOS = &apos;linux&apos; then
         <PackageName Value="LCL"/>
       </Item2>
     </RequiredPackages>
-    <Units Count="9">
+    <Units Count="11">
       <Unit0>
         <Filename Value="TrainCommander.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -189,6 +189,14 @@ if TargetOS = &apos;linux&apos; then
         <Filename Value="..\..\Target-Common\lcc_node_traindatabase.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit8>
+      <Unit9>
+        <Filename Value="..\..\Target-Common\lcc_listener_tree.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit9>
+      <Unit10>
+        <Filename Value="..\..\Target-Common\lcc_base_classes.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit10>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
@@ -248,7 +256,7 @@ if TargetOS = &apos;linux&apos; then
     </Linking>
   </CompilerOptions>
   <Debugging>
-    <Exceptions Count="4">
+    <Exceptions Count="5">
       <Item1>
         <Name Value="EAbort"/>
       </Item1>
@@ -261,6 +269,9 @@ if TargetOS = &apos;linux&apos; then
       <Item4>
         <Name Value="EIdSilentException"/>
       </Item4>
+      <Item5>
+        <Name Value="EIdSocketError"/>
+      </Item5>
     </Exceptions>
   </Debugging>
 </CONFIG>

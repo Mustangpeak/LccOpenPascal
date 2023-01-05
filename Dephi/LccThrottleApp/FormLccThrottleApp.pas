@@ -24,7 +24,8 @@ uses
   lcc_cdi_parser,
 
   FMX.Menus, FMX.Platform, FMX.ListBox, FMX.Memo.Types, FMX.ScrollBox, FMX.Memo,
-  FMX.Header, FMX.EditBox, FMX.SpinBox, System.ImageList, FMX.ImgList;
+  FMX.Header, FMX.EditBox, FMX.SpinBox, System.ImageList, FMX.ImgList,
+  FMX.TreeView;
 
 const
   FILENAME_SETTINGS = 'settings.xml';
@@ -38,10 +39,10 @@ type
   TLccThrottleAppForm = class(TForm)
     TabControlMain: TTabControl;
     TabItemTrains: TTabItem;
-    TabItem2: TTabItem;
-    ToolBar3: TToolBar;
-    lblTitle3: TLabel;
     TabItemLog: TTabItem;
+    ToolBarMain: TToolBar;
+    lblTitleMain: TLabel;
+    TabItem3: TTabItem;
     ToolBar4: TToolBar;
     lblTitle4: TLabel;
     TabItemSettings: TTabItem;
@@ -49,11 +50,11 @@ type
     LabelSettingsHeader: TLabel;
     GestureManager1: TGestureManager;
     ActionList1: TActionList;
-    NextTabAction1: TNextTabAction;
-    PreviousTabAction1: TPreviousTabAction;
-    MultiViewConsist: TMultiView;
+    ActionTabMainNext: TNextTabAction;
+    ActionTabMainPrev: TPreviousTabAction;
+    MultiViewRoster: TMultiView;
     ListViewTrainRoster: TListView;
-    SpeedButtonTab2Hamburger: TSpeedButton;
+    SpeedButtonTrainsRoster: TSpeedButton;
     LayoutSettingsTab: TLayout;
     ButtonSettingsResetConnection: TButton;
     Layout3D1: TLayout3D;
@@ -75,7 +76,7 @@ type
     LabeSettingslApplicationDocumentsHeader: TLabel;
     LabelSettingsApplicationDocumentsPath: TLabel;
     TextSettingsDebugHeader: TText;
-    Layout1: TLayout;
+    LayoutTrains: TLayout;
     TabControlTrainRoster: TTabControl;
     TabItemTrainRosterSelect: TTabItem;
     TabItemTrainRosterDetails: TTabItem;
@@ -87,8 +88,8 @@ type
     ToolBarTrainRosterEdit: TToolBar;
     LabelTrainRosterEdit: TLabel;
     SpeedButtonTrainRosterEdit: TSpeedButton;
-    ActionTrainRosterTabNext: TNextTabAction;
-    ActionTrainRosterTabPrev: TPreviousTabAction;
+    ActionTabTrainRosterNext: TNextTabAction;
+    ActionTabTrainRosterPrev: TPreviousTabAction;
     LayoutLog: TLayout;
     HeaderLogHeader: THeader;
     LabelLogHeader: TLabel;
@@ -100,9 +101,60 @@ type
     ListBoxItemTrainsDetailsHardwareVersion: TListBoxItem;
     ListBoxItemTrainsDetailsUserName: TListBoxItem;
     ListBoxItemTrainsDetailsUserDescription: TListBoxItem;
-    LayoutTrainRosterEdit: TLayout;
     TextSettingsNodeAlias: TText;
     TextSettingsNodeAliasID: TText;
+    ListBoxGroupHeaderConsists: TListBoxGroupHeader;
+    ListBoxItemTrainsDetailsConsists: TListBoxItem;
+    MultiViewConsists: TMultiView;
+    TabControlTrainConsists: TTabControl;
+    TabItemTrainConsists: TTabItem;
+    TabItem2: TTabItem;
+    LayoutConsistConsists: TLayout;
+    LabelConsistConsists: TLabel;
+    ToolBarConsistConsists: TToolBar;
+    TreeViewConsistConsists: TTreeView;
+    SpeedButtonTrainsConsist: TSpeedButton;
+    LayoutTrainsThrottle: TLayout;
+    VertScrollBoxFunctions: TVertScrollBox;
+    ButtonF0: TButton;
+    ButtonF19: TButton;
+    ButtonF18: TButton;
+    ButtonF17: TButton;
+    ButtonF16: TButton;
+    ButtonF15: TButton;
+    ButtonF14: TButton;
+    ButtonF13: TButton;
+    ButtonF12: TButton;
+    ButtonF11: TButton;
+    ButtonF10: TButton;
+    ButtonF1: TButton;
+    ButtonF2: TButton;
+    ButtonF3: TButton;
+    ButtonF4: TButton;
+    ButtonF5: TButton;
+    ButtonF6: TButton;
+    ButtonF7: TButton;
+    ButtonF8: TButton;
+    ButtonF9: TButton;
+    LayoutTrainsThrottleLever: TLayout;
+    TrackBarTrainsThrottleLever: TTrackBar;
+    ButtonF20: TButton;
+    ButtonF21: TButton;
+    ButtonF22: TButton;
+    ButtonF23: TButton;
+    ButtonF24: TButton;
+    ButtonF25: TButton;
+    ButtonF26: TButton;
+    ButtonF27: TButton;
+    Layout1: TLayout;
+    SpeedButtonTrainsRev: TSpeedButton;
+    SpeedButtonTrainsFwd: TSpeedButton;
+    SpeedButtonTrainsStop: TSpeedButton;
+    LayoutTrainsThrottleLeverBkgnd: TLayout;
+    LayoutTrainsThrottleInfo: TLayout;
+    LabelTrainsSpeedHeader: TLabel;
+    LabelTrainsSpeed: TLabel;
+    LabelTrainRosterEditContainer: TLabel;
     procedure GestureDone(Sender: TObject; const EventInfo: TGestureEventInfo; var Handled: Boolean);
     procedure FormCreate(Sender: TObject);
     procedure FormKeyUp(Sender: TObject; var Key: Word; var KeyChar: Char; Shift: TShiftState);
@@ -122,10 +174,15 @@ type
     procedure ButtonSettingsDeleteAppFolderClick(Sender: TObject);
     procedure SpeedButtonTrainRosterBackClick(Sender: TObject);
     procedure ListViewTrainRosterItemClickEx(const Sender: TObject; ItemIndex: Integer; const LocalClickPos: TPointF; const ItemObject: TListItemDrawable);
-    procedure MultiViewConsistHidden(Sender: TObject);
+    procedure MultiViewRosterHidden(Sender: TObject);
     procedure TabControlTrainRosterChange(Sender: TObject);
     procedure ListBoxItemTrainsDetailsUserNameClick(Sender: TObject);
     procedure ListBoxItemTrainsDetailsUserDescriptionClick(Sender: TObject);
+    procedure ButtonFnClick(Sender: TObject);
+    procedure SpeedButtonTrainsFwdClick(Sender: TObject);
+    procedure SpeedButtonTrainsRevClick(Sender: TObject);
+    procedure TrackBarTrainsThrottleLeverChange(Sender: TObject);
+    procedure SpeedButtonTrainsStopClick(Sender: TObject);
   private
     FNodeManager: TLccNodeManager;
     FEthernetClient: TLccEthernetClient;
@@ -141,10 +198,12 @@ type
     FPathMemoryConfig: string;
     FActiveTrainObject: TListViewItem;
     FCdiParserFrame: TLccCdiParser;
+    FCDILayoutFrame: TLayout;
     { Private declarations }
 
   protected
 
+    property CDILayoutFrame: TLayout read FCDILayoutFrame write FCDILayoutFrame;
     procedure XmlLoadSettingsFromFile;
     procedure XmlWriteDefaultFile;
 
@@ -178,7 +237,6 @@ type
     procedure OnNodeIDChanged(Sender: TObject; ALccNode: TLccNode);
     procedure OnNodeAliasChanged(Sender: TObject; ALccNode: TLccNode);
 
-
     procedure OnClientServerConnectionChange(Sender: TObject; Info: TLccHardwareConnectionInfo);
     procedure OnClientServerErrorMessage(Sender: TObject; Info: TLccHardwareConnectionInfo);
 
@@ -186,9 +244,13 @@ type
 
     function ValidEditBoxKey(Key: Word): Boolean;
     function ConnectionLogin: Boolean;
-    function FindListviewItemByTagObject(AListview: TListView; ATagObject: TObject): TListviewItem;
+    function FindListviewItemByTagTractionObject(AListview: TListView; ATagObject: TObject): TListviewItem;
     function SelectedRosterEqualsTractionObject(TractionObject: TLccTractionObject): Boolean;
-    procedure TryUpdateSelectedRosterTrainDetails(TractionObject: TLccTractionObject);
+    procedure TrainTabDetailsClear;
+    procedure TrainTabDetailsLoad(TractionObject: TLccTractionObject);
+    procedure TrainTabCDIClear;
+    procedure TrainTabCDILoad(TractionObject: TLccTractionObject);
+    procedure TrainTabCDISelect;
     procedure RenderCDI(TractionObject: TLccTractionObject);
   end;
 
@@ -279,6 +341,11 @@ begin
     XmlNodeSetFirstLevelTextContent(PathSettingsFile, 'settings', 'port', EditSettingsPort.Text, True);
 end;
 
+procedure TLccThrottleAppForm.ButtonFnClick(Sender: TObject);
+begin
+  beep;
+end;
+
 procedure TLccThrottleAppForm.ButtonSettingsDeleteAppFolderClick(Sender: TObject);
 var
   Files: TStringDynArray;
@@ -334,7 +401,7 @@ begin
   ConnectionLogin
 end;
 
-function TLccThrottleAppForm.FindListviewItemByTagObject(AListview: TListView; ATagObject: TObject): TListviewItem;
+function TLccThrottleAppForm.FindListviewItemByTagTractionObject(AListview: TListView; ATagObject: TObject): TListviewItem;
 var
   i: Integer;
 begin
@@ -351,6 +418,7 @@ end;
 
 procedure TLccThrottleAppForm.FormCloseQuery(Sender: TObject; var CanClose: Boolean);
 begin
+  TrainTabCDIClear;
   TimerLogin.Enabled := False;
   NodeManager.ReleaseAliasAll;
   EthernetClient.CloseConnection;
@@ -419,7 +487,8 @@ begin
 
     // Setup components to a standard state in case forgotten in the designer
     TabControlMain.ActiveTab := TabItemTrains;    // This defines the default active tab at runtime
-    MultiViewConsist.Mode := TMultiViewMode.Drawer;
+    MultiViewRoster.Mode := TMultiViewMode.Drawer;
+    MultiViewConsists.Mode := TMultiViewMode.Drawer;
     TabControlTrainRoster.ActiveTab := TabItemTrainRosterSelect;
     TimerLogin.Enabled := True; // Try to connect
 
@@ -459,13 +528,12 @@ end;
 
 procedure TLccThrottleAppForm.ListBoxItemTrainsDetailsUserDescriptionClick(Sender: TObject);
 begin
-   ActionTrainRosterTabNext.Execute;
-
+  TrainTabCDISelect;
 end;
 
 procedure TLccThrottleAppForm.ListBoxItemTrainsDetailsUserNameClick(Sender: TObject);
 begin
-   ActionTrainRosterTabNext.Execute;
+  TrainTabCDISelect;
 end;
 
 procedure TLccThrottleAppForm.ListViewTrainRosterItemClickEx(const Sender: TObject; ItemIndex: Integer; const LocalClickPos: TPointF; const ItemObject: TListItemDrawable);
@@ -473,18 +541,30 @@ var
   ListItem: TListItem;
   TractionObject: TLccTractionObject;
 begin
+  // Did we click on the Accessory to move to the Details tab?
   if ItemObject is TListItemAccessory then
   begin
-    ActionTrainRosterTabNext.Execute;
+    // Move to the Details tab
+    ActionTabTrainRosterNext.Execute;
+
+    // Reset the CDI Tab
+    TrainTabCDIClear;
+
+    // Need to load the information into that tab if we can.  If not we need to call for it
     TractionObject := ListViewTrainRoster.Items[ItemIndex].TagObject as TLccTractionObject;
-    if not TractionObject.SNIP.Valid then
+    if TractionObject.SNIP.Valid then
+    begin
+      TrainTabDetailsLoad(TractionObject);
+    end else
+    begin
+      // Clear the details so they are not stale from a previous load
+      TrainTabDetailsClear;
       Controller.SendSNIPRequest(TractionObject.NodeID, TractionObject.NodeAlias)
-    else
-      TryUpdateSelectedRosterTrainDetails(TractionObject);
+    end;
   end else
   begin
     ListItem := ListViewTrainRoster.Items[ItemIndex];
-    MultiViewConsist.HideMaster
+    MultiViewRoster.HideMaster
   end;
 end;
 
@@ -494,7 +574,7 @@ begin
     Clipboard.SetClipboard(LabelSystemDocumentsPath.Text)
 end;
 
-procedure TLccThrottleAppForm.MultiViewConsistHidden(Sender: TObject);
+procedure TLccThrottleAppForm.MultiViewRosterHidden(Sender: TObject);
 begin
   ActiveTrainObject := nil;
 end;
@@ -552,7 +632,7 @@ var
   TractionObject: TLccTractionObject;
 begin
   TractionObject := MemorySpaceReadEnging.TagObject as TLccTractionObject;
-  if MemorySpaceReadEnging.State = msesComplete then
+  if MemorySpaceReadEnging.EngineState = lesComplete then
   begin
     TractionObject.NodeCDI.CDI := Controller.EngineMemorySpaceRead.StreamAsString;
     TractionObject.NodeCDI.Implemented := True;
@@ -569,17 +649,24 @@ procedure TLccThrottleAppForm.OnSNIPChange(TractionObject: TLccTractionObject);
 var
   ListViewItem: TListViewItem;
 begin
-  ListViewItem := FindListviewItemByTagObject(ListViewTrainRoster, TractionObject);
+  ListViewItem := FindListviewItemByTagTractionObject(ListViewTrainRoster, TractionObject);
   if Assigned(ListViewItem) then
   begin
     ListViewItem.Text := TractionObject.DisplayName;
-    TryUpdateSelectedRosterTrainDetails(TractionObject);
+    TrainTabDetailsLoad(TractionObject);
   end;
 end;
 
 procedure TLccThrottleAppForm.OnTrainSNIPChange(TractionObject: TLccTractionObject);
+var
+  ListViewItem: TListViewItem;
 begin
-
+  ListViewItem := FindListviewItemByTagTractionObject(ListViewTrainRoster, TractionObject);
+  if Assigned(ListViewItem) then
+  begin
+    ListViewItem.Text := TractionObject.DisplayName;
+    TrainTabDetailsLoad(TractionObject);
+  end;
 end;
 
 procedure TLccThrottleAppForm.RenderCDI(TractionObject: TLccTractionObject);
@@ -590,7 +677,7 @@ begin
   begin
     XMLDoc := XmlLoadFromText( LccDOMString( TractionObject.NodeCDI.CDI));
     try
-    CdiParserFrame.Build_CDI_Interface(Controller, LayoutTrainRosterEdit, XMLDoc);
+      CDILayoutFrame := CdiParserFrame.Build_CDI_Interface(Controller, LabelTrainRosterEditContainer, XMLDoc);
     finally
       XmlFreeDocument(XMLDoc);
     end;
@@ -637,7 +724,7 @@ procedure TLccThrottleAppForm.OnRegisterChange(TractionObject: TLccTractionObjec
 var
   ListViewItem: TListViewItem;
 begin
-  ListviewItem := FindListviewItemByTagObject(ListViewTrainRoster, TractionObject);
+  ListviewItem := FindListviewItemByTagTractionObject(ListViewTrainRoster, TractionObject);
 
   if IsRegistered then
   begin
@@ -674,7 +761,23 @@ end;
 
 procedure TLccThrottleAppForm.SpeedButtonTrainRosterBackClick(Sender: TObject);
 begin
-  ActionTrainRosterTabPrev.Execute
+  ActionTabTrainRosterPrev.Execute;
+  TrainTabCDIClear;
+end;
+
+procedure TLccThrottleAppForm.SpeedButtonTrainsFwdClick(Sender: TObject);
+begin
+  SpeedButtonTrainsRev.IsPressed := not SpeedButtonTrainsFwd.IsPressed;
+end;
+
+procedure TLccThrottleAppForm.SpeedButtonTrainsRevClick(Sender: TObject);
+begin
+  SpeedButtonTrainsFwd.IsPressed := not SpeedButtonTrainsRev.IsPressed;
+end;
+
+procedure TLccThrottleAppForm.SpeedButtonTrainsStopClick(Sender: TObject);
+begin
+  TrackBarTrainsThrottleLever.Value := 100;
 end;
 
 procedure TLccThrottleAppForm.TabControlTrainRosterChange(Sender: TObject);
@@ -689,16 +792,29 @@ begin
     ButtonSettingsResetConnectionClick(Self)
 end;
 
-procedure TLccThrottleAppForm.TryUpdateSelectedRosterTrainDetails(TractionObject: TLccTractionObject);
+procedure TLccThrottleAppForm.TrackBarTrainsThrottleLeverChange(Sender: TObject);
+begin
+  LabelTrainsSpeed.Text := FloatToStr(100.0 - TrackBarTrainsThrottleLever.Value)
+end;
+
+procedure TLccThrottleAppForm.TrainTabCDIClear;
+begin
+  // Clear Tab 2, CDI
+  if Assigned(CDILayoutFrame) then
+  begin
+    try
+      CdiParserFrame.Clear_CDI_Interface(False);
+    finally
+      CDILayoutFrame := nil;
+    end;
+  end;
+end;
+
+procedure TLccThrottleAppForm.TrainTabCDILoad(TractionObject: TLccTractionObject);
 begin
   if SelectedRosterEqualsTractionObject(TractionObject) then
   begin
-    ListBoxItemTrainsDetailsManufacturer.ItemData.Detail := TractionObject.SNIP.Manufacturer;
-    ListBoxItemTrainsDetailsModel.ItemData.Detail := TractionObject.SNIP.Model;
-    ListBoxItemTrainsDetailsSofwareVersion.ItemData.Detail := TractionObject.SNIP.SoftwareVersion;
-    ListBoxItemTrainsDetailsHardwareVersion.ItemData.Detail := TractionObject.SNIP.HardwareVersion;
-    ListBoxItemTrainsDetailsUserName.ItemData.Detail := TractionObject.SNIP.UserName;
-    ListBoxItemTrainsDetailsUserDescription.ItemData.Detail := TractionObject.SNIP.UserDescription;
+    TrainTabCDIClear;
     if TractionObject.NodeCDI.Valid then
     begin
       RenderCDI(TractionObject);
@@ -709,6 +825,41 @@ begin
       Controller.EngineMemorySpaceRead.TagObject := TractionObject;
       Controller.EngineMemorySpaceRead.Start;
     end;
+  end;
+end;
+
+procedure TLccThrottleAppForm.TrainTabCDISelect;
+begin
+   if Assigned(ListViewTrainRoster.Selected) then
+   begin
+      ActionTabTrainRosterNext.Execute;
+      TrainTabCDILoad(ListViewTrainRoster.Selected.TagObject as TLccTractionObject)
+   end;
+end;
+
+procedure TLccThrottleAppForm.TrainTabDetailsClear;
+begin
+  // Initialize Tab 1, Details
+  ListBoxItemTrainsDetailsManufacturer.ItemData.Detail := 'loading...';
+  ListBoxItemTrainsDetailsModel.ItemData.Detail := 'loading...';
+  ListBoxItemTrainsDetailsSofwareVersion.ItemData.Detail := 'loading...';
+  ListBoxItemTrainsDetailsHardwareVersion.ItemData.Detail := 'loading...';
+  ListBoxItemTrainsDetailsUserName.ItemData.Detail := 'loading...';
+  ListBoxItemTrainsDetailsUserDescription.ItemData.Detail := 'loading...';
+  ListBoxItemTrainsDetailsConsists.ItemData.Detail := 'loading...';
+end;
+
+procedure TLccThrottleAppForm.TrainTabDetailsLoad(TractionObject: TLccTractionObject);
+begin
+  if SelectedRosterEqualsTractionObject(TractionObject) then
+  begin
+    ListBoxItemTrainsDetailsManufacturer.ItemData.Detail := TractionObject.SNIP.Manufacturer;
+    ListBoxItemTrainsDetailsModel.ItemData.Detail := TractionObject.SNIP.Model;
+    ListBoxItemTrainsDetailsSofwareVersion.ItemData.Detail := TractionObject.SNIP.SoftwareVersion;
+    ListBoxItemTrainsDetailsHardwareVersion.ItemData.Detail := TractionObject.SNIP.HardwareVersion;
+    ListBoxItemTrainsDetailsUserName.ItemData.Detail := TractionObject.SNIP.UserName;
+    ListBoxItemTrainsDetailsUserDescription.ItemData.Detail := TractionObject.SNIP.UserDescription;
+    ListBoxItemTrainsDetailsConsists.ItemData.Detail := 'Bob';
   end;
 end;
 

@@ -9,7 +9,7 @@ uses
   Interfaces, // this includes the LCL widgetset
   Forms, memdslaz, TrainCommanderUnit, TrainDatabaseUnit, lcc_ethernet_common,
   lcc_ethernet_websocket, lcc_ethernet_http, servervisualunit, 
-lcc_node_traindatabase;
+lcc_node_traindatabase, lcc_listener_tree, lcc_base_classes;
 
 {$R *.res}
 

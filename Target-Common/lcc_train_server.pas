@@ -24,6 +24,8 @@ uses
 type
   TLccTrainControllerResult = (tcr_Ok, tcr_ControllerRefused, tcr_TrainRefused);
   TLccTractionServer = class; // forward
+
+
   { TLccTractionControllerObject }
   TLccTractionControllerObject = class
   private
@@ -32,6 +34,8 @@ type
   public
     property Node: TNodeID read FNodeID write FNodeID;
     property Flags: Byte read FFlags write FFlags;
+
+    procedure Clear;
   end;
 
 
@@ -64,7 +68,7 @@ type
     property SpeedStatusEmergencyStop: Boolean read FSpeedStatusEmergencyStop;
     property SNIP: TLccSNIPObject read FSNIP;
     property TrainSNIP: TLccTrainSNIPObject read FTrainSNIP;
-    property Controller: TLccTractionControllerObject read FController write FController;
+    property Controller: TLccTractionControllerObject read FController write FController;    // Is it even possible to keep this valid across network segments?
     property Server: TLccTractionServer read FServer;
     constructor Create(AServer: TLccTractionServer);
     destructor Destroy; override;
@@ -116,7 +120,6 @@ type
     procedure HandleTractionControllerAssign(SourceMessage: TLccMessage);
     procedure HandleTractionControllerRelease(SourceMessage: TLccMessage);
     procedure HandleTractionControllerQuery(SourceMessage: TLccMessage);
-    procedure HandleTractionControllerChangingNotify(SourceMessage: TLccMessage);
     procedure HandleTractionControllerChangedNotify(SourceMessage: TLccMessage);
     procedure HandleTractionEStop(SourceMessage: TLccMessage);
     procedure HandleTractionListenerAttach(SourceMessage: TLccMessage);
@@ -163,6 +166,14 @@ implementation
 uses
   lcc_alias_server,
   lcc_node;
+
+{ TLccTractionControllerObject }
+
+procedure TLccTractionControllerObject.Clear;
+begin
+  FNodeID := NULL_NODE_ID;
+  FFlags := 0;
+end;
 
 
 { TLccTractionObjectTLccTractionObject }
@@ -411,14 +422,17 @@ begin
    // Do Nothing: Just a query won't change the database
 end;
 
-procedure TLccTractionServer.HandleTractionControllerChangingNotify(SourceMessage: TLccMessage);
-begin
-  // TODO: This is complicated if the train asks for permission...
-end;
 
 procedure TLccTractionServer.HandleTractionControllerChangedNotify(SourceMessage: TLccMessage);
+var
+  TractionObject: TLccTractionObject;
 begin
   // TODO: This is complicated if the train asks for permission...
+  TractionObject := Find(SourceMessage.DestID);
+  if Assigned(TractionObject) then
+  begin
+    TractionObject.Controller.Clear;  // Taken by another Controller
+  end;
 end;
 
 procedure TLccTractionServer.HandleTractionEStop(SourceMessage: TLccMessage);
@@ -618,15 +632,15 @@ begin
                   TRACTION_CONTROLLER_CONFIG_ASSIGN  : HandleTractionControllerAssign(SourceMessage);
                   TRACTION_CONTROLLER_CONFIG_RELEASE : HandleTractionControllerRelease(SourceMessage);
                   TRACTION_CONTROLLER_CONFIG_QUERY   : HandleTractionControllerQuery(SourceMessage);
-                  TRACTION_CONTROLLER_CONFIG_CHANGING_NOTIFY : HandleTractionControllerChangingNotify(SourceMessage);
+                  TRACTION_CONTROLLER_CONFIG_CHANGED_NOTIFY : HandleTractionControllerChangedNotify(SourceMessage);
                 end
               end;
-            TRACTION_LISTENER :
+            TRACTION_LISTENER_CONFIG :
               begin
                 case SourceMessage.DataArray[1] of
-                  TRACTION_LISTENER_ATTACH : HandleTractionListenerAttach(SourceMessage);
-                  TRACTION_LISTENER_DETACH : HandleTractionListenerDetach(SourceMessage);
-                  TRACTION_LISTENER_QUERY  : HandleTractionListenerQuery(SourceMessage);
+                  TRACTION_LISTENER_CONFIG_ATTACH : HandleTractionListenerAttach(SourceMessage);
+                  TRACTION_LISTENER_CONFIG_DETACH : HandleTractionListenerDetach(SourceMessage);
+                  TRACTION_LISTENER_CONFIG_QUERY  : HandleTractionListenerQuery(SourceMessage);
                 end;
               end;
             TRACTION_MANAGE :

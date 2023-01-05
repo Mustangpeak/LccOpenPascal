@@ -26,6 +26,7 @@ uses
   lcc_utilities,
   lcc_node,
   lcc_defines,
+  lcc_base_classes,
   lcc_alias_server,
   lcc_train_server,
   lcc_node_traindatabase,
@@ -106,7 +107,7 @@ type
     function GetCdiFile: string; override;
     procedure BeforeLogin; override;
 
-    procedure DoControllerTakeOverRequest(var AllowTakeOver: Boolean);
+    procedure DoControllerChangingNotify(Controller: TLccNodeIdentificationObject);
     procedure DoControllerAssignChange(ATractionServer: TLccTractionServer; ATractionObject: TLccTractionObject; IsAssigned: Boolean);
 
     procedure HandleProducerIdentifiedAll(var SourceMessage: TLccMessage);
@@ -114,7 +115,7 @@ type
     procedure HandleProducerIdentifiedSet(var SourceMessage: TLccMessage); override;
     procedure HandleProducerIdentifiedUnknown(var SourceMessage: TLccMessage); override;
     procedure HandleTractionControllerAssignReply(var SourceMessage: TLccMessage); override;
-    procedure HandleTractionControllerChanging(var SourceMessage: TLccMessage); override;
+    procedure HandleTractionControllerChangedNotify(var SourceMessage: TLccMessage); override;
 
     function MessageFromControlledTrain(ALccMessage: TLccMessage): Boolean;
   public
@@ -245,9 +246,9 @@ begin
   ProtocolMemoryOptions.LowSpace := MSI_TRACTION_FUNCTION_CONFIG;
 end;
 
-procedure TLccTrainController.DoControllerTakeOverRequest(var AllowTakeOver: Boolean);
+procedure TLccTrainController.DoControllerChangingNotify(Controller: TLccNodeIdentificationObject);
 begin
-  AllowTakeOver := True;
+
 end;
 
 procedure TLccTrainController.DoControllerAssignChange(ATractionServer: TLccTractionServer; ATractionObject: TLccTractionObject; IsAssigned: Boolean);
@@ -297,10 +298,10 @@ begin
       begin
         AssignedTrain.AssignTrain(SourceMessage.SourceID, SourceMessage.CAN.SourceAlias);
       end;
-    TRACTION_CONTROLLER_CONFIG_ASSIGN_REPLY_REFUSE_ASSIGNED_CONTROLLER :
+{    TRACTION_CONTROLLER_CONFIG_ASSIGN_REPLY_REFUSE_ASSIGNED_CONTROLLER :      // Depreciated bad idea
       begin
          AssignedTrain.ClearTrain;
-      end;
+      end;        }
     TRACTION_CONTROLLER_CONFIG_ASSIGN_REPLY_REFUSE_TRAIN :
       begin
          AssignedTrain.ClearTrain;
@@ -310,30 +311,11 @@ begin
   end;
 end;
 
-// This is called from the train to ask this controller to give up control
-procedure TLccTrainController.HandleTractionControllerChanging(var SourceMessage: TLccMessage);
-var
-  AllowTakeover: Boolean;
+procedure TLccTrainController.HandleTractionControllerChangedNotify(var SourceMessage: TLccMessage);
 begin
-  // Only care if coming from our Assigned Train
-  if MessageFromControlledTrain(SourceMessage) then
-  begin
-    AllowTakeover := True;
-    DoControllerTakeOverRequest(AllowTakeover);
-    if AllowTakeover then
-    begin
-      ReleaseTrain;
-      WorkerMessage.LoadTractionControllerChangingReply(NodeID, AliasID, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias, True);
-      SendMessageFunc(Self, WorkerMessage);
-   //       DoTrainReleased;
-    end else
-    begin
-      WorkerMessage.LoadTractionControllerChangingReply(NodeID, AliasID, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias, False );
-      SendMessageFunc(Self, WorkerMessage);
-    end;
-  end;
+  inherited HandleTractionControllerChangedNotify(SourceMessage);
+  // Controller is loosing the train
 end;
-
 
 function TLccTrainController.MessageFromControlledTrain(ALccMessage: TLccMessage): Boolean;
 begin

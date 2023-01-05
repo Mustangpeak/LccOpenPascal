@@ -27,6 +27,7 @@ uses
   lcc_ethernet_common,
   lcc_node_messages,
   lcc_node_train,
+  lcc_node_traindatabase,
   lcc_node_controller,
   lcc_common_classes,
   lcc_node,
@@ -205,6 +206,8 @@ type
 
     procedure OnControllerAssignChange(Sender: TObject; ATractionServer: TLccTractionServer; ATractionObject: TLccTractionObject; IsAssigned: Boolean);
 
+    procedure AllocateTrainCallback(EngineAllocateTrain: TLccEngineAllocateTrain; AEngineSearchTrain: TLccEngineSearchTrain);
+
     procedure OnCDIReadCallback(MemorySpaceReadEnging: TLccEngineMemorySpaceRead);
 
     procedure EnableControls(DoEnable: Boolean);
@@ -305,7 +308,13 @@ begin
   begin
     AddressWord := AddressInt;
     if Assigned(Controller) then
-      Controller.AssignTrainByDccAddress(AddressWord, IsLong, TLccDccSpeedStep( ComboBoxThrottleSpeedSteps.ItemIndex));
+    begin
+      Controller.EngineAllocateTrain.Reset;
+      Controller.EngineAllocateTrain.Assign(AddressWord, IsLong, TLccDccSpeedStep( ComboBoxThrottleSpeedSteps.ItemIndex), @AllocateTrainCallback);
+      Controller.EngineAllocateTrain.Start;
+
+   //   Controller.AssignTrainByDccAddress(AddressWord, IsLong, TLccDccSpeedStep( ComboBoxThrottleSpeedSteps.ItemIndex));
+    end;
   end;
 end;
 
@@ -831,6 +840,13 @@ begin
     end else
       Controller.ListenerDetachFromAssignedTrain;
   end;
+end;
+
+procedure TFormTrainController.AllocateTrainCallback(
+  EngineAllocateTrain: TLccEngineAllocateTrain;
+  AEngineSearchTrain: TLccEngineSearchTrain);
+begin
+  Controller.TractionServer.Find(AEngineSearchTrain.SearchTrain.NodeIdentification.NodeID);
 end;
 
 procedure TFormTrainController.OnCDIReadCallback(MemorySpaceReadEnging: TLccEngineMemorySpaceRead);

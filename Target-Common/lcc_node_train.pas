@@ -324,8 +324,7 @@ type
     procedure HandleTractionControllerAssign(var SourceMessage: TLccMessage); override;
     procedure HandleTractionControllerRelease(var SourceMessage: TLccMessage); override;
     procedure HandleTractionControllerQuery(var SourceMessage: TLccMessage); override;
-    procedure HandleTractionControllerChanging(var SourceMessage: TLccMessage); override;
-    procedure HandleTractionControllerChangingReply(var SourceMessage: TLccMessage); override;
+    procedure HandleTractionControllerChangedNotify(var SourceMessage: TLccMessage); override;
     procedure HandleTractionEStop(var SourceMessage: TLccMessage); override;
     procedure HandleTractionListenerAttach(var SourceMessage: TLccMessage); override;
     procedure HandleTractionListenerDetach(var SourceMessage: TLccMessage);override;
@@ -907,8 +906,8 @@ begin
       // Store the requesting controller that wants the train
       ControllerState.AssignRequestingController(SourceMessage.SourceID, SourceMessage.CAN.SourceAlias);
 
-      // The train will call the currently attached node and ask for it to be released.
-      WorkerMessage.LoadTractionControllerChangingNotify(NodeID, AliasID, ControllerState.AttachedController.NodeID, ControllerState.AttachedController.Alias, ControllerState.RequestingController.NodeID);
+      // The train will call the currently attached node and tell it that it is loosing control
+      WorkerMessage.LoadTractionControllerChangedNotify(NodeID, AliasID, ControllerState.AttachedController.NodeID, ControllerState.AttachedController.Alias, ControllerState.RequestingController.NodeID);
       SendMessageFunc(Self, WorkerMessage);
       // Now need to wait for a Changing Notity Reply
     end else
@@ -954,48 +953,12 @@ begin
   end;
 end;
 
-procedure TLccTrainDccNode.HandleTractionControllerChanging(var SourceMessage: TLccMessage);
+procedure TLccTrainDccNode.HandleTractionControllerChangedNotify(var SourceMessage: TLccMessage);
 var
   DoDefault: Boolean;
 begin
   DoDefault := True;
-  (NodeManager as INodeManagerTractionCallbacks).DoTractionControllerChange(Self, SourceMessage, DoDefault);
-
-  if DoDefault then
-  begin
-    // Just say yes for now
-    WorkerMessage.LoadTractionControllerChangingReply(NodeID, AliasID, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias, True);
-    SendMessageFunc(Self, WorkerMessage);
-  end;
-end;
-
-procedure TLccTrainDccNode.HandleTractionControllerChangingReply(var SourceMessage: TLccMessage);
-var
-  ChangedResult: Byte;
-  DoDefault: Boolean;
-begin
-  DoDefault := True;
-  (NodeManager as INodeManagerTractionCallbacks).DoTractionControllerChangeReply(Self, SourceMessage, DoDefault);
-
-  if DoDefault then
-  begin
-
-    // What did the train that is attached say about the new controller taking over the train?
-    ChangedResult := SourceMessage.TractionExtractControllerChangedResult;
-
-    case ChangedResult of
-      TRACTION_CONTROLLER_CONFIG_REPLY_OK :
-        begin
-          WorkerMessage.LoadTractionControllerAssignReply(NodeID, AliasID, ControllerState.RequestingController.NodeID, ControllerState.RequestingController.Alias, TRACTION_CONTROLLER_CONFIG_REPLY_OK);
-          ControllerState.AcceptRequestingController;
-        end
-    else
-      // Controller won't allow
-      WorkerMessage.LoadTractionControllerAssignReply(NodeID, AliasID, ControllerState.RequestingController.NodeID, ControllerState.RequestingController.Alias, TRACTION_CONTROLLER_CONFIG_ASSIGN_REPLY_REFUSE_ASSIGNED_CONTROLLER);
-      ControllerState.ClearRequestingController;
-    end;
-    SendMessageFunc(Self, WorkerMessage);
-  end
+  (NodeManager as INodeManagerTractionCallbacks).DoTractionControllerChangedNotify(Self, SourceMessage, DoDefault);
 end;
 
 procedure TLccTrainDccNode.HandleTractionManageReserve(var SourceMessage: TLccMessage);

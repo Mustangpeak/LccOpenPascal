@@ -83,7 +83,7 @@ var
 implementation
 
 uses
-  lcc_node_messages;
+  lcc_base_classes;
 
 { TLccAliasServer }
 
