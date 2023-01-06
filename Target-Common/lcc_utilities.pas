@@ -43,6 +43,7 @@ uses
   function NodeAliasToString(AliasID: Word): String;
   function ValidateIPString(IP4: string): Boolean;
   function ValidateNodeIDString(NodeIDStr: string): Boolean;
+  function ValidateEventIDString(NodeIDStr: string): Boolean;
   function ValidatePort(PortStr: string): Boolean; overload;
   function ValidatePort(Port: Integer): Boolean; overload;
   procedure NodeIDStringToNodeID(ANodeIDStr: String; var ANodeID: TNodeID);
@@ -304,6 +305,38 @@ begin
 
 end;
 
+function ValidateEventIDString(NodeIDStr: string): Boolean;
+var
+  Octet : string;
+  Dots, I : Integer;
+begin
+  NodeIDStr := UpperCase(NodeIDStr);
+
+  NodeIDStr := NodeIDStr + '.'; //add a dot. We use a dot to trigger the Octet check, so need the last one
+  Dots := 0;
+  Octet := '0';
+  {$IFDEF LCC_MOBILE}
+  For I := 0 To Length(NodeIDStr) - 1 Do
+  {$ELSE}
+  for I := 1 To Length(NodeIDStr) do
+  {$ENDIF}
+  begin
+    if CharInSet(NodeIDStr[I], ['0'..'9', 'A'..'F', '.']) then
+    begin
+      if NodeIDStr[I] = '.' then //found a dot so inc dots and check octet value
+      begin
+        Inc(Dots);
+        if (length(Octet) = 1) or (StrToInt('$' + Octet) > 255) then
+          Dots := 9; //Either there's no number or it's higher than 255 so push dots out of range to fail below
+        Octet := '0'; // Reset to check the next octet
+      end else// End is a dot   // Else is not a dot so
+        Octet := Octet + NodeIDStr[I]; // Add the next character to the octet
+    end else // End is not a dot   // Else Is not in CheckSet so
+      Dots := 9; // Push dots out of range to fail below
+  end;
+  Result := (Dots = 8) // The only way that Dots will equal 8 is if we passed all the tests
+end;
+
 function ValidatePort(PortStr: string): Boolean;
 var
   Port: Integer;
@@ -340,14 +373,14 @@ begin
       begin
         Inc(Dots);
         if (length(Octet) = 1) or (StrToInt('$' + Octet) > 255) then
-          Dots := 7; //Either there's no number or it's higher than 255 so push dots out of range
+          Dots := 7; //Either there's no number or it's higher than 255 so push dots out of range to fail below
         Octet := '0'; // Reset to check the next octet
-      end else// End of IP4[I] is a dot   // Else IP4[I] is not a dot so
+      end else// End is a dot   // Else is not a dot so
         Octet := Octet + NodeIDStr[I]; // Add the next character to the octet
-    end else // End of IP4[I] is not a dot   // Else IP4[I] Is not in CheckSet so
-      Dots := 7; // Push dots out of range
+    end else // End is not a dot   // Else Is not in CheckSet so
+      Dots := 7; // Push dots out of range to fail below
   end;
-  Result := (Dots = 6) // The only way that Dots will equal 4 is if we passed all the tests
+  Result := (Dots = 6) // The only way that Dots will equal 6 is if we passed all the tests
 end;
 
 function ValidateIPString(IP4: string): Boolean; // Coding by Dave Sonsalla

@@ -557,7 +557,6 @@ var
   List: TList;
   iContext, iByte: Integer;
   OtherContext: TIdContext;
-  AByte: Byte;
   TcpMessage: TLccDynamicByteArray;
 begin
   // Messages sent to the Listener from all the Connections (Contexts)

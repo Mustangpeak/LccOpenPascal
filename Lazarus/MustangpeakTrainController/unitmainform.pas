@@ -208,7 +208,7 @@ type
 
     procedure AllocateTrainCallback(EngineAllocateTrain: TLccEngineAllocateTrain; AEngineSearchTrain: TLccEngineSearchTrain);
 
-    procedure OnCDIReadCallback(MemorySpaceReadEnging: TLccEngineMemorySpaceRead);
+    procedure OnCDIReadCallback(MemorySpaceReadEnging: TLccEngineMemorySpaceAccess);
 
     procedure EnableControls(DoEnable: Boolean);
 
@@ -468,9 +468,9 @@ begin
           if not DetailsTractionObject.NodeCDI.Valid then
           begin
             PanelRosterEditorConfigurationBkGnd.Caption := 'Reading Configuration Data......';
-            Controller.EngineMemorySpaceRead.Reset;
-            Controller.EngineMemorySpaceRead.Assign(MSI_CDI, DetailsTractionObject.NodeID, DetailsTractionObject.NodeAlias, @OnCDIReadCallback);
-            Controller.EngineMemorySpaceRead.Start;
+            Controller.EngineMemorySpaceAccess.Reset;
+            Controller.EngineMemorySpaceAccess.Assign(MSI_CDI, DetailsTractionObject.NodeID, DetailsTractionObject.NodeAlias, @OnCDIReadCallback);
+            Controller.EngineMemorySpaceAccess.Start;
           end else
             LoadCDIUserInterface;
         end;
@@ -849,7 +849,7 @@ begin
   Controller.TractionServer.Find(AEngineSearchTrain.SearchTrain.NodeIdentification.NodeID);
 end;
 
-procedure TFormTrainController.OnCDIReadCallback(MemorySpaceReadEnging: TLccEngineMemorySpaceRead);
+procedure TFormTrainController.OnCDIReadCallback(MemorySpaceReadEnging: TLccEngineMemorySpaceAccess);
 begin
   LoadCDIUserInterface;
 

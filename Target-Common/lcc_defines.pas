@@ -24,7 +24,9 @@ uses
 const
   ENGINE_ERROR_MEMORY_SPACE_UNSUPPORTED_PROTOCOL      = $0001;
   ENGINE_ERROR_MEMORY_SPACE_UNSUPPORTED_MEMORYSPACE   = $0002;
-  ENGINE_ERROR_MEMORY_SPACE_READ_ERROR                = $0003;
+  ENGINE_ERROR_MEMORY_SPACE_READ_ERROR                = $0004;
+  ENGINE_ERROR_MEMORY_SPACE_WRITE_ERROR               = $0004;
+  ENGINE_ERROR_MEMORY_SPACE_WRITE_TO_READONLY_SPACE   = $0008;
 
   ENGINE_ERROR_TRACTION_CONTROLLER_CONFIG_ASSIGN_REPLY_REFUSE_TRAIN = $0001;
 
@@ -115,7 +117,6 @@ type
 type
   TLccCdiParserBase = class(TComponent)
   public
-    procedure SetNodeManager(ANodeManager: TObject); virtual; abstract;
     procedure DoConfigMemReadReply(ANode: TObject); virtual; abstract;
     procedure DoConfigMemWriteReply(ANode: TObject); virtual; abstract;
     procedure NotifyLccNodeDestroy(LccNode: TObject); virtual; abstract;
@@ -340,16 +341,16 @@ const
   STR_PIP_FIRMWARE_UPGRADE_ACTIVE    = 'Firmware Upgrade Active Protocol';
 
 const
-  MCP_WRITE                           = $00;                                    // MemoryConfigurationProtocol - Write Memory Mask
-  MCP_WRITE_STREAM                    = $20;
+  MCP_OPERATION                       = $80;                                    // MemoryConfigurationProtocol - Operation Mask
+  MCP_OPERATION_REPLY                 = $80;
+
+
   MCP_READ                            = $40;                                    // MemoryConfigurationProtocol - Read Memory Mask
   MCP_READ_CONFIGURATION              = $41;
   MCP_READ_ALL                        = $42;
   MCP_READ_CDI                        = $43;
 
   MCP_READ_STREAM                     = $60;
-  MCP_OPERATION                       = $80;                                    // MemoryConfigurationProtocol - Operation Mask
-  MCP_OPERATION_REPLY                 = $80;
   MCP_READ_REPLY                      = $50;                                    // MemoryConfigurationProtocol - Read Reply Mask [Does not include the Address Space Mask "or" it with the the Address space masks below]
   MCP_READ_REPLY_CONFIGURATION        = $51;
   MCP_READ_REPLY_ALL                  = $52;
@@ -359,7 +360,23 @@ const
   MCP_READ_REPLY_FAILURE_ALL          = $5A;
   MCP_READ_REPLY_FAILURE_CDI          = $5B;
 
-  MCP_WRITE_REPLY                     = $10;
+  MCP_WRITE                           = $00;                                    // MemoryConfigurationProtocol - Write Memory Mask
+  MCP_WRITE_CONFIGURATION             = $01;
+  MCP_WRITE_ALL                       = $02;
+  MCP_WRITE_CDI                       = $03;
+
+  MCP_WRITE_REPLY                     = $10;                                    // MemoryConfigurationProtocol - Read Reply Mask [Does not include the Address Space Mask "or" it with the the Address space masks below]
+  MCP_WRITE_REPLY_CONFIGURATION       = $11;
+  MCP_WRITE_REPLY_ALL                 = $12;
+  MCP_WRITE_REPLY_CDI                 = $13;
+  MCP_WRITE_REPLY_FAILURE             = $18;
+  MCP_WRITE_REPLY_FAILURE_CONFIG      = $19;
+  MCP_WRITE_REPLY_FAILURE_ALL         = $1A;
+  MCP_WRITE_REPLY_FAILURE_CDI         = $1B;
+
+
+  MCP_WRITE_STREAM                    = $20;
+
   MCP_READ_STREAM_REPLY               = $70;
 
   MCP_CDI                             = $03;                                    // Address space = CDI ($FF) access Mask

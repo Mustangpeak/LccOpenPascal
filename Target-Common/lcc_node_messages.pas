@@ -77,8 +77,9 @@ type
     FImplemented: Boolean;   // Flags if we tried and could not get a CDI
     FCDI: AnsiString;
     function GetValid: Boolean;
+    procedure SetCDI(const Value: AnsiString);
   public
-    property CDI: AnsiString read FCDI write FCDI;
+    property CDI: AnsiString read FCDI write SetCDI;
     property Implemented: Boolean read FImplemented write FImplemented;
     property Valid: Boolean read GetValid;
   end;
@@ -288,7 +289,7 @@ class  function TractionSearchEncodeNMRA(ForceLongAddress: Boolean; SpeedStep: T
   procedure LoadConfigMemReadReplyError(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; AddressSpace: Byte; ConfigMemAddress: DWord; ErrorCode: Word; ErrorCodeString: string);
   procedure LoadConfigMemWriteInteger(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; AddressSpace: Byte; ConfigMemAddress: DWord; IntegerSize: Byte; DataInteger: Integer);
   procedure LoadConfigMemWriteString(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; AddressSpace: Byte; ConfigMemAddress: DWord; AString: String);
-  procedure LoadConfigMemWriteArray(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; AddressSpace: Byte; ConfigMemAddress: DWord; ArraySize: Integer; AnArray: array of Byte);
+  procedure LoadConfigMemWriteArray(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; AddressSpace: Byte; ConfigMemAddress: DWord; AnArray: array of Byte);
   // MTIs
   procedure LoadOptionalInteractionRejected(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; Reason: Word; AnMTI: Word);
 
@@ -2988,11 +2989,11 @@ end;
 
 procedure TLccMessage.LoadConfigMemWriteArray(ASourceID: TNodeID;
   ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; AddressSpace: Byte;
-  ConfigMemAddress: DWord; ArraySize: Integer; AnArray: array of Byte);
+  ConfigMemAddress: DWord; AnArray: array of Byte);
 var
-  i, iDatagram, DatagramCount, DatagramLength, iArrayPos: Integer;
+  i, iDatagram, DatagramCount, DatagramLength, iArrayPos, ArraySize: Integer;
 begin
-  // Really should be a Get Address Space Info message here to make sure the start address is 0.....
+  ArraySize := Length(AnArray);
 
   if ArraySize mod 64 = 0 then
     DatagramCount := ArraySize div 64
@@ -3173,6 +3174,11 @@ end;
 function TLccNodeCDI.GetValid: Boolean;
 begin
   Result := Implemented and (CDI <> '');
+end;
+
+procedure TLccNodeCDI.SetCDI(const Value: AnsiString);
+begin
+  FCDI := Value;
 end;
 
 initialization

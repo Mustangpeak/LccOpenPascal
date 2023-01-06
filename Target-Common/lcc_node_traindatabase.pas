@@ -60,7 +60,7 @@ type
     destructor Destroy; override;
     procedure Start; override;
     procedure Reset; override;
-    procedure Process(SourceMessage: TLccMessage);
+    procedure Process(SourceMessage: TLccMessage); override;
     procedure Assign(DccAddress: Word; AnIsLongAddress: Boolean; ASpeedStep: TLccDccSpeedStep; ACallback: TLccEngineSearchTrainCallback); overload;
     procedure Assign(ASearchString: string; AnIsLongAddress: Boolean; ASpeedStep: TLccDccSpeedStep; ACallback: TLccEngineSearchTrainCallback); overload;
     procedure Assign(ASearchString: string; ATrackProtocolFlags: Word; ACallback: TLccEngineSearchTrainCallback); overload;
@@ -84,7 +84,7 @@ type
     procedure Start; override;
     procedure Stop; override;
     procedure Reset; override;
-    procedure Process(SourceMessage: TLccMessage);
+    procedure Process(SourceMessage: TLccMessage); override;
     procedure Assign(DccAddress: Word; IsLongAddress: Boolean; SpeedSteps: TLccDccSpeedStep; ACallback: TOnLccEngineSearchAndAllocateTrainCallback); overload;
     procedure Assign(SearchString: string; IsLongAddress: Boolean; SpeedSteps: TLccDccSpeedStep; ACallback: TOnLccEngineSearchAndAllocateTrainCallback); overload;
     procedure Assign(SearchString: string; TrackProtocolFlags: Word; ACallback: TOnLccEngineSearchAndAllocateTrainCallback); overload;
@@ -121,7 +121,7 @@ type
     destructor Destroy; override;
     procedure Start; override;
     procedure Reset; override;
-    procedure Process(SourceMessage: TLccMessage);
+    procedure Process(SourceMessage: TLccMessage); override;
     procedure Assign(ATargetNodeID: TNodeID; ATargetAliasID: Word; ACallback: TOnLccEngineRetrieveListenerInfo); // AMemorySpace = MSI_xxxx constants
   end;
 
@@ -134,7 +134,7 @@ type
     FTractionServer: TLccTractionServer;
     FEngineListenerInfo: TLccEngineRetrieveListenerInfo;
   protected
-    procedure DoMemorySpaceReadEngineDone(MemoryReadEngine: TLccEngineMemorySpaceRead); override;
+    procedure DoMemorySpaceReadEngineDone(MemoryReadEngine: TLccEngineMemorySpaceAccess); override;
   public
     property EngineSearchAndAllocateTrain: TLccEngineSearchAndAllocateTrain read FEngineSearchAndAllocateTrain write FEngineSearchAndAllocateTrain;
     property EngineCreateTrain: TLccEngineSearchTrain read FEngineSearchTrain write FEngineSearchTrain;
@@ -473,16 +473,29 @@ end;
 
 { TLccTractionServerNode }
 
-procedure TLccTractionServerNode.DoMemorySpaceReadEngineDone(MemoryReadEngine: TLccEngineMemorySpaceRead);
+procedure TLccTractionServerNode.DoMemorySpaceReadEngineDone(MemoryReadEngine: TLccEngineMemorySpaceAccess);
 var
   TractionObject: TLccTractionObject;
 begin
   inherited DoMemorySpaceReadEngineDone(MemoryReadEngine);
   if TractionServer.Enabled then
   begin
-    TractionObject := TractionServer.Find(MemoryReadEngine.TargetNodeID);
-    if Assigned(TractionObject) then
-      TractionObject.NodeCDI.CDI := MemoryReadEngine.StreamAsString;
+    if MemoryReadEngine.MemorySpace = MSI_CDI then
+    begin
+      TractionObject := TractionServer.Find(MemoryReadEngine.TargetNodeID);
+      if Assigned(TractionObject) then
+      begin
+        if MemoryReadEngine.EngineState = lesComplete then
+        begin
+          TractionObject.NodeCDI.CDI := MemoryReadEngine.StreamAsString;
+          TractionObject.NodeCDI.Implemented := True;
+        end else
+        begin
+          TractionObject.NodeCDI.CDI := '';  // Error
+          TractionObject.NodeCDI.Implemented := False;
+        end;
+      end;
+    end;
   end;
 end;
 

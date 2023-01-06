@@ -8,7 +8,7 @@ interface
 
 {$I ../lcc_compilers.inc}
 
-{.$DEFINE PRINT_MEM_LOCATIONS}
+{$DEFINE PRINT_MEM_LOCATIONS}
 
 uses
   Classes,
@@ -48,6 +48,7 @@ uses
   lcc_node_manager,
   lcc_utilities,
   lcc_node,
+  lcc_base_classes,
   lcc_xmlutilities;
 
 const
@@ -67,6 +68,8 @@ const
 
 
 type
+  TLccOpenPascalSpeedButton = class;
+
   {$IFDEF FPC}
     TLccPanel = TPanel;
     TLccTabControl = TPageControl;
@@ -163,7 +166,7 @@ type
 
   TDataElementInformation = class
   private
-    FCompareMemorySpaceButton: TLccSpeedButton;
+    FCompareMemorySpaceButton: TLccOpenPascalSpeedButton;
     FConfigData: TDataElementConfig;                             // What is the Datatype associated with this Memory Configuration location
     FIntDefault: Int64;                                          // If an Integer Type the default value
     FIntMax: Int64;                                              // If an Integer Type the Max value
@@ -174,9 +177,11 @@ type
     FMapList: TMapRelationList;                                  // Enumeration of the defined values for this data type (may not be any) and the Key associated with each defined value
     FOnMemChangeState: TNotifyEvent;                             // Called when MemState changes in the UI from the user interacting with it
     FMemState: TConfigMemState;                                  // Tracks the state of the actual memory stored in the Node compared to the UI interface for the Element (unknown, saved, unsaved, etc)
-    FReadMemorySpaceButton: TLccSpeedButton;
-    FWriteMemorySpaceButton: TLccSpeedButton;
+    FReadMemorySpaceButton: TLccOpenPascalSpeedButton;
+    FWriteMemorySpaceButton: TLccOpenPascalSpeedButton;
+    FEditControl: TObject;
     procedure SetMemState(AValue: TConfigMemState);
+    function GetMemoryAddressPointerHi: Int64;
   public
     constructor Create(ADataType: TLccConfigDataType);
     destructor Destroy; override;
@@ -185,14 +190,16 @@ type
     property IntMax: Int64 read FIntMax write FIntMax;
     property IntDefault: Int64 read FIntDefault write FIntDefault;
     property MemoryAddressPointer: Int64 read FMemoryAddressPointer write FMemoryAddressPointer;
+    property MemoryAddressPointerHi: Int64 read GetMemoryAddressPointerHi;
     property MemoryAllocation: DWord read FMemoryAllocation write FMemoryAllocation;
     property MemState: TConfigMemState read FMemState write SetMemState;
     property DataType: TLccConfigDataType read FDataType write FDataType;
     property MapList: TMapRelationList read FMapList write FMapList;
     property OnMemChangeState: TNotifyEvent read FOnMemChangeState write FOnMemChangeState;
-    property ReadMemorySpaceButton: TLccSpeedButton read FReadMemorySpaceButton write FReadMemorySpaceButton;
-    property WriteMemorySpaceButton: TLccSpeedButton read FWriteMemorySpaceButton write FWriteMemorySpaceButton;
-    property CompareMemorySpaceButton: TLccSpeedButton read FCompareMemorySpaceButton write FCompareMemorySpaceButton;
+    property ReadMemorySpaceButton: TLccOpenPascalSpeedButton read FReadMemorySpaceButton write FReadMemorySpaceButton;
+    property WriteMemorySpaceButton: TLccOpenPascalSpeedButton read FWriteMemorySpaceButton write FWriteMemorySpaceButton;
+    property CompareMemorySpaceButton: TLccOpenPascalSpeedButton read FCompareMemorySpaceButton write FCompareMemorySpaceButton;
+    property EditControl: TObject read FEditControl write FEditControl;
   end;
 
    { TLccOpenPascalSpinEdit }
@@ -244,33 +251,13 @@ type
     property ScrollingWindowContentsPanel: TLccPanel read FScrollingWindowContentsPanel write FScrollingWindowContentsPanel;
   end;
 
+  { TLccOpenPascalSpeedButton }
 
-  { TLccCdiParserSerializer }
-
-  TLccCdiParserSerializer = class
+  TLccOpenPascalSpeedButton = class(TLccSpeedButton)
   private
-    FDataElementInformation: TDataElementInformation;
-    FDataElementInformationList: TList;
-    FOnNotification: TParserNotificationEvent;
-    FOwnerParser: TLccCdiParser;
-    FWorkerMessage: TLccMessage;
-  protected
-    procedure DoNotification(Notify: TParserSerializer); virtual;
-    function PackCVReads(CV_Start: DWord): Byte;
+    FEditObject: TObject;
   public
-    constructor Create;
-    destructor Destroy; override;
-    procedure AddRead(AConfigInfo: TDataElementInformation);    // THIS SHOULD BE ONLY ONE ADD SO THIS STAYS SERIALIZED
-    procedure AddWrite(AConfigInfo: TDataElementInformation);
-    procedure Clear;
-    procedure SendNext;
-    procedure Remove(AConfigInfo: TDataElementInformation);
-
-    property DataElementInformation: TDataElementInformation read FDataElementInformation write FDataElementInformation;
-    property DataElementInformationList: TList read FDataElementInformationList write FDataElementInformationList;
-    property OwnerParser: TLccCdiParser read FOwnerParser write FOwnerParser;
-    property WorkerMessage: TLccMessage read FWorkerMessage write FWorkerMessage;
-    property OnNotification: TParserNotificationEvent read FOnNotification write FOnNotification;
+    property EditObject: TObject read FEditObject write FEditObject;
   end;
 
 
@@ -294,13 +281,13 @@ type
   TLccCdiParser = class(TLccCdiParserBase)
   private
     FAutoReadOnTabChange: Boolean;
-    FGlobalButtonReadPage: TButton;
-    FGlobalButtonStop: TButton;
-    FGlobalButtonWritePage: TButton;
+    FEngineMemorySpaceAccess: TLccEngineMemorySpaceAccess;
+    FGlobalButtonReadPage: TLccOpenPascalSpeedButton;
+    FGlobalButtonStop: TLccOpenPascalSpeedButton;
+    FGlobalButtonWritePage: TLccOpenPascalSpeedButton;
     FCVBlockRead: Word;
     FMarkedToStop: Boolean;
     FMarkedToStopIsStopping: Boolean;
-    FNodeManager: TLccNodeManager;
     FLccNode: TLccNode;
     FOnAfterReadPage: TNotifyEvent;
     FOnAfterWritePage: TNotifyEvent;
@@ -310,12 +297,12 @@ type
     FGlobalButtonBkGnd: TLccPanel;
     FParserFrame: TLccPanel;
     FPrintMemOffset: Boolean;
-    FSerializer: TLccCdiParserSerializer;
     FShowCompareBtn: Boolean;
     FShowReadBtn: Boolean;
     FShowWriteBtn: Boolean;
     FSuppressNameAndDescription: Boolean;
     FTabControl: TLccTabControl;
+    FTargetNodeIdentification: TLccNodeIdentificationObject;
     FWorkerMessage: TLccMessage;
     function GetCVBlockRead: Word;
     procedure SetCVBlockRead(AValue: Word);
@@ -329,7 +316,7 @@ type
     function CreateSpacer(ParentControl: TLccPanel): TLccLabel;
 
     // These all live within the base elements that need to be alTop aligned
-    function CreateButton(AContainerParent: TLccPanel; ACaption: LccDOMString; OnClickFunc: TNotifyEvent; Enable: Boolean; AWidth: single; AnAlign: {$IFDEF DELPHI}TAlignLayout{$ELSE}TAlign{$ENDIF}): TLccSpeedButton;
+    function CreateButton(AContainerParent: TLccPanel; ACaption: LccDOMString; OnClickFunc: TNotifyEvent; Enable: Boolean; AWidth: single; AnAlign: {$IFDEF DELPHI}TAlignLayout{$ELSE}TAlign{$ENDIF}): TLccOpenPascalSpeedButton;
     procedure CreateSpinEditLayout(ParentControl: TLccPanel; Indent: Integer; DataElementInformation: TDataElementInformation);
     procedure CreateEditLayout(ParentControl: TLccPanel; Indent: Integer; DataElementInformation: TDataElementInformation);
     procedure CreateComboBoxListLayout(ParentControl: TLccPanel; Indent: Integer; DataElementInformation: TDataElementInformation);
@@ -349,6 +336,9 @@ type
     // Lowest level process that does not create UI elements directly
     procedure ProcessElementForUIMap(Element: TLccXmlNode; var MemoryAddressPointer: Int64; DataElementInformation: TDataElementInformation);
 
+    function ExtractStringFromElementUI(DataElementInformation: TDataElementInformation; var AString: string): Boolean;
+    function ExtractIntFromElementUI(DataElementInformation: TDataElementInformation; var AnInteger: Integer): Boolean;
+    function ExtractEventIDFromElementUI(DataElementInformation: TDataElementInformation; var AnEventID: TEventID): Boolean;
 
 
     // Read Button presse handlers
@@ -359,6 +349,8 @@ type
     procedure DoButtonReadPageClick(Sender: TObject); virtual;
     procedure DoButtonWritePageClick(Sender: TObject); virtual;
     procedure DoButtonStopClick(Sender: TObject); virtual;
+
+    procedure OnEngineMemorySpaceAccessCallback(EngineMemorySpaceAccess: TLccEngineMemorySpaceAccess);
 
     // Control Event Handler
     procedure OnPageControlChange(Sender: TObject);
@@ -381,16 +373,9 @@ type
     procedure DoClearInterface; virtual;
     procedure DoBuildInterfaceComplete; virtual;
 
-
-    procedure Notification(AComponent: TComponent; Operation: TOperation); override;
-
     procedure OnSpinEditChange(Sender: TObject);
     procedure OnEditChange(Sender: TObject);
     procedure OnComboBoxChange(Sender: TObject);
-
-
-    procedure OnSerializerNotification(Sender: TObject; Notify: TParserSerializer);
-
 
     // ...............
 
@@ -400,35 +385,34 @@ type
     property ParserFrame: TLccPanel read FParserFrame write FParserFrame;  // alClient aligned to the Application Panel used as our drawing canvas
     property GlobalButtonBkGnd: TLccPanel read FGlobalButtonBkGnd write FGlobalButtonBkGnd; // alBottom aligned to the Parser Frame
     property TabControl: TLccTabControl read FTabControl write FTabControl; // alClient aligned in the Parser Frame, sibling to the GlobalButtonBkgnd
+    property EngineMemorySpaceAccess: TLccEngineMemorySpaceAccess read FEngineMemorySpaceAccess write FEngineMemorySpaceAccess;
+    property TargetNodeIdentification: TLccNodeIdentificationObject read FTargetNodeIdentification write FTargetNodeIdentification;
 
     // Located in the GlobalButtonBkGnd frame
-    property GlobalButtonReadPage: TButton read FGlobalButtonReadPage write FGlobalButtonReadPage;
-    property GlobalButtonWritePage: TButton read FGlobalButtonWritePage write FGlobalButtonWritePage;
-    property GlobalButtonStop: TButton read FGlobalButtonStop write FGlobalButtonStop;
+    property GlobalButtonReadPage: TLccOpenPascalSpeedButton read FGlobalButtonReadPage write FGlobalButtonReadPage;
+    property GlobalButtonWritePage: TLccOpenPascalSpeedButton read FGlobalButtonWritePage write FGlobalButtonWritePage;
+    property GlobalButtonStop: TLccOpenPascalSpeedButton read FGlobalButtonStop write FGlobalButtonStop;
 
 
     // Properties to look at below...............
 
     property MarkedToStop: Boolean read FMarkedToStop write FMarkedToStop;
     property MarkedToStopIsStopping: Boolean read FMarkedToStopIsStopping write FMarkedToStopIsStopping;
-    property Serializer: TLccCdiParserSerializer read FSerializer write FSerializer;
     property WorkerMessage: TLccMessage read FWorkerMessage write FWorkerMessage;
 
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
-    function Build_CDI_Interface(AnLccNode: TLccNode; ParentControl: TLccTextBox; CDI: TLccXmlDocument): TLccPanel; overload;
-    function Build_CDI_Interface(AnLccNode: TLccNode; ParentControl: TLccTextBox; CDI: String): TLccPanel; overload;
+    function Build_CDI_Interface(AnLccNode: TLccNode; ATargetNode: TLccNodeIdentificationObject; ParentControl: TLccTextBox; CDI: TLccXmlDocument): TLccPanel; overload;
+    function Build_CDI_Interface(AnLccNode: TLccNode; ATargetNode: TLccNodeIdentificationObject; ParentControl: TLccTextBox; CDI: String): TLccPanel; overload;
     procedure Clear_CDI_Interface(ClearLccNode: Boolean);
     procedure DoConfigMemReadReply(ANode: TObject); override;
     procedure DoConfigMemWriteReply(ANode: TObject); override;
     procedure NotifyLccNodeDestroy(LccNode: TObject); override;
-    procedure SetNodeManager(ANodeManager: TObject); override;
 
     property LccNode: TLccNode read FLccNode;
     property AutoReadOnTabChange: Boolean read FAutoReadOnTabChange write FAutoReadOnTabChange;
     property CVBlockRead: Word read GetCVBlockRead write SetCVBlockRead;
-    property NodeManager: TLccNodeManager read FNodeManager write FNodeManager;
     property PrintMemOffset: Boolean read FPrintMemOffset write FPrintMemOffset;
     property ShowReadBtn: Boolean read FShowReadBtn write FShowReadBtn;
     property ShowWriteBtn: Boolean read FShowWriteBtn write FShowWriteBtn;
@@ -442,160 +426,6 @@ type
 
 
 implementation
-
-type
-  TLccNodeManagerHack = class(TLccNodeManager)
-  end;
-
-
-{ TLccCdiParserSerializer }
-
-procedure TLccCdiParserSerializer.DoNotification(Notify: TParserSerializer);
-begin
-  if Assigned(OnNotification) then
-    OnNotification(Self, Notify);
-end;
-
-function TLccCdiParserSerializer.PackCVReads(CV_Start: DWord): Byte;
-var
-  Next: TDataElementInformation;
-  CV_Next: DWord;
-  i: Integer;
-  Found: Boolean;
-begin
-  Result := 1;
-  CV_Next := CV_Start + 1;
-  repeat
-    Found := False;
-    i := 0; // Index 0 is what is being used at the base address
-    while (i < DataElementInformationList.Count) and not Found do
-    begin
-      Next := TDataElementInformation( DataElementInformationList[i]);
-      if Next.MemoryAddressPointer = CV_Next then
-      begin
-        Inc(Result);
-        Inc(CV_Next);
-        Found := True;
-      end else
-        Inc(i);
-    end;
-
-    if Found then
-      DataElementInformationList.Delete(i);            // We don't own these, they belong to the Controls
-
-  until not Found or (Result = OwnerParser.CVBlockRead);
-end;
-
-constructor TLccCdiParserSerializer.Create;
-begin
-  inherited Create;
-  FDataElementInformation := nil;
-  FDataElementInformationList := TList.Create;
-  FWorkerMessage := TLccMessage.Create;
-end;
-
-destructor TLccCdiParserSerializer.Destroy;
-begin
-  FreeAndNil(FDataElementInformationList);
-  FreeAndNil(FWorkerMessage);
-  inherited Destroy;
-end;
-
-procedure TLccCdiParserSerializer.AddRead(AConfigInfo: TDataElementInformation);
-begin
-  if Assigned(AConfigInfo) then
-  begin
-    AConfigInfo.ConfigData.DataDirection := cdd_Read;
-    DataElementInformationList.Add(AConfigInfo);
-    DoNotification(ps_InsertRead);
-  end;
-end;
-
-procedure TLccCdiParserSerializer.AddWrite(AConfigInfo: TDataElementInformation);
-begin
-  if Assigned(AConfigInfo) then
-  begin
-    AConfigInfo.ConfigData.DataDirection := cdd_Write;
-    DataElementInformationList.Add(AConfigInfo);
-    DoNotification(ps_InsertWrite);
-  end;
-end;
-
-procedure TLccCdiParserSerializer.Clear;
-var
-  i: Integer;
-begin
-  for i := 0 to DataElementInformationList.Count - 1 do
-  begin
-    if TDataElementInformation(DataElementInformationList[i]).ConfigData.DataDirection = cdd_Read then
-      DoNotification(ps_RemoveRead)
-    else
-      DoNotification(ps_RemoveWrite);
-  end;
-  DataElementInformationList.Clear;
-  DataElementInformation := nil;
-end;
-
-procedure TLccCdiParserSerializer.SendNext;
-//var
-//  SequencialCVReads: Byte;
-begin
-
-  {
-  if (DataElementInformationList.Count > 0) and not Assigned(DataElementInformation) and Assigned(OwnerParser.NodeManager.RootNode) then
-  begin
-    DataElementInformation := TDataElementInformation( DataElementInformationList[0]);
-    DataElementInformationList.Delete(0);
-    if Assigned(OwnerParser) then
-    begin
-      if DataElementInformation.ConfigData.DataDirection = cdd_Read then
-      begin    // Reply will return on OwnerParser.DoConfigMemReadReply(...);
-        if (DataElementInformation.MemoryAddressPointer and $FF000000 = $FF000000) and (OwnerParser.CVBlockRead > 1) then
-        begin
-           SequencialCVReads := PackCVReads(DataElementInformation.MemoryAddressPointer);
-           OwnerParser.LccNode.ConfigurationMem.Initialize(DataElementInformation.MemoryAddressPointer, MSI_CONFIG, SequencialCVReads, DataElementInformation.DataType);
-           WorkerMessage.LoadConfigMemRead(OwnerParser.NodeManager.RootNode.NodeID, OwnerParser.NodeManager.RootNode.AliasID, OwnerParser.LccNode.NodeID, OwnerParser.LccNode.AliasID, MSI_CONFIG, DataElementInformation.MemoryAddressPointer, SequencialCVReads);
-           TLccNodeManagerHack( OwnerParser.NodeManager).DoRequestMessageSend(WorkerMessage);
-        end else
-        begin
-          OwnerParser.LccNode.ConfigurationMem.Initialize(DataElementInformation.MemoryAddressPointer, MSI_CONFIG, DataElementInformation.MemoryAllocation, DataElementInformation.DataType);
-          WorkerMessage.LoadConfigMemRead(OwnerParser.NodeManager.RootNode.NodeID, OwnerParser.NodeManager.RootNode.AliasID, OwnerParser.LccNode.NodeID, OwnerParser.LccNode.AliasID, MSI_CONFIG, DataElementInformation.MemoryAddressPointer, DataElementInformation.MemoryAllocation);
-          TLccNodeManagerHack( OwnerParser.NodeManager).DoRequestMessageSend(WorkerMessage);
-        end;
-      end else
-      if DataElementInformation.ConfigData.DataDirection = cdd_Write then
-      begin    // Reply MIGHT return on OwnerParser.DoConfigMemWriteReply(...);  Nodes are NOT required to send this
-        case DataElementInformation.DataType of
-          cdt_Int :
-            begin
-              OwnerParser.LccNode.ConfigurationMem.Initialize(DataElementInformation.MemoryAddressPointer, MSI_CONFIG, DataElementInformation.MemoryAllocation, DataElementInformation.DataType);
-              WorkerMessage.LoadConfigMemWriteInteger(OwnerParser.NodeManager.RootNode.NodeID, OwnerParser.NodeManager.RootNode.AliasID, OwnerParser.LccNode.NodeID, OwnerParser.LccNode.AliasID, MSI_CONFIG, DataElementInformation.MemoryAddressPointer, DataElementInformation.MemoryAllocation, DataElementInformation.ConfigData.DataInteger);
-              TLccNodeManagerHack( OwnerParser.NodeManager).DoRequestMessageSend(WorkerMessage);
-            end;
-          cdt_String :
-            begin
-              OwnerParser.LccNode.ConfigurationMem.Initialize(DataElementInformation.MemoryAddressPointer, MSI_CONFIG, DataElementInformation.MemoryAllocation, DataElementInformation.DataType);
-              WorkerMessage.LoadConfigMemWriteString(OwnerParser.NodeManager.RootNode.NodeID, OwnerParser.NodeManager.RootNode.AliasID, OwnerParser.LccNode.NodeID, OwnerParser.LccNode.AliasID, MSI_CONFIG, DataElementInformation.MemoryAddressPointer, DataElementInformation.ConfigData.DataString);
-              TLccNodeManagerHack( OwnerParser.NodeManager).DoRequestMessageSend(WorkerMessage);
-            end;
-        end;
-      end;
-    end;
-  end;       }
-end;
-
-procedure TLccCdiParserSerializer.Remove(AConfigInfo: TDataElementInformation);
-begin
-  if AConfigInfo = DataElementInformation then
-  begin
-    DataElementInformation := nil;
-    if AConfigInfo.ConfigData.DataDirection = cdd_Read then
-      DoNotification(ps_RemoveRead)
-    else
-      DoNotification(ps_RemoveWrite);
-    SendNext;
-  end;
-end;
 
 
 { TMapRelation }
@@ -706,9 +536,9 @@ end;
 
 function TLccCdiParser.CreateButton(AContainerParent: TLccPanel;
   ACaption: LccDOMString; OnClickFunc: TNotifyEvent; Enable: Boolean;
-  AWidth: single;  AnAlign: {$IFDEF DELPHI}TAlignLayout{$ELSE}TAlign{$ENDIF}): TLccSpeedButton;
+  AWidth: single; AnAlign: {$IFDEF DELPHI}TAlignLayout{$ELSE}TAlign{$ENDIF}): TLccOpenPascalSpeedButton;
 begin
-  Result := TLccSpeedButton.Create(AContainerParent);
+  Result := TLccOpenPascalSpeedButton.Create(AContainerParent);
   Result.Width := {$IFDEF DELPHI}AWidth{$ELSE}Trunc(AWidth){$ENDIF};
   Result.{$IFDEF DELPHI}Text{$ELSE}Caption{$ENDIF} := string( ACaption);
 
@@ -728,8 +558,7 @@ begin
   Result.Enabled := True;
 end;
 
-function TLccCdiParser.CreateLabel(ParentControl: TLccPanel;
-  ACaption: LccDOMString; Indent: Single; Bold: Boolean): TLccLabel;
+function TLccCdiParser.CreateLabel(ParentControl: TLccPanel; ACaption: LccDOMString; Indent: Single; Bold: Boolean): TLccLabel;
 begin
   Result := nil;
   if ACaption <> '' then
@@ -820,8 +649,6 @@ var
   LastLabel: TLccLabel;
 begin
   ItemStr := '';
-  Result := nil;
-
   // Add a tab to place the Identification information on
   Result := CreateTab(ATabControl, 'Identification');
 
@@ -935,8 +762,7 @@ begin
 
 end;
 
-function TLccCdiParser.CreateBaseEditorLayout(ParentControl: TLccPanel;
-  DataElementInformation: TDataElementInformation): TLccPanel;
+function TLccCdiParser.CreateBaseEditorLayout(ParentControl: TLccPanel; DataElementInformation: TDataElementInformation): TLccPanel;
 var
   ButtonWidth: Integer;
   ReadStr, WriteStr, CompareStr: LccDOMString;
@@ -989,6 +815,11 @@ begin
   {$IFDEF DELPHI}SpinEdit.Margins.Left := Indent;{$ELSE}SpinEdit.BorderSpacing.Left := Trunc(Indent);{$ENDIF}
   {$IFDEF DELPHI}SpinEdit.Margins.Right := COMMON_MARGIN;{$ELSE}SpinEdit.BorderSpacing.Right := COMMON_MARGIN;{$ENDIF}
 
+  // Put a link to the editor to the buttons associated with it
+  DataElementInformation.ReadMemorySpaceButton.EditObject := SpinEdit;
+  DataElementInformation.WriteMemorySpaceButton.EditObject := SpinEdit;
+  DataElementInformation.CompareMemorySpaceButton.EditObject := SpinEdit;
+  DataElementInformation.EditControl := SpinEdit;
 
  // SpinEdit.MaxValue := Info.in;
 
@@ -1009,6 +840,12 @@ begin
   EditBox.Align := {$IFDEF DELPHI}TAlignLayout.Client{$ELSE}alClient{$ENDIF};
   {$IFDEF DELPHI}EditBox.Margins.Left := Indent;{$ELSE}EditBox.BorderSpacing.Left := Trunc(Indent);{$ENDIF}
   {$IFDEF DELPHI}EditBox.Margins.Right := COMMON_MARGIN;{$ELSE}EditBox.BorderSpacing.Right := COMMON_MARGIN;{$ENDIF}
+
+    // Put a link to the editor to the buttons associated with it
+  DataElementInformation.ReadMemorySpaceButton.EditObject := EditBox;
+  DataElementInformation.WriteMemorySpaceButton.EditObject := EditBox;
+  DataElementInformation.CompareMemorySpaceButton.EditObject := EditBox;
+  DataElementInformation.EditControl := EditBox;
 end;
 
 procedure TLccCdiParser.CreateComboBoxListLayout(ParentControl: TLccPanel;
@@ -1032,6 +869,12 @@ begin
   ComboBox.ItemIndex := 0;
 
   ComboBox.DataElementInformation := DataElementInformation;
+
+  // Put a link to the editor to the buttons associated with it
+  DataElementInformation.ReadMemorySpaceButton.EditObject := ComboBox;
+  DataElementInformation.WriteMemorySpaceButton.EditObject := ComboBox;
+  DataElementInformation.CompareMemorySpaceButton.EditObject := ComboBox;
+  DataElementInformation.EditControl := ComboBox;
 end;
 
 procedure TLccCdiParser.DoAfterReadPage(Sender: TObject);
@@ -1183,20 +1026,70 @@ begin
 end;
 
 procedure TLccCdiParser.OnButtonReadClick(Sender: TObject);
+var
+  Info: TDataElementInformation;
 begin
-  if Assigned(FLccNode) and Assigned(NodeManager) then
+  Info :=  ButtonToDataElementInformation(Sender);
+  if Assigned(Info) then
   begin
-    Serializer.AddRead(ButtonToDataElementInformation(Sender));
-    Serializer.SendNext;
+    EngineMemorySpaceAccess.Reset;
+    case Info.DataType of
+      cdt_String   : EngineMemorySpaceAccess.Assign(lems_Read, MSI_CONFIG, True, Info.MemoryAddressPointer, Info.MemoryAddressPointerHi, True, TargetNodeIdentification.NodeID, TargetNodeIdentification.Alias, {$IFNDEF DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessCallback);
+      cdt_Int      : EngineMemorySpaceAccess.Assign(lems_Read, MSI_CONFIG, False, Info.MemoryAddressPointer, Info.MemoryAddressPointerHi, True, TargetNodeIdentification.NodeID, TargetNodeIdentification.Alias, {$IFNDEF DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessCallback);
+      cdt_EventID  : EngineMemorySpaceAccess.Assign(lems_Read, MSI_CONFIG, False, Info.MemoryAddressPointer, Info.MemoryAddressPointerHi, True, TargetNodeIdentification.NodeID, TargetNodeIdentification.Alias, {$IFNDEF DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessCallback);
+      cdt_Bit      : begin end;
+    end;
+    EngineMemorySpaceAccess.TagObject := Info;
+    EngineMemorySpaceAccess.Start;
   end;
 end;
 
 procedure TLccCdiParser.OnButtonWriteClick(Sender: TObject);
+var
+  Info: TDataElementInformation;
+  AString: String;
+  AnInteger: Integer;
+  AnEventID: TEventID;
 begin
-  if Assigned(FLccNode) and Assigned(NodeManager) then
+  Info :=  ButtonToDataElementInformation(Sender);
+  if Assigned(Info) then
   begin
-    Serializer.AddWrite(ButtonToDataElementInformation(Sender));
-    Serializer.SendNext;
+    EngineMemorySpaceAccess.Reset;
+    case Info.DataType of
+      cdt_String   : begin
+                       AString := '';
+                       if ExtractStringFromElementUI(Info, AString) then
+                       begin
+                         EngineMemorySpaceAccess.Assign(lems_Write, MSI_CONFIG, True, Info.MemoryAddressPointer, Info.MemoryAddressPointerHi, True, TargetNodeIdentification.NodeID, TargetNodeIdentification.Alias, {$IFNDEF DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessCallback);
+                         EngineMemorySpaceAccess.StringToStream := AnsiString(AString);
+                         EngineMemorySpaceAccess.Start;
+                       end;
+                     end;
+
+      cdt_Int      : begin
+                       AnInteger := 0;
+                       if ExtractIntFromElementUI(Info, AnInteger) then
+                       begin
+                         EngineMemorySpaceAccess.Assign(lems_Write, MSI_CONFIG, False, Info.MemoryAddressPointer, Info.MemoryAddressPointerHi, True, TargetNodeIdentification.NodeID, TargetNodeIdentification.Alias, {$IFNDEF DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessCallback);
+                         EngineMemorySpaceAccess.IntToStream[Info.MemoryAllocation] := AnInteger;
+                         EngineMemorySpaceAccess.Start;
+                       end;
+                     end;
+
+      cdt_EventID  : begin
+                       AnEventID := NULL_EVENT_ID;
+                       if ExtractEventIDFromElementUI(Info, AnEventID) then
+                       begin
+                         EngineMemorySpaceAccess.Assign(lems_Write, MSI_CONFIG, False, Info.MemoryAddressPointer, Info.MemoryAddressPointerHi, True, TargetNodeIdentification.NodeID, TargetNodeIdentification.Alias, {$IFNDEF DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessCallback);
+                         EngineMemorySpaceAccess.EventIDToStream := AnEventID;
+                         EngineMemorySpaceAccess.Start;
+                       end;
+                     end;
+
+      cdt_Bit      : begin end;
+    end;
+    EngineMemorySpaceAccess.TagObject := Info;
+    EngineMemorySpaceAccess.Start;
   end;
 end;
 
@@ -1207,7 +1100,7 @@ begin
 end;
 
 procedure TLccCdiParser.DoButtonReadPageClick(Sender: TObject);
-
+ {
   procedure RunSheet(Component: TComponent);
   var
     i: Integer;
@@ -1226,12 +1119,12 @@ procedure TLccCdiParser.DoButtonReadPageClick(Sender: TObject);
   end;
 
 var
-  TabSheet: TLccTabSheet;
+  TabSheet: TLccTabSheet;   }
 begin
-  TabSheet := FindActivePage;
+{  TabSheet := FindActivePage;
   if Assigned(TabSheet) then
     RunSheet(TabSheet);
-  Serializer.SendNext;
+  Serializer.SendNext;  }
 end;
 
 procedure TLccCdiParser.DoButtonStopClick(Sender: TObject);
@@ -1239,7 +1132,48 @@ begin
   MarkedToStop := True;
 end;
 
+procedure TLccCdiParser.OnEngineMemorySpaceAccessCallback(EngineMemorySpaceAccess: TLccEngineMemorySpaceAccess);
+var
+  Info: TDataElementInformation;
+  Edit: TLccEdit;
+  SpinEdit: TLccSpinEdit;
+  ComboBox: TLccComboBox;
+begin
+  if EngineMemorySpaceAccess.ReadWrite = lems_Read then
+  begin // Read completed
+    Info := EngineMemorySpaceAccess.TagObject as TDataElementInformation;
+    if Info.EditControl is TLccEdit then
+    begin
+      Edit := Info.EditControl as TLccEdit;
+      Edit.Text := string( EngineMemorySpaceAccess.StreamAsString);
+    end else
+    if Info.EditControl is TLccSpinEdit then
+    begin
+      SpinEdit := Info.EditControl as TLccSpinEdit;
+      SpinEdit.Value := EngineMemorySpaceAccess.StreamAsInt;
+    end else
+    if Info.EditControl is TLccComboBox then
+    begin
+      ComboBox := Info.EditControl as TLccComboBox;
+      {$IFDEF DELPHI}
+      if ComboBox.ItemIndex > -1 then
+      begin
+
+      end
+      {$ELSE}
+      Combobox.Text := EventIDToString(EngineMemorySpaceAccess.StreamAsEventID, True);
+      {$ENDIF}
+    end;
+  end else
+  begin // Write completed
+     // do something interesting here.....
+     beep;
+
+  end;
+end;
+
 procedure TLccCdiParser.DoButtonWritePageClick(Sender: TObject);
+  {
   procedure RunSheet(Component: TComponent);
   var
     i: Integer;
@@ -1258,12 +1192,12 @@ procedure TLccCdiParser.DoButtonWritePageClick(Sender: TObject);
   end;
 
 var
-  TabSheet: TLccTabSheet;
+  TabSheet: TLccTabSheet;   }
 begin
-  TabSheet := FindActivePage;
+ { TabSheet := FindActivePage;
   if Assigned(TabSheet) then
     RunSheet(TabSheet);
-  Serializer.SendNext;
+  Serializer.SendNext;    }
 end;
 
 function TLccCdiParser.ExtractElementItem(ParentElement: TLccXmlNode; Item: string;var ItemStr: LccDOMString): Boolean;
@@ -1298,17 +1232,17 @@ function TLccCdiParser.FindControlByMemoryAddressPointer(Address: DWord): TLccCo
     begin
       if AComponent is TLccOpenPascalSpinEdit then
       begin
-        if TLccOpenPascalSpinEdit( AComponent).DataElementInformation.MemoryAddressPointer = Address then
+        if (AComponent as TLccOpenPascalSpinEdit).DataElementInformation.MemoryAddressPointer = Address then
           Result := AComponent
       end else
       if AComponent is TLccOpenPascalEdit then
       begin
-        if TLccOpenPascalEdit( AComponent).DataElementInformation.MemoryAddressPointer = Address then
+        if (AComponent as TLccOpenPascalEdit).DataElementInformation.MemoryAddressPointer = Address then
           Result := AComponent
       end else
       if AComponent is TLccOpenPascalComboBox then
       begin
-        if TLccOpenPascalComboBox( AComponent).DataElementInformation.MemoryAddressPointer = Address then
+        if (AComponent as TLccOpenPascalComboBox).DataElementInformation.MemoryAddressPointer = Address then
           Result := AComponent
       end
     end
@@ -1341,18 +1275,6 @@ begin
         Result := PageControl.{$IFDEF DELPHI}ActiveTab{$ELSE}ActivePage{$ENDIF};
       end;
     end;
-  end;
-end;
-
-procedure TLccCdiParser.Notification(AComponent: TComponent; Operation: TOperation);
-begin
-  inherited Notification(AComponent, Operation);
-  if AComponent is TLccNodeManager then
-  begin
- //    case Operation of
- //      opInsert : TLccNodeManager(AComponent).CdiParser := Self;
- //      opRemove : TLccNodeManager(AComponent).CdiParser := nil;
-  //   end;
   end;
 end;
 
@@ -1557,6 +1479,105 @@ begin
    end;
 end;
 
+function TLccCdiParser.ExtractStringFromElementUI(DataElementInformation: TDataElementInformation; var AString: string): Boolean;
+var
+  LocalEdit: TLccEdit;
+  LocalComboBox: TLccComboBox;
+begin
+  Result := False;
+  AString := '';
+  if DataElementInformation.EditControl is TLccEdit then
+  begin
+    LocalEdit := DataElementInformation.EditControl as TLccEdit;
+    AString := LocalEdit.Text;
+    Result := True;
+  end else
+  if DataElementInformation.EditControl is TLccComboBox then
+  begin
+    LocalComboBox := DataElementInformation.EditControl as TLccComboBox;
+    if LocalComboBox.ItemIndex > -1 then
+    begin
+      AString := LocalComboBox.Items[LocalComboBox.ItemIndex];
+      Result := True;
+    end;
+  end
+  // SpinEdit is Integer only
+end;
+
+function TLccCdiParser.ExtractIntFromElementUI(DataElementInformation: TDataElementInformation; var AnInteger: Integer): Boolean;
+var
+  LocalEdit: TLccEdit;
+  LocalComboBox: TLccComboBox;
+  LocalSpinEdit: TLccSpinEdit;
+  LocalText: String;
+begin
+  Result := False;
+  AnInteger := 0;
+  if DataElementInformation.EditControl is TLccEdit then
+  begin
+    LocalEdit := DataElementInformation.EditControl as TLccEdit;
+    LocalText := LocalEdit.Text;
+    if TryStrToInt(LocalText, AnInteger) then
+      Result := True;
+  end else
+  if DataElementInformation.EditControl is TLccComboBox then
+  begin
+    LocalComboBox := DataElementInformation.EditControl as TLccComboBox;
+    if LocalComboBox.ItemIndex > -1 then
+    begin
+      LocalText := LocalComboBox.Items[LocalComboBox.ItemIndex];
+      if TryStrToInt(LocalText, AnInteger) then
+        Result := True;
+    end;
+  end else
+  if DataElementInformation.EditControl is TLccSpinEdit then
+  begin
+     LocalSpinEdit := DataElementInformation.EditControl as TLccSpinEdit;
+     AnInteger := Trunc(LocalSpinEdit.Value);
+     Result := True;
+  end;
+
+  // See if the Min/Max/Default have been used
+  if DataElementInformation.IntDefault < High(Int64) then
+  begin  // Not sure what to do with default....
+  end;
+  if DataElementInformation.IntMin < High(Int64) then
+    Result := AnInteger >= DataElementInformation.IntMin;
+  if DataElementInformation.IntMax < High(Int64) then
+    Result := AnInteger <= DataElementInformation.IntMax;
+end;
+
+function TLccCdiParser.ExtractEventIDFromElementUI(DataElementInformation: TDataElementInformation; var AnEventID: TEventID): Boolean;
+var
+  LocalEdit: TLccEdit;
+  LocalComboBox: TLccComboBox;
+begin
+  Result := False;
+  AnEventID := NULL_EVENT_ID;
+  if DataElementInformation.EditControl is TLccEdit then
+  begin
+    LocalEdit := DataElementInformation.EditControl as TLccEdit;
+    if ValidateEventIDString(LocalEdit.Text) then
+    begin
+      AnEventID := StrToEventID(LocalEdit.Text);
+      Result := True;
+    end;
+  end else
+  if DataElementInformation.EditControl is TLccComboBox then
+  begin
+    LocalComboBox := DataElementInformation.EditControl as TLccComboBox;
+    if LocalComboBox.ItemIndex > -1 then
+    begin
+      if ValidateEventIDString(LocalComboBox.Items[LocalComboBox.ItemIndex]) then
+      begin
+        AnEventID := StrToEventID( LocalComboBox.Items[LocalComboBox.ItemIndex]);
+        Result := True;
+      end;
+    end;
+  end
+  // SpinEdit is Integer only
+end;
+
 procedure TLccCdiParser.ProcessElementForUIDataElement(
   ParentControl: TLccPanel; Element: TLccXmlNode;
   var MemoryAddressPointer: Int64; Indent: Integer; AddressSpace: Byte;
@@ -1621,23 +1642,22 @@ begin
   FCVBlockRead := AValue;
 end;
 
-procedure TLccCdiParser.SetNodeManager(ANodeManager: TObject);
-begin
-  NodeManager := ANodeManager as TLccNodeManager;
-end;
 
 function TLccCdiParser.ButtonToDataElementInformation(Sender: TObject): TDataElementInformation;
+var
+  LocalSpeedButton: TLccOpenPascalSpeedButton;
 begin
-  if TLccSpeedButton(Sender).Owner is TLccOpenPascalSpinEdit then
-    Result := TLccOpenPascalSpinEdit( TLccSpeedButton(Sender).Owner).DataElementInformation
-  else
-  if TLccSpeedButton(Sender).Owner is TLccOpenPascalEdit then
-    Result := TLccOpenPascalEdit( TLccSpeedButton(Sender).Owner).DataElementInformation
-  else
-  if TLccSpeedButton(Sender).Owner is TLccOpenPascalComboBox then
-    Result := TLccOpenPascalComboBox( TLccSpeedButton(Sender).Owner).DataElementInformation
-  else
-   Result := nil;
+  Result := nil;
+  if Sender is TLccOpenPascalSpeedButton then
+  begin
+    LocalSpeedButton := Sender as TLccOpenPascalSpeedButton;
+    if LocalSpeedButton.EditObject is TLccOpenPascalSpinEdit then
+      Result := (LocalSpeedButton.EditObject as TLccOpenPascalSpinEdit).DataElementInformation;
+    if LocalSpeedButton.EditObject is TLccOpenPascalEdit then
+      Result := (LocalSpeedButton.EditObject as TLccOpenPascalEdit).DataElementInformation;
+    if LocalSpeedButton.EditObject is TLccOpenPascalComboBox then
+      Result := (LocalSpeedButton.EditObject as TLccOpenPascalComboBox).DataElementInformation;
+  end;
 end;
 
 procedure TLccCdiParser.OnSpinEditChange(Sender: TObject);
@@ -1662,41 +1682,8 @@ procedure TLccCdiParser.OnPageControlChange(Sender: TObject);
 begin
   ResizeActiveTabScrollingWindowFrame;
 
-  Serializer.Clear;
   if AutoReadOnTabChange then
     DoButtonReadPageClick(Sender);
-end;
-
-procedure TLccCdiParser.OnSerializerNotification(Sender: TObject; Notify: TParserSerializer);
-begin
-  if Assigned(ApplicationPanel) then
-  begin
-
-    if MarkedToStop and not MarkedToStopIsStopping then
-    begin
-      MarkedToStopIsStopping := True;
-      Serializer.Clear;
-    end;
-
-    if Serializer.DataElementInformationList.Count > 0 then
-    begin
-      GlobalButtonReadPage.Enabled := False;
-      GlobalButtonWritePage.Enabled := False;
-      GlobalButtonStop.Enabled := True;
-    end else
-    begin
-      GlobalButtonReadPage.Enabled := True;
-      GlobalButtonWritePage.Enabled := True;
-      GlobalButtonStop.Enabled := False;
-      MarkedToStop := False;
-      MarkedToStopIsStopping := False;
-      if Notify = ps_RemoveRead then
-        DoAfterReadPage(Self)
-      else
-        DoAfterWritePage(Self);
-    end;
-//    StatusPanel.Text := 'Remaining: ' + IntToStr(Serializer.DataElementInformationList.Count);
-  end;
 end;
 
 procedure TLccCdiParser.OnParserFrameResize(Sender: TObject);
@@ -1726,8 +1713,7 @@ begin
   FSuppressNameAndDescription := False;
   FPrintMemOffset := False;
   FWorkerMessage := TLccMessage.Create;
-  FSerializer := TLccCdiParserSerializer.Create;
-  Serializer.OwnerParser := Self;
+  FTargetNodeIdentification := TLccNodeIdentificationObject.Create;
   CVBlockRead := 1;
 end;
 
@@ -1736,11 +1722,12 @@ begin
  // if Assigned(NodeManager) then
  //   NodeManager.CdiParser := nil;
   FreeAndNil(FWorkerMessage);
-  FreeAndNil(FSerializer);
+  FreeAndNil(FEngineMemorySpaceAccess);
+  FreeAndNil(FTargetNodeIdentification);
   inherited Destroy;
 end;
 
-function TLccCdiParser.Build_CDI_Interface(AnLccNode: TLccNode; ParentControl: TLccTextBox; CDI: TLccXmlDocument): TLccPanel;
+function TLccCdiParser.Build_CDI_Interface(AnLccNode: TLccNode; ATargetNode: TLccNodeIdentificationObject; ParentControl: TLccTextBox; CDI: TLccXmlDocument): TLccPanel;
 const
   BUTTON_HEIGHT = 40;
 var
@@ -1766,8 +1753,12 @@ begin
 
   Clear_CDI_Interface(False);
   FLccNode := AnLccNode;
+  TargetNodeIdentification.AssignID(ATargetNode);
+  // So we can read write the memory spaces
+  FEngineMemorySpaceAccess := TLccEngineMemorySpaceAccess.Create(LccNode);
+  LccNode.RegisterEngine(EngineMemorySpaceAccess);
+
   FApplicationPanel := ParentControl;
-  Serializer.OnNotification := {$IFNDEF DELPHI}@{$ENDIF}OnSerializerNotification;
 
   // Background that holds everything and is passed back as the child of the ParentControl
   ParserFrame := TLccPanel.Create(ParentControl);
@@ -1822,7 +1813,7 @@ begin
   DoBuildInterfaceComplete;
 end;
 
-function TLccCdiParser.Build_CDI_Interface(AnLccNode: TLccNode; ParentControl: TLccTextBox; CDI: String): TLccPanel;
+function TLccCdiParser.Build_CDI_Interface(AnLccNode: TLccNode; ATargetNode: TLccNodeIdentificationObject; ParentControl: TLccTextBox; CDI: String): TLccPanel;
 var
   XML: TLccXmlDocument;
 begin
@@ -1831,7 +1822,7 @@ begin
   begin
     XML := XmlLoadFromText(CDI);
     try
-      Result := Build_CDI_Interface(AnLccNode, ParentControl, XML);
+      Result := Build_CDI_Interface(AnLccNode, ATargetNode, ParentControl, XML);
     finally
       XmlFreeDocument(XML);
     end;
@@ -1839,10 +1830,14 @@ begin
 end;
 
 procedure TLccCdiParser.Clear_CDI_Interface(ClearLccNode: Boolean);
-var
-  i: Integer;
 begin
-  Serializer.Clear;
+  if Assigned(LccNode) and Assigned(EngineMemorySpaceAccess) then
+  begin
+    EngineMemorySpaceAccess.Reset;
+    LccNode.UnRegisterEngine(EngineMemorySpaceAccess);
+    FreeAndNil(FEngineMemorySpaceAccess);
+  end;
+
   DoClearInterface;
   if Assigned(TabControl) then
   begin
@@ -1863,6 +1858,7 @@ begin
   FParserFrame := nil;
   FGlobalButtonBkGnd := nil;
   FTabControl := nil;
+
   if ClearLccNode then
     FLccNode := nil;
 end;
@@ -1889,6 +1885,9 @@ end;
 constructor TDataElementInformation.Create(ADataType: TLccConfigDataType);
 begin
   inherited Create;
+  FIntDefault := High(Int64);
+  FIntMin := High(Int64);
+  FIntMax := High(Int64);
   FMemState := ocs_Unknown;
   FDataType := ADataType;
   MapList := TMapRelationList.Create;
@@ -1902,6 +1901,11 @@ begin
   inherited Destroy;
 end;
 
+
+function TDataElementInformation.GetMemoryAddressPointerHi: Int64;
+begin
+  Result := MemoryAddressPointer + MemoryAllocation;
+end;
 
 end.
 

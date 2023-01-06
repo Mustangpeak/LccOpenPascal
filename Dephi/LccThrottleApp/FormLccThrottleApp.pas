@@ -21,6 +21,7 @@ uses
   lcc_node_messages,
   lcc_train_server,
   lcc_alias_server,
+  lcc_base_classes,
   lcc_cdi_parser,
 
   FMX.Menus, FMX.Platform, FMX.ListBox, FMX.Memo.Types, FMX.ScrollBox, FMX.Memo,
@@ -240,7 +241,7 @@ type
     procedure OnClientServerConnectionChange(Sender: TObject; Info: TLccHardwareConnectionInfo);
     procedure OnClientServerErrorMessage(Sender: TObject; Info: TLccHardwareConnectionInfo);
 
-    procedure CallbackOnMemorySpaceRead(MemorySpaceReadEnging: TLccEngineMemorySpaceRead);
+    procedure CallbackOnMemorySpaceRead(MemorySpaceAccessEngine: TLccEngineMemorySpaceAccess);
 
     function ValidEditBoxKey(Key: Word): Boolean;
     function ConnectionLogin: Boolean;
@@ -627,22 +628,17 @@ procedure TLccThrottleAppForm.OnClientServerErrorMessage(Sender: TObject; Info: 
 begin
 end;
 
-procedure TLccThrottleAppForm.CallbackOnMemorySpaceRead(MemorySpaceReadEnging: TLccEngineMemorySpaceRead);
+procedure TLccThrottleAppForm.CallbackOnMemorySpaceRead(MemorySpaceAccessEngine: TLccEngineMemorySpaceAccess);
 var
   TractionObject: TLccTractionObject;
 begin
-  TractionObject := MemorySpaceReadEnging.TagObject as TLccTractionObject;
-  if MemorySpaceReadEnging.EngineState = lesComplete then
+  TractionObject := MemorySpaceAccessEngine.TagObject as TLccTractionObject;
+  if MemorySpaceAccessEngine.EngineState = lesComplete then
   begin
-    TractionObject.NodeCDI.CDI := Controller.EngineMemorySpaceRead.StreamAsString;
-    TractionObject.NodeCDI.Implemented := True;
-    RenderCDI(TractionObject);
-  end else
-  begin
-    TractionObject.NodeCDI.CDI := '';
-    TractionObject.NodeCDI.Implemented := False;
+    // The CDI was updated by the TractionServer code
+    if TractionObject.NodeCDI.Valid then
+      RenderCDI(TractionObject);
   end;
-
 end;
 
 procedure TLccThrottleAppForm.OnSNIPChange(TractionObject: TLccTractionObject);
@@ -672,14 +668,18 @@ end;
 procedure TLccThrottleAppForm.RenderCDI(TractionObject: TLccTractionObject);
 var
   XMLDoc: TLccXmlDocument;
+  LocalNodeIdentification: TLccNodeIdentificationObject;
 begin
   if TractionObject.NodeCDI.Valid then
   begin
+    LocalNodeIdentification := TLccNodeIdentificationObject.Create;
+    LocalNodeIdentification.AssignID(TractionObject.NodeID, TractionObject.NodeAlias);
     XMLDoc := XmlLoadFromText( LccDOMString( TractionObject.NodeCDI.CDI));
     try
-      CDILayoutFrame := CdiParserFrame.Build_CDI_Interface(Controller, LabelTrainRosterEditContainer, XMLDoc);
+       CDILayoutFrame := CdiParserFrame.Build_CDI_Interface(Controller, LocalNodeIdentification, LabelTrainRosterEditContainer, XMLDoc);
     finally
       XmlFreeDocument(XMLDoc);
+      LocalNodeIdentification.Free;
     end;
   end;
 end;
@@ -811,19 +811,22 @@ begin
 end;
 
 procedure TLccThrottleAppForm.TrainTabCDILoad(TractionObject: TLccTractionObject);
+var
+  s: String;
 begin
   if SelectedRosterEqualsTractionObject(TractionObject) then
   begin
     TrainTabCDIClear;
     if TractionObject.NodeCDI.Valid then
     begin
+      s := TractionObject.NodeCDI.CDI;
       RenderCDI(TractionObject);
     end else
     begin
-      Controller.EngineMemorySpaceRead.Reset;
-      Controller.EngineMemorySpaceRead.Assign(MSI_CDI, TractionObject.NodeID, TractionObject.NodeAlias, CallbackOnMemorySpaceRead);
-      Controller.EngineMemorySpaceRead.TagObject := TractionObject;
-      Controller.EngineMemorySpaceRead.Start;
+      Controller.EngineMemorySpaceAccess.Reset;
+      Controller.EngineMemorySpaceAccess.Assign(lems_Read, MSI_CDI, True, 0, 0, False, TractionObject.NodeID, TractionObject.NodeAlias, CallbackOnMemorySpaceRead);
+      Controller.EngineMemorySpaceAccess.TagObject := TractionObject;
+      Controller.EngineMemorySpaceAccess.Start;
     end;
   end;
 end;
