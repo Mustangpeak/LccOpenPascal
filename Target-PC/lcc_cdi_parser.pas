@@ -356,7 +356,7 @@ type
     procedure OnPageControlChange(Sender: TObject);
 
     // Utility methods
-    function ButtonToDataElementInformation(Sender: TObject): TDataElementInformation;
+    function ButtonToDataElementInformation(Sender: TObject): TDataElementInformation;  // Gets the DataElementInfo from the Editor attached to the Button
     function ExtractElementItem(ParentElement: TLccXmlNode; Item: string; var ItemStr: LccDOMString): Boolean;
     function FindControlByMemoryAddressPointer(Address: DWord): TLccControl;
     function FindActivePage: TLccTabSheet;
@@ -1039,7 +1039,6 @@ begin
       cdt_EventID  : EngineMemorySpaceAccess.Assign(lems_Read, MSI_CONFIG, False, Info.MemoryAddressPointer, Info.MemoryAddressPointerHi, True, TargetNodeIdentification.NodeID, TargetNodeIdentification.Alias, {$IFNDEF DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessCallback);
       cdt_Bit      : begin end;
     end;
-    EngineMemorySpaceAccess.TagObject := Info;
     EngineMemorySpaceAccess.Start;
   end;
 end;
@@ -1050,6 +1049,7 @@ var
   AString: String;
   AnInteger: Integer;
   AnEventID: TEventID;
+  EngineMemorySpaceObject: TLccEngineMemorySpaceObject;
 begin
   Info :=  ButtonToDataElementInformation(Sender);
   if Assigned(Info) then
@@ -1060,8 +1060,9 @@ begin
                        AString := '';
                        if ExtractStringFromElementUI(Info, AString) then
                        begin
-                         EngineMemorySpaceAccess.Assign(lems_Write, MSI_CONFIG, True, Info.MemoryAddressPointer, Info.MemoryAddressPointerHi, True, TargetNodeIdentification.NodeID, TargetNodeIdentification.Alias, {$IFNDEF DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessCallback);
-                         EngineMemorySpaceAccess.StringToStream := AnsiString(AString);
+                         // Need to queue up the data we want to write to the memory space
+                         EngineMemorySpaceObject := EngineMemorySpaceAccess.Assign(lems_Write, MSI_CONFIG, True, Info.MemoryAddressPointer, Info.MemoryAddressPointerHi, True, TargetNodeIdentification.NodeID, TargetNodeIdentification.Alias, {$IFNDEF DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessCallback);
+                         EngineMemorySpaceObject.WriteString := AString;
                          EngineMemorySpaceAccess.Start;
                        end;
                      end;
@@ -1070,8 +1071,9 @@ begin
                        AnInteger := 0;
                        if ExtractIntFromElementUI(Info, AnInteger) then
                        begin
-                         EngineMemorySpaceAccess.Assign(lems_Write, MSI_CONFIG, False, Info.MemoryAddressPointer, Info.MemoryAddressPointerHi, True, TargetNodeIdentification.NodeID, TargetNodeIdentification.Alias, {$IFNDEF DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessCallback);
-                         EngineMemorySpaceAccess.IntToStream[Info.MemoryAllocation] := AnInteger;
+                         // Need to queue up the data we want to write to the memory space
+                         EngineMemorySpaceObject := EngineMemorySpaceAccess.Assign(lems_Write, MSI_CONFIG, False, Info.MemoryAddressPointer, Info.MemoryAddressPointerHi, True, TargetNodeIdentification.NodeID, TargetNodeIdentification.Alias, {$IFNDEF DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessCallback);
+                         EngineMemorySpaceObject.WriteInteger := AnInteger;
                          EngineMemorySpaceAccess.Start;
                        end;
                      end;
@@ -1080,15 +1082,15 @@ begin
                        AnEventID := NULL_EVENT_ID;
                        if ExtractEventIDFromElementUI(Info, AnEventID) then
                        begin
-                         EngineMemorySpaceAccess.Assign(lems_Write, MSI_CONFIG, False, Info.MemoryAddressPointer, Info.MemoryAddressPointerHi, True, TargetNodeIdentification.NodeID, TargetNodeIdentification.Alias, {$IFNDEF DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessCallback);
-                         EngineMemorySpaceAccess.EventIDToStream := AnEventID;
+                         // Need to queue up the data we want to write to the memory space
+                         EngineMemorySpaceObject := EngineMemorySpaceAccess.Assign(lems_Write, MSI_CONFIG, False, Info.MemoryAddressPointer, Info.MemoryAddressPointerHi, True, TargetNodeIdentification.NodeID, TargetNodeIdentification.Alias, {$IFNDEF DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessCallback);
+                         EngineMemorySpaceObject.WriteEventID := AnEventID;
                          EngineMemorySpaceAccess.Start;
                        end;
                      end;
 
       cdt_Bit      : begin end;
     end;
-    EngineMemorySpaceAccess.TagObject := Info;
     EngineMemorySpaceAccess.Start;
   end;
 end;
@@ -1100,7 +1102,21 @@ begin
 end;
 
 procedure TLccCdiParser.DoButtonReadPageClick(Sender: TObject);
- {
+
+
+  procedure QueueRead(Info: TDataElementInformation);
+  begin
+    if Assigned(Info) then
+    begin
+      case Info.DataType of
+        cdt_String   : EngineMemorySpaceAccess.Assign(lems_Read, MSI_CONFIG, True, Info.MemoryAddressPointer, Info.MemoryAddressPointerHi, True, TargetNodeIdentification.NodeID, TargetNodeIdentification.Alias, {$IFNDEF DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessCallback);
+        cdt_Int      : EngineMemorySpaceAccess.Assign(lems_Read, MSI_CONFIG, False, Info.MemoryAddressPointer, Info.MemoryAddressPointerHi, True, TargetNodeIdentification.NodeID, TargetNodeIdentification.Alias, {$IFNDEF DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessCallback);
+        cdt_EventID  : EngineMemorySpaceAccess.Assign(lems_Read, MSI_CONFIG, False, Info.MemoryAddressPointer, Info.MemoryAddressPointerHi, True, TargetNodeIdentification.NodeID, TargetNodeIdentification.Alias, {$IFNDEF DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessCallback);
+        cdt_Bit      : begin end;
+      end;
+    end;
+  end;
+
   procedure RunSheet(Component: TComponent);
   var
     i: Integer;
@@ -1109,22 +1125,26 @@ procedure TLccCdiParser.DoButtonReadPageClick(Sender: TObject);
       RunSheet(Component.Components[i]);
 
     if Component is TLccOpenPascalSpinEdit then
-      Serializer.AddRead(TLccOpenPascalSpinEdit( Component).DataElementInformation)
+      QueueRead(TLccOpenPascalSpinEdit( Component).DataElementInformation)
     else
     if Component is TLccOpenPascalEdit then
-      Serializer.AddRead(TLccOpenPascalEdit( Component).DataElementInformation)
+      QueueRead(TLccOpenPascalEdit( Component).DataElementInformation)
     else
     if Component is TLccOpenPascalComboBox then
-      Serializer.AddRead(TLccOpenPascalComboBox( Component).DataElementInformation)
+      QueueRead(TLccOpenPascalComboBox( Component).DataElementInformation)
   end;
 
 var
-  TabSheet: TLccTabSheet;   }
+  TabSheet: TLccTabSheet;
 begin
-{  TabSheet := FindActivePage;
+  TabSheet := FindActivePage;
   if Assigned(TabSheet) then
+  begin
+    EngineMemorySpaceAccess.Reset;
     RunSheet(TabSheet);
-  Serializer.SendNext;  }
+    if EngineMemorySpaceAccess.QueuedRequests > 0 then
+      EngineMemorySpaceAccess.Start;
+  end;
 end;
 
 procedure TLccCdiParser.DoButtonStopClick(Sender: TObject);
@@ -1134,27 +1154,28 @@ end;
 
 procedure TLccCdiParser.OnEngineMemorySpaceAccessCallback(EngineMemorySpaceAccess: TLccEngineMemorySpaceAccess);
 var
-  Info: TDataElementInformation;
   Edit: TLccEdit;
   SpinEdit: TLccSpinEdit;
   ComboBox: TLccComboBox;
+  Control: TObject;
 begin
   if EngineMemorySpaceAccess.ReadWrite = lems_Read then
   begin // Read completed
-    Info := EngineMemorySpaceAccess.TagObject as TDataElementInformation;
-    if Info.EditControl is TLccEdit then
+    Control := FindControlByMemoryAddressPointer(EngineMemorySpaceAccess.AddressLo);
+
+    if Control is TLccEdit then
     begin
-      Edit := Info.EditControl as TLccEdit;
+      Edit := Control as TLccEdit;
       Edit.Text := string( EngineMemorySpaceAccess.StreamAsString);
     end else
-    if Info.EditControl is TLccSpinEdit then
+    if Control is TLccSpinEdit then
     begin
-      SpinEdit := Info.EditControl as TLccSpinEdit;
+      SpinEdit := Control as TLccSpinEdit;
       SpinEdit.Value := EngineMemorySpaceAccess.StreamAsInt;
     end else
-    if Info.EditControl is TLccComboBox then
+    if Control is TLccComboBox then
     begin
-      ComboBox := Info.EditControl as TLccComboBox;
+      ComboBox := Control as TLccComboBox;
       {$IFDEF DELPHI}
       if ComboBox.ItemIndex > -1 then
       begin
@@ -1173,7 +1194,53 @@ begin
 end;
 
 procedure TLccCdiParser.DoButtonWritePageClick(Sender: TObject);
-  {
+
+
+  procedure QueueWrite(Info: TDataElementInformation);
+  var
+    AString: String;
+    AnInteger: Integer;
+    AnEventID: TEventID;
+    EngineMemorySpaceObject: TLccEngineMemorySpaceObject;
+  begin
+    if Assigned(Info) then
+    begin
+      case Info.DataType of
+        cdt_String   : begin
+                         AString := '';
+                         if ExtractStringFromElementUI(Info, AString) then
+                         begin
+                           // Need to queue up the data we want to write to the memory space
+                           EngineMemorySpaceObject := EngineMemorySpaceAccess.Assign(lems_Write, MSI_CONFIG, True, Info.MemoryAddressPointer, Info.MemoryAddressPointerHi, True, TargetNodeIdentification.NodeID, TargetNodeIdentification.Alias, {$IFNDEF DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessCallback);
+                           EngineMemorySpaceObject.WriteString := AString;
+                         end;
+                       end;
+
+        cdt_Int      : begin
+                         AnInteger := 0;
+                         if ExtractIntFromElementUI(Info, AnInteger) then
+                         begin
+                           // Need to queue up the data we want to write to the memory space
+                           EngineMemorySpaceObject := EngineMemorySpaceAccess.Assign(lems_Write, MSI_CONFIG, False, Info.MemoryAddressPointer, Info.MemoryAddressPointerHi, True, TargetNodeIdentification.NodeID, TargetNodeIdentification.Alias, {$IFNDEF DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessCallback);
+                           EngineMemorySpaceObject.WriteInteger := AnInteger;
+                         end;
+                       end;
+
+        cdt_EventID  : begin
+                         AnEventID := NULL_EVENT_ID;
+                         if ExtractEventIDFromElementUI(Info, AnEventID) then
+                         begin
+                           // Need to queue up the data we want to write to the memory space
+                           EngineMemorySpaceObject := EngineMemorySpaceAccess.Assign(lems_Write, MSI_CONFIG, False, Info.MemoryAddressPointer, Info.MemoryAddressPointerHi, True, TargetNodeIdentification.NodeID, TargetNodeIdentification.Alias, {$IFNDEF DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessCallback);
+                           EngineMemorySpaceObject.WriteEventID := AnEventID;
+                         end;
+                       end;
+
+        cdt_Bit      : begin end;
+      end;
+    end;
+  end;
+
   procedure RunSheet(Component: TComponent);
   var
     i: Integer;
@@ -1182,22 +1249,26 @@ procedure TLccCdiParser.DoButtonWritePageClick(Sender: TObject);
       RunSheet(Component.Components[i]);
 
     if Component is TLccOpenPascalSpinEdit then
-      Serializer.AddWrite(TLccOpenPascalSpinEdit( Component).DataElementInformation)
+      QueueWrite(TLccOpenPascalSpinEdit( Component).DataElementInformation)
     else
     if Component is TLccOpenPascalEdit then
-      Serializer.AddWrite(TLccOpenPascalEdit( Component).DataElementInformation)
+      QueueWrite(TLccOpenPascalEdit( Component).DataElementInformation)
     else
     if Component is TLccOpenPascalComboBox then
-      Serializer.AddWrite(TLccOpenPascalComboBox( Component).DataElementInformation)
+      QueueWrite(TLccOpenPascalComboBox( Component).DataElementInformation)
   end;
 
 var
-  TabSheet: TLccTabSheet;   }
+  TabSheet: TLccTabSheet;
 begin
- { TabSheet := FindActivePage;
+  TabSheet := FindActivePage;
   if Assigned(TabSheet) then
+  begin
+    EngineMemorySpaceAccess.Reset;
     RunSheet(TabSheet);
-  Serializer.SendNext;    }
+    if EngineMemorySpaceAccess.QueuedRequests > 0 then
+      EngineMemorySpaceAccess.Start;
+  end;
 end;
 
 function TLccCdiParser.ExtractElementItem(ParentElement: TLccXmlNode; Item: string;var ItemStr: LccDOMString): Boolean;

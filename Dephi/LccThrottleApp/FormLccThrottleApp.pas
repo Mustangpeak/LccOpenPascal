@@ -811,15 +811,12 @@ begin
 end;
 
 procedure TLccThrottleAppForm.TrainTabCDILoad(TractionObject: TLccTractionObject);
-var
-  s: String;
 begin
   if SelectedRosterEqualsTractionObject(TractionObject) then
   begin
     TrainTabCDIClear;
     if TractionObject.NodeCDI.Valid then
     begin
-      s := TractionObject.NodeCDI.CDI;
       RenderCDI(TractionObject);
     end else
     begin

@@ -152,12 +152,19 @@ type
     FAddressLo: DWord;
     FCallback: TOnEngineMemorySpaceAccessCallback;
     FCurrentAddress: DWord;
+    FDataType: TLccConfigDataType;
     FIsString: Boolean;
     FMemorySpace: Byte;
     FReadWrite: TLccEngineMemorySpaceReadWrite;
     FTargetAlias: Word;
     FTargetNodeID: TNodeID;
     FUseAddresses: Boolean;
+    FWriteEventID: TEventID;
+    FWriteInteger: Integer;
+    FWriteString: String;
+    procedure SetWriteEventID(AValue: TEventID);
+    procedure SetWriteInteger(AValue: Integer);
+    procedure SetWriteString(AValue: String);
   public
     property AddressLo: DWord read FAddressLo write FAddressLo;
     property AddressHi: DWord read FAddressHi write FAddressHi;
@@ -169,6 +176,11 @@ type
     property UseAddresses: Boolean read FUseAddresses write FUseAddresses;
     property MemorySpace: Byte read FMemorySpace write FMemorySpace;
     property ReadWrite: TLccEngineMemorySpaceReadWrite read FReadWrite write FReadWrite;
+
+    property WriteString: String read FWriteString write SetWriteString;
+    property WriteInteger: Integer read FWriteInteger write SetWriteInteger;
+    property WriteEventID: TEventID read FWriteEventID write SetWriteEventID;
+    property DataType: TLccConfigDataType read FDataType write FDataType;
 
     constructor Create(AReadWrite: TLccEngineMemorySpaceReadWrite; AMemorySpace: Byte; AnIsString: Boolean; AnAddressLo, AnAddressHi: DWORD; AnUseAddresses: Boolean; ATargetNodeID: TNodeID; ATargetAliasID: Word; ACallback: TOnEngineMemorySpaceAccessCallback);
   end;
@@ -197,11 +209,13 @@ type
     procedure SetStreamAsEventID(AValue: TEventID);
     procedure SetStreamAsInt(Size: Integer; AValue: Integer);
     procedure SetStreamAsString(AValue: AnsiString);
+    function GetQueuedRequests: Integer;
   protected
     property CurrentAddress: DWord read FCurrentAddress write FCurrentAddress;
     property MemorySpaceQueue: TList read FMemorySpaceQueue write FMemorySpaceQueue;
     property WritingChunk: Boolean read FWritingChunk write FWritingChunk;
 
+    procedure InternalStart;
     procedure HandleReadReply(SourceMessage: TLccMessage; DataStartIndex: Integer);
     procedure HandleWriteReply(SourceMessage: TLccMessage);
     procedure ReadNextChunk;
@@ -232,6 +246,7 @@ type
     property StringToStream: AnsiString write SetStreamAsString;
     property IntToStream[Size: Integer]: Integer write SetStreamAsInt;
     property EventIDToStream: TEventID write SetStreamAsEventID;
+    property QueuedRequests: Integer read GetQueuedRequests;
 
 
     constructor Create(AnOwner: TLccNode); override;
@@ -239,7 +254,7 @@ type
     procedure Start; override;
     procedure Reset; override;
     procedure Process(SourceMessage: TLccMessage); override;
-    procedure Assign(AReadWrite: TLccEngineMemorySpaceReadWrite; AMemorySpace: Byte; AnIsString: Boolean; AnAddressLo, AnAddressHi: DWORD; AnUseAddresses: Boolean; ATargetNodeID: TNodeID; ATargetAliasID: Word; ACallback: TOnEngineMemorySpaceAccessCallback); // AMemorySpace = MSI_xxxx constants
+    function Assign(AReadWrite: TLccEngineMemorySpaceReadWrite; AMemorySpace: Byte; AnIsString: Boolean; AnAddressLo, AnAddressHi: DWORD; AnUseAddresses: Boolean; ATargetNodeID: TNodeID; ATargetAliasID: Word; ACallback: TOnEngineMemorySpaceAccessCallback): TLccEngineMemorySpaceObject; // AMemorySpace = MSI_xxxx constants
   end;
 
   { TLccNode }
@@ -497,6 +512,24 @@ uses
 
 { TLccEngineMemorySpaceObject }
 
+procedure TLccEngineMemorySpaceObject.SetWriteEventID(AValue: TEventID);
+begin
+  FWriteEventID := AValue;
+  DataType := cdt_EventID;
+end;
+
+procedure TLccEngineMemorySpaceObject.SetWriteInteger(AValue: Integer);
+begin
+  FWriteInteger := AValue;
+  DataType := cdt_Int;
+end;
+
+procedure TLccEngineMemorySpaceObject.SetWriteString(AValue: String);
+begin
+  FWriteString := AValue;
+  DataType := cdt_String;
+end;
+
 constructor TLccEngineMemorySpaceObject.Create(
   AReadWrite: TLccEngineMemorySpaceReadWrite; AMemorySpace: Byte;
   AnIsString: Boolean; AnAddressLo, AnAddressHi: DWORD;
@@ -718,18 +751,16 @@ begin
   end;
 end;
 
-procedure TLccEngineMemorySpaceAccess.Assign(
+function TLccEngineMemorySpaceAccess.Assign(
   AReadWrite: TLccEngineMemorySpaceReadWrite; AMemorySpace: Byte;
   AnIsString: Boolean; AnAddressLo, AnAddressHi: DWORD;
   AnUseAddresses: Boolean; ATargetNodeID: TNodeID; ATargetAliasID: Word;
-  ACallback: TOnEngineMemorySpaceAccessCallback);
-var
-  EngineMemorySpaceObject: TLccEngineMemorySpaceObject;
+  ACallback: TOnEngineMemorySpaceAccessCallback): TLccEngineMemorySpaceObject;
 begin
  // Assert(EngineState = lesIdle, 'TMemorySpaceReadEngine.Assign is running');
-    EngineMemorySpaceObject := TLccEngineMemorySpaceObject.Create(AReadWrite, AMemorySpace, AnIsString, AnAddressLo, AnAddressHi, AnUseAddresses, ATargetNodeID, ATargetAliasID, ACallback);
-  if Assigned(EngineMemorySpaceObject) then
-    MemorySpaceQueue.Add(EngineMemorySpaceObject);
+  Result := TLccEngineMemorySpaceObject.Create(AReadWrite, AMemorySpace, AnIsString, AnAddressLo, AnAddressHi, AnUseAddresses, ATargetNodeID, ATargetAliasID, ACallback);
+  if Assigned(Result) then
+    MemorySpaceQueue.Add(Result);
 end;
 
 function TLccEngineMemorySpaceAccess.CalculateNextReadCount: Integer;
@@ -774,6 +805,23 @@ begin
   FreeAndNil(FPIPHelper);
   FreeAndNil(FMemoryStream);
   inherited Destroy;
+end;
+
+function TLccEngineMemorySpaceAccess.GetQueuedRequests: Integer;
+begin
+  Result := FMemorySpaceQueue.Count
+end;
+
+procedure TLccEngineMemorySpaceAccess.InternalStart;
+begin
+  inherited Start;
+  if not PIPHelper.Valid then
+  begin
+    // Get what protocols are supported
+    WorkerMessage.LoadProtocolIdentifyInquiry(OwnerNode.NodeID, OwnerNode.AliasID, TargetNodeID, TargetAlias);
+    OwnerNode.SendMessageFunc(OwnerNode, WorkerMessage);
+  end else
+    ValidatePIPAndProceed;
 end;
 
 function TLccEngineMemorySpaceAccess.GetStreamAsEventID: TEventID;
@@ -848,6 +896,14 @@ begin
     TargetNodeID := EngineMemorySpaceObject.TargetNodeID;
     TargetAlias := EngineMemorySpaceObject.TargetAlias;
     CallBack := EngineMemorySpaceObject.CallBack;
+    if ReadWrite = lems_Write then
+    begin
+      case EngineMemorySpaceObject.DataType of
+        cdt_String  : StringToStream := AnsiString( EngineMemorySpaceObject.WriteString);
+        cdt_Int     : IntToStream[AddressHi - AddressLo] := EngineMemorySpaceObject.WriteInteger;
+        cdt_EventID : EventIDToStream := EngineMemorySpaceObject.WriteEventID;
+      end;
+    end;
 
     if ReadWrite = lems_Read then
       MemoryStream.Clear;
@@ -864,7 +920,7 @@ begin
   Callback(Self);
   Reset;
   if NextMemorySpaceObjectFromQueue then
-    Start;
+    InternalStart;
 end;
 
 function TLccEngineMemorySpaceAccess.GetStreamAsInt: Integer;
@@ -894,17 +950,8 @@ end;
 
 procedure TLccEngineMemorySpaceAccess.Start;
 begin
-  inherited Start;
   if NextMemorySpaceObjectFromQueue then
-  begin
-    if not PIPHelper.Valid then
-    begin
-      // Get what protocols are supported
-      WorkerMessage.LoadProtocolIdentifyInquiry(OwnerNode.NodeID, OwnerNode.AliasID, TargetNodeID, TargetAlias);
-      OwnerNode.SendMessageFunc(OwnerNode, WorkerMessage);
-    end else
-      ValidatePIPAndProceed;
-  end;
+    InternalStart;
 end;
 
 procedure TLccEngineMemorySpaceAccess.Reset;
