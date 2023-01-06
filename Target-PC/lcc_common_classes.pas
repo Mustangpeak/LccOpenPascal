@@ -78,6 +78,7 @@ type
   private
     FConnecting: Boolean;
     FConnectionInfo: TLccHardwareConnectionInfo;
+    FErrorOnExit: Boolean;
     FGridConnectHelper: TGridConnectHelper;
     FGridConnectMessageAssembler: TLccGridConnectMessageAssembler;
     FOutgoingCircularArray: TThreadedCircularArray;
@@ -91,19 +92,19 @@ type
 
     procedure SetConnecting(AValue: Boolean); virtual;
 
-    procedure HandleErrorAndDisconnect(SuppressMessage: Boolean); virtual;
-    procedure HandleSendConnectionNotification(NewConnectionState: TLccConnectionState); virtual;
-
-    procedure ErrorMessage; virtual;
-    procedure RequestErrorMessageSent; virtual;
     procedure ConnectionStateChange; virtual;
 
   public
     constructor Create(CreateSuspended: Boolean; AnOwner: TLccHardwareConnectionManager; AConnectionInfo: TLccHardwareConnectionInfo); reintroduce; virtual;
     destructor Destroy; override;
 
+    procedure ErrorMessage; virtual;
+    procedure HandleSendConnectionNotification(NewConnectionState: TLccConnectionState; ContextOfThread: Boolean = True); virtual;
+    procedure HandleErrorAndDisconnect(SuppressMessage: Boolean; ContextOfThread: Boolean = True); virtual;
+
     property ConnectionInfo: TLccHardwareConnectionInfo read FConnectionInfo;
     property Connecting: Boolean read FConnecting write SetConnecting;
+    property ErrorOnExit: Boolean read FErrorOnExit write FErrorOnExit;
     property GridConnectHelper: TGridConnectHelper read FGridConnectHelper;
     property OutgoingGridConnect: TThreadStringList read FOutgoingGridConnect write FOutgoingGridConnect;
     property OutgoingCircularArray: TThreadedCircularArray read FOutgoingCircularArray write FOutgoingCircularArray;
@@ -351,18 +352,34 @@ begin
   FConnecting:=AValue;
 end;
 
-procedure TLccConnectionThread.HandleErrorAndDisconnect(SuppressMessage: Boolean);
+procedure TLccConnectionThread.HandleErrorAndDisconnect(SuppressMessage: Boolean; ContextOfThread: Boolean);
 begin
-  if not SuppressMessage then
-    Synchronize({$IFDEF FPC}@{$ENDIF}ErrorMessage);
-  HandleSendConnectionNotification(lcsDisconnected);
-  Terminate;
+  if ContextOfThread then
+  begin
+    if not SuppressMessage then
+      Synchronize({$IFDEF FPC}@{$ENDIF}ErrorMessage);
+    HandleSendConnectionNotification(lcsDisconnected);
+    Terminate;
+  end else
+  begin
+    if not SuppressMessage then
+      ErrorMessage;
+    HandleSendConnectionNotification(lcsDisconnected);
+    Terminate;
+  end;
 end;
 
-procedure TLccConnectionThread.HandleSendConnectionNotification(NewConnectionState: TLccConnectionState);
+procedure TLccConnectionThread.HandleSendConnectionNotification(NewConnectionState: TLccConnectionState; ContextOfThread: Boolean);
 begin
-  ConnectionInfo.ConnectionState := NewConnectionState;
-  Synchronize({$IFDEF FPC}@{$ENDIF}ConnectionStateChange);
+  if ContextOfThread then
+  begin
+    ConnectionInfo.ConnectionState := NewConnectionState;
+    Synchronize({$IFDEF FPC}@{$ENDIF}ConnectionStateChange);
+  end else
+  begin
+    ConnectionInfo.ConnectionState := NewConnectionState;
+    ConnectionStateChange;
+  end;
 end;
 
 procedure TLccConnectionThread.ErrorMessage;
@@ -376,11 +393,6 @@ begin
   finally
     LocalConnectionInfo.Free
   end;
-end;
-
-procedure TLccConnectionThread.RequestErrorMessageSent;
-begin
-
 end;
 
 procedure TLccConnectionThread.ConnectionStateChange;

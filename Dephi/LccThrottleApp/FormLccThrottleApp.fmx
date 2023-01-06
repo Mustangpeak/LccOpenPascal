@@ -1,7 +1,7 @@
 object LccThrottleAppForm: TLccThrottleAppForm
   Left = 0
   Top = 0
-  ActiveControl = TabItemTrains
+  ActiveControl = TabItemLog
   Caption = 'Form56'
   ClientHeight = 536
   ClientWidth = 416
@@ -973,29 +973,40 @@ object LccThrottleAppForm: TLccThrottleAppForm
         Size.Height = 487.000000000000000000
         Size.PlatformDefault = False
         TabOrder = 0
-        object HeaderLogHeader: THeader
-          Sides = [Top, Left, Bottom, Right]
-          Align = Top
-          Size.Width = 416.000000000000000000
-          Size.Height = 50.000000000000000000
-          Size.PlatformDefault = False
-          TabOrder = 0
-          object LabelLogHeader: TLabel
-            Align = Client
-            Text = 'Logging'
-            TabOrder = 1
-          end
-        end
         object MemoLog: TMemo
           Touch.InteractiveGestures = [Pan, LongTap, DoubleTap]
           DataDetectorTypes = []
           Align = Client
           Size.Width = 416.000000000000000000
-          Size.Height = 437.000000000000000000
+          Size.Height = 447.000000000000000000
+          Size.PlatformDefault = False
+          TabOrder = 0
+          Viewport.Width = 412.000000000000000000
+          Viewport.Height = 443.000000000000000000
+        end
+        object ToolBarLog: TToolBar
+          Size.Width = 416.000000000000000000
+          Size.Height = 40.000000000000000000
           Size.PlatformDefault = False
           TabOrder = 1
-          Viewport.Width = 412.000000000000000000
-          Viewport.Height = 433.000000000000000000
+          object SpeedButtonLogClear: TSpeedButton
+            Align = Right
+            Position.X = 336.000000000000000000
+            Size.Width = 80.000000000000000000
+            Size.Height = 40.000000000000000000
+            Size.PlatformDefault = False
+            Text = 'Clear'
+            OnClick = SpeedButtonLogClearClick
+          end
+          object SpeedButtonLogEnable: TSpeedButton
+            StaysPressed = True
+            Align = Left
+            IsPressed = True
+            Size.Width = 80.000000000000000000
+            Size.Height = 40.000000000000000000
+            Size.PlatformDefault = False
+            Text = 'Enable'
+          end
         end
       end
     end

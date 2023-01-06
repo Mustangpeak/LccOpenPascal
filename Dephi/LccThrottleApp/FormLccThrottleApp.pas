@@ -1,5 +1,9 @@
 ﻿unit FormLccThrottleApp;
 
+// TODO:
+// - Once connected and the server goes away there is a problem with the NodeID and a conversion to a string (exception)
+// - Add a more complex Train CDI and implement/test out Integer/EventID
+
 interface
 
 uses
@@ -92,8 +96,6 @@ type
     ActionTabTrainRosterNext: TNextTabAction;
     ActionTabTrainRosterPrev: TPreviousTabAction;
     LayoutLog: TLayout;
-    HeaderLogHeader: THeader;
-    LabelLogHeader: TLabel;
     MemoLog: TMemo;
     ListBoxGroupHeaderTrainDetails: TListBoxGroupHeader;
     ListBoxItemTrainsDetailsManufacturer: TListBoxItem;
@@ -156,6 +158,9 @@ type
     LabelTrainsSpeedHeader: TLabel;
     LabelTrainsSpeed: TLabel;
     LabelTrainRosterEditContainer: TLabel;
+    ToolBarLog: TToolBar;
+    SpeedButtonLogClear: TSpeedButton;
+    SpeedButtonLogEnable: TSpeedButton;
     procedure GestureDone(Sender: TObject; const EventInfo: TGestureEventInfo; var Handled: Boolean);
     procedure FormCreate(Sender: TObject);
     procedure FormKeyUp(Sender: TObject; var Key: Word; var KeyChar: Char; Shift: TShiftState);
@@ -184,6 +189,7 @@ type
     procedure SpeedButtonTrainsRevClick(Sender: TObject);
     procedure TrackBarTrainsThrottleLeverChange(Sender: TObject);
     procedure SpeedButtonTrainsStopClick(Sender: TObject);
+    procedure SpeedButtonLogClearClick(Sender: TObject);
   private
     FNodeManager: TLccNodeManager;
     FEthernetClient: TLccEthernetClient;
@@ -691,7 +697,7 @@ end;
 
 procedure TLccThrottleAppForm.OnNodeIDChanged(Sender: TObject; ALccNode: TLccNode);
 begin
-  EditSettingsNodeID.Text := ALccNode.NodeIDStr
+  EditSettingsNodeID.Text := ALccNode.NodeIDStr[True]
 end;
 
 procedure TLccThrottleAppForm.OnNodeLogin(Sender: TObject; LccSourceNode: TLccNode);
@@ -702,21 +708,27 @@ end;
 
 procedure TLccThrottleAppForm.OnReceiveMessage(Sender: TObject; LccMessage: TLccMessage);
 begin
-  MemoLog.Lines.BeginUpdate;
-  try
-    MemoLog.Lines.Add('R: ' + MessageToDetailedMessage(LccMessage))
-  finally
-    MemoLog.Lines.EndUpdate;
+ if SpeedButtonLogEnable.IsPressed then
+  begin
+    MemoLog.Lines.BeginUpdate;
+    try
+      MemoLog.Lines.Add('R: ' + MessageToDetailedMessage(LccMessage))
+    finally
+      MemoLog.Lines.EndUpdate;
+    end;
   end;
 end;
 
 procedure TLccThrottleAppForm.OnSendMessage(Sender: TObject;  LccMessage: TLccMessage);
 begin
-  MemoLog.Lines.BeginUpdate;
-  try
-    MemoLog.Lines.Add('S: ' + MessageToDetailedMessage(LccMessage))
-  finally
-    MemoLog.Lines.EndUpdate;
+  if SpeedButtonLogEnable.IsPressed then
+  begin
+    MemoLog.Lines.BeginUpdate;
+    try
+      MemoLog.Lines.Add('S: ' + MessageToDetailedMessage(LccMessage))
+    finally
+      MemoLog.Lines.EndUpdate;
+    end;
   end;
 end;
 
@@ -757,6 +769,16 @@ begin
   Result := False;
   if ListViewTrainRoster.Selected <> nil then
     Result := ListViewTrainRoster.Selected.TagObject = TractionObject
+end;
+
+procedure TLccThrottleAppForm.SpeedButtonLogClearClick(Sender: TObject);
+begin
+  MemoLog.Lines.BeginUpdate;
+  try
+    MemoLog.Lines.Clear;
+  finally
+    MemoLog.Lines.EndUpdate;
+  end;
 end;
 
 procedure TLccThrottleAppForm.SpeedButtonTrainRosterBackClick(Sender: TObject);

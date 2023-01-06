@@ -229,13 +229,13 @@ object FormTrainController: TFormTrainController
           VertScrollBar.Page = 399
           Align = alClient
           ClientHeight = 399
-          ClientWidth = 153
+          ClientWidth = 138
           TabOrder = 2
           object ToggleBoxF0: TToggleBox
             Left = 4
             Height = 22
             Top = 0
-            Width = 145
+            Width = 130
             Align = alTop
             BorderSpacing.Left = 4
             BorderSpacing.Right = 4
@@ -248,7 +248,7 @@ object FormTrainController: TFormTrainController
             Left = 4
             Height = 22
             Top = 22
-            Width = 145
+            Width = 130
             Align = alTop
             BorderSpacing.Left = 4
             BorderSpacing.Right = 4
@@ -260,7 +260,7 @@ object FormTrainController: TFormTrainController
             Left = 4
             Height = 22
             Top = 44
-            Width = 145
+            Width = 130
             Align = alTop
             BorderSpacing.Left = 4
             BorderSpacing.Right = 4
@@ -273,7 +273,7 @@ object FormTrainController: TFormTrainController
             Left = 4
             Height = 22
             Top = 110
-            Width = 145
+            Width = 130
             Align = alTop
             BorderSpacing.Left = 4
             BorderSpacing.Right = 4
@@ -286,7 +286,7 @@ object FormTrainController: TFormTrainController
             Left = 4
             Height = 22
             Top = 132
-            Width = 145
+            Width = 130
             Align = alTop
             BorderSpacing.Left = 4
             BorderSpacing.Right = 4
@@ -299,7 +299,7 @@ object FormTrainController: TFormTrainController
             Left = 4
             Height = 22
             Top = 154
-            Width = 145
+            Width = 130
             Align = alTop
             BorderSpacing.Left = 4
             BorderSpacing.Right = 4
@@ -312,7 +312,7 @@ object FormTrainController: TFormTrainController
             Left = 4
             Height = 22
             Top = 176
-            Width = 145
+            Width = 130
             Align = alTop
             BorderSpacing.Left = 4
             BorderSpacing.Right = 4
@@ -325,7 +325,7 @@ object FormTrainController: TFormTrainController
             Left = 4
             Height = 22
             Top = 198
-            Width = 145
+            Width = 130
             Align = alTop
             BorderSpacing.Left = 4
             BorderSpacing.Right = 4
@@ -338,7 +338,7 @@ object FormTrainController: TFormTrainController
             Left = 4
             Height = 22
             Top = 66
-            Width = 145
+            Width = 130
             Align = alTop
             BorderSpacing.Left = 4
             BorderSpacing.Right = 4
@@ -351,7 +351,7 @@ object FormTrainController: TFormTrainController
             Left = 4
             Height = 22
             Top = 88
-            Width = 145
+            Width = 130
             Align = alTop
             BorderSpacing.Left = 4
             BorderSpacing.Right = 4
@@ -364,7 +364,7 @@ object FormTrainController: TFormTrainController
             Left = 4
             Height = 22
             Top = 220
-            Width = 145
+            Width = 130
             Align = alTop
             BorderSpacing.Left = 4
             BorderSpacing.Right = 4
@@ -377,7 +377,7 @@ object FormTrainController: TFormTrainController
             Left = 4
             Height = 22
             Top = 242
-            Width = 145
+            Width = 130
             Align = alTop
             BorderSpacing.Left = 4
             BorderSpacing.Right = 4
@@ -390,7 +390,7 @@ object FormTrainController: TFormTrainController
             Left = 4
             Height = 22
             Top = 264
-            Width = 145
+            Width = 130
             Align = alTop
             BorderSpacing.Left = 4
             BorderSpacing.Right = 4
@@ -403,7 +403,7 @@ object FormTrainController: TFormTrainController
             Left = 4
             Height = 22
             Top = 286
-            Width = 145
+            Width = 130
             Align = alTop
             BorderSpacing.Left = 4
             BorderSpacing.Right = 4
@@ -416,7 +416,7 @@ object FormTrainController: TFormTrainController
             Left = 4
             Height = 22
             Top = 308
-            Width = 145
+            Width = 130
             Align = alTop
             BorderSpacing.Left = 4
             BorderSpacing.Right = 4
@@ -429,7 +429,7 @@ object FormTrainController: TFormTrainController
             Left = 4
             Height = 22
             Top = 330
-            Width = 145
+            Width = 130
             Align = alTop
             BorderSpacing.Left = 4
             BorderSpacing.Right = 4
@@ -442,7 +442,7 @@ object FormTrainController: TFormTrainController
             Left = 4
             Height = 22
             Top = 352
-            Width = 145
+            Width = 130
             Align = alTop
             BorderSpacing.Left = 4
             BorderSpacing.Right = 4
@@ -455,7 +455,7 @@ object FormTrainController: TFormTrainController
             Left = 4
             Height = 22
             Top = 374
-            Width = 145
+            Width = 130
             Align = alTop
             BorderSpacing.Left = 4
             BorderSpacing.Right = 4
@@ -468,7 +468,7 @@ object FormTrainController: TFormTrainController
             Left = 4
             Height = 22
             Top = 396
-            Width = 145
+            Width = 130
             Align = alTop
             BorderSpacing.Left = 4
             BorderSpacing.Right = 4
@@ -481,7 +481,7 @@ object FormTrainController: TFormTrainController
             Left = 4
             Height = 22
             Top = 418
-            Width = 145
+            Width = 130
             Align = alTop
             BorderSpacing.Left = 4
             BorderSpacing.Right = 4

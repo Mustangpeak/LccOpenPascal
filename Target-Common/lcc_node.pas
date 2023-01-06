@@ -191,6 +191,7 @@ type
   private
     FAddressHi: DWord;
     FAddressLo: DWord;
+    FAddressSpaceValid: Boolean;
     FCallback: TOnEngineMemorySpaceAccessCallback;
     FCurrentAddress: DWord;
     FIsString: Boolean;
@@ -214,6 +215,7 @@ type
     property CurrentAddress: DWord read FCurrentAddress write FCurrentAddress;
     property MemorySpaceQueue: TList read FMemorySpaceQueue write FMemorySpaceQueue;
     property WritingChunk: Boolean read FWritingChunk write FWritingChunk;
+    property AddressSpaceValid: Boolean read FAddressSpaceValid write FAddressSpaceValid;
 
     procedure InternalStart;
     procedure HandleReadReply(SourceMessage: TLccMessage; DataStartIndex: Integer);
@@ -222,11 +224,10 @@ type
     procedure WriteNextChunk;
     procedure ValidatePIPAndProceed;
     procedure ValidateAddressSpaceAndProceed(SourceMessage: TLccMessage);
-    function CalculateNextReadCount: Integer;
-    function CalculateNextWriteCount: Integer;
-    procedure ClearMemorySpaceQueue;
+    procedure FlushMemorySpaceQueue;
     function NextMemorySpaceObjectFromQueue: Boolean;
     procedure CallbackAndNextMemorySpace;
+    procedure StartOperation;
   public
     property AddressLo: DWord read FAddressLo write FAddressLo;
     property AddressHi: DWord read FAddressHi write FAddressHi;
@@ -252,7 +253,6 @@ type
     constructor Create(AnOwner: TLccNode); override;
     destructor Destroy; override;
     procedure Start; override;
-    procedure Reset; override;
     procedure Process(SourceMessage: TLccMessage); override;
     function Assign(AReadWrite: TLccEngineMemorySpaceReadWrite; AMemorySpace: Byte; AnIsString: Boolean; AnAddressLo, AnAddressHi: DWORD; AnUseAddresses: Boolean; ATargetNodeID: TNodeID; ATargetAliasID: Word; ACallback: TOnEngineMemorySpaceAccessCallback): TLccEngineMemorySpaceObject; // AMemorySpace = MSI_xxxx constants
   end;
@@ -305,8 +305,8 @@ type
     FEngineMemorySpaceAccess: TLccEngineMemorySpaceAccess;
 
     function GetAliasIDStr: String;
-    function GetNodeIDStr: String;
     procedure SetSendMessageFunc(AValue: TOnMessageEvent);
+    function GetNodeIDStr(WithDots: Boolean): String;
   protected
     FNodeID: TNodeID;
 
@@ -456,7 +456,7 @@ type
     property DatagramResendQueue: TDatagramQueue read FDatagramResendQueue;
     property GridConnect: Boolean read FGridConnect;
     property NodeID: TNodeID read FNodeID;
-    property NodeIDStr: String read GetNodeIDStr;
+    property NodeIDStr[WithDots: Boolean]: String read GetNodeIDStr;
     property Initialized: Boolean read FInitialized;
     property SendMessageFunc: TOnMessageEvent read FSendMessageFunc write SetSendMessageFunc;
 
@@ -487,6 +487,7 @@ type
     function ProcessMessageLCC(SourceMessage: TLccMessage): Boolean; virtual;
     function ProcessMessageGridConnect(SourceMessage: TLccMessage): Boolean; virtual;
 
+    // Task Engine Helpers
     procedure RegisterEngine(AnEngine: TLccEngineBase);
     procedure UnRegisterEngine(AnEngine: TLccEngineBase);
 
@@ -610,6 +611,7 @@ begin
       ReadNextChunk
     else begin
       EngineStateComplete;
+      // So this allows a hook in the Node to track reads of memoryspaces to cache them like in the TractionNode and TractionServer
       OwnerNode.DoMemorySpaceReadEngineDone(Self);
       CallbackAndNextMemorySpace;
     end;
@@ -619,8 +621,10 @@ end;
 procedure TLccEngineMemorySpaceAccess.HandleWriteReply(SourceMessage: TLccMessage);
 begin
   if MemoryStream.Position = MemoryStream.Size then
+  begin
+    EngineStateComplete;
     CallbackAndNextMemorySpace
-  else
+  end else
     WriteNextChunk;
 end;
 
@@ -630,9 +634,17 @@ var
 begin
   if EngineState = lesRunning then
   begin
-    NextCount := CalculateNextReadCount;
+    // Calculate the number of bytes to read
+    if CurrentAddress + 64 > AddressHi then
+      NextCount := AddressHi - CurrentAddress
+    else
+      NextCount := 64;
+
+    // Request the read
     WorkerMessage.LoadConfigMemRead(OwnerNode.NodeID, OwnerNode.AliasID, TargetNodeID, TargetAlias, MemorySpace, CurrentAddress, NextCount);
     OwnerNode.SendMessageFunc(OwnerNode, WorkerMessage);
+
+    // Update the current address pointer
     Inc(FCurrentAddress, NextCount)
   end;
 end;
@@ -648,9 +660,19 @@ var
 begin
   if EngineState = lesRunning then
   begin
-    NextCount := CalculateNextWriteCount;
+    // Calculate how many more bytes based
+    if MemoryStream.Size - MemoryStream.Position > 64 then
+      NextCount := 64
+    else
+      NextCount := MemoryStream.Size - MemoryStream.Position;
+
+
     if NextCount > 0 then
     begin
+      // Set the flag
+      WritingChunk := True;
+
+      // Copy the MemoryStream to the local array
       SetLength(ByteArray, NextCount);
       for i := 0 to NextCount - 1 do
       begin
@@ -661,9 +683,12 @@ begin
           ByteArray[i] := MemoryStream.ReadByte;
         {$ENDIF}
       end;
-      WritingChunk := True;
+
+      // Write the space
       WorkerMessage.LoadConfigMemWriteArray(OwnerNode.NodeID, OwnerNode.AliasID, TargetNodeID, TargetAlias, MemorySpace, CurrentAddress, ByteArray);
       OwnerNode.SendMessageFunc(OwnerNode, WorkerMessage);
+
+      // Update the address pointer
       Inc(FCurrentAddress, NextCount)
     end;
   end;
@@ -673,42 +698,51 @@ procedure TLccEngineMemorySpaceAccess.ValidatePIPAndProceed;
 var
   ProtocolsSupported: Boolean;
 begin
-  ProtocolsSupported := False;
+  if not AddressSpaceValid then
+  begin
+    ProtocolsSupported := False;
 
-  PIPHelper.DecodeFlags;
-  if PIPHelper.Datagram and PIPHelper.MemConfig then
-  begin
-    case MemorySpace of
-      MSI_CDI                      : ProtocolsSupported := PIPHelper.ConfigurationDefinitionInfo;
-      MSI_ALL                      : begin end; // We don't support this
-      MSI_CONFIG                   : ProtocolsSupported := PIPHelper.MemConfig;
-      MSI_ACDI_MFG                 : ProtocolsSupported := PIPHelper.AbbreviatedConfigurationDefinitionInfo;
-      MSI_ACDI_USER                : ProtocolsSupported := PIPHelper.AbbreviatedConfigurationDefinitionInfo;
-      MSI_TRACTION_FDI             : ProtocolsSupported := PIPHelper.TractionFunctionDefinitionInfo;
-      MSI_TRACTION_FUNCTION_CONFIG : ProtocolsSupported := PIPHelper.TractionFunctionConfiguration;
+    PIPHelper.DecodeFlags;
+    if PIPHelper.Datagram and PIPHelper.MemConfig then
+    begin
+      case MemorySpace of
+        MSI_CDI                      : ProtocolsSupported := PIPHelper.ConfigurationDefinitionInfo;
+        MSI_ALL                      : begin end; // We don't support this
+        MSI_CONFIG                   : ProtocolsSupported := PIPHelper.MemConfig;
+        MSI_ACDI_MFG                 : ProtocolsSupported := PIPHelper.AbbreviatedConfigurationDefinitionInfo;
+        MSI_ACDI_USER                : ProtocolsSupported := PIPHelper.AbbreviatedConfigurationDefinitionInfo;
+        MSI_TRACTION_FDI             : ProtocolsSupported := PIPHelper.TractionFunctionDefinitionInfo;
+        MSI_TRACTION_FUNCTION_CONFIG : ProtocolsSupported := PIPHelper.TractionFunctionConfiguration;
+      end;
     end;
-  end;
-  if ProtocolsSupported then
-  begin
-    WorkerMessage.LoadConfigMemAddressSpaceInfo(OwnerNode.NodeID, OwnerNode.AliasID, TargetNodeID, TargetAlias, MemorySpace);
-    OwnerNode.SendMessageFunc(OwnerNode, WorkerMessage);
-  end else
-  begin
-    ErrorCode := ENGINE_ERROR_MEMORY_SPACE_UNSUPPORTED_PROTOCOL;
-    EngineStateError;
-    CallbackAndNextMemorySpace;
+    if ProtocolsSupported then
+    begin
+      // Now see if the Memory Space supports what we want to do with it
+      WorkerMessage.LoadConfigMemAddressSpaceInfo(OwnerNode.NodeID, OwnerNode.AliasID, TargetNodeID, TargetAlias, MemorySpace);
+      OwnerNode.SendMessageFunc(OwnerNode, WorkerMessage);
+    end else
+    begin
+      ErrorCode := ENGINE_ERROR_MEMORY_SPACE_UNSUPPORTED_PROTOCOL;
+      EngineStateError;
+      CallbackAndNextMemorySpace;
+    end;
   end;
 end;
 
 procedure TLccEngineMemorySpaceAccess.ValidateAddressSpaceAndProceed(SourceMessage: TLccMessage);
 begin
-  if Assigned(SourceMessage) then
+  // We may have already validated this address space so we can save some time
+  if not AddressSpaceValid then
   begin
     if SourceMessage.DataArray[2] = MemorySpace then
     begin
+      // if this is a write to a read only memory space it is an error
       if not ((ReadWrite = lems_write) and (SourceMessage.DataArray[7] and $01 = 1)) then
       begin
-        // User did not pass valid addresses so use the entire space
+        // Address space can do what we are asking
+        AddressSpaceValid := True;
+
+        // User did not pass addresses so use the limits returned by this memory space
         if not UseAddresses then
         begin
           AddressHi := SourceMessage.ExtractDataBytesAsInt(3, 6);
@@ -718,19 +752,9 @@ begin
             AddressLo := 0;
         end;
 
-        CurrentAddress := AddressLo;
-        case ReadWrite of
-          lems_write :
-            begin
-              WriteNextChunk;
-            end;
-          lems_read  :
-            begin
-              MemoryStream.Clear;
-              ReadNextChunk;
-            end;
+        // Kick it off
+        StartOperation;
 
-        end;
       end else
       begin
         ErrorCode := ENGINE_ERROR_MEMORY_SPACE_WRITE_TO_READONLY_SPACE;
@@ -743,12 +767,7 @@ begin
       EngineStateError;
       CallbackAndNextMemorySpace;
     end;
-  end else
-  begin
-    ErrorCode := ENGINE_ERROR_MEMORY_SPACE_UNSUPPORTED_MEMORYSPACE;
-    EngineStateError;
-    CallbackAndNextMemorySpace;
-  end;
+  end
 end;
 
 function TLccEngineMemorySpaceAccess.Assign(
@@ -757,29 +776,15 @@ function TLccEngineMemorySpaceAccess.Assign(
   AnUseAddresses: Boolean; ATargetNodeID: TNodeID; ATargetAliasID: Word;
   ACallback: TOnEngineMemorySpaceAccessCallback): TLccEngineMemorySpaceObject;
 begin
- // Assert(EngineState = lesIdle, 'TMemorySpaceReadEngine.Assign is running');
+  // Need to Assign everthing first.. maybe you can add in while its running... but it was not envisioned to do so
+  Assert(EngineState = lesIdle, 'TMemorySpaceReadEngine.Assign is running');
+
   Result := TLccEngineMemorySpaceObject.Create(AReadWrite, AMemorySpace, AnIsString, AnAddressLo, AnAddressHi, AnUseAddresses, ATargetNodeID, ATargetAliasID, ACallback);
   if Assigned(Result) then
     MemorySpaceQueue.Add(Result);
 end;
 
-function TLccEngineMemorySpaceAccess.CalculateNextReadCount: Integer;
-begin
-  if CurrentAddress + 64 > AddressHi then
-    Result := AddressHi - CurrentAddress
-  else
-    Result := 64
-end;
-
-function TLccEngineMemorySpaceAccess.CalculateNextWriteCount: Integer;
-begin
-  if MemoryStream.Size - MemoryStream.Position > 64 then
-    Result := 64
-  else
-    Result := MemoryStream.Size - MemoryStream.Position
-end;
-
-procedure TLccEngineMemorySpaceAccess.ClearMemorySpaceQueue;
+procedure TLccEngineMemorySpaceAccess.FlushMemorySpaceQueue;
 var
   i: Integer;
 begin
@@ -801,7 +806,7 @@ end;
 
 destructor TLccEngineMemorySpaceAccess.Destroy;
 begin
-  ClearMemorySpaceQueue;
+  FlushMemorySpaceQueue;
   FreeAndNil(FPIPHelper);
   FreeAndNil(FMemoryStream);
   inherited Destroy;
@@ -815,31 +820,32 @@ end;
 procedure TLccEngineMemorySpaceAccess.InternalStart;
 begin
   inherited Start;
-  if not PIPHelper.Valid then
+
+  if ReadWrite = lems_Read then
+      MemoryStream.Clear;
+
+  if not AddressSpaceValid then
   begin
     // Get what protocols are supported
     WorkerMessage.LoadProtocolIdentifyInquiry(OwnerNode.NodeID, OwnerNode.AliasID, TargetNodeID, TargetAlias);
     OwnerNode.SendMessageFunc(OwnerNode, WorkerMessage);
   end else
-    ValidatePIPAndProceed;
+    StartOperation;
 end;
 
 function TLccEngineMemorySpaceAccess.GetStreamAsEventID: TEventID;
 begin
   Result := NULL_EVENT_ID;
-
 end;
 
 procedure TLccEngineMemorySpaceAccess.SetStreamAsEventID(AValue: TEventID);
 begin
-
   // Reset for use
   MemoryStream.Position := 0;
 end;
 
 procedure TLccEngineMemorySpaceAccess.SetStreamAsInt(Size: Integer; AValue: Integer);
 begin
-
   // Reset for use
   MemoryStream.Position := 0;
 end;
@@ -878,37 +884,49 @@ var
   EngineMemorySpaceObject: TLccEngineMemorySpaceObject;
 begin
   Result := False;
+  // Do we have anything to send?
   if MemorySpaceQueue.Count > 0 then
   begin
+    // Pull it out of the Queue and delete it from the Queue
     EngineMemorySpaceObject := TLccEngineMemorySpaceObject( MemorySpaceQueue[0]);
-    MemorySpaceQueue.Delete(0);
+    try
+      MemorySpaceQueue.Delete(0);
 
-    // See if we need to recheck if if the Memory space is valid, if not need to recheck if it supported
-    if (MemorySpace <> EngineMemorySpaceObject.MemorySpace) or (ReadWrite <> EngineMemorySpaceObject.ReadWrite) then
-      PIPHelper.Valid := False;
 
-    ReadWrite := EngineMemorySpaceObject.ReadWrite;
-    MemorySpace := EngineMemorySpaceObject.MemorySpace;
-    IsString := EngineMemorySpaceObject.IsString;
-    AddressLo := EngineMemorySpaceObject.AddressLo;
-    AddressHi := EngineMemorySpaceObject.AddressHi;
-    UseAddresses := EngineMemorySpaceObject.UseAddresses;
-    TargetNodeID := EngineMemorySpaceObject.TargetNodeID;
-    TargetAlias := EngineMemorySpaceObject.TargetAlias;
-    CallBack := EngineMemorySpaceObject.CallBack;
-    if ReadWrite = lems_Write then
-    begin
-      case EngineMemorySpaceObject.DataType of
-        cdt_String  : StringToStream := AnsiString( EngineMemorySpaceObject.WriteString);
-        cdt_Int     : IntToStream[AddressHi - AddressLo] := EngineMemorySpaceObject.WriteInteger;
-        cdt_EventID : EventIDToStream := EngineMemorySpaceObject.WriteEventID;
+      // See if we need to recheck if if the Memory space is valid, if not need to recheck if it is supported
+      if ((MemorySpace <> EngineMemorySpaceObject.MemorySpace) or (ReadWrite <> EngineMemorySpaceObject.ReadWrite)) or not EngineMemorySpaceObject.UseAddresses then
+        AddressSpaceValid := False;
+
+      ReadWrite := EngineMemorySpaceObject.ReadWrite;
+      MemorySpace := EngineMemorySpaceObject.MemorySpace;
+      IsString := EngineMemorySpaceObject.IsString;
+      AddressLo := EngineMemorySpaceObject.AddressLo;
+      CurrentAddress := EngineMemorySpaceObject.AddressLo;
+      AddressHi := EngineMemorySpaceObject.AddressHi;
+      UseAddresses := EngineMemorySpaceObject.UseAddresses;
+      TargetNodeID := EngineMemorySpaceObject.TargetNodeID;
+      TargetAlias := EngineMemorySpaceObject.TargetAlias;
+      CallBack := EngineMemorySpaceObject.CallBack;
+
+
+      // If it is a write the data to write is stored with the MemorySpaceObject so pull it into the local stream
+      // A read just uses the local stream and immediately call the callback
+      if ReadWrite = lems_Write then
+      begin
+        case EngineMemorySpaceObject.DataType of
+          cdt_String  : StringToStream := AnsiString( EngineMemorySpaceObject.WriteString);
+          cdt_Int     : IntToStream[AddressHi - AddressLo] := EngineMemorySpaceObject.WriteInteger;
+          cdt_EventID : EventIDToStream := EngineMemorySpaceObject.WriteEventID;
+        end;
+      end else
+      if ReadWrite = lems_Read then
+      begin
+        MemoryStream.Clear;   // Waste of time?
       end;
+
+    finally
+      EngineMemorySpaceObject.Free;
     end;
-
-    if ReadWrite = lems_Read then
-      MemoryStream.Clear;
-
-    EngineMemorySpaceObject.Free;
 
     Assert(not NullNodeID(FTargetNodeID), 'TMemorySpaceReadEngine, NodeID not set');
     Result := True;
@@ -918,9 +936,20 @@ end;
 procedure TLccEngineMemorySpaceAccess.CallbackAndNextMemorySpace;
 begin
   Callback(Self);
-  Reset;
   if NextMemorySpaceObjectFromQueue then
     InternalStart;
+end;
+
+procedure TLccEngineMemorySpaceAccess.StartOperation;
+begin
+  // Start off the current address
+  CurrentAddress := AddressLo;
+
+  // Start the process
+  case ReadWrite of
+    lems_write : WriteNextChunk;
+    lems_read  : ReadNextChunk;
+  end;
 end;
 
 function TLccEngineMemorySpaceAccess.GetStreamAsInt: Integer;
@@ -954,22 +983,6 @@ begin
     InternalStart;
 end;
 
-procedure TLccEngineMemorySpaceAccess.Reset;
-begin
-  inherited Reset;
-  FAddressHi := 0;
-  FAddressLo := 0;
-  FCurrentAddress := 0;
-  FMemorySpace := 0;
-  FTag := 0;
-  FTagObject := nil;
-  FTargetNodeID := NULL_NODE_ID;
-  FTargetAlias:= 0;
-  FCallback := nil;
-  FReadWrite := lems_read;
-  MemoryStream.Clear;
-end;
-
 procedure TLccEngineMemorySpaceAccess.Process(SourceMessage: TLccMessage);
 
 
@@ -1000,7 +1013,10 @@ begin
           begin
             if WritingChunk then
             begin
-              // Writes only acknowledge with OK or Rejected on the Ack
+               // Clear flag
+              WritingChunk := False;
+
+              // Writes typically only acknowledged with OK or Rejected on the Ack
               if SourceMessage.DataArray[0] <> 0 then
               begin
                 // We have a Reply Pending Bit set.. the write may take a while and when done will send a Write Reply
@@ -1013,19 +1029,18 @@ begin
                 ErrorCode := S_OK;
                 HandleWriteReply(SourceMessage);
               end;
-
-              WritingChunk := False;
             end;
           end;
         MTI_DATAGRAM_REJECTED_REPLY :
           begin
             if WritingChunk then
             begin
+              // Clear Flag
+              WritingChunk := False;
+
               EngineStateError;
               ErrorCode := ENGINE_ERROR_MEMORY_SPACE_WRITE_ERROR;
               CallbackAndNextMemorySpace;
-
-              WritingChunk := False;
             end;
           end;
         MTI_PROTOCOL_SUPPORT_REPLY :
@@ -1039,7 +1054,7 @@ begin
               DATAGRAM_PROTOCOL_CONFIGURATION :
               begin
                 case SourceMessage.DataArray[1] of
-                 MCP_WRITE_REPLY :
+                 MCP_WRITE_REPLY :  // This only happens if the write can take a while (like a CV write).  In that case a special Datagram OK message is sent.. see MTI_DATAGRAM_OK_REPLY above
                    begin
                      case SourceMessage.DataArray[6] of
                        MSI_ACDI_USER,
@@ -1056,7 +1071,7 @@ begin
                  MCP_WRITE_REPLY_FAILURE,
                  MCP_WRITE_REPLY_FAILURE_CONFIG,
                  MCP_WRITE_REPLY_FAILURE_ALL,
-                 MCP_WRITE_REPLY_FAILURE_CDI                  :
+                 MCP_WRITE_REPLY_FAILURE_CDI        : // This only happens if the write can take a while (like a CV write).   In that case a special Datagram Rejected message is sent.. see MTI_DATAGRAM_OK_REPLY above
                      begin
                        ErrorCode := ENGINE_ERROR_MEMORY_SPACE_WRITE_ERROR;
                        EngineStateError;
@@ -1222,11 +1237,6 @@ begin
 end;
 
 {TLccNode }
-
-function TLccNode.GetNodeIDStr: String;
-begin
-  Result := NodeIDToString(NodeID, False);
-end;
 
 procedure TLccNode.SetSendMessageFunc(AValue: TOnMessageEvent);
 begin
@@ -2299,6 +2309,11 @@ begin
   Result := CDI_XML;
 end;
 
+function TLccNode.GetNodeIDStr(WithDots: Boolean): String;
+begin
+  Result := NodeIDToString(NodeID, WithDots);
+end;
+
 procedure TLccNode.Login(ANodeID: TNodeID);
 var
   Temp: TNodeID;
@@ -2344,7 +2359,7 @@ begin
       // This assumes they are all running in separate thread and they keep running
       Sleep(DelayTime_ms);
       FPermitted := False;
-      (NodeManager as INodeManagerCallbacks).DoAliasReset(Self);
+      (NodeManager as INodeManagerCallbacks).DoAliasRelease(Self);
       AliasServer.MarkForRemovalByAlias(AliasID);
       FAliasID := 0;
       Enabled := False; // must call LogIn again to reenable

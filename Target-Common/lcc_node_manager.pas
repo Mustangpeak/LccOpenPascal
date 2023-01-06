@@ -50,7 +50,7 @@ type
     ['{C6920bCA-08BC-4D45-B27C-174640FA3106}']
     procedure DoAliasIDChanged(LccNode: TLccNode);
     procedure DoAliasMappingChange(LccNode: TLccNode; AnAliasMapping: TLccAliasMapping; IsMapped: Boolean);
-    procedure DoAliasReset(LccNode: TLccNode);
+    procedure DoAliasRelease(LccNode: TLccNode);
     procedure DoCDIRead(LccNode: TLccNode);
     procedure DoConfigMemAddressSpaceInfoReply(LccNode: TLccNode);
     procedure DoConfigMemOptionsReply(LccNode: TLccNode);
@@ -143,7 +143,7 @@ type
     FHardwarewareConnectionList: TInterfaceList;
     FNodes: TList;
     FOnAliasMappingChange: TOnAliasMappingChange;
-    FOnAliasReset: TOnLccNodeMessage;
+    FOnAliasRelease: TOnLccNodeMessage;
     FOnLccNodeMessageCallBack: TOnLccNodeMessageCallBack;
     FOnNodeAliasIDChanged: TOnLccNodeMessage;
     FOnNodeCDI: TOnLccNodeMessage;
@@ -189,7 +189,7 @@ type
     // INodeManagerCallbacks
     procedure DoAliasIDChanged(LccNode: TLccNode);     // Check
     procedure DoAliasMappingChange(LccNode: TLccNode; AnAliasMapping: TLccAliasMapping; IsMapped: Boolean);  // Check
-    procedure DoAliasReset(LccNode: TLccNode);
+    procedure DoAliasRelease(LccNode: TLccNode);
     procedure DoCDIRead(LccNode: TLccNode);    // TODO  Necessary?
     procedure DoConfigMemAddressSpaceInfoReply(LccNode: TLccNode);   // TODO  Necessary?
     procedure DoConfigMemOptionsReply(LccNode: TLccNode);   // TODO  Necessary?
@@ -271,7 +271,7 @@ type
 
     // CAN Node Management
     property OnNodeAliasIDChanged: TOnLccNodeMessage read FOnNodeAliasIDChanged write FOnNodeAliasIDChanged;
-    property OnAliasReset: TOnLccNodeMessage read FOnAliasReset write FOnAliasReset;
+    property OnAliasRelease: TOnLccNodeMessage read FOnAliasRelease write FOnAliasRelease;
 
     // Configuration Memory Information
     property OnNodeConfigMemAddressSpaceInfoReply: TOnLccNodeMessage read FOnNodeConfigMemAddressSpaceInfoReply write FOnNodeConfigMemAddressSpaceInfoReply;
@@ -524,10 +524,10 @@ begin
     OnNodeAliasIDChanged(Self, LccNode);
 end;
 
-procedure TLccNodeManager.DoAliasReset(LccNode: TLccNode);
+procedure TLccNodeManager.DoAliasRelease(LccNode: TLccNode);
 begin
-   if Assigned(FOnAliasReset) then
-     FOnAliasReset(Self, LccNode);
+   if Assigned(FOnAliasRelease) then
+     FOnAliasRelease(Self, LccNode);
 end;
 
 procedure TLccNodeManager.DoCDIRead(LccNode: TLccNode);

@@ -10,15 +10,6 @@
         <DeviceId Condition="'$(Platform)'=='iOSSimARM64'"/>
     </PropertyGroup>
     <ItemGroup Condition="'$(Platform)'=='OSX64'">
-        <DeployFile Include="OSX64\Debug\LccThrottleApp.dSYM" Condition="'$(Config)'=='Debug'">
-            <RemoteDir>LccThrottleApp.app\..\$(PROJECTNAME).app.dSYM\Contents\Resources\DWARF\</RemoteDir>
-            <RemoteName>LccThrottleApp</RemoteName>
-            <DeployClass>ProjectOSXDebug</DeployClass>
-            <Operation>1</Operation>
-            <LocalCommand/>
-            <RemoteCommand/>
-            <Overwrite>True</Overwrite>
-        </DeployFile>
         <DeployFile Include="$(BDS)\bin\delphi_PROJECTICNS.icns" Condition="'$(Config)'=='Debug'">
             <RemoteDir>LccThrottleApp.app\Contents\Resources\</RemoteDir>
             <RemoteName>LccThrottleApp.icns</RemoteName>
@@ -27,6 +18,55 @@
             <LocalCommand/>
             <RemoteCommand/>
             <Overwrite>True</Overwrite>
+        </DeployFile>
+        <DeployFile Include="OSX64\Debug\LccThrottleApp.info.plist" Condition="'$(Config)'=='Debug'">
+            <RemoteDir>LccThrottleApp.app\Contents\</RemoteDir>
+            <RemoteName>Info.plist</RemoteName>
+            <DeployClass>ProjectOSXInfoPList</DeployClass>
+            <Operation>1</Operation>
+            <LocalCommand/>
+            <RemoteCommand/>
+            <Overwrite>True</Overwrite>
+        </DeployFile>
+        <DeployFile Include="$(SKIADIR)\Binary\Shared\OSX64\libsk4d.dylib" Condition="'$(Config)'=='Debug' And '$(SKIADIR)'!=''">
+            <RemoteDir>LccThrottleApp.app\Contents\MacOS\</RemoteDir>
+            <RemoteName>libsk4d.dylib</RemoteName>
+            <DeployClass>Skia</DeployClass>
+            <Operation>1</Operation>
+            <LocalCommand/>
+            <RemoteCommand/>
+            <Overwrite>True</Overwrite>
+            <Required>True</Required>
+        </DeployFile>
+        <DeployFile Include="$(SKIADIR)\Binary\Shared\OSX64\libsk4d.dylib" Condition="'$(Config)'=='Release' And '$(SKIADIR)'!=''">
+            <RemoteDir>LccThrottleApp.app\Contents\MacOS\</RemoteDir>
+            <RemoteName>libsk4d.dylib</RemoteName>
+            <DeployClass>Skia</DeployClass>
+            <Operation>1</Operation>
+            <LocalCommand/>
+            <RemoteCommand/>
+            <Overwrite>True</Overwrite>
+            <Required>True</Required>
+        </DeployFile>
+        <DeployFile Include="$(BDS)\binosx64\libsk4d.dylib" Condition="'$(Config)'=='Debug' And '$(SKIADIR)'==''">
+            <RemoteDir>LccThrottleApp.app\Contents\MacOS\</RemoteDir>
+            <RemoteName>libsk4d.dylib</RemoteName>
+            <DeployClass>Skia</DeployClass>
+            <Operation>1</Operation>
+            <LocalCommand/>
+            <RemoteCommand/>
+            <Overwrite>True</Overwrite>
+            <Required>True</Required>
+        </DeployFile>
+        <DeployFile Include="$(BDS)\binosx64\libsk4d.dylib" Condition="'$(Config)'=='Release' And '$(SKIADIR)'==''">
+            <RemoteDir>LccThrottleApp.app\Contents\MacOS\</RemoteDir>
+            <RemoteName>libsk4d.dylib</RemoteName>
+            <DeployClass>Skia</DeployClass>
+            <Operation>1</Operation>
+            <LocalCommand/>
+            <RemoteCommand/>
+            <Overwrite>True</Overwrite>
+            <Required>True</Required>
         </DeployFile>
         <DeployFile Include="OSX64\Debug\LccThrottleApp.entitlements" Condition="'$(Config)'=='Debug'">
             <RemoteDir>LccThrottleApp.app\..\</RemoteDir>
@@ -47,22 +87,349 @@
             <Overwrite>True</Overwrite>
             <Required>True</Required>
         </DeployFile>
-        <DeployFile Include="OSX64\Debug\LccThrottleApp.info.plist" Condition="'$(Config)'=='Debug'">
-            <RemoteDir>LccThrottleApp.app\Contents\</RemoteDir>
-            <RemoteName>Info.plist</RemoteName>
-            <DeployClass>ProjectOSXInfoPList</DeployClass>
+        <DeployFile Include="OSX64\Debug\LccThrottleApp.dSYM" Condition="'$(Config)'=='Debug'">
+            <RemoteDir>LccThrottleApp.app\..\$(PROJECTNAME).app.dSYM\Contents\Resources\DWARF\</RemoteDir>
+            <RemoteName>LccThrottleApp</RemoteName>
+            <DeployClass>ProjectOSXDebug</DeployClass>
             <Operation>1</Operation>
             <LocalCommand/>
             <RemoteCommand/>
             <Overwrite>True</Overwrite>
         </DeployFile>
     </ItemGroup>
-    <ItemGroup Condition="'$(Platform)'=='Win32'"/>
-    <ItemGroup Condition="'$(Platform)'=='Android64'"/>
-    <ItemGroup Condition="'$(Platform)'=='Android'"/>
-    <ItemGroup Condition="'$(Platform)'=='OSXARM64'"/>
-    <ItemGroup Condition="'$(Platform)'=='Win64'"/>
-    <ItemGroup Condition="'$(Platform)'=='Linux64'"/>
+    <ItemGroup Condition="'$(Platform)'=='Win32'">
+        <DeployFile Include="$(SKIADIR)\Binary\Shared\Win32\sk4d.dll" Condition="'$(Config)'=='Debug' And '$(SKIADIR)'!=''">
+            <RemoteDir>LccThrottleApp\</RemoteDir>
+            <RemoteName>sk4d.dll</RemoteName>
+            <DeployClass>Skia</DeployClass>
+            <Operation>0</Operation>
+            <LocalCommand/>
+            <RemoteCommand/>
+            <Overwrite>True</Overwrite>
+            <Required>True</Required>
+        </DeployFile>
+        <DeployFile Include="$(SKIADIR)\Binary\Shared\Win32\sk4d.dll" Condition="'$(Config)'=='Release' And '$(SKIADIR)'!=''">
+            <RemoteDir>LccThrottleApp\</RemoteDir>
+            <RemoteName>sk4d.dll</RemoteName>
+            <DeployClass>Skia</DeployClass>
+            <Operation>0</Operation>
+            <LocalCommand/>
+            <RemoteCommand/>
+            <Overwrite>True</Overwrite>
+            <Required>True</Required>
+        </DeployFile>
+        <DeployFile Include="$(BDS)\bin\sk4d.dll" Condition="'$(Config)'=='Debug' And '$(SKIADIR)'==''">
+            <RemoteDir>LccThrottleApp\</RemoteDir>
+            <RemoteName>sk4d.dll</RemoteName>
+            <DeployClass>Skia</DeployClass>
+            <Operation>0</Operation>
+            <LocalCommand/>
+            <RemoteCommand/>
+            <Overwrite>True</Overwrite>
+            <Required>True</Required>
+        </DeployFile>
+        <DeployFile Include="$(BDS)\bin\sk4d.dll" Condition="'$(Config)'=='Release' And '$(SKIADIR)'==''">
+            <RemoteDir>LccThrottleApp\</RemoteDir>
+            <RemoteName>sk4d.dll</RemoteName>
+            <DeployClass>Skia</DeployClass>
+            <Operation>0</Operation>
+            <LocalCommand/>
+            <RemoteCommand/>
+            <Overwrite>True</Overwrite>
+            <Required>True</Required>
+        </DeployFile>
+    </ItemGroup>
+    <ItemGroup Condition="'$(Platform)'=='Android64'">
+        <DeployFile Include="$(SKIADIR)\Binary\Shared\Android64\libsk4d.so" Condition="'$(Config)'=='Debug' And '$(SKIADIR)'!=''">
+            <RemoteDir>LccThrottleApp\library\lib\arm64-v8a\</RemoteDir>
+            <RemoteName>libsk4d.so</RemoteName>
+            <DeployClass>Skia</DeployClass>
+            <Operation>1</Operation>
+            <LocalCommand/>
+            <RemoteCommand/>
+            <Overwrite>True</Overwrite>
+            <Required>True</Required>
+        </DeployFile>
+        <DeployFile Include="$(SKIADIR)\Binary\Shared\Android64\libsk4d.so" Condition="'$(Config)'=='Release' And '$(SKIADIR)'!=''">
+            <RemoteDir>LccThrottleApp\library\lib\arm64-v8a\</RemoteDir>
+            <RemoteName>libsk4d.so</RemoteName>
+            <DeployClass>Skia</DeployClass>
+            <Operation>1</Operation>
+            <LocalCommand/>
+            <RemoteCommand/>
+            <Overwrite>True</Overwrite>
+            <Required>True</Required>
+        </DeployFile>
+        <DeployFile Include="$(BDS)\binandroid64\libsk4d.so" Condition="'$(Config)'=='Debug' And '$(SKIADIR)'==''">
+            <RemoteDir>LccThrottleApp\library\lib\arm64-v8a\</RemoteDir>
+            <RemoteName>libsk4d.so</RemoteName>
+            <DeployClass>Skia</DeployClass>
+            <Operation>1</Operation>
+            <LocalCommand/>
+            <RemoteCommand/>
+            <Overwrite>True</Overwrite>
+            <Required>True</Required>
+        </DeployFile>
+        <DeployFile Include="$(BDS)\binandroid64\libsk4d.so" Condition="'$(Config)'=='Release' And '$(SKIADIR)'==''">
+            <RemoteDir>LccThrottleApp\library\lib\arm64-v8a\</RemoteDir>
+            <RemoteName>libsk4d.so</RemoteName>
+            <DeployClass>Skia</DeployClass>
+            <Operation>1</Operation>
+            <LocalCommand/>
+            <RemoteCommand/>
+            <Overwrite>True</Overwrite>
+            <Required>True</Required>
+        </DeployFile>
+        <DeployFile Include="$(SKIADIR)\Binary\Shared\Android\libsk4d.so" Condition="'$(Config)'=='Debug' And '$(SKIADIR)'!='' and '$(AndroidAppBundle)'=='true'">
+            <RemoteDir>LccThrottleApp\library\lib\armeabi-v7a\</RemoteDir>
+            <RemoteName>libsk4d.so</RemoteName>
+            <DeployClass>Skia</DeployClass>
+            <Operation>1</Operation>
+            <LocalCommand/>
+            <RemoteCommand/>
+            <Overwrite>True</Overwrite>
+            <Required>True</Required>
+        </DeployFile>
+        <DeployFile Include="$(SKIADIR)\Binary\Shared\Android\libsk4d.so" Condition="'$(Config)'=='Release' And '$(SKIADIR)'!='' and '$(AndroidAppBundle)'=='true'">
+            <RemoteDir>LccThrottleApp\library\lib\armeabi-v7a\</RemoteDir>
+            <RemoteName>libsk4d.so</RemoteName>
+            <DeployClass>Skia</DeployClass>
+            <Operation>1</Operation>
+            <LocalCommand/>
+            <RemoteCommand/>
+            <Overwrite>True</Overwrite>
+            <Required>True</Required>
+        </DeployFile>
+        <DeployFile Include="$(BDS)\binandroid32\libsk4d.so" Condition="'$(Config)'=='Debug' And '$(SKIADIR)'=='' and '$(AndroidAppBundle)'=='true'">
+            <RemoteDir>LccThrottleApp\library\lib\armeabi-v7a\</RemoteDir>
+            <RemoteName>libsk4d.so</RemoteName>
+            <DeployClass>Skia</DeployClass>
+            <Operation>1</Operation>
+            <LocalCommand/>
+            <RemoteCommand/>
+            <Overwrite>True</Overwrite>
+            <Required>True</Required>
+        </DeployFile>
+        <DeployFile Include="$(BDS)\binandroid32\libsk4d.so" Condition="'$(Config)'=='Release' And '$(SKIADIR)'=='' and '$(AndroidAppBundle)'=='true'">
+            <RemoteDir>LccThrottleApp\library\lib\armeabi-v7a\</RemoteDir>
+            <RemoteName>libsk4d.so</RemoteName>
+            <DeployClass>Skia</DeployClass>
+            <Operation>1</Operation>
+            <LocalCommand/>
+            <RemoteCommand/>
+            <Overwrite>True</Overwrite>
+            <Required>True</Required>
+        </DeployFile>
+    </ItemGroup>
+    <ItemGroup Condition="'$(Platform)'=='Android'">
+        <DeployFile Include="$(SKIADIR)\Binary\Shared\Android\libsk4d.so" Condition="'$(Config)'=='Debug' And '$(SKIADIR)'!=''">
+            <RemoteDir>LccThrottleApp\library\lib\armeabi-v7a\</RemoteDir>
+            <RemoteName>libsk4d.so</RemoteName>
+            <DeployClass>Skia</DeployClass>
+            <Operation>1</Operation>
+            <LocalCommand/>
+            <RemoteCommand/>
+            <Overwrite>True</Overwrite>
+            <Required>True</Required>
+        </DeployFile>
+        <DeployFile Include="$(SKIADIR)\Binary\Shared\Android\libsk4d.so" Condition="'$(Config)'=='Release' And '$(SKIADIR)'!=''">
+            <RemoteDir>LccThrottleApp\library\lib\armeabi-v7a\</RemoteDir>
+            <RemoteName>libsk4d.so</RemoteName>
+            <DeployClass>Skia</DeployClass>
+            <Operation>1</Operation>
+            <LocalCommand/>
+            <RemoteCommand/>
+            <Overwrite>True</Overwrite>
+            <Required>True</Required>
+        </DeployFile>
+        <DeployFile Include="$(BDS)\binandroid32\libsk4d.so" Condition="'$(Config)'=='Debug' And '$(SKIADIR)'==''">
+            <RemoteDir>LccThrottleApp\library\lib\armeabi-v7a\</RemoteDir>
+            <RemoteName>libsk4d.so</RemoteName>
+            <DeployClass>Skia</DeployClass>
+            <Operation>1</Operation>
+            <LocalCommand/>
+            <RemoteCommand/>
+            <Overwrite>True</Overwrite>
+            <Required>True</Required>
+        </DeployFile>
+        <DeployFile Include="$(BDS)\binandroid32\libsk4d.so" Condition="'$(Config)'=='Release' And '$(SKIADIR)'==''">
+            <RemoteDir>LccThrottleApp\library\lib\armeabi-v7a\</RemoteDir>
+            <RemoteName>libsk4d.so</RemoteName>
+            <DeployClass>Skia</DeployClass>
+            <Operation>1</Operation>
+            <LocalCommand/>
+            <RemoteCommand/>
+            <Overwrite>True</Overwrite>
+            <Required>True</Required>
+        </DeployFile>
+    </ItemGroup>
+    <ItemGroup Condition="'$(Platform)'=='OSXARM64'">
+        <DeployFile Include="$(BDS)\binosxarm64\libsk4d.dylib" Condition="'$(Config)'=='Debug' And '$(SKIADIR)'==''">
+            <RemoteDir>LccThrottleApp.app\Contents\MacOS\</RemoteDir>
+            <RemoteName>libsk4d.dylib</RemoteName>
+            <DeployClass>Skia</DeployClass>
+            <Operation>1</Operation>
+            <LocalCommand/>
+            <RemoteCommand/>
+            <Overwrite>True</Overwrite>
+            <Required>True</Required>
+        </DeployFile>
+        <DeployFile Include="$(BDS)\binosxarm64\libsk4d.dylib" Condition="'$(Config)'=='Release' And '$(SKIADIR)'==''">
+            <RemoteDir>LccThrottleApp.app\Contents\MacOS\</RemoteDir>
+            <RemoteName>libsk4d.dylib</RemoteName>
+            <DeployClass>Skia</DeployClass>
+            <Operation>1</Operation>
+            <LocalCommand/>
+            <RemoteCommand/>
+            <Overwrite>True</Overwrite>
+            <Required>True</Required>
+        </DeployFile>
+        <DeployFile Include="$(SKIADIR)\Binary\Shared\OSXARM64\libsk4d.dylib" Condition="'$(Config)'=='Debug' And '$(SKIADIR)'!=''">
+            <RemoteDir>LccThrottleApp.app\Contents\MacOS\</RemoteDir>
+            <RemoteName>libsk4d.dylib</RemoteName>
+            <DeployClass>Skia</DeployClass>
+            <Operation>1</Operation>
+            <LocalCommand/>
+            <RemoteCommand/>
+            <Overwrite>True</Overwrite>
+            <Required>True</Required>
+        </DeployFile>
+        <DeployFile Include="$(SKIADIR)\Binary\Shared\OSXARM64\libsk4d.dylib" Condition="'$(Config)'=='Release' And '$(SKIADIR)'!=''">
+            <RemoteDir>LccThrottleApp.app\Contents\MacOS\</RemoteDir>
+            <RemoteName>libsk4d.dylib</RemoteName>
+            <DeployClass>Skia</DeployClass>
+            <Operation>1</Operation>
+            <LocalCommand/>
+            <RemoteCommand/>
+            <Overwrite>True</Overwrite>
+            <Required>True</Required>
+        </DeployFile>
+    </ItemGroup>
+    <ItemGroup Condition="'$(Platform)'=='Win64'">
+        <DeployFile Include="$(SKIADIR)\Binary\Shared\Win64\sk4d.dll" Condition="'$(Config)'=='Debug' And '$(SKIADIR)'!=''">
+            <RemoteDir>LccThrottleApp\</RemoteDir>
+            <RemoteName>sk4d.dll</RemoteName>
+            <DeployClass>Skia</DeployClass>
+            <Operation>0</Operation>
+            <LocalCommand/>
+            <RemoteCommand/>
+            <Overwrite>True</Overwrite>
+            <Required>True</Required>
+        </DeployFile>
+        <DeployFile Include="$(SKIADIR)\Binary\Shared\Win64\sk4d.dll" Condition="'$(Config)'=='Release' And '$(SKIADIR)'!=''">
+            <RemoteDir>LccThrottleApp\</RemoteDir>
+            <RemoteName>sk4d.dll</RemoteName>
+            <DeployClass>Skia</DeployClass>
+            <Operation>0</Operation>
+            <LocalCommand/>
+            <RemoteCommand/>
+            <Overwrite>True</Overwrite>
+            <Required>True</Required>
+        </DeployFile>
+        <DeployFile Include="$(BDS)\bin64\sk4d.dll" Condition="'$(Config)'=='Debug' And '$(SKIADIR)'==''">
+            <RemoteDir>LccThrottleApp\</RemoteDir>
+            <RemoteName>sk4d.dll</RemoteName>
+            <DeployClass>Skia</DeployClass>
+            <Operation>0</Operation>
+            <LocalCommand/>
+            <RemoteCommand/>
+            <Overwrite>True</Overwrite>
+            <Required>True</Required>
+        </DeployFile>
+        <DeployFile Include="$(BDS)\bin64\sk4d.dll" Condition="'$(Config)'=='Release' And '$(SKIADIR)'==''">
+            <RemoteDir>LccThrottleApp\</RemoteDir>
+            <RemoteName>sk4d.dll</RemoteName>
+            <DeployClass>Skia</DeployClass>
+            <Operation>0</Operation>
+            <LocalCommand/>
+            <RemoteCommand/>
+            <Overwrite>True</Overwrite>
+            <Required>True</Required>
+        </DeployFile>
+    </ItemGroup>
+    <ItemGroup Condition="'$(Platform)'=='Linux64'">
+        <DeployFile Include="$(BDS)\binlinux64\libsk4d.so" Condition="'$(Config)'=='Release' And '$(SKIADIR)'==''">
+            <RemoteDir>LccThrottleApp\</RemoteDir>
+            <RemoteName>libsk4d.so</RemoteName>
+            <DeployClass>Skia</DeployClass>
+            <Operation>1</Operation>
+            <LocalCommand/>
+            <RemoteCommand/>
+            <Overwrite>True</Overwrite>
+            <Required>True</Required>
+        </DeployFile>
+        <DeployFile Include="$(BDS)\binlinux64\libsk4d.so" Condition="'$(Config)'=='Debug' And '$(SKIADIR)'==''">
+            <RemoteDir>LccThrottleApp\</RemoteDir>
+            <RemoteName>libsk4d.so</RemoteName>
+            <DeployClass>Skia</DeployClass>
+            <Operation>1</Operation>
+            <LocalCommand/>
+            <RemoteCommand/>
+            <Overwrite>True</Overwrite>
+            <Required>True</Required>
+        </DeployFile>
+        <DeployFile Include="$(SKIADIR)\Binary\Shared\Linux64\libsk4d.so" Condition="'$(Config)'=='Debug' And '$(SKIADIR)'!=''">
+            <RemoteDir>LccThrottleApp\</RemoteDir>
+            <RemoteName>libsk4d.so</RemoteName>
+            <DeployClass>Skia</DeployClass>
+            <Operation>1</Operation>
+            <LocalCommand/>
+            <RemoteCommand/>
+            <Overwrite>True</Overwrite>
+            <Required>True</Required>
+        </DeployFile>
+        <DeployFile Include="$(SKIADIR)\Binary\Shared\Linux64\libsk4d.so" Condition="'$(Config)'=='Release' And '$(SKIADIR)'!=''">
+            <RemoteDir>LccThrottleApp\</RemoteDir>
+            <RemoteName>libsk4d.so</RemoteName>
+            <DeployClass>Skia</DeployClass>
+            <Operation>1</Operation>
+            <LocalCommand/>
+            <RemoteCommand/>
+            <Overwrite>True</Overwrite>
+            <Required>True</Required>
+        </DeployFile>
+    </ItemGroup>
     <ItemGroup Condition="'$(Platform)'=='iOSDevice64'"/>
-    <ItemGroup Condition="'$(Platform)'=='iOSSimARM64'"/>
+    <ItemGroup Condition="'$(Platform)'=='iOSSimARM64'">
+        <DeployFile Include="$(BDS)\biniossimarm64\libsk4d.dylib" Condition="'$(Config)'=='Debug' And '$(SKIADIR)'==''">
+            <RemoteDir>LccThrottleApp.app\</RemoteDir>
+            <RemoteName>libsk4d.dylib</RemoteName>
+            <DeployClass>Skia</DeployClass>
+            <Operation>1</Operation>
+            <LocalCommand/>
+            <RemoteCommand/>
+            <Overwrite>True</Overwrite>
+            <Required>True</Required>
+        </DeployFile>
+        <DeployFile Include="$(BDS)\biniossimarm64\libsk4d.dylib" Condition="'$(Config)'=='Release' And '$(SKIADIR)'==''">
+            <RemoteDir>LccThrottleApp.app\</RemoteDir>
+            <RemoteName>libsk4d.dylib</RemoteName>
+            <DeployClass>Skia</DeployClass>
+            <Operation>1</Operation>
+            <LocalCommand/>
+            <RemoteCommand/>
+            <Overwrite>True</Overwrite>
+            <Required>True</Required>
+        </DeployFile>
+        <DeployFile Include="$(SKIADIR)\Binary\Shared\iOSSimARM64\libsk4d.dylib" Condition="'$(Config)'=='Debug' And '$(SKIADIR)'!=''">
+            <RemoteDir>LccThrottleApp.app\</RemoteDir>
+            <RemoteName>libsk4d.dylib</RemoteName>
+            <DeployClass>Skia</DeployClass>
+            <Operation>1</Operation>
+            <LocalCommand/>
+            <RemoteCommand/>
+            <Overwrite>True</Overwrite>
+            <Required>True</Required>
+        </DeployFile>
+        <DeployFile Include="$(SKIADIR)\Binary\Shared\iOSSimARM64\libsk4d.dylib" Condition="'$(Config)'=='Release' And '$(SKIADIR)'!=''">
+            <RemoteDir>LccThrottleApp.app\</RemoteDir>
+            <RemoteName>libsk4d.dylib</RemoteName>
+            <DeployClass>Skia</DeployClass>
+            <Operation>1</Operation>
+            <LocalCommand/>
+            <RemoteCommand/>
+            <Overwrite>True</Overwrite>
+            <Required>True</Required>
+        </DeployFile>
+    </ItemGroup>
 </Project>

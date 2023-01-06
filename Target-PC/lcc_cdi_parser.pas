@@ -286,6 +286,7 @@ type
     FGlobalButtonStop: TLccOpenPascalSpeedButton;
     FGlobalButtonWritePage: TLccOpenPascalSpeedButton;
     FCVBlockRead: Word;
+    FGlobalToolbarLabel: TLccLabel;
     FMarkedToStop: Boolean;
     FMarkedToStopIsStopping: Boolean;
     FLccNode: TLccNode;
@@ -350,6 +351,8 @@ type
     procedure DoButtonWritePageClick(Sender: TObject); virtual;
     procedure DoButtonStopClick(Sender: TObject); virtual;
 
+    procedure UpdateToolbarLabel(Info: string);
+
     procedure OnEngineMemorySpaceAccessCallback(EngineMemorySpaceAccess: TLccEngineMemorySpaceAccess);
 
     // Control Event Handler
@@ -392,7 +395,7 @@ type
     property GlobalButtonReadPage: TLccOpenPascalSpeedButton read FGlobalButtonReadPage write FGlobalButtonReadPage;
     property GlobalButtonWritePage: TLccOpenPascalSpeedButton read FGlobalButtonWritePage write FGlobalButtonWritePage;
     property GlobalButtonStop: TLccOpenPascalSpeedButton read FGlobalButtonStop write FGlobalButtonStop;
-
+    property GlobalToolbarLabel: TLccLabel read FGlobalToolbarLabel write FGlobalToolbarLabel;
 
     // Properties to look at below...............
 
@@ -1063,7 +1066,6 @@ begin
                          // Need to queue up the data we want to write to the memory space
                          EngineMemorySpaceObject := EngineMemorySpaceAccess.Assign(lems_Write, MSI_CONFIG, True, Info.MemoryAddressPointer, Info.MemoryAddressPointerHi, True, TargetNodeIdentification.NodeID, TargetNodeIdentification.Alias, {$IFNDEF DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessCallback);
                          EngineMemorySpaceObject.WriteString := AString;
-                         EngineMemorySpaceAccess.Start;
                        end;
                      end;
 
@@ -1074,7 +1076,6 @@ begin
                          // Need to queue up the data we want to write to the memory space
                          EngineMemorySpaceObject := EngineMemorySpaceAccess.Assign(lems_Write, MSI_CONFIG, False, Info.MemoryAddressPointer, Info.MemoryAddressPointerHi, True, TargetNodeIdentification.NodeID, TargetNodeIdentification.Alias, {$IFNDEF DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessCallback);
                          EngineMemorySpaceObject.WriteInteger := AnInteger;
-                         EngineMemorySpaceAccess.Start;
                        end;
                      end;
 
@@ -1085,7 +1086,6 @@ begin
                          // Need to queue up the data we want to write to the memory space
                          EngineMemorySpaceObject := EngineMemorySpaceAccess.Assign(lems_Write, MSI_CONFIG, False, Info.MemoryAddressPointer, Info.MemoryAddressPointerHi, True, TargetNodeIdentification.NodeID, TargetNodeIdentification.Alias, {$IFNDEF DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessCallback);
                          EngineMemorySpaceObject.WriteEventID := AnEventID;
-                         EngineMemorySpaceAccess.Start;
                        end;
                      end;
 
@@ -1103,6 +1103,8 @@ end;
 
 procedure TLccCdiParser.DoButtonReadPageClick(Sender: TObject);
 
+var
+  ElementCount: Integer;
 
   procedure QueueRead(Info: TDataElementInformation);
   begin
@@ -1115,6 +1117,8 @@ procedure TLccCdiParser.DoButtonReadPageClick(Sender: TObject);
         cdt_Bit      : begin end;
       end;
     end;
+    UpdateToolbarLabel('Elements Found: ' + IntToStr(ElementCount));
+    Inc(ElementCount);
   end;
 
   procedure RunSheet(Component: TComponent);
@@ -1137,6 +1141,8 @@ procedure TLccCdiParser.DoButtonReadPageClick(Sender: TObject);
 var
   TabSheet: TLccTabSheet;
 begin
+  ElementCount := 0;
+  UpdateToolbarLabel('Elements Found: ');
   TabSheet := FindActivePage;
   if Assigned(TabSheet) then
   begin
@@ -1150,6 +1156,11 @@ end;
 procedure TLccCdiParser.DoButtonStopClick(Sender: TObject);
 begin
   MarkedToStop := True;
+end;
+
+procedure TLccCdiParser.UpdateToolbarLabel(Info: string);
+begin
+  GlobalToolbarLabel.{$IFDEF DELPHI}Text{$ELSE}Caption{$ENDIF} := Info
 end;
 
 procedure TLccCdiParser.OnEngineMemorySpaceAccessCallback(EngineMemorySpaceAccess: TLccEngineMemorySpaceAccess);
@@ -1180,16 +1191,18 @@ begin
       if ComboBox.ItemIndex > -1 then
       begin
 
-      end
+      end;
       {$ELSE}
       Combobox.Text := EventIDToString(EngineMemorySpaceAccess.StreamAsEventID, True);
       {$ENDIF}
+
+      UpdateToolbarLabel('Remaining: ' + IntToStr(EngineMemorySpaceAccess.QueuedRequests));
     end;
   end else
   begin // Write completed
      // do something interesting here.....
-     beep;
 
+    UpdateToolbarLabel('Remaining: ' + IntToStr(EngineMemorySpaceAccess.QueuedRequests));
   end;
 end;
 
@@ -1847,12 +1860,18 @@ begin
   GlobalButtonReadPage := CreateButton(GlobalButtonBkGnd, 'Read All', {$IFNDEF DELPHI}@{$ENDIF}DoButtonReadPageClick, False, (GlobalButtonBkGnd.Width/3)-2, {$IFDEF DELPHI}TAlignLayout.Right{$ELSE}alRight{$ENDIF});
   GlobalButtonWritePage := CreateButton(GlobalButtonBkGnd, 'Write All', {$IFNDEF DELPHI}@{$ENDIF}DoButtonWritePageClick, False, (GlobalButtonBkGnd.Width/3)-2, {$IFDEF DELPHI}TAlignLayout.Right{$ELSE}alRight{$ENDIF});
   GlobalButtonStop := CreateButton(GlobalButtonBkGnd, 'Abort', {$IFNDEF DELPHI}@{$ENDIF}DoButtonStopClick, False, (GlobalButtonBkGnd.Width/3)-2, {$IFDEF DELPHI}TAlignLayout.Right{$ELSE}alRight{$ENDIF});
+  GlobalToolbarLabel := TLccLabel.Create(GlobalButtonBkGnd);
+  GlobalToolbarLabel.Align := {$IFDEF DELPHI}TAlignLayout.Bottom{$ELSE}alBottom{$ENDIF};
+  GlobalToolbarLabel.Parent := GlobalButtonBkGnd;
+  UpdateToolbarLabel('');
+
 
   // TabControl that is client aligned with the FooterBkGnd
   TabControl := TLccTabControl.Create(ParentControl);
   TabControl.Align := {$IFDEF DELPHI}TAlignLayout.Client{$ELSE}alClient{$ENDIF};
   TabControl.Parent := ParserFrame;
 
+  UpdateToolbarLabel('Reading CDI...');
   CdiRootElement := XmlFindRootNode(CDI, 'cdi');
   if Assigned(CdiRootElement) then
   begin

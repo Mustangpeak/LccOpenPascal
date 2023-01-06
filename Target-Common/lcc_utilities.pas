@@ -357,6 +357,12 @@ var
   Dots, I : Integer;
 begin
   NodeIDStr := UpperCase(NodeIDStr);
+  if (NodeIDStr[1] = '0') and (NodeIDStr[2] = 'X') then
+  begin
+    for i := 1 to Length(NodeIDStr) - 2 do
+      NodeIDStr[i] := NodeIDStr[i+2];
+    SetLength(NodeIDStr, Length(NodeIDStr) - 2);
+  end;
 
   NodeIDStr := NodeIDStr + '.'; //add a dot. We use a dot to trigger the Octet check, so need the last one
   Dots := 0;

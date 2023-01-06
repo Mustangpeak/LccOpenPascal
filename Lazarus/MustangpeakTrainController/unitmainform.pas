@@ -32,6 +32,7 @@ uses
   lcc_common_classes,
   lcc_node,
   lcc_defines,
+  lcc_base_classes,
   lcc_utilities,
   lcc_cdi_parser;
 
@@ -206,7 +207,7 @@ type
 
     procedure OnControllerAssignChange(Sender: TObject; ATractionServer: TLccTractionServer; ATractionObject: TLccTractionObject; IsAssigned: Boolean);
 
-    procedure AllocateTrainCallback(EngineAllocateTrain: TLccEngineAllocateTrain; AEngineSearchTrain: TLccEngineSearchTrain);
+    procedure AllocateTrainCallback(EngineAllocateTrain: TLccEngineSearchAndAllocateTrain; AEngineSearchTrain: TLccEngineSearchTrain);
 
     procedure OnCDIReadCallback(MemorySpaceReadEnging: TLccEngineMemorySpaceAccess);
 
@@ -309,9 +310,9 @@ begin
     AddressWord := AddressInt;
     if Assigned(Controller) then
     begin
-      Controller.EngineAllocateTrain.Reset;
-      Controller.EngineAllocateTrain.Assign(AddressWord, IsLong, TLccDccSpeedStep( ComboBoxThrottleSpeedSteps.ItemIndex), @AllocateTrainCallback);
-      Controller.EngineAllocateTrain.Start;
+      Controller.EngineSearchAndAllocateTrain.Reset;
+      Controller.EngineSearchAndAllocateTrain.Assign(AddressWord, IsLong, TLccDccSpeedStep( ComboBoxThrottleSpeedSteps.ItemIndex), @AllocateTrainCallback);
+      Controller.EngineSearchAndAllocateTrain.Start;
 
    //   Controller.AssignTrainByDccAddress(AddressWord, IsLong, TLccDccSpeedStep( ComboBoxThrottleSpeedSteps.ItemIndex));
     end;
@@ -469,7 +470,7 @@ begin
           begin
             PanelRosterEditorConfigurationBkGnd.Caption := 'Reading Configuration Data......';
             Controller.EngineMemorySpaceAccess.Reset;
-            Controller.EngineMemorySpaceAccess.Assign(MSI_CDI, DetailsTractionObject.NodeID, DetailsTractionObject.NodeAlias, @OnCDIReadCallback);
+            Controller.EngineMemorySpaceAccess.Assign(lems_Read, MSI_CDI, True, 0, 0, False, DetailsTractionObject.NodeID, DetailsTractionObject.NodeAlias, @OnCDIReadCallback);
             Controller.EngineMemorySpaceAccess.Start;
           end else
             LoadCDIUserInterface;
@@ -814,7 +815,7 @@ end;
 
 procedure TFormTrainController.OnNodeIDChanged(Sender: TObject; ALccNode: TLccNode);
 begin
-  EditSettingsNodeID.Text := ALccNode.NodeIDStr;
+  EditSettingsNodeID.Text := ALccNode.NodeIDStr[True];
 end;
 
 procedure TFormTrainController.OnNodeAliasChanged(Sender: TObject; ALccNode: TLccNode);
@@ -843,7 +844,7 @@ begin
 end;
 
 procedure TFormTrainController.AllocateTrainCallback(
-  EngineAllocateTrain: TLccEngineAllocateTrain;
+  EngineAllocateTrain: TLccEngineSearchAndAllocateTrain;
   AEngineSearchTrain: TLccEngineSearchTrain);
 begin
   Controller.TractionServer.Find(AEngineSearchTrain.SearchTrain.NodeIdentification.NodeID);
@@ -972,12 +973,21 @@ begin
 end;
 
 procedure TFormTrainController.LoadCDIUserInterface;
+var
+  ATargetNode: TLccNodeIdentificationObject;
 begin
   if Assigned(DetailsTractionObject) then
   begin
-    PanelRosterEditorConfigurationBkGnd.Caption := 'Building User Interface......';
-    CDIParser.Build_CDI_Interface(nil, PanelRosterEditorConfigurationBkGnd, DetailsTractionObject.NodeCDI.CDI);
-    PanelRosterEditorConfigurationBkGnd.Caption := '';
+    ATargetNode := TLccNodeIdentificationObject.Create;
+    try
+      ATargetNode.AssignID(DetailsTractionObject.NodeID, DetailsTractionObject.NodeAlias);
+      PanelRosterEditorConfigurationBkGnd.Caption := 'Building User Interface......';
+      CDIParser.Build_CDI_Interface(Controller, ATargetNode, PanelRosterEditorConfigurationBkGnd, DetailsTractionObject.NodeCDI.CDI);
+      PanelRosterEditorConfigurationBkGnd.Caption := '';
+
+    finally
+      ATargetNode.Free;
+    end;
   end;
 end;
 

@@ -129,9 +129,9 @@ type
     // Callbacks from the Node Manager
     procedure OnNodeManagerAliasIDChanged(Sender: TObject; LccSourceNode: TLccNode);
     procedure OnNodeManagerIDChanged(Sender: TObject; LccSourceNode: TLccNode);
-    procedure OnNodeManagerNodeLogout(Sender: TObject; LccSourceNode: TLccNode);
-    procedure OnNodeManagerNodeLogin(Sender: TObject; LccSourceNode: TLccNode);
-
+    procedure OnNodeManagerNodeLogin(Sender: TObject; LccSourceNode: TLccNode);  // Note there is not defined way for a node to log out of OpenLCB
+    procedure OnNodeManagerAliasRelease(Sender: TObject; ALccNode: TLccNode);
+    procedure OnNodeManagerNodeDestroy(Sender: TObject; ALccNode: TLccNode);
 
     procedure OnNodeTractionListenerAttach(Sender: TObject; LccNode: TLccNode; AMessage: TLccMessage; var DoDefault: Boolean);
     procedure OnNodeTractionListenerDetach(Sender: TObject; LccNode: TLccNode; AMessage: TLccMessage; var DoDefault: Boolean);
@@ -146,6 +146,7 @@ type
     function FindSingleLevelNodeWithData(ParentNode: TTreeNode; const NodeData: Pointer): TTreeNode;
     procedure RebuildTrainListview;
     procedure ReleaseAliasOnTrains;
+    procedure NodeIsGoingAway(LccSourceNode: TLccNode);
 
   public
     property LccServer: TLccEthernetServer read FLccServer write FLccServer;
@@ -363,6 +364,8 @@ begin
   NodeManager.OnNodeTractionListenerDetach := @OnNodeTractionListenerDetach;
   NodeManager.OnNodeTractionListenerQuery := @OnNodeTractionListenerQuery;
   NodeManager.OnAliasMappingChange := @OnAliasMappingChange;
+  NodeManager.OnAliasRelease := @OnNodeManagerAliasRelease;
+  NodeManager.OnNodeDestroy := @OnNodeManagerNodeDestroy;
 
   FLccServer := TLccEthernetServer.Create(nil, NodeManager);
   LccServer.OnConnectionStateChange := @OnCommandStationServerConnectionState;
@@ -613,7 +616,7 @@ end;
 procedure TFormTrainCommander.OnNodeManagerIDChanged(Sender: TObject; LccSourceNode: TLccNode);
 begin
   if LccSourceNode is TLccCommandStationNode then
-    LabelNodeID.Caption := LccSourceNode.NodeIDStr;
+    LabelNodeID.Caption := LccSourceNode.NodeIDStr[True];
 end;
 
 procedure TFormTrainCommander.OnNodeManagerNodeLogin(Sender: TObject; LccSourceNode: TLccNode);
@@ -631,6 +634,16 @@ begin
     TreeNode.Data := TrainNode;
     TreeNode.ImageIndex := 18;
   end;
+end;
+
+procedure TFormTrainCommander.OnNodeManagerAliasRelease(Sender: TObject; ALccNode: TLccNode);
+begin
+  NodeIsGoingAway(ALccNode);
+end;
+
+procedure TFormTrainCommander.OnNodeManagerNodeDestroy(Sender: TObject; ALccNode: TLccNode);
+begin
+  NodeIsGoingAway(ALccNode);
 end;
 
 procedure TFormTrainCommander.OnNodeTractionListenerAttach(Sender: TObject;
@@ -686,9 +699,9 @@ begin
   end;
 
   if ATrainNode.DccLongAddress then
-    Result := IntToStr(ATrainNode.DccAddress) + ' Long ' + SpeedStep + ' [' + ATrainNode.AliasIDStr + ']' + ' [' + ATrainNode.NodeIDStr + ']'
+    Result := IntToStr(ATrainNode.DccAddress) + ' Long ' + SpeedStep + ' [' + ATrainNode.AliasIDStr + ']' + ' [' + ATrainNode.NodeIDStr[True] + ']'
   else
-    Result := IntToStr(ATrainNode.DccAddress) + ' Short ' + SpeedStep + ' [' + ATrainNode.AliasIDStr + ']' + ' [' + ATrainNode.NodeIDStr + ']';
+    Result := IntToStr(ATrainNode.DccAddress) + ' Short ' + SpeedStep + ' [' + ATrainNode.AliasIDStr + ']' + ' [' + ATrainNode.NodeIDStr[True] + ']';
 end;
 
 function TFormTrainCommander.FindSingleLevelNodeWithData(ParentNode: TTreeNode;
@@ -749,6 +762,30 @@ begin
   end;
 end;
 
+procedure TFormTrainCommander.NodeIsGoingAway(LccSourceNode: TLccNode);
+var
+ TreeNode: TTreeNode;
+ TrainNode: TLccTrainDccNode;
+begin
+  if Assigned(LccSourceNode) then
+  begin
+    if LccSourceNode is TLccTrainDccNode then
+    begin
+      TrainNode := LccSourceNode as TLccTrainDccNode;
+      TreeNode := TreeViewTrains.Items.FindNodeWithData(TrainNode);
+      while Assigned(TreeNode) do
+      begin
+        if Assigned(TreeNode) then
+        begin
+          TreeViewTrains.Items.Delete(TreeNode);
+          Break;
+        end;
+        TreeNode := TreeViewTrains.Items.FindNodeWithData(LccSourceNode);
+      end;
+    end;
+  end;
+end;
+
 procedure TFormTrainCommander.OnComPortConnectionStateChange(Sender: TObject; Info: TLccHardwareConnectionInfo);
 begin
   if Sender is TLccConnectionThread then
@@ -798,24 +835,6 @@ begin
   finally
     MemoComPort.Lines.EndUpdate;
   end;
-end;
-
-procedure TFormTrainCommander.OnNodeManagerNodeLogout(Sender: TObject; LccSourceNode: TLccNode);
-{var
-  TreeNode: TTreeNode;
-  TrainNode: TLccTrainDccNode;      }
-begin
-{  if LccSourceNode is TLccTrainDccNode then
-  begin
-    TrainNode := LccSourceNode as TLccTrainDccNode;
-    TreeNode := TreeViewTrains.Items.FindNodeWithData(TrainNode);
-    while Assigned(TreeNode) do
-    begin
-      if Assigned(TreeNode) then
-        TreeViewTrains.Items.Delete(TreeNode);
-      TreeNode := TreeViewTrains.Items.FindNodeWithData(LccSourceNode);
-    end;
-  end;     }
 end;
 
 procedure TFormTrainCommander.OnCommandStationServerReceiveMessage(Sender: TObject; LccMessage: TLccMessage);
