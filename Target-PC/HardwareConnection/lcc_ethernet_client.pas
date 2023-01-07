@@ -293,7 +293,8 @@ end;
 
 procedure TLccEthernetClientThread.OnClientConnected(Sender: TObject);
 begin
-  HandleSendConnectionNotification(lcsConnected);
+  if not Terminated then
+    HandleSendConnectionNotification(lcsConnected);
   idThreadComponent.Active := True;
 end;
 procedure TLccEthernetClientThread.OnClientDisconnected(Sender: TObject);
@@ -312,7 +313,6 @@ var
   AByte: Byte;
   TcpMessage: TLccDynamicByteArray;
 begin
-
   if (ConnectionInfo as TLccEthernetConnectionInfo).GridConnect then
   begin
     AString := '';
@@ -342,13 +342,15 @@ begin
               begin
                 Owner.NodeManager.ReceiveMessageServerThread.ReceiveMessageServerAddMessage(WorkerMessage);
                 try
-                  Synchronize({$IFDEF FPC}@{$ENDIF}ReceiveMessage);  // WorkerMessage contains the message
+                  if not Terminated then
+                    Synchronize({$IFDEF FPC}@{$ENDIF}ReceiveMessage);  // WorkerMessage contains the message
                 except
                 end;
               end;
             imgcr_ErrorToSend :
               begin
        //         ConnectionInfo.LccMessage.CopyToTarget(WorkerMessage);
+       //       if not Terminated then
        //         Synchronize({$IFDEF FPC}@{$ENDIF}RequestErrorMessageSent);
               end;
             imgcr_False,
@@ -372,7 +374,8 @@ begin
         begin
           Owner.NodeManager.ReceiveMessageServerThread.ReceiveMessageServerAddMessage(WorkerMessage);
           try
-            Synchronize({$IFDEF FPC}@{$ENDIF}ReceiveMessage);  // WorkerMessage contains the message
+            if not Terminated then
+              Synchronize({$IFDEF FPC}@{$ENDIF}ReceiveMessage);  // WorkerMessage contains the message
           except
           end;
         end

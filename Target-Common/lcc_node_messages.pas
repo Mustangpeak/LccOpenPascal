@@ -154,7 +154,7 @@ public
   procedure InsertNodeID(StartIndex: Integer; var ANodeID: TNodeID);
   procedure InsertEventID(StartIndex: Integer; var AnEventID: TEventID);
   procedure InsertDWordAsDataBytes(DoubleWord: DWord; StartByteIndex: Integer);
-  procedure InsertWordAsDataBytes(AWord: DWord; StartByteIndex: Integer);
+  procedure InsertWordAsDataBytes(AWord: Word; StartByteIndex: Integer);
   function ExtractDataBytesAsEventID(StartIndex: Integer): TEventID;
   function ExtractDataBytesAsInt(StartByteIndex, EndByteIndex: Integer): DWORD;
   function ExtractDataBytesAsNodeID(StartIndex: Integer; var ANodeID: TNodeID): TNodeID;
@@ -781,7 +781,7 @@ begin
   FDataArray[StartByteIndex+3] := _Lo(DoubleWord);
 end;
 
-procedure TLccMessage.InsertWordAsDataBytes(AWord: DWord; StartByteIndex: Integer);
+procedure TLccMessage.InsertWordAsDataBytes(AWord: Word; StartByteIndex: Integer);
 begin
   FDataArray[StartByteIndex]   := _Hi(AWord);
   FDataArray[StartByteIndex+1] := _Lo(AWord);

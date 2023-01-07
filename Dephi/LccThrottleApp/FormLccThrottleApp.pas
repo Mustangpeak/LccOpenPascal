@@ -247,7 +247,9 @@ type
     procedure OnClientServerConnectionChange(Sender: TObject; Info: TLccHardwareConnectionInfo);
     procedure OnClientServerErrorMessage(Sender: TObject; Info: TLccHardwareConnectionInfo);
 
-    procedure CallbackOnMemorySpaceRead(MemorySpaceAccessEngine: TLccEngineMemorySpaceAccess);
+    procedure OnEngineMemorySpaceAccessCallback(MemorySpaceAccessEngine: TLccEngineMemorySpaceAccess);
+    procedure OnEngineMemorySpaceAccessProgressCallback(AEngineMemorySpaceAccess: TLccEngineMemorySpaceAccess);
+    procedure OnCdiParserProcessCallback(ACdiParser: TLccCdiParser; ProgressInfo: string);
 
     function ValidEditBoxKey(Key: Word): Boolean;
     function ConnectionLogin: Boolean;
@@ -586,10 +588,17 @@ begin
   ActiveTrainObject := nil;
 end;
 
-procedure TLccThrottleAppForm.OnAliasMappingChange(Sender: TObject;
-  LccSourceNode: TLccNode; AnAliasMapping: TLccAliasMapping; IsMapped: Boolean);
+procedure TLccThrottleAppForm.OnAliasMappingChange(Sender: TObject; LccSourceNode: TLccNode; AnAliasMapping: TLccAliasMapping; IsMapped: Boolean);
 begin
 
+end;
+
+procedure TLccThrottleAppForm.OnCdiParserProcessCallback(ACdiParser: TLccCdiParser; ProgressInfo: string);
+begin
+  LabelTrainRosterEdit.BeginUpdate;
+  LabelTrainRosterEdit.Text := ProgressInfo;
+  LabelTrainRosterEdit.EndUpdate;
+  Application.ProcessMessages;
 end;
 
 procedure TLccThrottleAppForm.OnClientServerConnectionChange(Sender: TObject; Info: TLccHardwareConnectionInfo);
@@ -634,7 +643,13 @@ procedure TLccThrottleAppForm.OnClientServerErrorMessage(Sender: TObject; Info: 
 begin
 end;
 
-procedure TLccThrottleAppForm.CallbackOnMemorySpaceRead(MemorySpaceAccessEngine: TLccEngineMemorySpaceAccess);
+procedure TLccThrottleAppForm.OnEngineMemorySpaceAccessProgressCallback(AEngineMemorySpaceAccess: TLccEngineMemorySpaceAccess);
+begin
+  if AEngineMemorySpaceAccess.MemorySpace = MSI_CDI then
+    LabelTrainRosterEditContainer.Text := 'Loading... ' + IntToStr(AEngineMemorySpaceAccess.MemoryStream.Size) + ' bytes';
+end;
+
+procedure TLccThrottleAppForm.OnEngineMemorySpaceAccessCallback(MemorySpaceAccessEngine: TLccEngineMemorySpaceAccess);
 var
   TractionObject: TLccTractionObject;
 begin
@@ -682,7 +697,7 @@ begin
     LocalNodeIdentification.AssignID(TractionObject.NodeID, TractionObject.NodeAlias);
     XMLDoc := XmlLoadFromText( LccDOMString( TractionObject.NodeCDI.CDI));
     try
-       CDILayoutFrame := CdiParserFrame.Build_CDI_Interface(Controller, LocalNodeIdentification, LabelTrainRosterEditContainer, XMLDoc);
+       CDILayoutFrame := CdiParserFrame.Build_CDI_Interface(Controller, LocalNodeIdentification, LabelTrainRosterEditContainer, XMLDoc, OnCdiParserProcessCallback);
     finally
       XmlFreeDocument(XMLDoc);
       LocalNodeIdentification.Free;
@@ -843,7 +858,7 @@ begin
     end else
     begin
       Controller.EngineMemorySpaceAccess.Reset;
-      Controller.EngineMemorySpaceAccess.Assign(lems_Read, MSI_CDI, True, 0, 0, False, TractionObject.NodeID, TractionObject.NodeAlias, CallbackOnMemorySpaceRead);
+      Controller.EngineMemorySpaceAccess.Assign(lems_Read, MSI_CDI, True, 0, 0, False, TractionObject.NodeID, TractionObject.NodeAlias, OnEngineMemorySpaceAccessCallback, OnEngineMemorySpaceAccessProgressCallback);
       Controller.EngineMemorySpaceAccess.TagObject := TractionObject;
       Controller.EngineMemorySpaceAccess.Start;
     end;

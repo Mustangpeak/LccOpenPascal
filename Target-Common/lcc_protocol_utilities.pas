@@ -48,7 +48,7 @@ type
     destructor Destroy; override;
 
     function ReadAsString(Address: DWord; AStream: TStream): String;
-    procedure DatagramReadRequest(LccMessage: TLccMessage; OutMessage: TLccMessage; AStream: TStream); virtual;
+    procedure DatagramReadRequest(LccMessage: TLccMessage; OutMessage: TLccMessage; AStream: TStream; AutoGrow: Boolean); virtual;
     procedure DatagramWriteRequest(LccMessage: TLccMessage; AStream: TStream); virtual;
     function DatagramReadChunk(AStream: TStream; LccMessage: TLccMessage): Boolean;
   end;
@@ -354,6 +354,9 @@ begin
   AStream.Position := Address;
   for i := iStart to LccMessage.DataCount - 1 do
     StreamWriteByte(AStream, LccMessage.DataArrayIndexer[i]);
+
+  // We don't need to send a WriteReply for this.. the Datagram OK is all that is needed...
+  // Unless it will take a while then we can send a special Datagram OK and then send the WriteReply later.
 end;
 
 function TNodeProtocolBase.DatagramReadChunk(AStream: TStream; LccMessage: TLccMessage): Boolean;
@@ -402,46 +405,91 @@ begin
  end;
 end;
 
-procedure TNodeProtocolBase.DatagramReadRequest(LccMessage: TLccMessage; OutMessage: TLccMessage; AStream: TStream);
+procedure TNodeProtocolBase.DatagramReadRequest(LccMessage: TLccMessage;
+  OutMessage: TLccMessage; AStream: TStream; AutoGrow: Boolean);
 //
 // Assumes the Source and Destination have already been set up
 //
 var
   i: Integer;
+  OldStreamSize: Int64;
   FirstDataByte, BytesToRead: Integer;
   AddressStart: DWord;
+  B: Byte;
 begin
   // Assumption is this is a datagram message
 
   // Is the addressStart space in the header or is it the first byte in the data that
   // we need to skip over?
-  if LccMessage.DataArrayIndexer[1] and $03 = 0 then
-    FirstDataByte := 7     // Skip over the addressStart space byte in the data
+  if LccMessage.DataArray[1] and $03 = 0 then
+    FirstDataByte := 7  // Skip over the addressStart space byte in the data
   else
-    FirstDataByte := 6;    // The addressStart space is encoded in the header so use all the data bytes
-  BytesToRead := LccMessage.DataArrayIndexer[FirstDataByte];                  // number of bytes to read
-  OutMessage.DataArrayIndexer[0] := LccMessage.DataArrayIndexer[0];          // Just copy the original message
-  OutMessage.DataArrayIndexer[1] := LccMessage.DataArrayIndexer[1] or $10;   // except set the reply flag
-  OutMessage.DataArrayIndexer[2] := LccMessage.DataArrayIndexer[2];          // Copy the addressStart
-  OutMessage.DataArrayIndexer[3] := LccMessage.DataArrayIndexer[3];
-  OutMessage.DataArrayIndexer[4] := LccMessage.DataArrayIndexer[4];
-  OutMessage.DataArrayIndexer[5] := LccMessage.DataArrayIndexer[5];
+    FirstDataByte := 6; // The addressStart space is encoded in the header so use all the data bytes
+  BytesToRead := LccMessage.DataArray[FirstDataByte];                // number of bytes to read
+  OutMessage.DataArrayIndexer[0] := LccMessage.DataArray[0];         // Just copy the original message
+  OutMessage.DataArrayIndexer[1] := LccMessage.DataArray[1] or $10;  // except set the reply flag
+  OutMessage.DataArrayIndexer[2] := LccMessage.DataArray[2];         // Copy the addressStart
+  OutMessage.DataArrayIndexer[3] := LccMessage.DataArray[3];
+  OutMessage.DataArrayIndexer[4] := LccMessage.DataArray[4];
+  OutMessage.DataArrayIndexer[5] := LccMessage.DataArray[5];
   if FirstDataByte = 7 then
-    OutMessage.DataArrayIndexer[6] := LccMessage.DataArrayIndexer[6];
+    OutMessage.DataArrayIndexer[6] := LccMessage.DataArray[6];
 
   AddressStart := LccMessage.ExtractDataBytesAsInt(2, 5);     // Pull out the AddressStart
 
-  if (AStream.Size = 0) or (AddressStart > AStream.Size) then   // Something is wrong.. Should I send an error?
-    OutMessage.DataCount := FirstDataByte - 1
-  else begin
-    AStream.Position := AddressStart;
-    i := 0;
-    while (AStream.Position < AStream.Size) and (i < BytesToRead) do
+  if AutoGrow then
+  begin
+    if AStream.Size < (AddressStart + BytesToRead) then         // Grow the Address space
     begin
-      OutMessage.DataArrayIndexer[FirstDataByte + i] := StreamReadByte(AStream);
-      Inc(i);
+      OldStreamSize := AStream.Size;
+      AStream.Size := AddressStart + BytesToRead;
+      AStream.Position := OldStreamSize;
+      while AStream.Position < AStream.Size do
+      begin
+        B := 0;
+        AStream.Write(B, SizeOf(B));
+      end;
     end;
-    OutMessage.DataCount := FirstDataByte + i;
+
+    AStream.Position := AddressStart;
+    for i := 0 to BytesToRead - 1 do
+    begin
+      AStream.Read(B, SizeOf(B));
+      OutMessage.DataArrayIndexer[FirstDataByte + i] := B;
+    end;
+    OutMessage.DataCount := BytesToRead + FirstDataByte; // Include the header info
+  end else
+  begin  // Don't grow so more checks need to be done
+    if AddressStart >= AStream.Size then
+    begin
+      OutMessage.DataArrayIndexer[1] := LccMessage.DataArray[1] or $08;  // Set a Failure Status
+      OutMessage.InsertWordAsDataBytes(ERROR_PERMANENT_INVALID_ARGUMENTS, FirstDataByte);         // Errorcode
+      OutMessage.DataCount := 2;
+    end else
+    if BytesToRead > 64 then
+    begin
+      OutMessage.DataArrayIndexer[1] := LccMessage.DataArray[1] or $08;  // Set a Failure Status
+      OutMessage.InsertWordAsDataBytes(ERROR_TEMPORARY_INVALID_ARGUMENTS, FirstDataByte);         // Errorcode
+      OutMessage.DataCount := 2;
+    end else
+    if BytesToRead = 0 then
+    begin
+      OutMessage.DataArrayIndexer[1] := LccMessage.DataArray[1] or $08;  // Set a Failure Status
+      OutMessage.InsertWordAsDataBytes(ERROR_TEMPORARY_INVALID_ARGUMENTS, FirstDataByte);         // Errorcode
+      OutMessage.DataCount := 2;
+    end else
+    begin
+      OutMessage.DataCount := 0;
+      AStream.Position := AddressStart;
+      while (AStream.Position < AStream.Size) and (OutMessage.DataCount < BytesToRead) do
+      begin
+        B := 0;
+        AStream.Read(B, SizeOf(B));
+        OutMessage.DataArrayIndexer[FirstDataByte + OutMessage.DataCount] := B;
+        OutMessage.DataCount := OutMessage.DataCount + 1
+      end;
+      OutMessage.DataCount := OutMessage.DataCount + FirstDataByte; // Include the header info
+    end;
   end;
 end;
 

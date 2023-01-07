@@ -797,7 +797,7 @@ function StreamReadByte(AStream: TStream): Byte;
 begin
   Result := 0;
   AStream.Read(Result, 1);
-  end;
+end;
 
 procedure StreamWriteByte(AStream: TStream; AByte: Byte);
 begin

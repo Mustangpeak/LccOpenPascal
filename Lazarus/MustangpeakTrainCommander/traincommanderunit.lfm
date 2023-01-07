@@ -192,6 +192,20 @@ object FormTrainCommander: TFormTrainCommander
       OnClick = ButtonCreateConsistClick
       TabOrder = 14
     end
+    object SpeedButton1: TSpeedButton
+      Left = 1162
+      Height = 22
+      Top = 21
+      Width = 23
+      OnClick = SpeedButton1Click
+    end
+    object SpeedButton2: TSpeedButton
+      Left = 1202
+      Height = 22
+      Top = 25
+      Width = 23
+      OnClick = SpeedButton2Click
+    end
   end
   object PanelConnections: TPanel
     Left = 0

@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ComCtrls, ExtCtrls,
-  StdCtrls, Spin,
+  StdCtrls, Spin, Buttons,
   lcc_ethernet_server,
   lcc_defines,
   lcc_node,
@@ -26,6 +26,7 @@ uses
   lcc_alias_server,
   lcc_train_server,
   lcc_xmlutilities,
+  lcc_utilities,
   lcc_cdi_parser;
 
 
@@ -64,6 +65,8 @@ type
     PanelTrains: TPanel;
     PanelConnections: TPanel;
     PanelDetails: TPanel;
+    SpeedButton1: TSpeedButton;
+    SpeedButton2: TSpeedButton;
     SplitterConnections1: TSplitter;
     SplitterTrains: TSplitter;
     SplitterConnections: TSplitter;
@@ -83,6 +86,8 @@ type
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure FormShow(Sender: TObject);
+    procedure SpeedButton1Click(Sender: TObject);
+    procedure SpeedButton2Click(Sender: TObject);
     procedure ToggleBoxServerFormChange(Sender: TObject);
   private
     FAutoCreateTrainAddress: Word;
@@ -411,6 +416,131 @@ begin
   ComboBoxComPorts.Items.Delimiter := ';';
   ComboBoxComPorts.Items.DelimitedText := StringReplace(GetSerialPortNames, ',', ';', [rfReplaceAll, rfIgnoreCase]);
   ComboBoxComPorts.ItemIndex := 0;
+end;
+
+procedure TFormTrainCommander.SpeedButton1Click(Sender: TObject);
+var
+  AValue, Size, Result_: Integer;
+  Hex, Temp: string;
+  W: Word;
+  CharPtr: PChar;
+  B: Byte;
+  StartIndex, i: Integer;
+  MemoryStream: TMemoryStream;
+begin
+  AValue := 567;
+  Size := 2;
+
+
+  MemoryStream := TMemoryStream.Create;
+
+
+  MemoryStream.Clear;
+
+  Hex := IntToHex(AValue, Size * 2);
+
+  {$IFDEF LCC_MOBILE}
+  StartIndex := 0;
+  {$ELSE}
+  StartIndex := 1;
+  {$ENDIF}
+  CharPtr := @Hex[StartIndex];
+
+  for i := 0 to Size - 1 do
+  begin
+    Temp := '';
+    Temp := CharPtr^;
+    Inc(CharPtr);
+    Temp := Temp + CharPtr^;
+    Inc(CharPtr);
+    B := StrToInt('$' + Temp);
+    MemoryStream.Write(B, SizeOf(B));
+  end;
+
+  // Reset for use
+  MemoryStream.Position := 0;
+
+
+  // Undo
+  MemoryStream.Position := 0;
+
+  Temp := '';
+  for i := 0 to MemoryStream.Size - 1 do
+  begin
+    B := 0;
+    MemoryStream.Read(B, SizeOf(B));
+    Hex := IntToHex(B, 2);
+    Temp := Temp + Hex;
+  end;
+
+  if not TryStrToInt('$' + Temp, Result_) then
+    Result_ := 0;
+
+  // Reset for use
+  MemoryStream.Position := 0;
+
+
+  MemoryStream.Free;
+end;
+
+procedure TFormTrainCommander.SpeedButton2Click(Sender: TObject);
+var
+  EventIDStr, Temp, Hex: AnsiString;
+  StartIndex, i: Integer;
+  CharPtr: PAnsiChar;
+  B: Byte;
+  MemoryStream: TMemoryStream;
+  AValue, Result_: TEventID;
+begin
+  MemoryStream := TMemoryStream.Create;
+
+  AValue := EVENT_IS_TRAIN;
+
+  MemoryStream.Position := 0;
+
+  EventIDStr := EventIDToString(AValue, False);
+
+  {$IFDEF LCC_MOBILE}
+  StartIndex := 0;
+  {$ELSE}
+  StartIndex := 1;
+  {$ENDIF}
+  CharPtr := @EventIDStr[StartIndex];
+
+  // Implicit 8 Bytes
+  for i := 0 to 7 do
+  begin
+    Temp := '';
+    Temp := CharPtr^;
+    Inc(CharPtr);
+    Temp := Temp + CharPtr^;
+    Inc(CharPtr);
+    B := StrToInt('$' + Temp);
+    MemoryStream.Write(B, SizeOf(B));
+  end;
+
+  // Reset for use
+  MemoryStream.Position := 0;
+
+
+  // Read it back
+  MemoryStream.Position := 0;
+
+  Temp := '';
+  for i := 0 to MemoryStream.Size - 1 do
+  begin
+    B := 0;
+    MemoryStream.Read(B, SizeOf(B));
+    Hex := IntToHex(B, 2);
+    Temp := Temp + Hex;
+  end;
+
+  Result_ := StrToEventID(Temp);
+
+  // Reset for use
+  MemoryStream.Position := 0;
+
+  MemoryStream.Free;
 end;
 
 procedure TFormTrainCommander.OnCommandStationServerConnectionState(Sender: TObject; Info: TLccHardwareConnectionInfo);

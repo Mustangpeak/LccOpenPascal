@@ -162,6 +162,7 @@ type
     FWriteEventID: TEventID;
     FWriteInteger: Integer;
     FWriteString: String;
+    FCallbackProgress: TOnEngineMemorySpaceAccessCallback;
     procedure SetWriteEventID(AValue: TEventID);
     procedure SetWriteInteger(AValue: Integer);
     procedure SetWriteString(AValue: String);
@@ -172,6 +173,7 @@ type
     property TargetNodeID: TNodeID read FTargetNodeID write FTargetNodeID;
     property TargetAlias: Word read FTargetAlias write FTargetAlias;
     property CallBack: TOnEngineMemorySpaceAccessCallback read FCallback write FCallback;
+    property CallBackProgress: TOnEngineMemorySpaceAccessCallback read FCallbackProgress write FCallbackProgress;
     property CurrentAddress: DWord read FCurrentAddress write FCurrentAddress;
     property UseAddresses: Boolean read FUseAddresses write FUseAddresses;
     property MemorySpace: Byte read FMemorySpace write FMemorySpace;
@@ -182,7 +184,7 @@ type
     property WriteEventID: TEventID read FWriteEventID write SetWriteEventID;
     property DataType: TLccConfigDataType read FDataType write FDataType;
 
-    constructor Create(AReadWrite: TLccEngineMemorySpaceReadWrite; AMemorySpace: Byte; AnIsString: Boolean; AnAddressLo, AnAddressHi: DWORD; AnUseAddresses: Boolean; ATargetNodeID: TNodeID; ATargetAliasID: Word; ACallback: TOnEngineMemorySpaceAccessCallback);
+    constructor Create(AReadWrite: TLccEngineMemorySpaceReadWrite; AMemorySpace: Byte; AnIsString: Boolean; AnAddressLo, AnAddressHi: DWORD; AnUseAddresses: Boolean; ATargetNodeID: TNodeID; ATargetAliasID: Word; ACallback: TOnEngineMemorySpaceAccessCallback; ACallBackProgress: TOnEngineMemorySpaceAccessCallback = nil);
   end;
 
   { TLccEngineMemorySpaceAccess }
@@ -204,6 +206,7 @@ type
     FTargetNodeID: TNodeID;
     FUseAddresses: Boolean;
     FWritingChunk: Boolean;
+    FCallbackProgress: TOnEngineMemorySpaceAccessCallback;
     function GetStreamAsString: AnsiString;
     function GetStreamAsInt: Integer;
     function GetStreamAsEventID: TEventID;
@@ -218,7 +221,7 @@ type
     property AddressSpaceValid: Boolean read FAddressSpaceValid write FAddressSpaceValid;
 
     procedure InternalStart;
-    procedure HandleReadReply(SourceMessage: TLccMessage; DataStartIndex: Integer);
+    procedure HandleReadReply(SourceMessage: TLccMessage);
     procedure HandleWriteReply(SourceMessage: TLccMessage);
     procedure ReadNextChunk;
     procedure WriteNextChunk;
@@ -232,6 +235,7 @@ type
     property AddressLo: DWord read FAddressLo write FAddressLo;
     property AddressHi: DWord read FAddressHi write FAddressHi;
     property CallBack: TOnEngineMemorySpaceAccessCallback read FCallback write FCallback;
+    property CallBackProgress: TOnEngineMemorySpaceAccessCallback read FCallbackProgress write FCallbackProgress;
     property IsString: Boolean read FIsString write FIsString;
     property MemoryStream: TMemoryStream read FMemoryStream;
     property MemorySpace: Byte read FMemorySpace write FMemorySpace;                               // MSI_xxxx constants
@@ -253,8 +257,9 @@ type
     constructor Create(AnOwner: TLccNode); override;
     destructor Destroy; override;
     procedure Start; override;
+    procedure Reset; override;
     procedure Process(SourceMessage: TLccMessage); override;
-    function Assign(AReadWrite: TLccEngineMemorySpaceReadWrite; AMemorySpace: Byte; AnIsString: Boolean; AnAddressLo, AnAddressHi: DWORD; AnUseAddresses: Boolean; ATargetNodeID: TNodeID; ATargetAliasID: Word; ACallback: TOnEngineMemorySpaceAccessCallback): TLccEngineMemorySpaceObject; // AMemorySpace = MSI_xxxx constants
+    function Assign(AReadWrite: TLccEngineMemorySpaceReadWrite; AMemorySpace: Byte; AnIsString: Boolean; AnAddressLo, AnAddressHi: DWORD; AnUseAddresses: Boolean; ATargetNodeID: TNodeID; ATargetAliasID: Word; ACallback: TOnEngineMemorySpaceAccessCallback; ACallBackProgress: TOnEngineMemorySpaceAccessCallback = nil): TLccEngineMemorySpaceObject; // AMemorySpace = MSI_xxxx constants
   end;
 
   { TLccNode }
@@ -535,7 +540,8 @@ constructor TLccEngineMemorySpaceObject.Create(
   AReadWrite: TLccEngineMemorySpaceReadWrite; AMemorySpace: Byte;
   AnIsString: Boolean; AnAddressLo, AnAddressHi: DWORD;
   AnUseAddresses: Boolean; ATargetNodeID: TNodeID; ATargetAliasID: Word;
-  ACallback: TOnEngineMemorySpaceAccessCallback);
+  ACallback: TOnEngineMemorySpaceAccessCallback;
+  ACallBackProgress: TOnEngineMemorySpaceAccessCallback = nil);
 begin
   ReadWrite := AReadWrite;
   MemorySpace := AMemorySpace;
@@ -546,6 +552,7 @@ begin
   TargetNodeID := ATargetNodeID;
   TargetAlias := ATargetAliasID;
   CallBack := ACallback;
+  CallbackProgress := ACallbackProgress;
 end;
 
 { TLccEngineBase }
@@ -589,20 +596,30 @@ end;
 
 { TLccEngineMemorySpaceAccess }
 
-procedure TLccEngineMemorySpaceAccess.HandleReadReply(SourceMessage: TLccMessage; DataStartIndex: Integer);
+procedure TLccEngineMemorySpaceAccess.HandleReadReply(SourceMessage: TLccMessage);
 var
-  i: Integer;
+  i, DataStartIndex, MemspaceDataSentCount: Integer;
   NullFound: Boolean;
 begin
   if EngineState = lesRunning then
   begin
     NullFound := False;
-    for i := DataStartIndex to SourceMessage.DataCount - 1 do
+
+    if SourceMessage.DataArray[1] and $0F = 0 then     // $50 means Address space in Byte 6
+      DataStartIndex := 7                    // $51...$53 for all others  (not true in decoding Reply Fail)
+    else
+      DataStartIndex := 6;
+
+    MemspaceDataSentCount := SourceMessage.DataCount - DataStartIndex;
+
+    for i := 0 to MemspaceDataSentCount - 1 do
     begin
-      MemoryStream.Write(SourceMessage.DataArray[i], 1);
+      MemoryStream.Write(SourceMessage.DataArray[i + DataStartIndex], 1);
+      Inc(FCurrentAddress);  // Update the current address pointer
+
       if IsString then
       begin
-        if Char( SourceMessage.DataArray[i]) = #0 then
+        if Char( SourceMessage.DataArray[i + DataStartIndex]) = #0 then
           NullFound := True;
       end;
     end;
@@ -644,8 +661,9 @@ begin
     WorkerMessage.LoadConfigMemRead(OwnerNode.NodeID, OwnerNode.AliasID, TargetNodeID, TargetAlias, MemorySpace, CurrentAddress, NextCount);
     OwnerNode.SendMessageFunc(OwnerNode, WorkerMessage);
 
-    // Update the current address pointer
-    Inc(FCurrentAddress, NextCount)
+    if Assigned(CallBackProgress) then
+      CallbackProgress(Self);
+
   end;
 end;
 
@@ -687,6 +705,9 @@ begin
       // Write the space
       WorkerMessage.LoadConfigMemWriteArray(OwnerNode.NodeID, OwnerNode.AliasID, TargetNodeID, TargetAlias, MemorySpace, CurrentAddress, ByteArray);
       OwnerNode.SendMessageFunc(OwnerNode, WorkerMessage);
+
+      if Assigned(CallBackProgress) then
+        CallbackProgress(Self);
 
       // Update the address pointer
       Inc(FCurrentAddress, NextCount)
@@ -774,12 +795,13 @@ function TLccEngineMemorySpaceAccess.Assign(
   AReadWrite: TLccEngineMemorySpaceReadWrite; AMemorySpace: Byte;
   AnIsString: Boolean; AnAddressLo, AnAddressHi: DWORD;
   AnUseAddresses: Boolean; ATargetNodeID: TNodeID; ATargetAliasID: Word;
-  ACallback: TOnEngineMemorySpaceAccessCallback): TLccEngineMemorySpaceObject;
+  ACallback: TOnEngineMemorySpaceAccessCallback;
+  ACallBackProgress: TOnEngineMemorySpaceAccessCallback = nil): TLccEngineMemorySpaceObject;
 begin
   // Need to Assign everthing first.. maybe you can add in while its running... but it was not envisioned to do so
   Assert(EngineState = lesIdle, 'TMemorySpaceReadEngine.Assign is running');
 
-  Result := TLccEngineMemorySpaceObject.Create(AReadWrite, AMemorySpace, AnIsString, AnAddressLo, AnAddressHi, AnUseAddresses, ATargetNodeID, ATargetAliasID, ACallback);
+  Result := TLccEngineMemorySpaceObject.Create(AReadWrite, AMemorySpace, AnIsString, AnAddressLo, AnAddressHi, AnUseAddresses, ATargetNodeID, ATargetAliasID, ACallback, ACallbackProgress);
   if Assigned(Result) then
     MemorySpaceQueue.Add(Result);
 end;
@@ -834,18 +856,92 @@ begin
 end;
 
 function TLccEngineMemorySpaceAccess.GetStreamAsEventID: TEventID;
+var
+  Hex, Temp: AnsiString;
+  StartIndex, i: Integer;
+  CharPtr: PAnsiChar;
+  B: Byte;
 begin
-  Result := NULL_EVENT_ID;
+  MemoryStream.Position := 0;
+
+  Temp := '';
+  for i := 0 to MemoryStream.Size - 1 do
+  begin
+    B := 0;
+    MemoryStream.Read(B, SizeOf(B));
+    Hex := IntToHex(B, 2);
+    Temp := Temp + Hex;
+  end;
+
+  Result := StrToEventID(Temp);
+
+  // Reset for use
+  MemoryStream.Position := 0;
 end;
 
 procedure TLccEngineMemorySpaceAccess.SetStreamAsEventID(AValue: TEventID);
+var
+  EventIDStr, Temp: AnsiString;
+  StartIndex, i: Integer;
+  CharPtr: PAnsiChar;
+  B: Byte;
 begin
+  MemoryStream.Position := 0;
+
+  EventIDStr := EventIDToString(AValue, False);
+
+  {$IFDEF LCC_MOBILE}
+  StartIndex := 0;
+  {$ELSE}
+  StartIndex := 1;
+  {$ENDIF}
+  CharPtr := @EventIDStr[StartIndex];
+
+  // Implicit 8 Bytes
+  for i := 0 to 7 do
+  begin
+    Temp := '';
+    Temp := CharPtr^;
+    Inc(CharPtr);
+    Temp := Temp + CharPtr^;
+    Inc(CharPtr);
+    B := StrToInt('$' + Temp);
+    MemoryStream.Write(B, SizeOf(B));
+  end;
+
   // Reset for use
   MemoryStream.Position := 0;
 end;
 
 procedure TLccEngineMemorySpaceAccess.SetStreamAsInt(Size: Integer; AValue: Integer);
+var
+  Hex, Temp: AnsiString;
+  CharPtr: PAnsiChar;
+  B: Byte;
+  StartIndex, i: Integer;
 begin
+  MemoryStream.Clear;
+
+  Hex := IntToHex(AValue, Size * 2);
+
+  {$IFDEF LCC_MOBILE}
+  StartIndex := 0;
+  {$ELSE}
+  StartIndex := 1;
+  {$ENDIF}
+  CharPtr := @Hex[StartIndex];
+
+  for i := 0 to Size - 1 do
+  begin
+    Temp := '';
+    Temp := CharPtr^;
+    Inc(CharPtr);
+    Temp := Temp + CharPtr^;
+    Inc(CharPtr);
+    B := StrToInt('$' + Temp);
+    MemoryStream.Write(B, SizeOf(B));
+  end;
+
   // Reset for use
   MemoryStream.Position := 0;
 end;
@@ -854,26 +950,21 @@ end;
 procedure TLccEngineMemorySpaceAccess.SetStreamAsString(AValue: AnsiString);
 var
   i: Integer;
-  {$IFDEF DELPHI}
   B: Byte;
-  {$ENDIF}
 begin
   MemoryStream.Clear;
-  for i := 1 to Length(AValue) do
-  begin
-    {$IFDEF DELPHI}
-    B := Ord( AValue[i]);
-    MemoryStream.Write(B, 1);
-    {$ELSE}
-    MemoryStream.WriteByte(Ord( AValue[i]));
-    {$ENDIF}
-  end;
- {$IFDEF DELPHI}
-  B := Ord( #0);
-  MemoryStream.Write(B, 1);
+  {$IFDEF LCC_MOBILE}
+  for i := 0 to Length(AValue) - 1 do
   {$ELSE}
-  MemoryStream.WriteByte(Ord( #0));
+  for i := 1 to Length(AValue) do
   {$ENDIF}
+  begin
+    B := Ord( AValue[i]);
+    MemoryStream.Write(B, SizeOf(B));
+  end;
+
+  B := Ord( #0);
+  MemoryStream.Write(B, SizeOf(B));
 
   // Reset for use
   MemoryStream.Position := 0;
@@ -907,6 +998,7 @@ begin
       TargetNodeID := EngineMemorySpaceObject.TargetNodeID;
       TargetAlias := EngineMemorySpaceObject.TargetAlias;
       CallBack := EngineMemorySpaceObject.CallBack;
+      CallBackProgress := EngineMemorySpaceObject.CallBackProgress;
 
 
       // If it is a write the data to write is stored with the MemorySpaceObject so pull it into the local stream
@@ -935,7 +1027,8 @@ end;
 
 procedure TLccEngineMemorySpaceAccess.CallbackAndNextMemorySpace;
 begin
-  Callback(Self);
+  if Assigned(Callback) then
+    Callback(Self);
   if NextMemorySpaceObjectFromQueue then
     InternalStart;
 end;
@@ -954,11 +1047,27 @@ end;
 
 function TLccEngineMemorySpaceAccess.GetStreamAsInt: Integer;
 var
-  Str: AnsiString;
+  Hex, Temp: AnsiString;
+  B: Byte;
+  i: Integer;
 begin
-  Result := 0;
-  Str := StreamAsString;
-  TryStrToInt(string( Str), Result);
+
+  MemoryStream.Position := 0;
+
+  Temp := '';
+  for i := 0 to MemoryStream.Size - 1 do
+  begin
+    B := 0;
+    MemoryStream.Read(B, SizeOf(B));
+    Hex := IntToHex(B, 2);
+    Temp := Temp + Hex;
+  end;
+
+  if not TryStrToInt('$' + Temp, Result) then
+    Result := 0;
+
+  // Reset for use
+  MemoryStream.Position := 0;
 end;
 
 function TLccEngineMemorySpaceAccess.GetStreamAsString: AnsiString;
@@ -971,7 +1080,7 @@ begin
   MemoryStream.Position := 0;
   for i := 0 to MemoryStream.Size - 1 do
   begin
-    MemoryStream.Read(C, 1);
+    MemoryStream.Read(C, SizeOf(C));
     if C <> #0 then
       Result := Result + C
   end;
@@ -983,10 +1092,19 @@ begin
     InternalStart;
 end;
 
+procedure TLccEngineMemorySpaceAccess.Reset;
+begin
+  inherited Reset;
+  AddressSpaceValid := False;
+  FlushMemorySpaceQueue;
+  MemoryStream.Clear;
+  PIPHelper.Valid := False;
+end;
+
 procedure TLccEngineMemorySpaceAccess.Process(SourceMessage: TLccMessage);
 
 
-  function DecodeMemoryAddress(ASourceMessage: TLccMessage): Byte;
+  function DecodeMemorySpace(ASourceMessage: TLccMessage): Byte;
   begin
     // Figure out where the Memory space to work on is located, encoded in the header or in the first databyte slot.
     case ASourceMessage.DataArray[1] and $03 of
@@ -1002,6 +1120,7 @@ procedure TLccEngineMemorySpaceAccess.Process(SourceMessage: TLccMessage);
 var
   ReplyPending: Boolean;
   ReplyEstimatedTime: extended;    // In Seconds
+  DecodedMemorySpace: Byte;
 
 begin
   if EngineState = lesRunning then
@@ -1054,15 +1173,17 @@ begin
               DATAGRAM_PROTOCOL_CONFIGURATION :
               begin
                 case SourceMessage.DataArray[1] of
-                 MCP_WRITE_REPLY :  // This only happens if the write can take a while (like a CV write).  In that case a special Datagram OK message is sent.. see MTI_DATAGRAM_OK_REPLY above
+                 MCP_WRITE_REPLY,  // This only happens if the write can take a while (like a CV write).  In that case a special Datagram OK message is sent.. see MTI_DATAGRAM_OK_REPLY above
+                 MCP_WRITE_REPLY_CONFIGURATION,
+                 MCP_WRITE_REPLY_ALL,
+                 MCP_WRITE_REPLY_CDI :
                    begin
-                     case SourceMessage.DataArray[6] of
+                     DecodedMemorySpace := DecodeMemorySpace(SourceMessage);
+                     case DecodedMemorySpace of
                        MSI_ACDI_USER,
-                       MSI_TRACTION_FDI             : if DecodeMemoryAddress(SourceMessage) = MemorySpace then
-                                                        HandleWriteReply(SourceMessage);
                        MSI_CONFIG,
-                       MSI_TRACTION_FUNCTION_CONFIG :if DecodeMemoryAddress(SourceMessage) = MemorySpace then
-                                                       HandleWriteReply(SourceMessage);
+                       MSI_TRACTION_FUNCTION_CONFIG : if DecodedMemorySpace = MemorySpace then HandleWriteReply(SourceMessage);
+                       MSI_TRACTION_FDI,
                        MSI_ALL,
                        MSI_CDI,
                        MSI_ACDI_MFG                 : begin end;  // Should never happen
@@ -1078,25 +1199,22 @@ begin
                        CallbackAndNextMemorySpace;
                      end;
 
-                 MCP_READ_REPLY :
+                 MCP_READ_REPLY,
+                 MCP_READ_REPLY_CONFIGURATION,
+                 MCP_READ_REPLY_ALL,
+                 MCP_READ_REPLY_CDI :
                    begin
-                     case SourceMessage.DataArray[6] of
+                     DecodedMemorySpace := DecodeMemorySpace(SourceMessage);
+                     case DecodedMemorySpace of
                        MSI_ALL                      : begin end;
                        MSI_CDI,
                        MSI_ACDI_MFG,
                        MSI_ACDI_USER,
-                       MSI_TRACTION_FDI             : if DecodeMemoryAddress(SourceMessage) = MemorySpace then
-                                                        HandleReadReply(SourceMessage, 7);
+                       MSI_TRACTION_FDI,
                        MSI_CONFIG,
-                       MSI_TRACTION_FUNCTION_CONFIG :if DecodeMemoryAddress(SourceMessage) = MemorySpace then
-                                                       HandleReadReply(SourceMessage, 7);
+                       MSI_TRACTION_FUNCTION_CONFIG :if DecodedMemorySpace = MemorySpace then HandleReadReply(SourceMessage);
                      end;
                    end;
-                 MCP_READ_REPLY_CONFIGURATION       : if DecodeMemoryAddress(SourceMessage) = MemorySpace then
-                                                        HandleReadReply(SourceMessage, 6);
-                 MCP_READ_REPLY_ALL                 : begin end;
-                 MCP_READ_REPLY_CDI                 : if DecodeMemoryAddress(SourceMessage) = MemorySpace then
-                                                        HandleReadReply(SourceMessage, 6);
                  MCP_READ_REPLY_FAILURE,
                  MCP_READ_REPLY_FAILURE_CONFIG,
                  MCP_READ_REPLY_FAILURE_ALL,
@@ -1372,7 +1490,7 @@ procedure TLccNode.HandleConfiguration_MemorySpaceRead(var SourceMessage: TLccMe
 begin
   WorkerMessage.LoadDatagram(NodeID, FAliasID, SourceMessage.SourceID,
   SourceMessage.CAN.SourceAlias);
-  ProtocolMemoryConfiguration.DatagramReadRequest(SourceMessage, WorkerMessage, StreamConfig);
+  ProtocolMemoryConfiguration.DatagramReadRequest(SourceMessage, WorkerMessage, StreamConfig, True);
   SendDatagramRequiredReply(SourceMessage,WorkerMessage);
 end;
 
@@ -1396,7 +1514,7 @@ procedure TLccNode.HandleACDI_User_MemorySpaceRead(var SourceMessage: TLccMessag
 begin
   WorkerMessage.LoadDatagram(NodeID, FAliasID, SourceMessage.SourceID,
   SourceMessage.CAN.SourceAlias);
-  ProtocolACDIUser.DatagramReadRequest(SourceMessage, WorkerMessage, StreamConfig);
+  ProtocolACDIUser.DatagramReadRequest(SourceMessage, WorkerMessage, StreamConfig, True);
   SendDatagramRequiredReply(SourceMessage,WorkerMessage);
 end;
 
@@ -1405,7 +1523,7 @@ procedure TLccNode.HandleACDI_Manufacturer_MemorySpaceRead(
 begin
   WorkerMessage.LoadDatagram(NodeID, FAliasID, SourceMessage.SourceID,
   SourceMessage.CAN.SourceAlias);
-  ProtocolACDIMfg.DatagramReadRequest(SourceMessage, WorkerMessage, StreamManufacturerData);
+  ProtocolACDIMfg.DatagramReadRequest(SourceMessage, WorkerMessage, StreamManufacturerData, False);
   SendDatagramRequiredReply(SourceMessage, WorkerMessage);
 end;
 
@@ -1417,7 +1535,7 @@ end;
 procedure TLccNode.HandleCDI_MemorySpaceRead(var SourceMessage: TLccMessage);
 begin
   WorkerMessage.LoadDatagram(NodeID, FAliasID, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias);
-  ProtocolMemoryConfigurationDefinitionInfo.DatagramReadRequest(SourceMessage, WorkerMessage, StreamCdi);
+  ProtocolMemoryConfigurationDefinitionInfo.DatagramReadRequest(SourceMessage, WorkerMessage, StreamCdi, False);
   SendDatagramRequiredReply(SourceMessage, WorkerMessage);
 end;
 
@@ -1475,14 +1593,14 @@ procedure TLccNode.HandleTractionFDI_ConfigurationMemorySpaceRead(var SourceMess
 begin
   WorkerMessage.LoadDatagram(NodeID, FAliasID, SourceMessage.SourceID,
   SourceMessage.CAN.SourceAlias);
-  ProtocolMemoryConfiguration.DatagramReadRequest(SourceMessage, WorkerMessage, StreamTractionConfig);
+  ProtocolMemoryConfiguration.DatagramReadRequest(SourceMessage, WorkerMessage, StreamTractionConfig, True);
   SendDatagramRequiredReply(SourceMessage, WorkerMessage);
 end;
 
 procedure TLccNode.HandleTractionFDI_MemorySpaceRead(var SourceMessage: TLccMessage);
 begin
   WorkerMessage.LoadDatagram(NodeID, FAliasID, SourceMessage.SourceID,SourceMessage.CAN.SourceAlias);
-  ProtocolMemoryConfigurationDefinitionInfo.DatagramReadRequest(SourceMessage, WorkerMessage, StreamTractionFdi);
+  ProtocolMemoryConfigurationDefinitionInfo.DatagramReadRequest(SourceMessage, WorkerMessage, StreamTractionFdi, False);
   SendDatagramRequiredReply(SourceMessage, WorkerMessage);
 end;
 
@@ -1683,7 +1801,7 @@ begin
   // Setup the Manufacturer Data Stream from the XML to allow access for ACDI and SNIP
   LoadManufacturerDataStream(CdiXML);
 
-  // Setup the Configuration Memory Stream
+  // Setup the Configuration Memory Stream this is good for a single node...
   StreamConfig.Size := LEN_USER_MANUFACTURER_INFO;
   StreamConfig.Position := 0;
   StreamWriteByte(StreamConfig, USER_MFG_INFO_VERSION_ID);

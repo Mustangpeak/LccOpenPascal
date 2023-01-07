@@ -190,9 +190,9 @@ const
        		  '</string>'+
        	  '</group>'+
          '</segment>'+
-  '</cdi>');  }
+  '</cdi>');
 
-
+     }
 type
 
   { TListenerNode }

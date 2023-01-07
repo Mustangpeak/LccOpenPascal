@@ -289,14 +289,16 @@ begin
                 begin
                   NodeManager.ReceiveMessageServerThread.ReceiveMessageServerAddMessage(WorkerMessage);
                   try
-                    Owner.Synchronize({$IFDEF FPC}@{$ENDIF}Owner.ReceiveMessage);  // WorkerMessage contains the message
+                    if not Owner.Terminated then
+                      Owner.Synchronize({$IFDEF FPC}@{$ENDIF}Owner.ReceiveMessage);  // WorkerMessage contains the message
                   except
                   end;
                 end;
               imgcr_ErrorToSend :
                 begin
          //         ConnectionInfo.LccMessage.CopyToTarget(WorkerMessage);
-         //         Synchronize({$IFDEF FPC}@{$ENDIF}RequestErrorMessageSent);
+         //         if not Terminated then
+         //           Synchronize({$IFDEF FPC}@{$ENDIF}RequestErrorMessageSent);
                 end;
               imgcr_False,
               imgcr_UnknownError :
@@ -339,7 +341,8 @@ begin
             begin
               NodeManager.ReceiveMessageServerThread.ReceiveMessageServerAddMessage(WorkerMessage);
               try
-                Owner.Synchronize({$IFDEF FPC}@{$ENDIF}Owner.ReceiveMessage);
+                if not Owner.Terminated then
+                  Owner.Synchronize({$IFDEF FPC}@{$ENDIF}Owner.ReceiveMessage);
               except
               end;
             end
@@ -519,18 +522,20 @@ end;
 procedure TLccEthernetListener.IdTCPServerConnect(AContext: TIdContext);
 begin
   GridConnectContextList.AddContext(AContext);
-
   (ConnectionInfo as TLccEthernetConnectionInfo).ClientIP := AContext.Binding.PeerIP;
   (ConnectionInfo as TLccEthernetConnectionInfo).ClientPort := AContext.Binding.PeerPort;
+
+  if Terminated then Exit;
   HandleSendConnectionNotification(lcsClientConnected);
 end;
 
 procedure TLccEthernetListener.IdTCPServerDisconnect(AContext: TIdContext);
 begin
   GridConnectContextList.RemoveContext(AContext);
-
   (ConnectionInfo as TLccEthernetConnectionInfo).ClientIP := AContext.Binding.PeerIP;
   (ConnectionInfo as TLccEthernetConnectionInfo).ClientPort := AContext.Binding.PeerPort;
+
+  if Terminated then Exit;
   HandleSendConnectionNotification(lcsClientDisconnected);
 end;
 
@@ -544,6 +549,7 @@ var
   AByte: Byte;
   TcpMessage: TLccDynamicByteArray;
 begin
+
   // Messages sent to the Listener from all the Connections (Contexts)
 
   if (ConnectionInfo as TLccEthernetConnectionInfo).GridConnect then
