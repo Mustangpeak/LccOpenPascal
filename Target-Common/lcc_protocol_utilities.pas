@@ -30,27 +30,19 @@ type
 
   TNodeProtocolBase = class(TObject)
   private
-    FCreateTime: DWord;
-    FErrorCode: Word;
-    FSendMessageFunc: TOnMessageEvent;
     FWorkerMessage: TLccMessage;
   protected
     FValid: Boolean;
     procedure SetValid(AValue: Boolean); virtual;  // Just so it can be overridden for special behavior
-    property CreateTime: DWord read FCreateTime write FCreateTime;
     property WorkerMessage: TLccMessage read FWorkerMessage write FWorkerMessage;
   public
-    property SendMessageFunc: TOnMessageEvent read FSendMessageFunc write FSendMessageFunc;
-    property ErrorCode: Word read FErrorCode write FErrorCode;
     property Valid: Boolean read FValid write SetValid;
 
     constructor Create; virtual;
     destructor Destroy; override;
 
-    function ReadAsString(Address: DWord; AStream: TStream): String;
     procedure DatagramReadRequest(LccMessage: TLccMessage; OutMessage: TLccMessage; AStream: TStream; AutoGrow: Boolean); virtual;
-    procedure DatagramWriteRequest(LccMessage: TLccMessage; AStream: TStream); virtual;
-    function DatagramReadChunk(AStream: TStream; LccMessage: TLccMessage): Boolean;
+    procedure DatagramWriteRequest(LccMessage: TLccMessage; AStream: TStream; AutoGrow: Boolean); virtual;
   end;
 
   { TProtocolSupportedProtocols }
@@ -171,7 +163,7 @@ type
     property EventIDAsStr[Index: Integer]: String read GetEventIDAsStr;
   end;
 
-   { TConfigMemAddressSpaceInfoObject }
+  { TConfigMemAddressSpaceInfoObject }
 
   TConfigMemAddressSpaceInfoObject = class
   private
@@ -222,47 +214,47 @@ type
 
   { TProtocolMemoryOptions }
 
- TProtocolMemoryOptions = class(TNodeProtocolBase)
- private
-   FHighSpace: Byte;
-   FLowSpace: Byte;
-   FSupportACDIMfgRead: Boolean;
-   FSupportACDIUserRead: Boolean;
-   FSupportACDIUserWrite: Boolean;
-   FUnAlignedReads: Boolean;
-   FUnAlignedWrites: Boolean;
-   FWriteArbitraryBytes: Boolean;
-   FWriteLenFourBytes: Boolean;
-   FWriteLenOneByte: Boolean;
-   FWriteLenSixyFourBytes: Boolean;
-   FWriteLenTwoBytes: Boolean;
-   FWriteStream: Boolean;
-   FWriteUnderMask: Boolean;
- public
-   property WriteUnderMask: Boolean read FWriteUnderMask write FWriteUnderMask;
-   property UnAlignedReads: Boolean read FUnAlignedReads write FUnAlignedReads;
-   property UnAlignedWrites: Boolean read FUnAlignedWrites write FUnAlignedWrites;
-   property SupportACDIMfgRead: Boolean read FSupportACDIMfgRead write FSupportACDIMfgRead;
-   property SupportACDIUserRead: Boolean read FSupportACDIUserRead write FSupportACDIUserRead;
-   property SupportACDIUserWrite: Boolean read FSupportACDIUserWrite write FSupportACDIUserWrite;
-   property WriteLenOneByte: Boolean read FWriteLenOneByte write FWriteLenOneByte;
-   property WriteLenTwoBytes: Boolean read FWriteLenTwoBytes write FWriteLenTwoBytes;
-   property WriteLenFourBytes: Boolean read FWriteLenFourBytes write FWriteLenFourBytes;
-   property WriteLenSixyFourBytes: Boolean read FWriteLenSixyFourBytes write FWriteLenSixyFourBytes;
-   property WriteArbitraryBytes: Boolean read FWriteArbitraryBytes write FWriteArbitraryBytes;
-   property WriteStream: Boolean read FWriteStream write FWriteStream;
-   property HighSpace: Byte read FHighSpace write FHighSpace;
-   property LowSpace: Byte read FLowSpace write FLowSpace;
+  TProtocolMemoryOptions = class(TNodeProtocolBase)
+  private
+    FHighSpace: Byte;
+    FLowSpace: Byte;
+    FSupportACDIMfgRead: Boolean;
+    FSupportACDIUserRead: Boolean;
+    FSupportACDIUserWrite: Boolean;
+    FUnAlignedReads: Boolean;
+    FUnAlignedWrites: Boolean;
+    FWriteArbitraryBytes: Boolean;
+    FWriteLenFourBytes: Boolean;
+    FWriteLenOneByte: Boolean;
+    FWriteLenSixyFourBytes: Boolean;
+    FWriteLenTwoBytes: Boolean;
+    FWriteStream: Boolean;
+    FWriteUnderMask: Boolean;
+  public
+    property WriteUnderMask: Boolean read FWriteUnderMask write FWriteUnderMask;
+    property UnAlignedReads: Boolean read FUnAlignedReads write FUnAlignedReads;
+    property UnAlignedWrites: Boolean read FUnAlignedWrites write FUnAlignedWrites;
+    property SupportACDIMfgRead: Boolean read FSupportACDIMfgRead write FSupportACDIMfgRead;
+    property SupportACDIUserRead: Boolean read FSupportACDIUserRead write FSupportACDIUserRead;
+    property SupportACDIUserWrite: Boolean read FSupportACDIUserWrite write FSupportACDIUserWrite;
+    property WriteLenOneByte: Boolean read FWriteLenOneByte write FWriteLenOneByte;
+    property WriteLenTwoBytes: Boolean read FWriteLenTwoBytes write FWriteLenTwoBytes;
+    property WriteLenFourBytes: Boolean read FWriteLenFourBytes write FWriteLenFourBytes;
+    property WriteLenSixyFourBytes: Boolean read FWriteLenSixyFourBytes write FWriteLenSixyFourBytes;
+    property WriteArbitraryBytes: Boolean read FWriteArbitraryBytes write FWriteArbitraryBytes;
+    property WriteStream: Boolean read FWriteStream write FWriteStream;
+    property HighSpace: Byte read FHighSpace write FHighSpace;
+    property LowSpace: Byte read FLowSpace write FLowSpace;
 
-   procedure LoadReply(LccMessage: TLccMessage);
- end;
+    procedure LoadReply(LccMessage: TLccMessage);
+  end;
 
-   { TProtocolMemoryConfigurationDefinitionInfo }
+  { TProtocolMemoryConfigurationDefinitionInfo }
 
   TProtocolMemoryConfigurationDefinitionInfo = class(TNodeProtocolBase)  // Everything is handled by the default base case
   end;
 
-   { TLccSNIPObject }
+  { TLccSNIPObject }
 
   TLccSNIPObject = class
   private
@@ -295,18 +287,11 @@ type
   end;
 
 
- { TProtocolMemoryConfiguration }
+  { TProtocolMemoryConfiguration }
 
-TProtocolMemoryConfiguration = class(TNodeProtocolBase)
-private
-
-protected
-public
-  constructor Create; override;
-  destructor Destroy; override;
-
-  procedure DatagramWriteRequest(LccMessage: TLccMessage; AStream: TStream); override;
-end;
+  TProtocolMemoryConfiguration = class(TNodeProtocolBase)
+  public
+  end;
 
   { TProtocolACDIMfg }
 
@@ -332,46 +317,76 @@ begin
   FValid:=AValue;
 end;
 
-procedure TNodeProtocolBase.DatagramWriteRequest(LccMessage: TLccMessage; AStream: TStream);
+procedure TNodeProtocolBase.DatagramWriteRequest(LccMessage: TLccMessage; AStream: TStream; AutoGrow: Boolean);
 var
  i: Integer;
- iStart : Integer;
- WriteCount,Address: DWord;
+ FirstDataByte, MemspaceDataSentCount : Integer;
+ BytesToWrite, AddressStart: DWord;
+ OldStreamSize: Int64;
+ B: Byte;
 begin
   // Assumption is this is a datagram message
 
   // First see if the memory space to work on is in byte 6 or part of the first byte
   // to determine where the first byte of real data is
   if LccMessage.DataArrayIndexer[1] and $03 = 0 then
-    iStart := 7
+    FirstDataByte := 7
   else
-    iStart := 6;
+    FirstDataByte := 6;
 
-  WriteCount := LccMessage.DataCount - iStart;
-  Address := LccMessage.ExtractDataBytesAsInt(2, 5);
-  if Address + WriteCount > DWord( AStream.Size) then
-    AStream.Size := Int64( Address) + Int64(WriteCount);
-  AStream.Position := Address;
-  for i := iStart to LccMessage.DataCount - 1 do
-    StreamWriteByte(AStream, LccMessage.DataArrayIndexer[i]);
+  BytesToWrite := LccMessage.DataCount - FirstDataByte;
+  AddressStart := LccMessage.ExtractDataBytesAsInt(2, 5);
+
+  if BytesToWrite > 64 then
+  begin
+    // How to set a bad Datagram ACK from here?
+  end else
+  if BytesToWrite = 0 then
+  begin
+    // How to set a bad Datagram ACK from here?
+  end else
+  begin
+
+    if AutoGrow then
+    begin
+      if AStream.Size < (AddressStart + BytesToWrite) then         // Grow the Address space
+      begin
+        OldStreamSize := AStream.Size;
+        AStream.Size := AddressStart + BytesToWrite;
+        AStream.Position := OldStreamSize;
+        while AStream.Position < AStream.Size do
+        begin
+          B := 0;
+          AStream.Write(B, SizeOf(B));
+        end;
+
+      end;
+    end;
+
+    if AddressStart >= AStream.Size then
+    begin
+      // How to set a bad Datagram ACK from here?
+    end else
+    begin
+
+      MemspaceDataSentCount := LccMessage.DataCount - FirstDataByte;
+
+      AStream.Position := AddressStart;
+      for i := 0 to MemspaceDataSentCount - 1 do
+      begin
+        B := LccMessage.DataArray[i + FirstDataByte];
+        AStream.Write(B, SizeOf(B));
+      end;
+    end;
+  end;
 
   // We don't need to send a WriteReply for this.. the Datagram OK is all that is needed...
   // Unless it will take a while then we can send a special Datagram OK and then send the WriteReply later.
 end;
 
-function TNodeProtocolBase.DatagramReadChunk(AStream: TStream; LccMessage: TLccMessage): Boolean;
-begin
-  Result := False;
-end;
-
 constructor TNodeProtocolBase.Create;
 begin
   inherited Create;
-  {$IFDEF FPC}
- // FCreateTime := GetTickCount;  This kills OSX.....
-  {$ELSE}
-  FCreateTime := TThread.GetTickCount;
-  {$ENDIF}
   FWorkerMessage := TLccMessage.Create;
 end;
 
@@ -381,37 +396,12 @@ begin
   inherited Destroy;
 end;
 
-function TNodeProtocolBase.ReadAsString(Address: DWord; AStream: TStream): String;
-var
- i: DWord;
- C: Char;
- Done: Boolean;
-begin
- Result := '';
- if AStream.Size > Address then
- begin
-   AStream.Position := Address;
-   i := 0;
-   Done := False;
-   while (i + Address < DWord( AStream.Size)) and not Done do
-   begin
-     C := Chr( StreamReadByte(AStream));
-     if C <> #0 then
-       Result := Result + C
-     else
-       Done := True;
-     Inc(i)
-   end;
- end;
-end;
-
 procedure TNodeProtocolBase.DatagramReadRequest(LccMessage: TLccMessage;
   OutMessage: TLccMessage; AStream: TStream; AutoGrow: Boolean);
 //
 // Assumes the Source and Destination have already been set up
 //
 var
-  i: Integer;
   OldStreamSize: Int64;
   FirstDataByte, BytesToRead: Integer;
   AddressStart: DWord;
@@ -437,48 +427,43 @@ begin
 
   AddressStart := LccMessage.ExtractDataBytesAsInt(2, 5);     // Pull out the AddressStart
 
-  if AutoGrow then
+  if BytesToRead > 64 then
   begin
-    if AStream.Size < (AddressStart + BytesToRead) then         // Grow the Address space
+    OutMessage.DataArrayIndexer[1] := LccMessage.DataArray[1] or $08;  // Set a Failure Status
+    OutMessage.InsertWordAsDataBytes(ERROR_TEMPORARY_INVALID_ARGUMENTS, FirstDataByte);         // Errorcode
+    OutMessage.DataCount := 2;
+  end else
+  if BytesToRead = 0 then
+  begin
+    OutMessage.DataArrayIndexer[1] := LccMessage.DataArray[1] or $08;  // Set a Failure Status
+    OutMessage.InsertWordAsDataBytes(ERROR_TEMPORARY_INVALID_ARGUMENTS, FirstDataByte);         // Errorcode
+    OutMessage.DataCount := 2;
+  end else
+  begin
+
+    if AutoGrow then
     begin
-      OldStreamSize := AStream.Size;
-      AStream.Size := AddressStart + BytesToRead;
-      AStream.Position := OldStreamSize;
-      while AStream.Position < AStream.Size do
+      if AStream.Size < (AddressStart + BytesToRead) then         // Grow the Address space
       begin
-        B := 0;
-        AStream.Write(B, SizeOf(B));
+        OldStreamSize := AStream.Size;
+        AStream.Size := AddressStart + BytesToRead;
+        AStream.Position := OldStreamSize;
+        while AStream.Position < AStream.Size do
+        begin
+          B := 0;
+          AStream.Write(B, SizeOf(B));
+        end;
       end;
     end;
 
-    AStream.Position := AddressStart;
-    for i := 0 to BytesToRead - 1 do
-    begin
-      AStream.Read(B, SizeOf(B));
-      OutMessage.DataArrayIndexer[FirstDataByte + i] := B;
-    end;
-    OutMessage.DataCount := BytesToRead + FirstDataByte; // Include the header info
-  end else
-  begin  // Don't grow so more checks need to be done
     if AddressStart >= AStream.Size then
     begin
       OutMessage.DataArrayIndexer[1] := LccMessage.DataArray[1] or $08;  // Set a Failure Status
       OutMessage.InsertWordAsDataBytes(ERROR_PERMANENT_INVALID_ARGUMENTS, FirstDataByte);         // Errorcode
       OutMessage.DataCount := 2;
     end else
-    if BytesToRead > 64 then
     begin
-      OutMessage.DataArrayIndexer[1] := LccMessage.DataArray[1] or $08;  // Set a Failure Status
-      OutMessage.InsertWordAsDataBytes(ERROR_TEMPORARY_INVALID_ARGUMENTS, FirstDataByte);         // Errorcode
-      OutMessage.DataCount := 2;
-    end else
-    if BytesToRead = 0 then
-    begin
-      OutMessage.DataArrayIndexer[1] := LccMessage.DataArray[1] or $08;  // Set a Failure Status
-      OutMessage.InsertWordAsDataBytes(ERROR_TEMPORARY_INVALID_ARGUMENTS, FirstDataByte);         // Errorcode
-      OutMessage.DataCount := 2;
-    end else
-    begin
+
       OutMessage.DataCount := 0;
       AStream.Position := AddressStart;
       while (AStream.Position < AStream.Size) and (OutMessage.DataCount < BytesToRead) do
@@ -957,23 +942,6 @@ begin
   Result[i] :=  Ord(#0);  // null terminate string
 end;
 
-{ TProtocolMemoryConfiguration }
-
-constructor TProtocolMemoryConfiguration.Create;
-begin
- inherited Create;
-end;
-
-
-destructor TProtocolMemoryConfiguration.Destroy;
-begin
- inherited Destroy;
-end;
-
-procedure TProtocolMemoryConfiguration.DatagramWriteRequest(LccMessage: TLccMessage; AStream: TStream);
-begin
-  inherited DatagramWriteRequest(LccMessage, AStream);
-end;
 
 
 end.

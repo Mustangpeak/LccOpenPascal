@@ -1359,14 +1359,6 @@ end;
 procedure TLccNode.SetSendMessageFunc(AValue: TOnMessageEvent);
 begin
   FSendMessageFunc := AValue;
-  ProtocolSupportedProtocols.SendMessageFunc := AValue;
-  FProtocolSimpleNodeInfo.SendMessageFunc := AValue;
-  ProtocolMemoryConfigurationDefinitionInfo.SendMessageFunc := AValue;
-  ProtocolMemoryOptions.SendMessageFunc := AValue;
-  ProtocolMemoryInfo.SendMessageFunc := AValue;
-  ProtocolEventConsumed.SendMessageFunc := AValue;
-  ProtocolEventsProduced.SendMessageFunc := AValue;
-  DatagramResendQueue.SendMessageFunc := AValue;
 end;
 
 procedure TLccNode.DoMemorySpaceReadEngineDone(MemoryReadEngine: TLccEngineMemorySpaceAccess);
@@ -1478,7 +1470,7 @@ end;
 procedure TLccNode.HandleConfiguration_MemorySpaceWrite(var SourceMessage: TLccMessage);
 begin
   SendDatagramAckReply(SourceMessage, False, 0);     // We will be sending a Write Reply
-  ProtocolMemoryConfiguration.DatagramWriteRequest(SourceMessage, StreamConfig);
+  ProtocolMemoryConfiguration.DatagramWriteRequest(SourceMessage, StreamConfig, True);
 end;
 
 procedure TLccNode.HandleACDI_Manufacturer_MemorySpaceWrite(var SourceMessage: TLccMessage);
@@ -1497,7 +1489,7 @@ end;
 procedure TLccNode.HandleACDI_UserMemorySpaceWrite(var SourceMessage: TLccMessage);
 begin
   SendDatagramAckReply(SourceMessage, False, 0);     // We will be sending a Write Reply
-  ProtocolACDIUser.DatagramWriteRequest(SourceMessage, StreamConfig);
+  ProtocolACDIUser.DatagramWriteRequest(SourceMessage, StreamConfig, True);
 end;
 
 procedure TLccNode.HandleStreamRead;
@@ -1607,7 +1599,7 @@ end;
 procedure TLccNode.HandleTractionFDI_ConfigurationMemorySpaceWrite(var SourceMessage: TLccMessage);
 begin
   SendDatagramAckReply(SourceMessage, False, 0);     // We will be sending a Write Reply
-  ProtocolMemoryConfiguration.DatagramWriteRequest(SourceMessage, StreamTractionConfig);
+  ProtocolMemoryConfiguration.DatagramWriteRequest(SourceMessage, StreamTractionConfig, True);
 end;
 
 procedure TLccNode.HandleVerifiedNodeIDNumber(var SourceMessage: TLccMessage);
