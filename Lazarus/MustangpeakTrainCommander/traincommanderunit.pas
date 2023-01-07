@@ -67,6 +67,7 @@ type
     PanelDetails: TPanel;
     SpeedButton1: TSpeedButton;
     SpeedButton2: TSpeedButton;
+    SpeedButton3: TSpeedButton;
     SplitterConnections1: TSplitter;
     SplitterTrains: TSplitter;
     SplitterConnections: TSplitter;
@@ -88,6 +89,7 @@ type
     procedure FormShow(Sender: TObject);
     procedure SpeedButton1Click(Sender: TObject);
     procedure SpeedButton2Click(Sender: TObject);
+    procedure SpeedButton3Click(Sender: TObject);
     procedure ToggleBoxServerFormChange(Sender: TObject);
   private
     FAutoCreateTrainAddress: Word;
@@ -541,6 +543,11 @@ begin
   MemoryStream.Position := 0;
 
   MemoryStream.Free;
+end;
+
+procedure TFormTrainCommander.SpeedButton3Click(Sender: TObject);
+begin
+  SpeedButton3.Caption := 'Datagram: ' + IntToStr(CommandStationNode.DatagramResendQueue.Count);
 end;
 
 procedure TFormTrainCommander.OnCommandStationServerConnectionState(Sender: TObject; Info: TLccHardwareConnectionInfo);

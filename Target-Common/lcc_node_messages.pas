@@ -277,7 +277,6 @@ class  function TractionSearchEncodeNMRA(ForceLongAddress: Boolean; SpeedStep: T
   // CDI
   procedure LoadCDIRequest(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; Address: DWORD);
   // Datagram
-  procedure LoadDatagram(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word);
   procedure LoadDatagramAck(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; Ok: Boolean; ReplyPending: Boolean; TimeOutValueN: Byte);
   procedure LoadDatagramRejected(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; Reason: Word);
   // ConfigurationMemory
@@ -287,9 +286,10 @@ class  function TractionSearchEncodeNMRA(ForceLongAddress: Boolean; SpeedStep: T
   procedure LoadConfigMemRead(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; AddressSpace: Byte; ConfigMemAddress: DWord; ReadCount: Byte);
   procedure LoadConfigMemReadReply(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; AddressSpace: Byte; ConfigMemAddress: DWord; ConfigMemData: array of Byte);
   procedure LoadConfigMemReadReplyError(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; AddressSpace: Byte; ConfigMemAddress: DWord; ErrorCode: Word; ErrorCodeString: string);
-  procedure LoadConfigMemWriteInteger(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; AddressSpace: Byte; ConfigMemAddress: DWord; IntegerSize: Byte; DataInteger: Integer);
-  procedure LoadConfigMemWriteString(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; AddressSpace: Byte; ConfigMemAddress: DWord; AString: String);
-  procedure LoadConfigMemWriteArray(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; AddressSpace: Byte; ConfigMemAddress: DWord; AnArray: array of Byte);
+  procedure LoadConfigMemWrite(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; AddressSpace: Byte; ConfigMemAddress: DWord; AnArray: array of Byte);
+  procedure LoadConfigMemWriteReply(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; AddressSpace: Byte; ConfigMemAddress: DWord);
+  procedure LoadConfigMemWriteReplyError(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; AddressSpace: Byte; ConfigMemAddress: DWord; ErrorCode: Word; ErrorCodeString: string);
+  function DecodeMemorySpace: Byte;
   // MTIs
   procedure LoadOptionalInteractionRejected(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; Reason: Word; AnMTI: Word);
 
@@ -2092,16 +2092,6 @@ begin
   MTI := MTI_CONSUMER_IDENTIFY;
 end;
 
-procedure TLccMessage.LoadDatagram(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word);
-begin
-  ZeroFields;
-  SourceID := ASourceID;
-  DestID := ADestID;
-  CAN.SourceAlias := ASourceAlias;
-  CAN.DestAlias := ADestAlias;
-  MTI := MTI_DATAGRAM;
-end;
-
 procedure TLccMessage.LoadProducerIdentify(ASourceID: TNodeID; ASourceAlias: Word; var Event: TEventID);
 begin
   ZeroFields;
@@ -2841,7 +2831,6 @@ procedure TLccMessage.LoadConfigMemRead(ASourceID: TNodeID;
 begin
   Assert(ReadCount <= 64, 'TLccMessage.LoadConfigMemRead must be less than 64 bytes');
 
-  // Really should be a Get Address Space Info message here to make sure the start address is 0.....
   ZeroFields;
   SourceID := ASourceID;
   DestID := ADestID;
@@ -2910,7 +2899,7 @@ begin
     case AddressSpace of
       MSI_CDI    : FDataArray[1] := MCP_READ_REPLY_CDI;
       MSI_ALL    : FDataArray[1] := MCP_READ_REPLY_ALL;
-      MSI_CONFIG : FDataArray[1] := MCP_READ_REPLY_CONFIGURATION;
+      MSI_CONFIG : FDataArray[1] := MCP_READ_REPLY_CONFIG;
     end;
     FDataArray[2] := _Highest(ConfigMemAddress);
     FDataArray[3] := _Higher(ConfigMemAddress);
@@ -2939,7 +2928,7 @@ begin
   // Use the long version with the optional Byte 6 if the memory space is not one of the original 3 (CDI, All, Config)
   if AddressSpace < MSI_CONFIG then
   begin
-    FDataArray[1] := MCP_READ_REPLY;
+    FDataArray[1] := MCP_READ_REPLY_FAILURE;
     FDataArray[2] := _Highest(ConfigMemAddress);
     FDataArray[3] := _Higher(ConfigMemAddress);
     FDataArray[4] := _Hi(ConfigMemAddress);
@@ -2949,21 +2938,21 @@ begin
     FDataArray[8] := Lo(ErrorCode);
 
     {$IFDEF LCC_MOBILE}
-    for i := 1 to Length(ErrorCodeString) do
-      FDataArray[i+8] := Byte(ErrorCodeString[i]);
-    {$ELSE}
     for i := 0 to Length(ErrorCodeString) - 1 do
-      FDataArray[i+9] := Byte(ErrorCodeString[i]);
+      FDataArray[i + 9] := Byte(ErrorCodeString[i]);
+    {$ELSE}
+    for i := 1 to Length(ErrorCodeString) do
+      FDataArray[i + 8] := Byte(ErrorCodeString[i]);
     {$ENDIF}
-    FDataArray[9+Length(ErrorCodeString)] := Byte(#0);
+    FDataArray[9 + Length(ErrorCodeString)] := Byte(#0);
 
-    DataCount := 9+Length(ErrorCodeString)+1;
+    DataCount := 9 + Length(ErrorCodeString) + 1;   // 9 header bytes + null
   end else
   begin
     case AddressSpace of
-      MSI_CDI    : FDataArray[1] := MCP_READ_REPLY_CDI;
-      MSI_ALL    : FDataArray[1] := MCP_READ_REPLY_ALL;
-      MSI_CONFIG : FDataArray[1] := MCP_READ_REPLY_CONFIGURATION;
+      MSI_CDI    : FDataArray[1] := MCP_READ_REPLY_FAILURE_CDI;
+      MSI_ALL    : FDataArray[1] := MCP_READ_REPLY_FAILURE_ALL;
+      MSI_CONFIG : FDataArray[1] := MCP_READ_REPLY_FAILURE_CONFIG;
     end;
     FDataArray[2] := _Highest(ConfigMemAddress);
     FDataArray[3] := _Higher(ConfigMemAddress);
@@ -2973,92 +2962,37 @@ begin
     FDataArray[7] := Lo(ErrorCode);
 
     {$IFDEF LCC_MOBILE}
-    for i := 1 to Length(ErrorCodeString) do
-      FDataArray[i+7] := Byte(ErrorCodeString[i]);
-    {$ELSE}
     for i := 0 to Length(ErrorCodeString) - 1 do
-      FDataArray[i+8] := Byte(ErrorCodeString[i]);
+      FDataArray[i + 8] := Byte(ErrorCodeString[i]);
+    {$ELSE}
+    for i := 1 to Length(ErrorCodeString) do
+      FDataArray[i + 7] := Byte(ErrorCodeString[i]);
     {$ENDIF}
-    FDataArray[8+Length(ErrorCodeString)] := Byte(#0);
+    FDataArray[8 + Length(ErrorCodeString)] := Byte(#0);
 
-    DataCount := 8+Length(ErrorCodeString)+1;
+    DataCount := 8 + Length(ErrorCodeString) + 1;   // 8 header bytes + null
   end;
   MTI := MTI_DATAGRAM;
 
 end;
 
-procedure TLccMessage.LoadConfigMemWriteArray(ASourceID: TNodeID;
+procedure TLccMessage.LoadConfigMemWrite(ASourceID: TNodeID;
   ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; AddressSpace: Byte;
   ConfigMemAddress: DWord; AnArray: array of Byte);
 var
-  i, iDatagram, DatagramCount, DatagramLength, iArrayPos, ArraySize: Integer;
+  i, WriteCount: Integer;
 begin
-  ArraySize := Length(AnArray);
+  WriteCount := Length(AnArray);
 
-  if ArraySize mod 64 = 0 then
-    DatagramCount := ArraySize div 64
-  else
-    DatagramCount := (ArraySize div 64) + 1;
+  Assert(WriteCount <= 64, 'TLccMessage.LoadConfigMemWrite must be less than 64 bytes');
 
-  for iDatagram := 0 to DatagramCount - 1 do
-  begin
-    DatagramLength := ArraySize;
-    if DatagramLength > 64 then
-      DatagramLength := 64;
-
-    ZeroFields;
-    SourceID := ASourceID;
-    DestID := ADestID;
-    CAN.SourceAlias := ASourceAlias;
-    CAN.DestAlias := ADestAlias;
-    FDataArray[0] := DATAGRAM_PROTOCOL_CONFIGURATION;
-    if AddressSpace < MSI_CONFIG then
-    begin
-      FDataArray[1] := MCP_WRITE;
-      FDataArray[2] := _Highest(ConfigMemAddress);
-      FDataArray[3] := _Higher(ConfigMemAddress);
-      FDataArray[4] := _Hi(ConfigMemAddress);
-      FDataArray[5] := _Lo(ConfigMemAddress);
-      FDataArray[6] := AddressSpace;
-      DataCount := 7;
-    end else
-    begin
-      case AddressSpace of
-        MSI_CDI : FDataArray[1] := MCP_WRITE or MCP_CDI;
-        MSI_ALL : FDataArray[1] := MCP_WRITE or MCP_ALL;
-        MSI_CONFIG : FDataArray[1] := MCP_WRITE or MCP_CONFIGURATION;
-      end;
-      FDataArray[2] := _Highest(ConfigMemAddress);
-      FDataArray[3] := _Higher(ConfigMemAddress);
-      FDataArray[4] := _Hi(ConfigMemAddress);
-      FDataArray[5] := _Lo(ConfigMemAddress);
-      DataCount := 6;
-    end;
-
-    iArrayPos := 0;
-    for i := 0 to DatagramLength - 1 do
-    begin
-      FDataArray[DataCount] := AnArray[iArrayPos];
-      Inc(FDataCount);
-      Inc(iArrayPos);
-      Inc(ConfigMemAddress);
-    end;
-
-    MTI := MTI_DATAGRAM;
-  end;
-end;
-
-procedure TLccMessage.LoadConfigMemWriteInteger(ASourceID: TNodeID;
-  ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; AddressSpace: Byte;
-  ConfigMemAddress: DWord; IntegerSize: Byte; DataInteger: Integer);
-begin
-  // Really should be a Get Address Space Info message here to make sure the start address is 0.....
   ZeroFields;
   SourceID := ASourceID;
   DestID := ADestID;
   CAN.SourceAlias := ASourceAlias;
   CAN.DestAlias := ADestAlias;
   FDataArray[0] := DATAGRAM_PROTOCOL_CONFIGURATION;
+
   if AddressSpace < MSI_CONFIG then
   begin
     FDataArray[1] := MCP_WRITE;
@@ -3071,8 +3005,8 @@ begin
   end else
   begin
     case AddressSpace of
-      MSI_CDI : FDataArray[1] := MCP_WRITE or MCP_CDI;
-      MSI_ALL : FDataArray[1] := MCP_WRITE or MCP_ALL;
+      MSI_CDI    : FDataArray[1] := MCP_WRITE or MCP_CDI;
+      MSI_ALL    : FDataArray[1] := MCP_WRITE or MCP_ALL;
       MSI_CONFIG : FDataArray[1] := MCP_WRITE or MCP_CONFIGURATION;
     end;
     FDataArray[2] := _Highest(ConfigMemAddress);
@@ -3082,92 +3016,127 @@ begin
     DataCount := 6;
   end;
 
-  case IntegerSize of
-    1 : begin
-          FDataArray[DataCount] := _Lo(DataInteger);
-          Inc(FDataCount, 1);
-        end;
-    2 : begin
-          InsertWordAsDataBytes(Word( DataInteger), DataCount);
-          Inc(FDataCount, 2);
-        end;
-    4 : begin
-          InsertDWordAsDataBytes(DWord( DataInteger), DataCount);
-          Inc(FDataCount, 4);
-        end;
+  for i := 0 to WriteCount - 1 do
+    FDataArray[i + DataCount] := AnArray[i];
+
+  DataCount := DataCount + Length(AnArray);
+
+  MTI := MTI_DATAGRAM;
+end;
+
+procedure TLccMessage.LoadConfigMemWriteReply(ASourceID: TNodeID;
+  ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; AddressSpace: Byte;
+  ConfigMemAddress: DWord);
+begin
+  ZeroFields;
+  SourceID := ASourceID;
+  DestID := ADestID;
+  CAN.SourceAlias := ASourceAlias;
+  CAN.DestAlias := ADestAlias;
+  FDataArray[0] := DATAGRAM_PROTOCOL_CONFIGURATION;
+
+  // Use the long version with the optional Byte 6 if the memory space is not one of the original 3 (CDI, All, Config)
+  if AddressSpace < MSI_CONFIG then
+  begin
+    FDataArray[1] := MCP_WRITE_REPLY;
+    FDataArray[2] := _Highest(ConfigMemAddress);
+    FDataArray[3] := _Higher(ConfigMemAddress);
+    FDataArray[4] := _Hi(ConfigMemAddress);
+    FDataArray[5] := _Lo(ConfigMemAddress);
+    FDataArray[6] := AddressSpace;
+    DataCount := 7;
+  end else
+  begin
+    case AddressSpace of
+      MSI_CDI    : FDataArray[1] := MCP_WRITE_REPLY_CDI;
+      MSI_ALL    : FDataArray[1] := MCP_WRITE_REPLY_ALL;
+      MSI_CONFIG : FDataArray[1] := MCP_READ_REPLY_CONFIG;
+    end;
+    FDataArray[2] := _Highest(ConfigMemAddress);
+    FDataArray[3] := _Higher(ConfigMemAddress);
+    FDataArray[4] := _Hi(ConfigMemAddress);
+    FDataArray[5] := _Lo(ConfigMemAddress);
+    DataCount := 6;
   end;
   MTI := MTI_DATAGRAM;
 end;
 
-procedure TLccMessage.LoadConfigMemWriteString(ASourceID: TNodeID;
+procedure TLccMessage.LoadConfigMemWriteReplyError(ASourceID: TNodeID;
   ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; AddressSpace: Byte;
-  ConfigMemAddress: DWord; AString: String);
+  ConfigMemAddress: DWord; ErrorCode: Word; ErrorCodeString: string);
 var
-  i, iDatagram, DatagramCount, iStringPos, DatagramLength, StrLength: Integer;
+  i: Integer;
 begin
-  // Really should be a Get Address Space Info message here to make sure the start address is 0.....
+  ZeroFields;
+  SourceID := ASourceID;
+  DestID := ADestID;
+  CAN.SourceAlias := ASourceAlias;
+  CAN.DestAlias := ADestAlias;
+  FDataArray[0] := DATAGRAM_PROTOCOL_CONFIGURATION;
 
-  iStringPos := 1;         // 1 indexed
-
-  StrLength := Length(AString) + 1;  // Include the Null
-
-  if StrLength mod 64 = 0 then
-    DatagramCount := StrLength div 64
-  else
-    DatagramCount := (StrLength div 64) + 1;
-
-  for iDatagram := 0 to DatagramCount - 1 do
+  // Use the long version with the optional Byte 6 if the memory space is not one of the original 3 (CDI, All, Config)
+  if AddressSpace < MSI_CONFIG then
   begin
-    DatagramLength := StrLength - (iStringPos - 1);
-    if DatagramLength > 64 then
-      DatagramLength := 64;
+    FDataArray[1] := MCP_WRITE_REPLY_FAILURE;
+    FDataArray[2] := _Highest(ConfigMemAddress);
+    FDataArray[3] := _Higher(ConfigMemAddress);
+    FDataArray[4] := _Hi(ConfigMemAddress);
+    FDataArray[5] := _Lo(ConfigMemAddress);
+    FDataArray[6] := AddressSpace;
+    FDataArray[7] := Hi(ErrorCode);
+    FDataArray[8] := Lo(ErrorCode);
 
-    ZeroFields;
-    SourceID := ASourceID;
-    DestID := ADestID;
-    CAN.SourceAlias := ASourceAlias;
-    CAN.DestAlias := ADestAlias;
-    FDataArray[0] := DATAGRAM_PROTOCOL_CONFIGURATION;
-    if AddressSpace < MSI_CONFIG then
-    begin
-      FDataArray[1] := MCP_WRITE;
-      FDataArray[2] := _Highest(ConfigMemAddress);
-      FDataArray[3] := _Higher(ConfigMemAddress);
-      FDataArray[4] := _Hi(ConfigMemAddress);
-      FDataArray[5] := _Lo(ConfigMemAddress);
-      FDataArray[6] := AddressSpace;
-      DataCount := 7;
-    end else
-    begin
-      case AddressSpace of
-        MSI_CDI : FDataArray[1] := MCP_WRITE or MCP_CDI;
-        MSI_ALL : FDataArray[1] := MCP_WRITE or MCP_ALL;
-        MSI_CONFIG : FDataArray[1] := MCP_WRITE or MCP_CONFIGURATION;
-      end;
-      FDataArray[2] := _Highest(ConfigMemAddress);
-      FDataArray[3] := _Higher(ConfigMemAddress);
-      FDataArray[4] := _Hi(ConfigMemAddress);
-      FDataArray[5] := _Lo(ConfigMemAddress);
-      DataCount := 6;
-    end;
+    {$IFDEF LCC_MOBILE}
+    for i := 0 to Length(ErrorCodeString) - 1 do
+      FDataArray[i + 9] := Byte(ErrorCodeString[i]);
+    {$ELSE}
+    for i := 1 to Length(ErrorCodeString) do
+      FDataArray[i + 8] := Byte(ErrorCodeString[i]);
+    {$ENDIF}
+    FDataArray[9 + Length(ErrorCodeString)] := Byte(#0);
 
-    if DatagramLength = 1 then
-    begin
-      FDataArray[DataCount] := Ord(#0);
-      Inc(FDataCount);
-    end else
-    begin
-      for i := 0 to DatagramLength - 1 do
-      begin
-        FDataArray[DataCount] := Ord( AString[iStringPos]);
-        Inc(FDataCount);
-        Inc(iStringPos);
-        Inc(ConfigMemAddress);
-      end;
+    DataCount := 9 + Length(ErrorCodeString) + 1;   // 9 header bytes + null
+  end else
+  begin
+    case AddressSpace of
+      MSI_CDI    : FDataArray[1] := MCP_WRITE_REPLY_FAILURE_CDI;
+      MSI_ALL    : FDataArray[1] := MCP_WRITE_REPLY_FAILURE_ALL;
+      MSI_CONFIG : FDataArray[1] := MCP_WRITE_REPLY_FAILURE_CONFIG;
     end;
-    MTI := MTI_DATAGRAM;
+    FDataArray[2] := _Highest(ConfigMemAddress);
+    FDataArray[3] := _Higher(ConfigMemAddress);
+    FDataArray[4] := _Hi(ConfigMemAddress);
+    FDataArray[5] := _Lo(ConfigMemAddress);
+    FDataArray[6] := Hi(ErrorCode);
+    FDataArray[7] := Lo(ErrorCode);
+
+    {$IFDEF LCC_MOBILE}
+    for i := 0 to Length(ErrorCodeString) - 1 do
+      FDataArray[i + 8] := Byte(ErrorCodeString[i]);
+    {$ELSE}
+    for i := 1 to Length(ErrorCodeString) do
+      FDataArray[i + 7] := Byte(ErrorCodeString[i]);
+    {$ENDIF}
+    FDataArray[8 + Length(ErrorCodeString)] := Byte(#0);
+
+    DataCount := 8 + Length(ErrorCodeString) + 1;   // 8 header bytes + null
+  end;
+  MTI := MTI_DATAGRAM;
+end;
+
+function TLccMessage.DecodeMemorySpace: Byte;
+begin
+  // Figure out where the Memory space to work on is located, encoded in the header or in the first databyte slot.
+  case DataArray[1] and $03 of
+    MCP_NONE          : Result := DataArray[6];
+    MCP_CDI           : Result := MSI_CDI;
+    MCP_ALL           : Result := MSI_ALL;
+    MCP_CONFIGURATION : Result := MSI_CONFIG
+  else
+    Result := 0;
   end;
 end;
+
 
 { TLccNodeCDI }
 

@@ -546,7 +546,7 @@ var
   List: TList;
   iContext, iByte: Integer;
   OtherContext: TIdContext;
-  AByte: Byte;
+//  AByte: Byte;
   TcpMessage: TLccDynamicByteArray;
 begin
 
@@ -673,7 +673,6 @@ begin
         Sleep(50);
         if TimeCount = 100 then
         begin
-          beep;
           Break // Something went really wrong
         end;
       end;

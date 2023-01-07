@@ -37,7 +37,6 @@ uses
   function EqualEventID(EventID1, EventID2: TEventID): Boolean;
   procedure NodeIDToEventID(NodeID: TNodeID; LowBytes: Word; var EventID: TEventID);
   function NullNodeID(ANodeID: TNodeID): Boolean;
-  procedure StringToNullArray(AString: String; var ANullArray: TLccDynamicByteArray; var iIndex: Integer);
   function EventIDToString(EventID: TEventID; InsertDots: Boolean): String;
   function NodeIDToString(NodeID: TNodeID; InsertDots: Boolean): String;
   function NodeAliasToString(AliasID: Word): String;
@@ -461,27 +460,6 @@ begin
   EventID[5] := _Lo(     NodeID[0]);
   EventID[6] := _Hi(LowBytes);
   EventID[7] := _Lo(LowBytes);
-end;
-
-procedure StringToNullArray(AString: String; var ANullArray: TLccDynamicByteArray; var iIndex: Integer);
-var
-  Len, i: Integer;
-begin
-  Len := Length(AString);
-  if Len > 0 then
-  begin
-    {$IFDEF FPC}
-      for i := 1 to Len do
-    {$ELSE}
-      {$IFDEF LCC_MOBILE}for i := 0 to Len - 1 do{$ELSE}for i := 1 to Len do{$ENDIF}
-    {$ENDIF}
-    begin
-      ANullArray[iIndex] := Ord( AString[i]);
-      Inc(iIndex);
-    end;
-  end;
-  ANullArray[iIndex] := 0;
-  Inc(iIndex);
 end;
 
 function NullNodeID(ANodeID: TNodeID): Boolean;

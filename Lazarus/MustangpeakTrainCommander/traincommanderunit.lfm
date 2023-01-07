@@ -206,6 +206,13 @@ object FormTrainCommander: TFormTrainCommander
       Width = 23
       OnClick = SpeedButton2Click
     end
+    object SpeedButton3: TSpeedButton
+      Left = 1126
+      Height = 22
+      Top = 64
+      Width = 106
+      OnClick = SpeedButton3Click
+    end
   end
   object PanelConnections: TPanel
     Left = 0

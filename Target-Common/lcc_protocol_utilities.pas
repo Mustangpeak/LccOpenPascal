@@ -35,14 +35,16 @@ type
     FValid: Boolean;
     procedure SetValid(AValue: Boolean); virtual;  // Just so it can be overridden for special behavior
     property WorkerMessage: TLccMessage read FWorkerMessage write FWorkerMessage;
+
+    procedure InitializeOutMessageNodeIDs(InMessage, OutMessage: TLccMessage);
   public
     property Valid: Boolean read FValid write SetValid;
 
     constructor Create; virtual;
     destructor Destroy; override;
 
-    procedure DatagramReadRequest(LccMessage: TLccMessage; OutMessage: TLccMessage; AStream: TStream; AutoGrow: Boolean); virtual;
-    procedure DatagramWriteRequest(LccMessage: TLccMessage; AStream: TStream; AutoGrow: Boolean); virtual;
+    function DatagramReadRequest(LccMessage: TLccMessage; OutMessage: TLccMessage; AStream: TStream; AutoGrow: Boolean; MemOffset: Int64 = 0): Word; virtual;
+    function DatagramWriteRequest(LccMessage: TLccMessage; AStream: TStream; AutoGrow: Boolean; MemOffset: Int64 = 0): Word; virtual;
   end;
 
   { TProtocolSupportedProtocols }
@@ -246,12 +248,7 @@ type
     property HighSpace: Byte read FHighSpace write FHighSpace;
     property LowSpace: Byte read FLowSpace write FLowSpace;
 
-    procedure LoadReply(LccMessage: TLccMessage);
-  end;
-
-  { TProtocolMemoryConfigurationDefinitionInfo }
-
-  TProtocolMemoryConfigurationDefinitionInfo = class(TNodeProtocolBase)  // Everything is handled by the default base case
+    procedure LoadReply(LccMessage, OutMessage: TLccMessage);
   end;
 
   { TLccSNIPObject }
@@ -287,24 +284,11 @@ type
   end;
 
 
-  { TProtocolMemoryConfiguration }
+  { TProtocolMemoryAccess }
 
-  TProtocolMemoryConfiguration = class(TNodeProtocolBase)
+  TProtocolMemoryAccess = class(TNodeProtocolBase)
   public
   end;
-
-  { TProtocolACDIMfg }
-
-  TProtocolACDIMfg = class(TNodeProtocolBase)   // Everything is handled by the default base case
-  public
-  end;
-
-  { TProtocolACDIUser }
-
-  TProtocolACDIUser = class(TNodeProtocolBase)   // Everything is handled by the default base case
-  public
-  end;
-
 
 
 implementation
@@ -317,7 +301,18 @@ begin
   FValid:=AValue;
 end;
 
-procedure TNodeProtocolBase.DatagramWriteRequest(LccMessage: TLccMessage; AStream: TStream; AutoGrow: Boolean);
+procedure TNodeProtocolBase.InitializeOutMessageNodeIDs(InMessage, OutMessage: TLccMessage);
+begin
+   // Setup the OutMessage node info
+  OutMessage.ZeroFields;
+  OutMessage.SourceID := InMessage.DestID;
+  OutMessage.DestID := InMessage.SourceID;
+  OutMessage.CAN.SourceAlias := InMessage.CAN.DestAlias;
+  OutMessage.CAN.DestAlias := InMessage.CAN.SourceAlias;
+  OutMessage.MTI := MTI_DATAGRAM;
+end;
+
+function TNodeProtocolBase.DatagramWriteRequest(LccMessage: TLccMessage; AStream: TStream; AutoGrow: Boolean; MemOffset: Int64 = 0): Word;
 var
  i: Integer;
  FirstDataByte, MemspaceDataSentCount : Integer;
@@ -326,6 +321,8 @@ var
  B: Byte;
 begin
   // Assumption is this is a datagram message
+
+  Result := S_OK;
 
   // First see if the memory space to work on is in byte 6 or part of the first byte
   // to determine where the first byte of real data is
@@ -337,15 +334,14 @@ begin
   BytesToWrite := LccMessage.DataCount - FirstDataByte;
   AddressStart := LccMessage.ExtractDataBytesAsInt(2, 5);
 
+  AddressStart := AddressStart + MemOffset;
+
   if BytesToWrite > 64 then
-  begin
-    // How to set a bad Datagram ACK from here?
-  end else
+    Result := ERROR_TEMPORARY_INVALID_ARGUMENTS
+  else
   if BytesToWrite = 0 then
-  begin
-    // How to set a bad Datagram ACK from here?
-  end else
-  begin
+    Result := ERROR_TEMPORARY_INVALID_ARGUMENTS
+  else begin
 
     if AutoGrow then
     begin
@@ -364,10 +360,8 @@ begin
     end;
 
     if AddressStart >= AStream.Size then
-    begin
-      // How to set a bad Datagram ACK from here?
-    end else
-    begin
+      Result := ERROR_TEMPORARY_INVALID_ARGUMENTS
+    else begin
 
       MemspaceDataSentCount := LccMessage.DataCount - FirstDataByte;
 
@@ -377,7 +371,7 @@ begin
         B := LccMessage.DataArray[i + FirstDataByte];
         AStream.Write(B, SizeOf(B));
       end;
-    end;
+    end
   end;
 
   // We don't need to send a WriteReply for this.. the Datagram OK is all that is needed...
@@ -396,8 +390,7 @@ begin
   inherited Destroy;
 end;
 
-procedure TNodeProtocolBase.DatagramReadRequest(LccMessage: TLccMessage;
-  OutMessage: TLccMessage; AStream: TStream; AutoGrow: Boolean);
+function TNodeProtocolBase.DatagramReadRequest(LccMessage: TLccMessage; OutMessage: TLccMessage; AStream: TStream; AutoGrow: Boolean; MemOffset: Int64 = 0): Word;
 //
 // Assumes the Source and Destination have already been set up
 //
@@ -408,6 +401,10 @@ var
   B: Byte;
 begin
   // Assumption is this is a datagram message
+
+  Result := S_OK;
+
+  InitializeOutMessageNodeIDs(LccMessage, OutMessage);
 
   // Is the addressStart space in the header or is it the first byte in the data that
   // we need to skip over?
@@ -426,27 +423,30 @@ begin
     OutMessage.DataArrayIndexer[6] := LccMessage.DataArray[6];
 
   AddressStart := LccMessage.ExtractDataBytesAsInt(2, 5);     // Pull out the AddressStart
+  AddressStart := AddressStart + MemOffset;
 
   if BytesToRead > 64 then
   begin
+    Result := ERROR_TEMPORARY_INVALID_ARGUMENTS;
     OutMessage.DataArrayIndexer[1] := LccMessage.DataArray[1] or $08;  // Set a Failure Status
-    OutMessage.InsertWordAsDataBytes(ERROR_TEMPORARY_INVALID_ARGUMENTS, FirstDataByte);         // Errorcode
+    OutMessage.InsertWordAsDataBytes(Result, FirstDataByte);           // Errorcode
     OutMessage.DataCount := 2;
   end else
   if BytesToRead = 0 then
   begin
+    Result := ERROR_TEMPORARY_INVALID_ARGUMENTS;
     OutMessage.DataArrayIndexer[1] := LccMessage.DataArray[1] or $08;  // Set a Failure Status
-    OutMessage.InsertWordAsDataBytes(ERROR_TEMPORARY_INVALID_ARGUMENTS, FirstDataByte);         // Errorcode
+    OutMessage.InsertWordAsDataBytes(Result, FirstDataByte);           // Errorcode
     OutMessage.DataCount := 2;
   end else
   begin
 
     if AutoGrow then
     begin
-      if AStream.Size < (AddressStart + BytesToRead) then         // Grow the Address space
+      if AStream.Size < Int64( AddressStart) + Int64( BytesToRead) then         // Grow the Address space
       begin
         OldStreamSize := AStream.Size;
-        AStream.Size := AddressStart + BytesToRead;
+        AStream.Size := Int64( AddressStart) + Int64( BytesToRead);
         AStream.Position := OldStreamSize;
         while AStream.Position < AStream.Size do
         begin
@@ -458,8 +458,9 @@ begin
 
     if AddressStart >= AStream.Size then
     begin
+      Result := ERROR_TEMPORARY_INVALID_ARGUMENTS;
       OutMessage.DataArrayIndexer[1] := LccMessage.DataArray[1] or $08;  // Set a Failure Status
-      OutMessage.InsertWordAsDataBytes(ERROR_PERMANENT_INVALID_ARGUMENTS, FirstDataByte);         // Errorcode
+      OutMessage.InsertWordAsDataBytes(Result, FirstDataByte);         // Errorcode
       OutMessage.DataCount := 2;
     end else
     begin
@@ -750,12 +751,14 @@ begin
  Result := List.Count
 end;
 
-procedure TProtocolMemoryInfo.LoadReply(LccMessage: TLccMessage;
-  OutMessage: TLccMessage);
+procedure TProtocolMemoryInfo.LoadReply(LccMessage: TLccMessage; OutMessage: TLccMessage);
 var
  Info: TConfigMemAddressSpaceInfoObject;
 begin
   // Decode the LccMessage
+
+ InitializeOutMessageNodeIDs(LccMessage, OutMessage);
+
  Info := FindByAddressSpace( LccMessage.DataArrayIndexer[2]);
  OutMessage.DataArrayIndexer[0] := $20;
  if Assigned(Info) then
@@ -796,10 +799,13 @@ end;
 
 { TProtocolMemoryOptions }
 
-procedure TProtocolMemoryOptions.LoadReply(LccMessage: TLccMessage);
+procedure TProtocolMemoryOptions.LoadReply(LccMessage, OutMessage: TLccMessage);
 var
   OpsMask: Word;
 begin
+
+  InitializeOutMessageNodeIDs(LccMessage, OutMessage);
+
   LccMessage.DataArrayIndexer[0] := $20;
   LccMessage.DataArrayIndexer[1] := MCP_OP_GET_CONFIG_OPTIONS_REPLY;
   LccMessage.DataArrayIndexer[5] := FHighSpace;

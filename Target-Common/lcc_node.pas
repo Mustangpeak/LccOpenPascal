@@ -88,6 +88,7 @@ type
     FQueue: TObjectList;
     {$ENDIF}
     FSendMessageFunc: TOnMessageEvent;
+    function GetCount: Integer;
   protected
     {$IFDEF DELPHI}
     property Queue: TObjectList<TLccMessage> read FQueue write FQueue;
@@ -97,6 +98,7 @@ type
 
     function FindBySourceNode(LccMessage: TLccMessage): Integer;
   public
+    property Count: Integer read GetCount;
     property SendMessageFunc: TOnMessageEvent read FSendMessageFunc write FSendMessageFunc;
 
     constructor Create;
@@ -274,18 +276,15 @@ type
     FGridConnect: Boolean;
     FLoginTimoutCounter: Integer;
     FPermitted: Boolean;
-    FProtocolACDIMfg: TProtocolACDIMfg;
-    FProtocolACDIUser: TProtocolACDIUser;
     FProtocolEventConsumed: TProtocolEvents;
     FProtocolEventsProduced: TProtocolEvents;
-    FProtocolMemoryConfiguration: TProtocolMemoryConfiguration;
+    FProtocolMemoryAccess: TProtocolMemoryAccess;
     FProtocolMemoryInfo: TProtocolMemoryInfo;
     FProtocolMemoryOptions: TProtocolMemoryOptions;
     FProtocolSimpleNodeInfo: TProtocolSimpleNodeInfo;
     FProtocolSupportedProtocols: TProtocolSupportedProtocols;
-    FProtocolMemoryConfigurationDefinitionInfo: TProtocolMemoryConfigurationDefinitionInfo;
     FSeedNodeID: TNodeID;
-    FWorkerMessageDatagram: TLccMessage;
+    FWorkerMessageForAckMessages: TLccMessage;
     FInitialized: Boolean;
     FNodeManager: {$IFDEF DELPHI}TComponent{$ELSE}TObject{$ENDIF};
     FSendMessageFunc: TOnMessageEvent;
@@ -332,10 +331,10 @@ type
     procedure HandleConfiguration_MemorySpaceWrite(var SourceMessage: TLccMessage);virtual;
     procedure HandleACDI_Manufacturer_MemorySpaceWrite(var SourceMessage: TLccMessage); virtual;
     procedure HandleACDI_UserMemorySpaceWrite(var SourceMessage: TLccMessage);virtual;
-    procedure HandleStreamRead;
-    procedure HandleStreamWrite;
     procedure HandleTractionFDI_MemorySpaceWrite(var SourceMessage: TLccMessage); virtual;
     procedure HandleTractionFDI_ConfigurationMemorySpaceWrite(var SourceMessage: TLccMessage); virtual;
+    procedure SendMemoryWriteFailure(var MemoryWriteRequestMessage: TLccMessage; ErrorCode: Word; ErrorString: String); virtual;
+    procedure HandleStreamWrite;
        // Datagram Configuration Type Handlers - Memory Space Read Handlers
     procedure HandleCDI_MemorySpaceRead(var SourceMessage: TLccMessage);virtual;
     procedure HandleAll_MemorySpaceRead(var SourceMessage: TLccMessage);virtual;
@@ -344,6 +343,8 @@ type
     procedure HandleACDI_User_MemorySpaceRead(var SourceMessage: TLccMessage);virtual;
     procedure HandleTractionFDI_MemorySpaceRead(var SourceMessage: TLccMessage); virtual;
     procedure HandleTractionFDI_ConfigurationMemorySpaceRead(var SourceMessage: TLccMessage); virtual;
+    procedure SendMemoryReadFailure(var MemoryReadRequestMessage: TLccMessage; ErrorCode: Word; ErrorString: String); virtual;
+    procedure HandleStreamRead;
       // Datagram Configuration Options Handlers
     procedure HandleOperationGetAddressSpaceInfo(var SourceMessage: TLccMessage);
     procedure HandleOperationGetConfiguration(var SourceMessage: TLccMessage);
@@ -432,7 +433,7 @@ type
     property EnginesRegisteredList: TList read FEnginesRegisteredList write FEnginesRegisteredList;
 
     property WorkerMessage: TLccMessage read FWorkerMessage write FWorkerMessage;
-    property WorkerMessageDatagram: TLccMessage read FWorkerMessageDatagram write FWorkerMessageDatagram;
+    property WorkerMessageForAckMessages: TLccMessage read FWorkerMessageForAckMessages write FWorkerMessageForAckMessages;
 
     // GridConnect Helpers
     property DuplicateAliasDetected: Boolean read FDuplicateAliasDetected write FDuplicateAliasDetected;
@@ -446,7 +447,7 @@ type
     procedure AutoGenerateEvents;
     procedure SendDatagramAckReply(SourceMessage: TLccMessage; ReplyPending: Boolean; TimeOutValueN: Byte);
     procedure SendDatagramRejectedReply(SourceMessage: TLccMessage; Reason: Word);
-    procedure SendDatagramRequiredReply(SourceMessage, ReplyLccMessage: TLccMessage);
+    procedure QueueAndSendDatagramReplyToWaitForAck(DatagramRequest, DatagramReply: TLccMessage);
     function GetCdiFile: string; virtual;
     procedure BeforeLogin; virtual;
     procedure LccLogIn(ANodeID: TNodeID); virtual;
@@ -471,11 +472,8 @@ type
     property ProtocolEventsProduced: TProtocolEvents read FProtocolEventsProduced write FProtocolEventsProduced;
     property ProtocolMemoryInfo: TProtocolMemoryInfo read FProtocolMemoryInfo write FProtocolMemoryInfo;
     property ProtocolMemoryOptions: TProtocolMemoryOptions read FProtocolMemoryOptions write FProtocolMemoryOptions;
-    property ProtocolMemoryConfigurationDefinitionInfo: TProtocolMemoryConfigurationDefinitionInfo read FProtocolMemoryConfigurationDefinitionInfo write FProtocolMemoryConfigurationDefinitionInfo;
+    property ProtocolMemoryAccess: TProtocolMemoryAccess read FProtocolMemoryAccess write FProtocolMemoryAccess;
     property ProtocolSimpleNodeInfo: TProtocolSimpleNodeInfo read FProtocolSimpleNodeInfo write FProtocolSimpleNodeInfo;
-    property ProtocolMemoryConfiguration: TProtocolMemoryConfiguration read FProtocolMemoryConfiguration write FProtocolMemoryConfiguration;
-    property ProtocolACDIMfg: TProtocolACDIMfg read FProtocolACDIMfg write FProtocolACDIMfg;
-    property ProtocolACDIUser: TProtocolACDIUser read FProtocolACDIUser write FProtocolACDIUser;
 
     // GridConnect Helpers
     property AliasID: Word read FAliasID;
@@ -703,7 +701,7 @@ begin
       end;
 
       // Write the space
-      WorkerMessage.LoadConfigMemWriteArray(OwnerNode.NodeID, OwnerNode.AliasID, TargetNodeID, TargetAlias, MemorySpace, CurrentAddress, ByteArray);
+      WorkerMessage.LoadConfigMemWrite(OwnerNode.NodeID, OwnerNode.AliasID, TargetNodeID, TargetAlias, MemorySpace, CurrentAddress, ByteArray);
       OwnerNode.SendMessageFunc(OwnerNode, WorkerMessage);
 
       if Assigned(CallBackProgress) then
@@ -858,8 +856,7 @@ end;
 function TLccEngineMemorySpaceAccess.GetStreamAsEventID: TEventID;
 var
   Hex, Temp: AnsiString;
-  StartIndex, i: Integer;
-  CharPtr: PAnsiChar;
+  i: Integer;
   B: Byte;
 begin
   MemoryStream.Position := 0;
@@ -869,11 +866,11 @@ begin
   begin
     B := 0;
     MemoryStream.Read(B, SizeOf(B));
-    Hex := IntToHex(B, 2);
+    Hex := AnsiString( IntToHex(B, 2));
     Temp := Temp + Hex;
   end;
 
-  Result := StrToEventID(Temp);
+  Result := StrToEventID( string( Temp));
 
   // Reset for use
   MemoryStream.Position := 0;
@@ -888,7 +885,7 @@ var
 begin
   MemoryStream.Position := 0;
 
-  EventIDStr := EventIDToString(AValue, False);
+  EventIDStr := AnsiString( EventIDToString(AValue, False));
 
   {$IFDEF LCC_MOBILE}
   StartIndex := 0;
@@ -905,7 +902,7 @@ begin
     Inc(CharPtr);
     Temp := Temp + CharPtr^;
     Inc(CharPtr);
-    B := StrToInt('$' + Temp);
+    B := StrToInt('$' + String( Temp));
     MemoryStream.Write(B, SizeOf(B));
   end;
 
@@ -922,7 +919,7 @@ var
 begin
   MemoryStream.Clear;
 
-  Hex := IntToHex(AValue, Size * 2);
+  Hex := AnsiString( IntToHex(AValue, Size * 2));
 
   {$IFDEF LCC_MOBILE}
   StartIndex := 0;
@@ -938,7 +935,7 @@ begin
     Inc(CharPtr);
     Temp := Temp + CharPtr^;
     Inc(CharPtr);
-    B := StrToInt('$' + Temp);
+    B := StrToInt('$' + String( Temp));
     MemoryStream.Write(B, SizeOf(B));
   end;
 
@@ -1059,11 +1056,11 @@ begin
   begin
     B := 0;
     MemoryStream.Read(B, SizeOf(B));
-    Hex := IntToHex(B, 2);
+    Hex := AnsiString( IntToHex(B, 2));
     Temp := Temp + Hex;
   end;
 
-  if not TryStrToInt('$' + Temp, Result) then
+  if not TryStrToInt('$' + String( Temp), Result) then
     Result := 0;
 
   // Reset for use
@@ -1102,21 +1099,6 @@ begin
 end;
 
 procedure TLccEngineMemorySpaceAccess.Process(SourceMessage: TLccMessage);
-
-
-  function DecodeMemorySpace(ASourceMessage: TLccMessage): Byte;
-  begin
-    // Figure out where the Memory space to work on is located, encoded in the header or in the first databyte slot.
-    case ASourceMessage.DataArray[1] and $03 of
-      MCP_NONE          : Result := SourceMessage.DataArray[6];
-      MCP_CDI           : Result := MSI_CDI;
-      MCP_ALL           : Result := MSI_ALL;
-      MCP_CONFIGURATION : Result := MSI_CONFIG
-    else
-      Result := 0;
-    end;
-  end;
-
 var
   ReplyPending: Boolean;
   ReplyEstimatedTime: extended;    // In Seconds
@@ -1130,6 +1112,13 @@ begin
       case SourceMessage.MTI of
         MTI_DATAGRAM_OK_REPLY :
           begin
+
+
+            // So the spec says a read/write failure will send OK with the pending flag set then a failure code will be sent,
+            // this is important because a Write typically only sends an Datagram OK message...
+
+    //        DOES THIS WORK NOW??????
+
             if WritingChunk then
             begin
                // Clear flag
@@ -1152,15 +1141,7 @@ begin
           end;
         MTI_DATAGRAM_REJECTED_REPLY :
           begin
-            if WritingChunk then
-            begin
-              // Clear Flag
-              WritingChunk := False;
 
-              EngineStateError;
-              ErrorCode := ENGINE_ERROR_MEMORY_SPACE_WRITE_ERROR;
-              CallbackAndNextMemorySpace;
-            end;
           end;
         MTI_PROTOCOL_SUPPORT_REPLY :
           begin
@@ -1178,7 +1159,7 @@ begin
                  MCP_WRITE_REPLY_ALL,
                  MCP_WRITE_REPLY_CDI :
                    begin
-                     DecodedMemorySpace := DecodeMemorySpace(SourceMessage);
+                     DecodedMemorySpace := SourceMessage.DecodeMemorySpace;
                      case DecodedMemorySpace of
                        MSI_ACDI_USER,
                        MSI_CONFIG,
@@ -1200,11 +1181,11 @@ begin
                      end;
 
                  MCP_READ_REPLY,
-                 MCP_READ_REPLY_CONFIGURATION,
+                 MCP_READ_REPLY_CONFIG,
                  MCP_READ_REPLY_ALL,
                  MCP_READ_REPLY_CDI :
                    begin
-                     DecodedMemorySpace := DecodeMemorySpace(SourceMessage);
+                     DecodedMemorySpace := SourceMessage.DecodeMemorySpace;
                      case DecodedMemorySpace of
                        MSI_ALL                      : begin end;
                        MSI_CDI,
@@ -1277,6 +1258,11 @@ begin
     Queue.DisposeOf;
   {$ENDIF}
   inherited Destroy;
+end;
+
+function TDatagramQueue.GetCount: Integer;
+begin
+  Result :=  FQueue.Count;
 end;
 
 function TDatagramQueue.FindBySourceNode(LccMessage: TLccMessage): Integer;
@@ -1368,7 +1354,8 @@ end;
 
 procedure TLccNode.HandleTractionFDI_MemorySpaceWrite(var SourceMessage: TLccMessage);
 begin
-  SendDatagramAckReply(SourceMessage, False, 0);  // Can't write to this memory space
+  // Can't write to this memory space
+  SendDatagramAckReply(SourceMessage, False, 0);
 end;
 
 procedure TLccNode.HandleOptionalInteractionRejected(var SourceMessage: TLccMessage);
@@ -1424,17 +1411,14 @@ end;
 
 procedure TLccNode.HandleOperationGetAddressSpaceInfo(var SourceMessage: TLccMessage);
 begin
-  WorkerMessage.LoadDatagram(NodeID, FAliasID, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias);
   ProtocolMemoryInfo.LoadReply(SourceMessage, WorkerMessage);
-  SendDatagramRequiredReply(SourceMessage, WorkerMessage);
+  QueueAndSendDatagramReplyToWaitForAck(SourceMessage, WorkerMessage); // Source may not have memory to take the data, set it up to resend if needed
 end;
 
 procedure TLccNode.HandleOperationGetConfiguration(var SourceMessage: TLccMessage);
 begin
-  WorkerMessage.LoadDatagram(NodeID, FAliasID, SourceMessage.SourceID,
-  SourceMessage.CAN.SourceAlias);
-  ProtocolMemoryOptions.LoadReply(WorkerMessage);
-  SendDatagramRequiredReply(SourceMessage,WorkerMessage);
+  ProtocolMemoryOptions.LoadReply(WorkerMessage, WorkerMessage);
+  QueueAndSendDatagramReplyToWaitForAck(SourceMessage, WorkerMessage); // Source may not have memory to take the data, set it up to resend if needed
 end;
 
 procedure TLccNode.HandleOperationLock(var SourceMessage: TLccMessage);
@@ -1468,28 +1452,54 @@ begin
 end;
 
 procedure TLccNode.HandleConfiguration_MemorySpaceWrite(var SourceMessage: TLccMessage);
+var
+  Code: Word;
 begin
-  SendDatagramAckReply(SourceMessage, False, 0);     // We will be sending a Write Reply
-  ProtocolMemoryConfiguration.DatagramWriteRequest(SourceMessage, StreamConfig, True);
+  // Note here that for ACDI overlays the ConfigMemory so the ConfigMemory Address
+  // must be offset by 1 as the ACDI has byte 0 = the ACDI version number
+
+  Code := ProtocolMemoryAccess.DatagramWriteRequest(SourceMessage, StreamConfig, True, 1);
+  case Code of
+     S_OK : SendDatagramAckReply(SourceMessage, False, 0);      // All Ok just an Ack
+  else
+    SendMemoryWriteFailure(SourceMessage, Code, '');
+  end;
 end;
 
 procedure TLccNode.HandleACDI_Manufacturer_MemorySpaceWrite(var SourceMessage: TLccMessage);
 begin
-  SendDatagramAckReply(SourceMessage, False, 0);  // Can't write to this memory space
+  // Can't write to this memory space
+  SendMemoryWriteFailure(SourceMessage, ERROR_PERMANENT_NOT_IMPLEMENTED, '');
 end;
 
 procedure TLccNode.HandleConfiguration_MemorySpaceRead(var SourceMessage: TLccMessage);
+var
+  Code: Word;
 begin
-  WorkerMessage.LoadDatagram(NodeID, FAliasID, SourceMessage.SourceID,
-  SourceMessage.CAN.SourceAlias);
-  ProtocolMemoryConfiguration.DatagramReadRequest(SourceMessage, WorkerMessage, StreamConfig, True);
-  SendDatagramRequiredReply(SourceMessage,WorkerMessage);
+  // Note here that for ACDI overlays the ConfigMemory so the ConfigMemory Address
+  // must be offset by 1 as the ACDI has byte 0 = the ACDI version number
+  Code := ProtocolMemoryAccess.DatagramReadRequest(SourceMessage, WorkerMessage, StreamConfig, True, 1);
+  case Code of
+     S_OK : QueueAndSendDatagramReplyToWaitForAck(SourceMessage, WorkerMessage);   // Source may not have memory to take the data, set it up to resend if needed
+  else
+    SendMemoryReadFailure(SourceMessage, Code, '');
+  end;
+
 end;
 
 procedure TLccNode.HandleACDI_UserMemorySpaceWrite(var SourceMessage: TLccMessage);
+var
+  Code: Word;
 begin
-  SendDatagramAckReply(SourceMessage, False, 0);     // We will be sending a Write Reply
-  ProtocolACDIUser.DatagramWriteRequest(SourceMessage, StreamConfig, True);
+  // Note here that for ACDI overlays the ConfigMemory so the ConfigMemory Address
+  // must be offset by 1 as the ACDI has byte 0 = the ACDI version number
+
+  Code := ProtocolMemoryAccess.DatagramWriteRequest(SourceMessage, StreamConfig, True);
+  case Code of
+     S_OK : SendDatagramAckReply(SourceMessage, False, 0);     // All OK send an Ack
+  else
+    SendMemoryWriteFailure(SourceMessage, Code, '');
+  end;
 end;
 
 procedure TLccNode.HandleStreamRead;
@@ -1503,42 +1513,58 @@ begin
 end;
 
 procedure TLccNode.HandleACDI_User_MemorySpaceRead(var SourceMessage: TLccMessage);
+var
+  Code: Word;
 begin
-  WorkerMessage.LoadDatagram(NodeID, FAliasID, SourceMessage.SourceID,
-  SourceMessage.CAN.SourceAlias);
-  ProtocolACDIUser.DatagramReadRequest(SourceMessage, WorkerMessage, StreamConfig, True);
-  SendDatagramRequiredReply(SourceMessage,WorkerMessage);
+  // Note here that for ACDI overlays the ConfigMemory so the ConfigMemory Address
+  // must be offset by 1 as the ACDI has byte 0 = the ACDI version number
+  Code := ProtocolMemoryAccess.DatagramReadRequest(SourceMessage, WorkerMessage, StreamConfig, True);
+  case Code of
+     S_OK : QueueAndSendDatagramReplyToWaitForAck(SourceMessage, WorkerMessage);   // Source may not have memory to take the data, set it up to resend if needed
+  else
+    SendMemoryReadFailure(SourceMessage, Code, '');
+  end;
 end;
 
-procedure TLccNode.HandleACDI_Manufacturer_MemorySpaceRead(
-  var SourceMessage: TLccMessage);
+procedure TLccNode.HandleACDI_Manufacturer_MemorySpaceRead(var SourceMessage: TLccMessage);
+var
+  Code: Word;
 begin
-  WorkerMessage.LoadDatagram(NodeID, FAliasID, SourceMessage.SourceID,
-  SourceMessage.CAN.SourceAlias);
-  ProtocolACDIMfg.DatagramReadRequest(SourceMessage, WorkerMessage, StreamManufacturerData, False);
-  SendDatagramRequiredReply(SourceMessage, WorkerMessage);
+  Code := ProtocolMemoryAccess.DatagramReadRequest(SourceMessage, WorkerMessage, StreamManufacturerData, True);
+  case Code of
+     S_OK : QueueAndSendDatagramReplyToWaitForAck(SourceMessage, WorkerMessage);   // Source may not have memory to take the data, set it up to resend if needed
+  else
+    SendMemoryReadFailure(SourceMessage, Code, '');
+  end;
 end;
 
 procedure TLccNode.HandleAll_MemorySpaceRead(var SourceMessage: TLccMessage);
 begin
-  SendDatagramAckReply(SourceMessage, False, 0);
+  SendMemoryReadFailure(SourceMessage, ERROR_PERMANENT_NOT_IMPLEMENTED, '');
 end;
 
 procedure TLccNode.HandleCDI_MemorySpaceRead(var SourceMessage: TLccMessage);
+var
+  Code: Word;
 begin
-  WorkerMessage.LoadDatagram(NodeID, FAliasID, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias);
-  ProtocolMemoryConfigurationDefinitionInfo.DatagramReadRequest(SourceMessage, WorkerMessage, StreamCdi, False);
-  SendDatagramRequiredReply(SourceMessage, WorkerMessage);
+  Code := ProtocolMemoryAccess.DatagramReadRequest(SourceMessage, WorkerMessage, StreamCdi, True);
+  case Code of
+     S_OK : QueueAndSendDatagramReplyToWaitForAck(SourceMessage, WorkerMessage);   // Source may not have memory to take the data, set it up to resend if needed
+  else
+    SendMemoryReadFailure(SourceMessage, Code, '');
+  end;
 end;
 
 procedure TLccNode.HandleCDI_MemorySpaceWrite(var SourceMessage: TLccMessage);
 begin
-  SendDatagramAckReply(SourceMessage, False, 0);  // Can't write to this memory space
+  // Can't write to this memory space
+  SendMemoryWriteFailure(SourceMessage, ERROR_PERMANENT_NOT_IMPLEMENTED, '');
 end;
 
 procedure TLccNode.HandleAll_MemorySpaceWrite(var SourceMessage: TLccMessage);
 begin
-  SendDatagramAckReply(SourceMessage, False, 0);  // Can't write to this memory space
+  // Can't write to this memory space
+  SendMemoryWriteFailure(SourceMessage, ERROR_PERMANENT_NOT_IMPLEMENTED, '');
 end;
 
 procedure TLccNode.HandleConsumerIdentifiedSet(var SourceMessage: TLccMessage);
@@ -1582,24 +1608,55 @@ begin
 end;
 
 procedure TLccNode.HandleTractionFDI_ConfigurationMemorySpaceRead(var SourceMessage: TLccMessage);
+var
+  Code: Word;
 begin
-  WorkerMessage.LoadDatagram(NodeID, FAliasID, SourceMessage.SourceID,
-  SourceMessage.CAN.SourceAlias);
-  ProtocolMemoryConfiguration.DatagramReadRequest(SourceMessage, WorkerMessage, StreamTractionConfig, True);
-  SendDatagramRequiredReply(SourceMessage, WorkerMessage);
+  Code := ProtocolMemoryAccess.DatagramReadRequest(SourceMessage, WorkerMessage, StreamTractionConfig, True);
+  case Code of
+     S_OK : QueueAndSendDatagramReplyToWaitForAck(SourceMessage, WorkerMessage);   // Source may not have memory to take the data, set it up to resend if needed
+  else
+    SendMemoryReadFailure(SourceMessage, Code, '');
+  end;
+end;
+
+procedure TLccNode.SendMemoryReadFailure(var MemoryReadRequestMessage: TLccMessage; ErrorCode: Word; ErrorString: String);
+begin
+  // No reason to Queue this to wait for the reply Ack as the receiving node has not reason to reject it
+  SendDatagramAckReply(MemoryReadRequestMessage, True, 0);   // Per the Spec set pending true as we are sending the Failure Reply
+  WorkerMessage.LoadConfigMemReadReplyError(NodeID, AliasID, MemoryReadRequestMessage.SourceID, MemoryReadRequestMessage.CAN.SourceAlias, MemoryReadRequestMessage.DecodeMemorySpace, MemoryReadRequestMessage.ExtractDataBytesAsInt(2, 5), ErrorCode, ErrorString);
+  SendMessageFunc(Self, WorkerMessage);
 end;
 
 procedure TLccNode.HandleTractionFDI_MemorySpaceRead(var SourceMessage: TLccMessage);
+var
+  Code: Word;
 begin
-  WorkerMessage.LoadDatagram(NodeID, FAliasID, SourceMessage.SourceID,SourceMessage.CAN.SourceAlias);
-  ProtocolMemoryConfigurationDefinitionInfo.DatagramReadRequest(SourceMessage, WorkerMessage, StreamTractionFdi, False);
-  SendDatagramRequiredReply(SourceMessage, WorkerMessage);
+  Code := ProtocolMemoryAccess.DatagramReadRequest(SourceMessage, WorkerMessage, StreamTractionFdi, True);
+  case Code of
+     S_OK : QueueAndSendDatagramReplyToWaitForAck(SourceMessage, WorkerMessage);   // Source may not have memory to take the data, set it up to resend if needed
+  else
+    SendMemoryReadFailure(SourceMessage, Code, '');
+  end;
 end;
 
 procedure TLccNode.HandleTractionFDI_ConfigurationMemorySpaceWrite(var SourceMessage: TLccMessage);
+var
+  Code: Word;
 begin
-  SendDatagramAckReply(SourceMessage, False, 0);     // We will be sending a Write Reply
-  ProtocolMemoryConfiguration.DatagramWriteRequest(SourceMessage, StreamTractionConfig, True);
+  Code := ProtocolMemoryAccess.DatagramWriteRequest(SourceMessage, StreamTractionConfig, True);
+  case Code of
+     S_OK : SendDatagramAckReply(SourceMessage, False, 0);     // All OK send an Ack
+  else
+    SendMemoryWriteFailure(SourceMessage, Code, '');
+  end;
+end;
+
+procedure TLccNode.SendMemoryWriteFailure(var MemoryWriteRequestMessage: TLccMessage; ErrorCode: Word; ErrorString: String);
+begin
+  // No reason to Queue this to wait for the reply Ack as the receiving node has not reason to reject it
+  SendDatagramAckReply(MemoryWriteRequestMessage, True, 0);   // Per the Spec set pending true as we are sending the Failure Reply
+  WorkerMessage.LoadConfigMemWriteReplyError(NodeID, AliasID, MemoryWriteRequestMessage.SourceID, MemoryWriteRequestMessage.CAN.SourceAlias, MemoryWriteRequestMessage.DecodeMemorySpace, MemoryWriteRequestMessage.ExtractDataBytesAsInt(2, 5), ErrorCode, ErrorString);
+  SendMessageFunc(Self, WorkerMessage);
 end;
 
 procedure TLccNode.HandleVerifiedNodeIDNumber(var SourceMessage: TLccMessage);
@@ -1750,15 +1807,12 @@ begin
   inherited Create;
   FProtocolSupportedProtocols := TProtocolSupportedProtocols.Create;
   FProtocolSimpleNodeInfo := TProtocolSimpleNodeInfo.Create;
-  FProtocolMemoryConfigurationDefinitionInfo := TProtocolMemoryConfigurationDefinitionInfo.Create;
   FProtocolMemoryOptions := TProtocolMemoryOptions.Create;
-  FProtocolMemoryConfiguration := TProtocolMemoryConfiguration.Create;
+  FProtocolMemoryAccess := TProtocolMemoryAccess.Create;
   FProtocolMemoryInfo := TProtocolMemoryInfo.Create;
   FProtocolEventConsumed := TProtocolEvents.Create;
   FProtocolEventsProduced := TProtocolEvents.Create;
 
-  FProtocolACDIMfg := TProtocolACDIMfg.Create;
-  FProtocolACDIUser := TProtocolACDIUser.Create;
   FStreamCdi := TMemoryStream.Create;
   FStreamConfig := TMemoryStream.Create;
   FStreamManufacturerData := TMemoryStream.Create;
@@ -1766,7 +1820,7 @@ begin
   FStreamTractionFdi := TMemoryStream.Create;
 
   FDatagramResendQueue := TDatagramQueue.Create;
-  FWorkerMessageDatagram := TLccMessage.Create;
+  FWorkerMessageForAckMessages := TLccMessage.Create;
   FWorkerMessage := TLccMessage.Create;
   FNodeManager := ANodeManager;
   FGridConnect := GridConnectLink;
@@ -1794,6 +1848,8 @@ begin
   LoadManufacturerDataStream(CdiXML);
 
   // Setup the Configuration Memory Stream this is good for a single node...
+  // Note here that for ACDI overlays the ConfigMemory so the ConfigMemory Address
+  // must be offset by 1 as the ACDI has byte 0 = the ACDI version number
   StreamConfig.Size := LEN_USER_MANUFACTURER_INFO;
   StreamConfig.Position := 0;
   StreamWriteByte(StreamConfig, USER_MFG_INFO_VERSION_ID);
@@ -2372,11 +2428,9 @@ begin
   FreeAndNil(FProtocolEventsProduced);
   FreeAndNil(FProtocolMemoryOptions);
   FreeAndNil(FProtocolMemoryInfo);
-  FreeAndNil(FProtocolACDIMfg);
-  FreeAndNil(FProtocolACDIUser);
-  FreeAndNil(FProtocolMemoryConfigurationDefinitionInfo);
+  FreeAndNil(FProtocolMemoryAccess);
   FreeAndNil(FDatagramResendQueue);
-  FreeAndNil(FWorkerMessageDatagram);
+  FreeAndNil(FWorkerMessageForAckMessages);
   FreeAndNil(FWorkerMessage);
   FreeAndNil(FStreamCdi);
   FreeAndNil(FStreamConfig);
@@ -2385,7 +2439,6 @@ begin
   FreeAndNil(FStreamTractionFdi);
   FreeAndNil(FEnginesRegisteredList);
   FreeAndNil(FEngineMemorySpaceAccess);
-  FProtocolMemoryConfiguration.Free;
   inherited;
 end;
 
@@ -2543,10 +2596,8 @@ end;
 procedure TLccNode.SendDatagramAckReply(SourceMessage: TLccMessage; ReplyPending: Boolean; TimeOutValueN: Byte);
 begin
   // Only Ack if we accept the datagram
-  WorkerMessageDatagram.LoadDatagramAck(NodeID, FAliasID,
-                                        SourceMessage.SourceID, SourceMessage.CAN.SourceAlias,
-                                        True, ReplyPending, TimeOutValueN);
-  SendMessageFunc(Self, WorkerMessageDatagram);
+  WorkerMessageForAckMessages.LoadDatagramAck(NodeID, FAliasID, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias, True, ReplyPending, TimeOutValueN);
+  SendMessageFunc(Self, FWorkerMessageForAckMessages);
 end;
 
 procedure TLccNode.SendConsumedEvents;
@@ -2578,20 +2629,18 @@ end;
 
 procedure TLccNode.SendDatagramRejectedReply(SourceMessage: TLccMessage; Reason: Word);
 begin
-  WorkerMessageDatagram.LoadDatagramRejected(NodeID, FAliasID,
-                                             SourceMessage.SourceID, SourceMessage.CAN.SourceAlias,
-                                             Reason);
-  SendMessageFunc(Self, WorkerMessageDatagram);
+  WorkerMessageForAckMessages.LoadDatagramRejected(NodeID, FAliasID, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias, Reason);
+  SendMessageFunc(Self, WorkerMessageForAckMessages);
 end;
 
-procedure TLccNode.SendDatagramRequiredReply(SourceMessage, ReplyLccMessage: TLccMessage);
+procedure TLccNode.QueueAndSendDatagramReplyToWaitForAck(DatagramRequest, DatagramReply: TLccMessage);
 begin
-  if DatagramResendQueue.Add(ReplyLccMessage.Clone) then     // Waiting for an ACK
+  if DatagramResendQueue.Add(DatagramReply.Clone) then     // Message that is waiting for an ACK for possible resend
   begin
-    SendDatagramAckReply(SourceMessage, False, 0);   // We will be sending a Read Reply
-    SendMessageFunc(Self, ReplyLccMessage);
+    SendDatagramAckReply(DatagramRequest, False, 0);       // Ack the Request
+    SendMessageFunc(Self, DatagramReply);                  // Now send our reply
   end else
-    SendDatagramRejectedReply(SourceMessage, ERROR_TEMPORARY_BUFFER_UNAVAILABLE)
+    SendDatagramRejectedReply(DatagramRequest, ERROR_TEMPORARY_BUFFER_UNAVAILABLE)   // We have problems so ask the node to resend if it wants
 end;
 
 procedure TLccNode.SendEvents;

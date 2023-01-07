@@ -352,7 +352,7 @@ const
 
   MCP_READ_STREAM                     = $60;
   MCP_READ_REPLY                      = $50;                                    // MemoryConfigurationProtocol - Read Reply Mask [Does not include the Address Space Mask "or" it with the the Address space masks below]
-  MCP_READ_REPLY_CONFIGURATION        = $51;
+  MCP_READ_REPLY_CONFIG               = $51;
   MCP_READ_REPLY_ALL                  = $52;
   MCP_READ_REPLY_CDI                  = $53;
   MCP_READ_REPLY_FAILURE              = $58;

@@ -1207,11 +1207,8 @@ procedure TLccCdiParser.DoButtonWritePageClick(Sender: TObject);
                            EngineMemorySpaceObject := EngineMemorySpaceAccess.Assign(lems_Write, MSI_CONFIG, False, Info.MemoryAddressPointer, Info.MemoryAddressPointerHi, True, TargetNodeIdentification.NodeID, TargetNodeIdentification.Alias, {$IFNDEF DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessCallback, {$IFNDEF DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessProgressCallback);
                            EngineMemorySpaceObject.WriteEventID := AnEventID;
                          end;
-                       end else
-                         beep;
-
-     //   cdt_Bit      : begin end
-
+                       end;
+        cdt_Bit      : begin end
       end;
     end;
   end;
