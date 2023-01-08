@@ -349,19 +349,25 @@ begin
           begin
             LocalMessage := TLccMessage( LocalMessageList[i]);
 
-            // Pick out the Verify Message and AMR/AMD to update the AliasMapping Database
-            UpdateGlobalMappings(LocalMessage);
+            if EqualNodeID(LocalMessage.SourceID, NULL_NODE_ID, True) and (LocalMessage.CAN.SourceAlias = 0) then    // Malformed Message with no SourceID
+              LocalMessage.Free
+            else begin
+              // Pick out the Verify Message and AMR/AMD to update the AliasMapping Database
+              UpdateGlobalMappings(LocalMessage);
 
-            // Pull the message apart and find all the Nodes it requires then test them againt the AliasMapping Database.
-            // If they are not there then push the Alias or NodeID (from a message payload) into the Alias Mapping Request list to Send that node a message
-            // to Verify it
-            if LocalMessage.ExtractNodeIdentificationToCallback({$IFNDEF DELPHI}@{$ENDIF}NodeIdentificationToCallbackProc, True, True) then
-              LocalValidatedMessageList.Add(LocalMessageList[i])
-            else
-              LocalUnValidatedMessageList.Add(LocalMessageList[i]);
+              // Pull the message apart and find all the Nodes it requires then test them againt the AliasMapping Database.
+              // If they are not there then push the Alias or NodeID (from a message payload) into the Alias Mapping Request list to Send that node a message
+              // to Verify it
+              if LocalMessage.ExtractNodeIdentificationToCallback({$IFNDEF DELPHI}@{$ENDIF}NodeIdentificationToCallbackProc, True, True) then
+                LocalValidatedMessageList.Add(LocalMessageList[i])
+              else begin
+                LocalMessage.AbandonCount := 0;
+                LocalUnValidatedMessageList.Add(LocalMessage);
+              end;
+            end;
           end else
           begin  // Raw TCP we move them all
-            LocalValidatedMessageList.Add(LocalMessageList[i]);
+            LocalValidatedMessageList.Add(LocalMessage);
           end;
         end;
       finally
@@ -394,8 +400,6 @@ begin
       // ***********************************************************************
 
       // See if any UnValidated Messages have been validated and the Mappings now exist
-      // TODO:  THESE NEED TO BE COUNTED AND DECIDED WHAT TO DO IF THEY DON'T GET A REPLY FROM THE
-      //        VERIFY ID CALL.  TRY SENDING VERIFY ID A FEW MORE TIMES THEN THROW IT AWAY?
       // ***********************************************************************
       if not Terminated then
       begin
@@ -408,7 +412,15 @@ begin
             begin
               LocalValidatedMessageList.Add(LocalMessage);
               LocalUnValidatedMessageList[i] := nil;
+            end else
+            begin    // Give it 5 seconds or throw it out
+              if (LocalMessage.AbandonCount * TIMEOUT_RECIEVE_THREAD) > 5000 then
+              begin
+                LocalMessage.Free;
+                LocalUnValidatedMessageList[i] := nil;
+              end;
             end;
+            LocalMessage.AbandonCount := LocalMessage.AbandonCount + 1;
          end;
 
           // Now go through and delete the slots that are empty

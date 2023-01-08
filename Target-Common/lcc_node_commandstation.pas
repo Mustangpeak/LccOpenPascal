@@ -85,12 +85,15 @@ uses
 
 function TLccCommandStationNode.AddTrain(ADccAddress: Word; ALongAddress: Boolean; ASpeedStep: TLccDccSpeedStep): TLccTrainDccNode;
 begin
-  Result := (NodeManager as TLccNodeManager).AddNodeByClass('', TLccTrainDccNode, False, NULL_NODE_ID) as TLccTrainDccNode;
-  if Assigned(Result) then
+  if Assigned(NodeManager) then
   begin
-    Result.DccAddress := ADccAddress;
-    Result.DccLongAddress := ALongAddress;
-    Result.DccSpeedStep := ASpeedStep;
+  Result := (NodeManager as TLccNodeManager).AddNodeByClass('', TLccTrainDccNode, False, NULL_NODE_ID) as TLccTrainDccNode;
+    if Assigned(Result) then
+    begin
+      Result.DccAddress := ADccAddress;
+      Result.DccLongAddress := ALongAddress;
+      Result.DccSpeedStep := ASpeedStep;
+    end;
   end;
 end;
 

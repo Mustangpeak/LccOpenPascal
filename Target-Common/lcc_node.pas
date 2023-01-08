@@ -111,7 +111,7 @@ type
   end;
 
 
-  TOnEngineMemorySpaceAccessCallback = procedure(EngineMemorySpaceAccess: TLccEngineMemorySpaceAccess) of object;
+  TOnEngineMemorySpaceAccessCallback = procedure(AnEngineMemorySpaceAccess: TLccEngineMemorySpaceAccess) of object;
 
   TLccEngineState = (lesIdle, lesRunning, lesStopped, lesComplete, lesError);
 
@@ -2321,6 +2321,7 @@ var
   MappingList: TList;
   i: Integer;
 begin
+  // First look in the valid mappings and see if any are ready to be deleted or need an event fired
   MappingList := AliasServer.MappingList.LockList;
   try
     for i := MappingList.Count - 1 downto 0 do
@@ -2343,35 +2344,27 @@ begin
     AliasServer.MappingList.UnlockList;
   end;
 
+  // Now work on the Mapping Requests, if this is the first time we looked at it then
+  // make a copy of it into the WorkerList to have a Verify Node message sent
+
   MappingList := AliasServer.MappingRequestList.LockList;
   try
     for i := 0 to MappingList.Count - 1 do
     begin
       LocalNodeIdentificationObject := TLccNodeIdentificationObject( MappingList[i]);
-
       if LocalNodeIdentificationObject.AbandonCount = 0 then
         AliasServer.WorkerMappingRequestList.Add(LocalNodeIdentificationObject.Clone)
-      else begin
-        if LocalNodeIdentificationObject.AbandonCount > 20 then
-        begin
-          {$IFDEF LOG_MAPPING}DebugLn('Mapping Request Deleted: 0x' + IntToHex(LocalNodeIdentificationObject.Alias, 4) + '; ' + NodeIDToString(LocalNodeIdentificationObject.NodeID, True));{$ENDIF}
-          FreeAndNil(LocalNodeIdentificationObject);
-          MappingList[i] := nil;
-        end;
-      end;
-      if Assigned(LocalNodeIdentificationObject) then
-        LocalNodeIdentificationObject.AbandonCount := LocalNodeIdentificationObject.AbandonCount + 1;
     end;
-
-    for i := MappingList.Count - 1 downto 0 do
-      if MappingList[i] = nil then
-        MappingList.Delete(i);
   finally
     AliasServer.MappingRequestList.UnlockList;
   end;
 
+  // If the Request has been in the list too long then toss it out
+  AliasServer.MappingRequestLiveTimeIncreaseAndDeleteAbandoned(20);
 
-  // do this outside of the MappingRequestList lock
+
+  // Do this outside of the MappingRequestList lock, these are the partial mappings that need
+  // messages sent to complete the mapping then they are all released for this runthrough
   try
     for i := 0 to AliasServer.WorkerMappingRequestList.Count - 1 do
     begin

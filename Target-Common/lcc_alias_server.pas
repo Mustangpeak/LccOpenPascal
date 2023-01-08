@@ -51,8 +51,8 @@ type
   TLccAliasServer = class(TObject)
 
   private
-    FMappingList: TThreadList;
-    FMappingRequestList: TThreadList;
+    FMappingList: TThreadList;          // Valid Mappings
+    FMappingRequestList: TThreadList;   // Mappings that have only one ID and waiting for a message to come in to fill them out and move them to the MappingList
     FWorkerMappingRequestList: TList;
 
   public
@@ -74,7 +74,7 @@ type
     function AddMapping(ANodeID: TNodeID; AnAlias: Word): TLccAliasMapping;
     procedure AddMappingRequest(ANodeID: TNodeID; AnAlias: Word);
     function MarkForRemovalByAlias(AnAlias: Word): TLccAliasMapping;
-    procedure MappingRequestLiveTimeIncrease(MaxAbandonTimeCount: Word);
+    procedure MappingRequestLiveTimeIncreaseAndDeleteAbandoned(MaxAbandonTimeCount: Word);
   end;
 
 var
@@ -266,6 +266,7 @@ var
   List: TList;
   Duplicate: Boolean;
 begin
+  // Someone is asking for a Mapping Request, first we see if it is a duplicate
   Duplicate := False;
   List := MappingRequestList.LockList;
   try
@@ -282,6 +283,7 @@ begin
     MappingRequestList.UnlockList;
   end;
 
+  // Nope not a duplicate (as of before we unlocked the list) so create a new request object and add it to the list (that call is thread safe)
   if not Duplicate then
   begin
     LocalObj := TLccNodeIdentificationObject.Create;
@@ -306,32 +308,26 @@ begin
   end;
 end;
 
-procedure TLccAliasServer.MappingRequestLiveTimeIncrease(MaxAbandonTimeCount: Word);
+procedure TLccAliasServer.MappingRequestLiveTimeIncreaseAndDeleteAbandoned(MaxAbandonTimeCount: Word);
 var
-  LocalObj: TLccNodeIdentificationObject;
+  LocalNodeIdentificationObject: TLccNodeIdentificationObject;
   i: Integer;
   List: TList;
 begin
   List := MappingRequestList.LockList;
   try
-    for i := 0 to List.Count - 1 do
-    begin
-      LocalObj := TLccNodeIdentificationObject( List[i]);
-      LocalObj.AbandonCount := LocalObj.AbandonCount + 1;
-
-      if LocalObj.AbandonCount > MaxAbandonTimeCount then
-      begin
-        LocalObj.Free;
-        List[i] := nil;
-      end;
-    end;
-
     for i := List.Count - 1 downto 0 do
     begin
-      if List[i] = nil then
-        List.Delete(i);
-    end;
+      LocalNodeIdentificationObject := TLccNodeIdentificationObject( List[i]);
+      LocalNodeIdentificationObject.AbandonCount := LocalNodeIdentificationObject.AbandonCount + 1;
 
+      if LocalNodeIdentificationObject.AbandonCount > MaxAbandonTimeCount then
+      begin
+        {$IFDEF LOG_MAPPING}DebugLn('Mapping Request Deleted: 0x' + IntToHex(LocalNodeIdentificationObject.Alias, 4) + '; ' + NodeIDToString(LocalNodeIdentificationObject.NodeID, True));{$ENDIF}
+        LocalNodeIdentificationObject.Free;
+        List.Delete(i);
+      end;
+    end;
   finally
     MappingRequestList.UnlockList;
   end;

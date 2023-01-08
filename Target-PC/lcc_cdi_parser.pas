@@ -103,6 +103,9 @@ type
   TParserNotificationEvent = procedure(Sender: TObject; Notify: TParserSerializer) of object;
   TLccCdiParser = class;
 
+  TLccIntegerAttributes = (lia_Default, lia_Min, lia_Max);
+  TLccIntegerAttributesSet = set of TLccIntegerAttributes;
+
   // Holds the Property/Value pairs for a Map type Configuration
   { TMapRelation }
 
@@ -155,12 +158,14 @@ type
   end;
 
   // Contains information that defines what the configuration info for an element
+
   { TDataElementInformation }
 
   TDataElementInformation = class
   private
     FCompareMemorySpaceButton: TLccOpenPascalSpeedButton;
     FConfigData: TDataElementConfig;                             // What is the Datatype associated with this Memory Configuration location
+    FIntAttributesValid: TLccIntegerAttributesSet;
     FIntDefault: Int64;                                          // If an Integer Type the default value
     FIntMax: Int64;                                              // If an Integer Type the Max value
     FIntMin: Int64;                                              // If an Integer Type the Min value
@@ -176,12 +181,11 @@ type
     procedure SetMemState(AValue: TConfigMemState);
     function GetMemoryAddressPointerHi: Int64;
   public
-    constructor Create(ADataType: TLccConfigDataType);
-    destructor Destroy; override;
     property ConfigData: TDataElementConfig read FConfigData write FConfigData;
     property IntMin: Int64 read FIntMin write FIntMin;
     property IntMax: Int64 read FIntMax write FIntMax;
     property IntDefault: Int64 read FIntDefault write FIntDefault;
+    property IntAttributesValid: TLccIntegerAttributesSet read FIntAttributesValid write FIntAttributesValid;
     property MemoryAddressPointer: Int64 read FMemoryAddressPointer write FMemoryAddressPointer;
     property MemoryAddressPointerHi: Int64 read GetMemoryAddressPointerHi;
     property MemoryAllocation: DWord read FMemoryAllocation write FMemoryAllocation;
@@ -193,6 +197,14 @@ type
     property WriteMemorySpaceButton: TLccOpenPascalSpeedButton read FWriteMemorySpaceButton write FWriteMemorySpaceButton;
     property CompareMemorySpaceButton: TLccOpenPascalSpeedButton read FCompareMemorySpaceButton write FCompareMemorySpaceButton;
     property EditControl: TObject read FEditControl write FEditControl;
+
+    constructor Create(ADataType: TLccConfigDataType);
+    destructor Destroy; override;
+    function FindMapIndexForProperty(Value: Integer): Integer; overload;
+    function FindMapIndexForProperty(Value: LccDOMString): Integer; overload;
+    function FindMapIndexForProperty(Value: TEventID): Integer; overload;
+    function FindMapPropertyForValue(Value: LccDOMString): LccDOMString;        // find the "Key" that is assocated with the passsed Value
+    function FindMapPropertyForIndex(Value: Integer): LccDOMString;             // find the "Key" to the mapping by the index of the list
   end;
 
   { TLccOpenPascalSpinEdit }
@@ -326,9 +338,9 @@ type
     // Lowest level process that does not create UI elements directly
     procedure ProcessElementForUIMap(Element: TLccXmlNode; var MemoryAddressPointer: Int64; DataElementInformation: TDataElementInformation);
 
-    function ExtractStringFromElementUI(DataElementInformation: TDataElementInformation; var AString: string): Boolean;
-    function ExtractIntFromElementUI(DataElementInformation: TDataElementInformation; var AnInteger: Integer): Boolean;
-    function ExtractEventIDFromElementUI(DataElementInformation: TDataElementInformation; var AnEventID: TEventID): Boolean;
+    function ExtractStringFromElementUIToStoreInConfigMem(DataElementInformation: TDataElementInformation; var AString: string): Boolean;
+    function ExtractIntFromElementUIToStoreInConfigMem(DataElementInformation: TDataElementInformation; var AnInteger: Integer): Boolean;
+    function ExtractEventIDFromElementUIToStoreInConfigMem(DataElementInformation: TDataElementInformation; var AnEventID: TEventID): Boolean;
 
     // Read Button presse handlers
     procedure OnButtonCompareClick(Sender: TObject); virtual;
@@ -341,8 +353,8 @@ type
 
     procedure UpdateToolbarLabel(Info: string);
     procedure UpdateApplicationProgressCallback(Info: string);
-    procedure OnEngineMemorySpaceAccessCallback(AEngineMemorySpaceAccess: TLccEngineMemorySpaceAccess);
-    procedure OnEngineMemorySpaceAccessProgressCallback(AEngineMemorySpaceAccess: TLccEngineMemorySpaceAccess);
+    procedure OnEngineMemorySpaceAccessCallback(AnEngineMemorySpaceAccess: TLccEngineMemorySpaceAccess);
+    procedure OnEngineMemorySpaceAccessProgressCallback(AnEngineMemorySpaceAccess: TLccEngineMemorySpaceAccess);
 
     // Control Event Handler
     procedure OnPageControlChange(Sender: TObject);
@@ -770,12 +782,17 @@ begin
   SpinEdit.Align := {$IFDEF DELPHI}TAlignLayout.Client{$ELSE}alClient{$ENDIF};
   {$IFDEF DELPHI}SpinEdit.Margins.Left := Indent;{$ELSE}SpinEdit.BorderSpacing.Left := Trunc(Indent);{$ENDIF}
   {$IFDEF DELPHI}SpinEdit.Margins.Right := COMMON_MARGIN;{$ELSE}SpinEdit.BorderSpacing.Right := COMMON_MARGIN;{$ENDIF}
+
   // Put a link to the editor to the buttons associated with it
   DataElementInformation.ReadMemorySpaceButton.EditObject := SpinEdit;
   DataElementInformation.WriteMemorySpaceButton.EditObject := SpinEdit;
   DataElementInformation.CompareMemorySpaceButton.EditObject := SpinEdit;
   DataElementInformation.EditControl := SpinEdit;
- // SpinEdit.MaxValue := Info.in;
+
+  if lia_Default in DataElementInformation.IntAttributesValid then
+    SpinEdit.Text := IntToStr(DataElementInformation.IntDefault)
+  else
+    SpinEdit.Text := ''
 
 end;
 
@@ -792,11 +809,14 @@ begin
   EditBox.Align := {$IFDEF DELPHI}TAlignLayout.Client{$ELSE}alClient{$ENDIF};
   {$IFDEF DELPHI}EditBox.Margins.Left := Indent;{$ELSE}EditBox.BorderSpacing.Left := Trunc(Indent);{$ENDIF}
   {$IFDEF DELPHI}EditBox.Margins.Right := COMMON_MARGIN;{$ELSE}EditBox.BorderSpacing.Right := COMMON_MARGIN;{$ENDIF}
+
     // Put a link to the editor to the buttons associated with it
   DataElementInformation.ReadMemorySpaceButton.EditObject := EditBox;
   DataElementInformation.WriteMemorySpaceButton.EditObject := EditBox;
   DataElementInformation.CompareMemorySpaceButton.EditObject := EditBox;
   DataElementInformation.EditControl := EditBox;
+
+  EditBox.Text := '[unknown]';
 end;
 
 procedure TLccCdiParser.CreateComboBoxListLayout(ParentControl: TLccPanel;
@@ -818,11 +838,19 @@ begin
     ComboBox.Items.Add(string( TMapRelation(DataElementInformation.MapList.Relations[i]).Value));
   ComboBox.ItemIndex := 0;
   ComboBox.DataElementInformation := DataElementInformation;
+
   // Put a link to the editor to the buttons associated with it
   DataElementInformation.ReadMemorySpaceButton.EditObject := ComboBox;
   DataElementInformation.WriteMemorySpaceButton.EditObject := ComboBox;
   DataElementInformation.CompareMemorySpaceButton.EditObject := ComboBox;
   DataElementInformation.EditControl := ComboBox;
+
+  if lia_Default in DataElementInformation.IntAttributesValid then
+  begin
+    ComboBox.ItemIndex := DataElementInformation.FindMapIndexForProperty( DataElementInformation.IntDefault);
+  end
+  else
+    ComboBox.ItemIndex := -1;
 end;
 
 procedure TLccCdiParser.DoAfterReadPage(Sender: TObject);
@@ -998,7 +1026,7 @@ begin
     case Info.DataType of
       cdt_String   : begin
                        AString := '';
-                       if ExtractStringFromElementUI(Info, AString) then
+                       if ExtractStringFromElementUIToStoreInConfigMem(Info, AString) then
                        begin
                          // Need to queue up the data we want to write to the memory space
                          EngineMemorySpaceObject := EngineMemorySpaceAccess.Assign(lems_Write, MSI_CONFIG, True, Info.MemoryAddressPointer, Info.MemoryAddressPointerHi, True, TargetNodeIdentification.NodeID, TargetNodeIdentification.Alias, {$IFNDEF DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessCallback, {$IFNDEF DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessProgressCallback);
@@ -1007,7 +1035,7 @@ begin
                      end;
       cdt_Int      : begin
                        AnInteger := 0;
-                       if ExtractIntFromElementUI(Info, AnInteger) then
+                       if ExtractIntFromElementUIToStoreInConfigMem(Info, AnInteger) then
                        begin
                          // Need to queue up the data we want to write to the memory space
                          EngineMemorySpaceObject := EngineMemorySpaceAccess.Assign(lems_Write, MSI_CONFIG, False, Info.MemoryAddressPointer, Info.MemoryAddressPointerHi, True, TargetNodeIdentification.NodeID, TargetNodeIdentification.Alias, {$IFNDEF DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessCallback, {$IFNDEF DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessProgressCallback);
@@ -1016,7 +1044,7 @@ begin
                      end;
       cdt_EventID  : begin
                        AnEventID := NULL_EVENT_ID;
-                       if ExtractEventIDFromElementUI(Info, AnEventID) then
+                       if ExtractEventIDFromElementUIToStoreInConfigMem(Info, AnEventID) then
                        begin
                          // Need to queue up the data we want to write to the memory space
                          EngineMemorySpaceObject := EngineMemorySpaceAccess.Assign(lems_Write, MSI_CONFIG, False, Info.MemoryAddressPointer, Info.MemoryAddressPointerHi, True, TargetNodeIdentification.NodeID, TargetNodeIdentification.Alias, {$IFNDEF DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessCallback, {$IFNDEF DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessProgressCallback);
@@ -1100,16 +1128,57 @@ begin
     ProgressCallback(Self, Info);
 end;
 
-procedure TLccCdiParser.OnEngineMemorySpaceAccessCallback(AEngineMemorySpaceAccess: TLccEngineMemorySpaceAccess);
+procedure TLccCdiParser.OnEngineMemorySpaceAccessCallback(AnEngineMemorySpaceAccess: TLccEngineMemorySpaceAccess);
 var
   Edit: TLccOpenPascalEdit;
   SpinEdit: TLccOpenPascalSpinEdit;
   ComboBox: TLccOpenPascalComboBox;
   Control: TObject;
 begin
-  if AEngineMemorySpaceAccess.ReadWrite = lems_Read then
+  if AnEngineMemorySpaceAccess.ReadWrite = lems_Read then
   begin // Read completed
-    Control := FindControlByMemoryAddressPointer(AEngineMemorySpaceAccess.AddressLo);
+    Control := FindControlByMemoryAddressPointer(AnEngineMemorySpaceAccess.AddressLo);
+    if Control is TLccOpenPascalEdit then
+    begin
+      Edit := Control as TLccOpenPascalEdit;
+
+      case Edit.DataElementInformation.DataType of
+        cdt_String  : Edit.Text := AnEngineMemorySpaceAccess.StreamAsString;
+        cdt_Int     : Edit.Text := IntToStr(AnEngineMemorySpaceAccess.StreamAsInt);
+        cdt_EventID : Edit.Text := EventIDToString(AnEngineMemorySpaceAccess.StreamAsEventID, True);
+        cdt_Bit     : begin end;
+      end;
+     end else
+    if Control is TLccOpenPascalSpinEdit then
+    begin
+      SpinEdit := Control as TLccOpenPascalSpinEdit;
+
+      case SpinEdit.DataElementInformation.DataType of
+        cdt_String  : begin end;
+        cdt_Int     : SpinEdit.Text := IntToStr(AnEngineMemorySpaceAccess.StreamAsInt);
+        cdt_EventID : begin end;
+        cdt_Bit     : begin end;
+      end;
+
+      SpinEdit.Value := AnEngineMemorySpaceAccess.StreamAsInt;
+    end else
+    if Control is TLccOpenPascalComboBox then
+    begin
+      ComboBox := Control as TLccOpenPascalComboBox;
+
+      case ComboBox.DataElementInformation.DataType of
+        cdt_String  : ComboBox.ItemIndex := ComboBox.DataElementInformation.FindMapIndexForProperty(LccDOMString( AnEngineMemorySpaceAccess.StreamAsString));
+        cdt_Int     : ComboBox.ItemIndex := ComboBox.DataElementInformation.FindMapIndexForProperty(AnEngineMemorySpaceAccess.StreamAsInt);
+        cdt_EventID : ComboBox.ItemIndex := ComboBox.DataElementInformation.FindMapIndexForProperty(AnEngineMemorySpaceAccess.StreamAsEventID);
+        cdt_Bit     : begin end;
+      end;
+    end;
+
+    UpdateToolbarLabel('Reading: ' + IntToStr(AnEngineMemorySpaceAccess.QueuedRequests));
+  end else
+  begin // Write completed
+
+    Control := FindControlByMemoryAddressPointer(AnEngineMemorySpaceAccess.AddressLo);
     if Control is TLccOpenPascalEdit then
     begin
       Edit := Control as TLccOpenPascalEdit;
@@ -1120,9 +1189,7 @@ begin
         cdt_EventID : begin end;
         cdt_Bit     : begin end;
       end;
-
-      Edit.Text := string( AEngineMemorySpaceAccess.StreamAsString);
-    end else
+     end else
     if Control is TLccOpenPascalSpinEdit then
     begin
       SpinEdit := Control as TLccOpenPascalSpinEdit;
@@ -1134,7 +1201,7 @@ begin
         cdt_Bit     : begin end;
       end;
 
-      SpinEdit.Value := AEngineMemorySpaceAccess.StreamAsInt;
+      SpinEdit.Value := AnEngineMemorySpaceAccess.StreamAsInt;
     end else
     if Control is TLccOpenPascalComboBox then
     begin
@@ -1146,25 +1213,14 @@ begin
         cdt_EventID : begin end;
         cdt_Bit     : begin end;
       end;
-
-
-
-      {$IFDEF DELPHI}
-      if ComboBox.ItemIndex > -1 then
-      begin
-      end;
-      {$ELSE}
-      Combobox.Text := EventIDToString(EngineMemorySpaceAccess.StreamAsEventID, True);
-      {$ENDIF}
-      UpdateToolbarLabel('Reading: ' + IntToStr(AEngineMemorySpaceAccess.QueuedRequests));
     end;
-  end else
-  begin // Write completed
+
      // do something interesting here.....
-    UpdateToolbarLabel('Writing: ' + IntToStr(AEngineMemorySpaceAccess.QueuedRequests));
+    UpdateToolbarLabel('Writing: ' + IntToStr(AnEngineMemorySpaceAccess.QueuedRequests));
   end;
 end;
-procedure TLccCdiParser.OnEngineMemorySpaceAccessProgressCallback(AEngineMemorySpaceAccess: TLccEngineMemorySpaceAccess);
+
+procedure TLccCdiParser.OnEngineMemorySpaceAccessProgressCallback(AnEngineMemorySpaceAccess: TLccEngineMemorySpaceAccess);
 begin
 
 end;
@@ -1183,7 +1239,7 @@ procedure TLccCdiParser.DoButtonWritePageClick(Sender: TObject);
       case Info.DataType of
         cdt_String   : begin
                          AString := '';
-                         if ExtractStringFromElementUI(Info, AString) then
+                         if ExtractStringFromElementUIToStoreInConfigMem(Info, AString) then
                          begin
                            // Need to queue up the data we want to write to the memory space
                            EngineMemorySpaceObject := EngineMemorySpaceAccess.Assign(lems_Write, MSI_CONFIG, True, Info.MemoryAddressPointer, Info.MemoryAddressPointerHi, True, TargetNodeIdentification.NodeID, TargetNodeIdentification.Alias, {$IFNDEF DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessCallback, {$IFNDEF DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessProgressCallback);
@@ -1192,7 +1248,7 @@ procedure TLccCdiParser.DoButtonWritePageClick(Sender: TObject);
                        end;
         cdt_Int      : begin
                          AnInteger := 0;
-                         if ExtractIntFromElementUI(Info, AnInteger) then
+                         if ExtractIntFromElementUIToStoreInConfigMem(Info, AnInteger) then
                          begin
                            // Need to queue up the data we want to write to the memory space
                            EngineMemorySpaceObject := EngineMemorySpaceAccess.Assign(lems_Write, MSI_CONFIG, False, Info.MemoryAddressPointer, Info.MemoryAddressPointerHi, True, TargetNodeIdentification.NodeID, TargetNodeIdentification.Alias, {$IFNDEF DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessCallback, {$IFNDEF DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessProgressCallback);
@@ -1201,7 +1257,7 @@ procedure TLccCdiParser.DoButtonWritePageClick(Sender: TObject);
                        end;
         cdt_EventID  : begin
                          AnEventID := NULL_EVENT_ID;
-                         if ExtractEventIDFromElementUI(Info, AnEventID) then
+                         if ExtractEventIDFromElementUIToStoreInConfigMem(Info, AnEventID) then
                          begin
                            // Need to queue up the data we want to write to the memory space
                            EngineMemorySpaceObject := EngineMemorySpaceAccess.Assign(lems_Write, MSI_CONFIG, False, Info.MemoryAddressPointer, Info.MemoryAddressPointerHi, True, TargetNodeIdentification.NodeID, TargetNodeIdentification.Alias, {$IFNDEF DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessCallback, {$IFNDEF DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessProgressCallback);
@@ -1445,15 +1501,22 @@ begin
     ProcessElementForUIDataElement(ParentControl, Element, MemoryAddressPointer, Indent, AddressSpace, DataElementInformation);
     ChildElement := XmlFirstChild(Element);
     while Assigned(ChildElement) do
-    begin
+    begin // Only valid for integer variables
       if ChildElement.NodeName = 'min' then
+      begin
+        DataElementInformation.IntAttributesValid := DataElementInformation.IntAttributesValid + [lia_Min];
         DataElementInformation.IntMin := StrToInt64(string( XmlNodeTextContent(ChildElement)))
-      else
+      end else
       if ChildElement.NodeName = 'max' then
+      begin
+        DataElementInformation.IntAttributesValid := DataElementInformation.IntAttributesValid + [lia_Max];
         DataElementInformation.IntMax := StrToInt64(string( XmlNodeTextContent(ChildElement)))
-      else
+      end else
       if ChildElement.NodeName = 'default' then
+      begin
+        DataElementInformation.IntAttributesValid := DataElementInformation.IntAttributesValid + [lia_Default];
         DataElementInformation.IntDefault := StrToInt64(string( XmlNodeTextContent(ChildElement)));
+      end;
       ChildElement := ChildElement.NextSibling;
     end;
 
@@ -1507,7 +1570,7 @@ begin
    end;
 end;
 
-function TLccCdiParser.ExtractStringFromElementUI(DataElementInformation: TDataElementInformation; var AString: string): Boolean;
+function TLccCdiParser.ExtractStringFromElementUIToStoreInConfigMem(DataElementInformation: TDataElementInformation; var AString: string): Boolean;
 var
   LocalEdit: TLccEdit;
   LocalComboBox: TLccComboBox;
@@ -1515,24 +1578,21 @@ begin
   Result := False;
   AString := '';
   if DataElementInformation.EditControl is TLccEdit then
-  begin
+  begin       // If it is an Edit Control then it is just the string in the Edit
     LocalEdit := DataElementInformation.EditControl as TLccEdit;
-    AString := LocalEdit.Text;
+    AString := LocalEdit.Text;   // Storing an empty string is valid
     Result := True;
   end else
   if DataElementInformation.EditControl is TLccComboBox then
   begin
     LocalComboBox := DataElementInformation.EditControl as TLccComboBox;
-    if LocalComboBox.ItemIndex > -1 then
-    begin
-      AString := LocalComboBox.Items[LocalComboBox.ItemIndex];
-      Result := True;
-    end;
+    AString := string( DataElementInformation.FindMapPropertyForIndex(LocalComboBox.ItemIndex));
+    Result := AString <> '';
   end
   // SpinEdit is Integer only
 end;
 
-function TLccCdiParser.ExtractIntFromElementUI(DataElementInformation: TDataElementInformation; var AnInteger: Integer): Boolean;
+function TLccCdiParser.ExtractIntFromElementUIToStoreInConfigMem(DataElementInformation: TDataElementInformation; var AnInteger: Integer): Boolean;
 var
   LocalEdit: TLccEdit;
   LocalComboBox: TLccComboBox;
@@ -1551,12 +1611,10 @@ begin
   if DataElementInformation.EditControl is TLccComboBox then
   begin
     LocalComboBox := DataElementInformation.EditControl as TLccComboBox;
-    if LocalComboBox.ItemIndex > -1 then
-    begin
-      LocalText := LocalComboBox.Items[LocalComboBox.ItemIndex];
-      if TryStrToInt(LocalText, AnInteger) then
-        Result := True;
-    end;
+    LocalComboBox := DataElementInformation.EditControl as TLccComboBox;
+    LocalText := string( DataElementInformation.FindMapPropertyForIndex(LocalComboBox.ItemIndex));
+    if TryStrToInt(LocalText, AnInteger) then
+      Result := True
   end else
   if DataElementInformation.EditControl is TLccSpinEdit then
   begin
@@ -1566,19 +1624,17 @@ begin
   end;
 
   // See if the Min/Max/Default have been used
-  if DataElementInformation.IntDefault < High(Int64) then
-  begin  // Not sure what to do with default....
-  end;
-  if DataElementInformation.IntMin < High(Int64) then
+  if lia_Min in DataElementInformation.IntAttributesValid then
     Result := AnInteger >= DataElementInformation.IntMin;
-  if DataElementInformation.IntMax < High(Int64) then
+  if lia_Max in DataElementInformation.IntAttributesValid then
     Result := AnInteger <= DataElementInformation.IntMax;
 end;
 
-function TLccCdiParser.ExtractEventIDFromElementUI(DataElementInformation: TDataElementInformation; var AnEventID: TEventID): Boolean;
+function TLccCdiParser.ExtractEventIDFromElementUIToStoreInConfigMem(DataElementInformation: TDataElementInformation; var AnEventID: TEventID): Boolean;
 var
   LocalEdit: TLccEdit;
   LocalComboBox: TLccComboBox;
+  LocalText: String;
 begin
   Result := False;
   AnEventID := NULL_EVENT_ID;
@@ -1594,11 +1650,12 @@ begin
   if DataElementInformation.EditControl is TLccComboBox then
   begin
     LocalComboBox := DataElementInformation.EditControl as TLccComboBox;
-    if LocalComboBox.ItemIndex > -1 then
+    LocalText := string( DataElementInformation.FindMapPropertyForIndex(LocalComboBox.ItemIndex));
+    if LocalText <> '' then
     begin
-      if ValidateEventIDString(LocalComboBox.Items[LocalComboBox.ItemIndex]) then
+      if ValidateEventIDString(LocalText) then
       begin
-        AnEventID := StrToEventID( LocalComboBox.Items[LocalComboBox.ItemIndex]);
+        AnEventID := StrToEventID( LocalText);
         Result := True;
       end;
     end;
@@ -1904,9 +1961,6 @@ end;
 constructor TDataElementInformation.Create(ADataType: TLccConfigDataType);
 begin
   inherited Create;
-  FIntDefault := High(Int64);
-  FIntMin := High(Int64);
-  FIntMax := High(Int64);
   FMemState := ocs_Unknown;
   FDataType := ADataType;
   MapList := TMapRelationList.Create;
@@ -1918,6 +1972,82 @@ begin
    FreeAndNil( FMapList);
    FreeAndNil(FConfigData);
   inherited Destroy;
+end;
+
+function TDataElementInformation.FindMapIndexForProperty(Value: Integer): Integer;
+var
+  i: Integer;
+  MapRelation: TMapRelation;
+begin
+  Result := -1;
+  for i := 0 to MapList.Count - 1 do
+  begin
+    MapRelation := MapList.Relations[i];
+    if LowerCase( LccDOMString( IntToStr(Value))) = LowerCase(MapRelation.Prop) then
+    begin
+      Result := i;
+      Break;
+    end;
+  end;
+end;
+
+function TDataElementInformation.FindMapIndexForProperty(Value: LccDOMString): Integer;
+var
+  i: Integer;
+  MapRelation: TMapRelation;
+begin
+  Result := -1;
+  for i := 0 to MapList.Count - 1 do
+  begin
+    MapRelation := MapList.Relations[i];
+    if LowerCase(Value) = LowerCase(MapRelation.Prop) then
+    begin
+      Result := i;
+      Break;
+    end;
+  end;
+end;
+
+function TDataElementInformation.FindMapIndexForProperty(Value: TEventID): Integer;
+var
+  i: Integer;
+  MapRelation: TMapRelation;
+begin
+  Result := -1;
+  for i := 0 to MapList.Count - 1 do
+  begin
+    MapRelation := MapList.Relations[i];                // Try it with dots and no dots
+    if (LowerCase( LccDOMString( EventIDToString(Value, True))) = LowerCase(MapRelation.Prop)) or
+       (LowerCase( LccDOMString( EventIDToString(Value, False))) = LowerCase(MapRelation.Prop))
+    then begin
+      Result := i;
+      Break;
+    end;
+  end;
+end;
+
+function TDataElementInformation.FindMapPropertyForValue(Value: LccDOMString): LccDOMString;
+var
+  i: Integer;
+  LowerValue: LccDOMString;
+begin
+  Result := '';
+  LowerValue := LowerCase(Value);
+  for i := 0 to MapList.Count - 1 do
+  begin
+    if LowerValue = LowerCase( MapList.Relations[i].Value) then
+    begin
+      Result := MapList.Relations[i].Value;
+      Break;
+    end;
+  end;
+end;
+
+function TDataElementInformation.FindMapPropertyForIndex(Value: Integer): LccDOMString;
+begin
+  Result := '';
+  if (Value > -1) and (Value < MapList.Count) then
+    Result := MapList.Relations[Value].Prop;
 end;
 
 function TDataElementInformation.GetMemoryAddressPointerHi: Int64;
