@@ -1,0 +1,86 @@
+object FrameLccNodeEditorGroup: TFrameLccNodeEditorGroup
+  Size.Width = 596.000000000000000000
+  Size.Height = 378.000000000000000000
+  Size.PlatformDefault = False
+  OnResize = FrameResize
+  object LayoutGroup: TLayout
+    Align = Client
+    Size.Width = 596.000000000000000000
+    Size.Height = 378.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 2
+    object ToolBarGroup: TToolBar
+      Padding.Left = 4.000000000000000000
+      Padding.Right = 4.000000000000000000
+      Size.Width = 596.000000000000000000
+      Size.Height = 48.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 0
+      object LayoutGroupHeaderText: TLayout
+        Align = Client
+        Size.Width = 540.000000000000000000
+        Size.Height = 48.000000000000000000
+        Size.PlatformDefault = False
+        TabOrder = 1
+        object LabelGroupName: TLabel
+          Align = Top
+          StyledSettings = [Family, Size, FontColor]
+          Margins.Left = 4.000000000000000000
+          Margins.Top = 2.000000000000000000
+          Margins.Right = 4.000000000000000000
+          Position.X = 4.000000000000000000
+          Position.Y = 2.000000000000000000
+          Size.Width = 532.000000000000000000
+          Size.Height = 17.000000000000000000
+          Size.PlatformDefault = False
+          TextSettings.Font.StyleExt = {00070000000000000004000000}
+          Text = 'Group Name'
+          TabOrder = 0
+          OnClick = LabelGroupNameClick
+        end
+        object LabelGroupDescription: TLabel
+          Align = Top
+          StyledSettings = [Family, Size, FontColor]
+          Margins.Left = 4.000000000000000000
+          Margins.Top = 2.000000000000000000
+          Margins.Right = 4.000000000000000000
+          Position.X = 4.000000000000000000
+          Position.Y = 21.000000000000000000
+          Size.Width = 532.000000000000000000
+          Size.Height = 17.000000000000000000
+          Size.PlatformDefault = False
+          TextSettings.Font.StyleExt = {00040000000200000004000000}
+          Text = 'Group Description'
+          TabOrder = 1
+        end
+      end
+      object SpeedButtonGroupExpand: TSpeedButton
+        Align = Right
+        Position.X = 544.000000000000000000
+        Size.Width = 48.000000000000000000
+        Size.Height = 48.000000000000000000
+        Size.PlatformDefault = False
+        StyleLookup = 'arrowdowntoolbutton'
+        Text = 'SpeedButtonGroupExpand'
+        OnClick = SpeedButtonGroupExpandClick
+      end
+    end
+    object LayoutGroupContents: TLayout
+      Align = Client
+      ClipChildren = True
+      Size.Width = 596.000000000000000000
+      Size.Height = 330.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 1
+    end
+  end
+  object FloatAnimationGroupExpand: TFloatAnimation
+    AnimationType = Out
+    Duration = 1.000000000000000000
+    Interpolation = Exponential
+    OnFinish = FloatAnimationGroupExpandFinish
+    PropertyName = 'Height'
+    StartValue = 0.000000000000000000
+    StopValue = 400.000000000000000000
+  end
+end

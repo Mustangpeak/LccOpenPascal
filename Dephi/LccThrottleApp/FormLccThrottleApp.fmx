@@ -56,14 +56,14 @@ object LccThrottleAppForm: TLccThrottleAppForm
         TabOrder = 1
         object LayoutTrainsThrottle: TLayout
           Align = Client
-          Size.Width = 166.000000000000000000
+          Size.Width = 57.000000000000000000
           Size.Height = 439.000000000000000000
           Size.PlatformDefault = False
           TabOrder = 3
           object VertScrollBoxFunctions: TVertScrollBox
             Align = Right
             Margins.Right = 2.000000000000000000
-            Position.X = -9.000000000000000000
+            Position.X = -118.000000000000000000
             Size.Width = 173.000000000000000000
             Size.Height = 439.000000000000000000
             Size.PlatformDefault = False
@@ -609,13 +609,13 @@ object LccThrottleAppForm: TLccThrottleAppForm
           Mode = Panel
           NavigationPaneOptions.CollapsedWidth = 190.000000000000000000
           OnHidden = MultiViewRosterHidden
-          Size.Width = 250.000000000000000000
+          Size.Width = 359.000000000000000000
           Size.Height = 439.000000000000000000
           Size.PlatformDefault = False
           TabOrder = 1
           object TabControlTrainRoster: TTabControl
             Align = Client
-            Size.Width = 250.000000000000000000
+            Size.Width = 359.000000000000000000
             Size.Height = 439.000000000000000000
             Size.PlatformDefault = False
             TabIndex = 2
@@ -623,11 +623,11 @@ object LccThrottleAppForm: TLccThrottleAppForm
             TabPosition = PlatformDefault
             OnChange = TabControlTrainRosterChange
             Sizes = (
-              250s
+              359s
               413s
-              250s
+              359s
               413s
-              250s
+              359s
               413s)
             object TabItemTrainRosterSelect: TTabItem
               CustomIcon = <
@@ -648,7 +648,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
                 HeaderAppearanceClassName = 'TListHeaderObjects'
                 FooterAppearanceClassName = 'TListHeaderObjects'
                 Align = Client
-                Size.Width = 250.000000000000000000
+                Size.Width = 359.000000000000000000
                 Size.Height = 413.000000000000000000
                 Size.PlatformDefault = False
                 TabOrder = 0
@@ -671,7 +671,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
               ExplicitSize.cy = 26.000000000000000000
               object ListBoxTrainRosterItem: TListBox
                 Align = Client
-                Size.Width = 250.000000000000000000
+                Size.Width = 359.000000000000000000
                 Size.Height = 373.000000000000000000
                 Size.PlatformDefault = False
                 TabOrder = 0
@@ -679,7 +679,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
                 DefaultItemStyles.ItemStyle = ''
                 DefaultItemStyles.GroupHeaderStyle = ''
                 DefaultItemStyles.GroupFooterStyle = ''
-                Viewport.Width = 246.000000000000000000
+                Viewport.Width = 355.000000000000000000
                 Viewport.Height = 369.000000000000000000
                 object ListBoxGroupHeaderTrainDetails: TListBoxGroupHeader
                   StyleLookup = 'listboxplainheader'
@@ -688,7 +688,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
                 end
                 object ListBoxItemTrainsDetailsManufacturer: TListBoxItem
                   Position.Y = 19.000000000000000000
-                  Size.Width = 246.000000000000000000
+                  Size.Width = 355.000000000000000000
                   Size.Height = 36.000000000000000000
                   Size.PlatformDefault = False
                   StyleLookup = 'listboxitembottomdetail'
@@ -697,7 +697,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
                 end
                 object ListBoxItemTrainsDetailsModel: TListBoxItem
                   Position.Y = 55.000000000000000000
-                  Size.Width = 246.000000000000000000
+                  Size.Width = 355.000000000000000000
                   Size.Height = 36.000000000000000000
                   Size.PlatformDefault = False
                   StyleLookup = 'listboxitembottomdetail'
@@ -706,7 +706,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
                 end
                 object ListBoxItemTrainsDetailsSofwareVersion: TListBoxItem
                   Position.Y = 91.000000000000000000
-                  Size.Width = 246.000000000000000000
+                  Size.Width = 355.000000000000000000
                   Size.Height = 36.000000000000000000
                   Size.PlatformDefault = False
                   StyleLookup = 'listboxitembottomdetail'
@@ -715,7 +715,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
                 end
                 object ListBoxItemTrainsDetailsHardwareVersion: TListBoxItem
                   Position.Y = 127.000000000000000000
-                  Size.Width = 246.000000000000000000
+                  Size.Width = 355.000000000000000000
                   Size.Height = 36.000000000000000000
                   Size.PlatformDefault = False
                   StyleLookup = 'listboxitembottomdetail'
@@ -725,7 +725,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
                 object ListBoxItemTrainsDetailsUserName: TListBoxItem
                   ItemData.Accessory = aMore
                   Position.Y = 163.000000000000000000
-                  Size.Width = 246.000000000000000000
+                  Size.Width = 355.000000000000000000
                   Size.Height = 36.000000000000000000
                   Size.PlatformDefault = False
                   StyleLookup = 'listboxitembottomdetail'
@@ -736,7 +736,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
                 object ListBoxItemTrainsDetailsUserDescription: TListBoxItem
                   ItemData.Accessory = aMore
                   Position.Y = 199.000000000000000000
-                  Size.Width = 246.000000000000000000
+                  Size.Width = 355.000000000000000000
                   Size.Height = 36.000000000000000000
                   Size.PlatformDefault = False
                   StyleLookup = 'listboxitembottomdetail'
@@ -752,7 +752,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
                 object ListBoxItemTrainsDetailsConsists: TListBoxItem
                   ItemData.Accessory = aMore
                   Position.Y = 254.000000000000000000
-                  Size.Width = 246.000000000000000000
+                  Size.Width = 355.000000000000000000
                   Size.Height = 36.000000000000000000
                   Size.PlatformDefault = False
                   StyleLookup = 'listboxitembottomdetail'
@@ -761,13 +761,13 @@ object LccThrottleAppForm: TLccThrottleAppForm
                 end
               end
               object ToolBarTrainRosterDetails: TToolBar
-                Size.Width = 250.000000000000000000
+                Size.Width = 359.000000000000000000
                 Size.Height = 40.000000000000000000
                 Size.PlatformDefault = False
                 TabOrder = 1
                 object LabelTrainRosterHeader: TLabel
                   Align = Client
-                  Size.Width = 250.000000000000000000
+                  Size.Width = 359.000000000000000000
                   Size.Height = 40.000000000000000000
                   Size.PlatformDefault = False
                   TextSettings.HorzAlign = Center
@@ -799,13 +799,13 @@ object LccThrottleAppForm: TLccThrottleAppForm
               ExplicitSize.cx = 41.000000000000000000
               ExplicitSize.cy = 26.000000000000000000
               object ToolBarTrainRosterEdit: TToolBar
-                Size.Width = 250.000000000000000000
+                Size.Width = 359.000000000000000000
                 Size.Height = 40.000000000000000000
                 Size.PlatformDefault = False
                 TabOrder = 1
                 object LabelTrainRosterEdit: TLabel
                   Align = Client
-                  Size.Width = 250.000000000000000000
+                  Size.Width = 359.000000000000000000
                   Size.Height = 40.000000000000000000
                   Size.PlatformDefault = False
                   TextSettings.HorzAlign = Center
@@ -824,7 +824,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
               end
               object LabelTrainRosterEditContainer: TLabel
                 Align = Client
-                Size.Width = 250.000000000000000000
+                Size.Width = 359.000000000000000000
                 Size.Height = 373.000000000000000000
                 Size.PlatformDefault = False
                 TextSettings.HorzAlign = Center
@@ -1273,8 +1273,8 @@ object LccThrottleAppForm: TLccThrottleAppForm
   object TimerLogin: TTimer
     Enabled = False
     OnTimer = TimerLoginTimer
-    Left = 64
-    Top = 256
+    Left = 48
+    Top = 304
   end
   object PopupMenuLabelPath: TPopupMenu
     Left = 72
@@ -1301,7 +1301,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
       end>
   end
   object ActionList1: TActionList
-    Left = 144
+    Left = 256
     Top = 256
     object ActionTabMainNext: TNextTabAction
       Category = 'Tab'

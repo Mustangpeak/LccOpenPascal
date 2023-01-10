@@ -39,3 +39,7 @@ Target-PC/__recovery
 Dephi/CDI_Parser/Linux64
 Dephi/CDI_Parser/OSX64
 Dephi/CDI_Parser/Win64
+Dephi/FMX_UserInterfaces/Win64
+Dephi/FMX_UserInterfaces/OSX64
+Dephi/LccOpenPascalProjectGroup.groupproj.local
+Dephi/LccOpenPascalProjectGroup.~dsk

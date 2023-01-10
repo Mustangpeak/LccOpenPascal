@@ -1,8 +1,7 @@
 ﻿unit FormLccThrottleApp;
 
 // TODO:
-// - Once connected and the server goes away there is a problem with the NodeID and a conversion to a string (exception)
-// - Add a more complex Train CDI and implement/test out Integer/EventID
+// Still hang on shutdown once in a while
 
 interface
 
@@ -30,7 +29,7 @@ uses
 
   FMX.Menus, FMX.Platform, FMX.ListBox, FMX.Memo.Types, FMX.ScrollBox, FMX.Memo,
   FMX.Header, FMX.EditBox, FMX.SpinBox, System.ImageList, FMX.ImgList,
-  FMX.TreeView;
+  FMX.TreeView, FMX.Colors, FMX.Effects;
 
 const
   FILENAME_SETTINGS = 'settings.xml';
@@ -435,7 +434,6 @@ end;
 
 procedure TLccThrottleAppForm.FormCreate(Sender: TObject);
 begin
-
   // Local field setup
 
   // Lcc library setup
@@ -570,6 +568,15 @@ begin
       TrainTabDetailsClear;
       Controller.SendSNIPRequest(TractionObject.NodeID, TractionObject.NodeAlias)
     end;
+
+    if not TractionObject.NodeCDI.Valid  then
+    begin
+      Controller.EngineMemorySpaceAccess.Reset;
+      Controller.EngineMemorySpaceAccess.Assign(lems_Read, MSI_CDI, True, 0, 0, False, TractionObject.NodeID, TractionObject.NodeAlias, OnEngineMemorySpaceAccessCallback, OnEngineMemorySpaceAccessProgressCallback);
+      Controller.EngineMemorySpaceAccess.TagObject := TractionObject;
+      Controller.EngineMemorySpaceAccess.Start;
+    end;
+
   end else
   begin
     ListItem := ListViewTrainRoster.Items[ItemIndex];
@@ -855,13 +862,7 @@ begin
     if TractionObject.NodeCDI.Valid then
     begin
       RenderCDI(TractionObject);
-    end else
-    begin
-      Controller.EngineMemorySpaceAccess.Reset;
-      Controller.EngineMemorySpaceAccess.Assign(lems_Read, MSI_CDI, True, 0, 0, False, TractionObject.NodeID, TractionObject.NodeAlias, OnEngineMemorySpaceAccessCallback, OnEngineMemorySpaceAccessProgressCallback);
-      Controller.EngineMemorySpaceAccess.TagObject := TractionObject;
-      Controller.EngineMemorySpaceAccess.Start;
-    end;
+    end
   end;
 end;
 

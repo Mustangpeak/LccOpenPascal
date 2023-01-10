@@ -1,0 +1,243 @@
+object FrameLccNodeEditor: TFrameLccNodeEditor
+  Size.Width = 662.000000000000000000
+  Size.Height = 250.000000000000000000
+  Size.PlatformDefault = False
+  object FrameLayoutEditor: TLayout
+    Align = Top
+    ClipChildren = True
+    Size.Width = 662.000000000000000000
+    Size.Height = 80.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 2
+    object LayoutEditor: TLayout
+      Align = Client
+      Size.Width = 618.000000000000000000
+      Size.Height = 80.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 0
+      object LabelName: TLabel
+        Align = Top
+        ClipChildren = True
+        HitTest = True
+        Margins.Left = 4.000000000000000000
+        Margins.Top = 4.000000000000000000
+        Margins.Right = 4.000000000000000000
+        Position.X = 4.000000000000000000
+        Position.Y = 4.000000000000000000
+        Size.Width = 610.000000000000000000
+        Size.Height = 17.000000000000000000
+        Size.PlatformDefault = False
+        TextSettings.VertAlign = Leading
+        Text = 'Train Information'
+        TabOrder = 0
+        OnClick = LabelNameClick
+        object FloatAnimationName: TFloatAnimation
+          AnimationType = Out
+          Duration = 0.500000000000000000
+          OnFinish = FloatAnimationNameFinish
+          PropertyName = 'Height'
+          StartValue = 0.000000000000000000
+          StopValue = 0.000000000000000000
+        end
+      end
+      object LabelDescription: TLabel
+        Align = Top
+        ClipChildren = True
+        StyledSettings = [Family, Size, FontColor]
+        HitTest = True
+        Margins.Left = 8.000000000000000000
+        Margins.Right = 4.000000000000000000
+        Margins.Bottom = 4.000000000000000000
+        Position.X = 8.000000000000000000
+        Position.Y = 21.000000000000000000
+        Size.Width = 606.000000000000000000
+        Size.Height = 16.000000000000000000
+        Size.PlatformDefault = False
+        TextSettings.Font.StyleExt = {00040000000200000004000000}
+        TextSettings.VertAlign = Leading
+        Text = 'Here is were you change information about this train.'
+        TabOrder = 1
+        OnClick = LabelDescriptionClick
+        object FloatAnimationDescription: TFloatAnimation
+          AnimationType = Out
+          Duration = 0.500000000000000000
+          Interpolation = Exponential
+          OnFinish = FloatAnimationDescriptionFinish
+          PropertyName = 'Height'
+          StartValue = 0.000000000000000000
+          StopValue = 0.000000000000000000
+        end
+      end
+      object LayoutEditorControl: TLayout
+        Align = Client
+        ClipChildren = True
+        Size.Width = 618.000000000000000000
+        Size.Height = 39.000000000000000000
+        Size.PlatformDefault = False
+        TabOrder = 2
+        object LayoutActionButtons: TLayout
+          Align = Right
+          ClipChildren = True
+          Position.X = 374.000000000000000000
+          Size.Width = 200.000000000000000000
+          Size.Height = 39.000000000000000000
+          Size.PlatformDefault = False
+          TabOrder = 3
+          object SpeedButtonActionCompare: TSpeedButton
+            Align = Right
+            Hint = 
+              'Compare contents of editor with the nodes configuration memory v' +
+              'alue'
+            Position.X = 8.000000000000000000
+            Size.Width = 64.000000000000000000
+            Size.Height = 39.000000000000000000
+            Size.PlatformDefault = False
+            Text = 'Compare'
+          end
+          object SpeedButtonActionRead: TSpeedButton
+            Align = Right
+            Hint = 
+              'Write the contents of the editor to the nodes configuration memo' +
+              'ry'
+            Position.X = 72.000000000000000000
+            Size.Width = 64.000000000000000000
+            Size.Height = 39.000000000000000000
+            Size.PlatformDefault = False
+            Text = 'Read'
+          end
+          object SpeedButtonActionWrite: TSpeedButton
+            Align = Right
+            Hint = 'Write the value of the editor to the nodes configuration memory'
+            Position.X = 136.000000000000000000
+            Size.Width = 64.000000000000000000
+            Size.Height = 39.000000000000000000
+            Size.PlatformDefault = False
+            Text = 'Write'
+          end
+          object FloatAnimationShowActions: TFloatAnimation
+            Duration = 0.200000002980232200
+            PropertyName = 'Width'
+            StartValue = 0.000000000000000000
+            StopValue = 0.000000000000000000
+          end
+        end
+        object SpeedButtonShowActions: TSpeedButton
+          Align = Right
+          Margins.Top = 4.000000000000000000
+          Margins.Bottom = 4.000000000000000000
+          Position.X = 574.000000000000000000
+          Position.Y = 4.000000000000000000
+          Size.Width = 44.000000000000000000
+          Size.Height = 31.000000000000000000
+          Size.PlatformDefault = False
+          StyleLookup = 'composetoolbutton'
+          OnClick = SpeedButtonShowActionsClick
+        end
+        object LayoutEditorContainer: TLayout
+          Align = Client
+          Padding.Left = 16.000000000000000000
+          Padding.Top = 8.000000000000000000
+          Padding.Right = 4.000000000000000000
+          Padding.Bottom = 8.000000000000000000
+          Size.Width = 374.000000000000000000
+          Size.Height = 39.000000000000000000
+          Size.PlatformDefault = False
+          TabOrder = 4
+          object EditBox: TEdit
+            Touch.InteractiveGestures = [LongTap, DoubleTap]
+            Align = Right
+            TabOrder = 3
+            Position.X = 270.000000000000000000
+            Position.Y = 8.000000000000000000
+            Size.Width = 100.000000000000000000
+            Size.Height = 23.000000000000000000
+            Size.PlatformDefault = False
+            OnChange = EditBoxChange
+            object InnerGlowEffectEditorEditBox: TInnerGlowEffect
+              Softness = 0.400000005960464500
+              GlowColor = claGold
+              Opacity = 0.899999976158142100
+              object ColorAnimationEditBoxInnerGlowEffect: TColorAnimation
+                Duration = 0.500000000000000000
+                OnFinish = ColorAnimationEditBoxInnerGlowEffectFinish
+                PropertyName = 'GlowColor'
+                StartValue = claWhite
+                StopValue = claWhite
+              end
+            end
+          end
+          object SpinBox: TSpinBox
+            Touch.InteractiveGestures = [LongTap, DoubleTap]
+            Align = Right
+            TabOrder = 4
+            Cursor = crIBeam
+            Position.X = 170.000000000000000000
+            Position.Y = 8.000000000000000000
+            Size.Width = 100.000000000000000000
+            Size.Height = 23.000000000000000000
+            Size.PlatformDefault = False
+            OnChange = SpinBoxChange
+            object InnerGlowEffectEditorSpinBox: TInnerGlowEffect
+              Softness = 0.400000005960464500
+              GlowColor = claGold
+              Opacity = 0.899999976158142100
+              object ColorAnimationSpinBoxInnerGlowEffect: TColorAnimation
+                Duration = 0.500000000000000000
+                OnFinish = ColorAnimationSpinBoxInnerGlowEffectFinish
+                PropertyName = 'GlowColor'
+                StartValue = claWhite
+                StopValue = claWhite
+              end
+            end
+          end
+          object ComboBox: TComboBox
+            Align = Right
+            Position.X = 70.000000000000000000
+            Position.Y = 8.000000000000000000
+            Size.Width = 100.000000000000000000
+            Size.Height = 23.000000000000000000
+            Size.PlatformDefault = False
+            TabOrder = 5
+            OnChange = ComboBoxChange
+            object InnerGlowEffectEditorComboBox: TInnerGlowEffect
+              Softness = 0.400000005960464500
+              GlowColor = claGold
+              Opacity = 0.899999976158142100
+              object ColorAnimationComboBoxInnerGlowEffect: TColorAnimation
+                Duration = 0.500000000000000000
+                OnFinish = ColorAnimationComboBoxInnerGlowEffectFinish
+                PropertyName = 'GlowColor'
+                StartValue = claWhite
+                StopValue = claWhite
+              end
+            end
+          end
+        end
+      end
+    end
+    object LayoutTextFolding: TLayout
+      Align = Right
+      Position.X = 618.000000000000000000
+      Size.Width = 44.000000000000000000
+      Size.Height = 80.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 1
+      object SpeedButtonTextFolding: TSpeedButton
+        Align = Client
+        Size.Width = 44.000000000000000000
+        Size.Height = 80.000000000000000000
+        Size.PlatformDefault = False
+        StyleLookup = 'searchtoolbutton'
+        Text = 'SpeedButtonTextFolding'
+        OnClick = SpeedButtonTextFoldingClick
+      end
+      object FloatAnimationLayoutTextFolding: TFloatAnimation
+        Duration = 0.200000002980232200
+        OnFinish = FloatAnimationLayoutTextFoldingFinish
+        PropertyName = 'Width'
+        StartValue = 0.000000000000000000
+        StopValue = 0.000000000000000000
+      end
+    end
+  end
+end

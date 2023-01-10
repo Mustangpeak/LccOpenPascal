@@ -1,0 +1,48 @@
+﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <ProjectGuid>{A5ADCC49-7235-4CD8-9381-5A308B5C8E71}</ProjectGuid>
+    </PropertyGroup>
+    <ItemGroup>
+        <Projects Include="FMX_UserInterfaces\FMX_UserInterfaces.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="LccThrottleApp\LccThrottleApp.dproj">
+            <Dependencies/>
+        </Projects>
+    </ItemGroup>
+    <ProjectExtensions>
+        <Borland.Personality>Default.Personality.12</Borland.Personality>
+        <Borland.ProjectType/>
+        <BorlandProject>
+            <Default.Personality/>
+        </BorlandProject>
+    </ProjectExtensions>
+    <Target Name="FMX_UserInterfaces">
+        <MSBuild Projects="FMX_UserInterfaces\FMX_UserInterfaces.dproj"/>
+    </Target>
+    <Target Name="FMX_UserInterfaces:Clean">
+        <MSBuild Projects="FMX_UserInterfaces\FMX_UserInterfaces.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="FMX_UserInterfaces:Make">
+        <MSBuild Projects="FMX_UserInterfaces\FMX_UserInterfaces.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="LccThrottleApp">
+        <MSBuild Projects="LccThrottleApp\LccThrottleApp.dproj"/>
+    </Target>
+    <Target Name="LccThrottleApp:Clean">
+        <MSBuild Projects="LccThrottleApp\LccThrottleApp.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="LccThrottleApp:Make">
+        <MSBuild Projects="LccThrottleApp\LccThrottleApp.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="Build">
+        <CallTarget Targets="FMX_UserInterfaces;LccThrottleApp"/>
+    </Target>
+    <Target Name="Clean">
+        <CallTarget Targets="FMX_UserInterfaces:Clean;LccThrottleApp:Clean"/>
+    </Target>
+    <Target Name="Make">
+        <CallTarget Targets="FMX_UserInterfaces:Make;LccThrottleApp:Make"/>
+    </Target>
+    <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
+</Project>

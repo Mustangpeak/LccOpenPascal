@@ -1,0 +1,53 @@
+object FMX_UserInterfaceForm: TFMX_UserInterfaceForm
+  Left = 0
+  Top = 0
+  Caption = 'Header Footer Form'
+  ClientHeight = 473
+  ClientWidth = 369
+  FormFactor.Width = 1440
+  FormFactor.Height = 900
+  FormFactor.Devices = [Desktop]
+  OnCreate = FormCreate
+  OnDestroy = FormDestroy
+  DesignerMasterStyle = 0
+  object Header: TToolBar
+    Size.Width = 369.000000000000000000
+    Size.Height = 48.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 0
+    object HeaderLabel: TLabel
+      Align = Contents
+      Size.Width = 369.000000000000000000
+      Size.Height = 48.000000000000000000
+      Size.PlatformDefault = False
+      StyleLookup = 'toollabel'
+      TextSettings.HorzAlign = Center
+      Text = 'Title'
+      object SpeedButton1: TSpeedButton
+        Position.X = 24.000000000000000000
+        Position.Y = -4.000000000000000000
+        Text = 'Create'
+        OnClick = SpeedButton1Click
+      end
+    end
+  end
+  object Footer: TToolBar
+    Align = Bottom
+    Position.Y = 425.000000000000000000
+    Size.Width = 369.000000000000000000
+    Size.Height = 48.000000000000000000
+    Size.PlatformDefault = False
+    StyleLookup = 'bottomtoolbar'
+    TabOrder = 1
+  end
+  object FramedVertScrollBox1: TFramedVertScrollBox
+    Align = Client
+    Size.Width = 369.000000000000000000
+    Size.Height = 377.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 2
+    OnResize = FramedVertScrollBox1Resize
+    Viewport.Width = 365.000000000000000000
+    Viewport.Height = 373.000000000000000000
+  end
+end

@@ -1,0 +1,24 @@
+inherited FMX_UserInterfaceForm_iPhone47in: TFMX_UserInterfaceForm_iPhone47in
+  ClientHeight = 647
+  ClientWidth = 375
+  DesignerMasterStyle = 2
+  inherited Header: TToolBar
+    Size.Width = 375.000000000000000000
+    Size.Height = 44.000000000000000000
+    inherited HeaderLabel: TLabel
+      Size.Width = 375.000000000000000000
+      Size.Height = 44.000000000000000000
+    end
+  end
+  inherited Footer: TToolBar
+    Position.Y = 603.000000000000000000
+    Size.Width = 375.000000000000000000
+    Size.Height = 44.000000000000000000
+  end
+  inherited FramedVertScrollBox1: TFramedVertScrollBox
+    Size.Width = 375.000000000000000000
+    Size.Height = 559.000000000000000000
+    Viewport.Width = 375.000000000000000000
+    Viewport.Height = 559.000000000000000000
+  end
+end

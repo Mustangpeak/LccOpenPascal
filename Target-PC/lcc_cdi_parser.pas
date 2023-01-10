@@ -41,6 +41,7 @@ uses
     FMX.Graphics,
     System.UITypes,
     FMX.Forms,
+    FMX.Effects,
     System.Generics.Collections,
   {$ENDIF}
   lcc_defines,
@@ -212,11 +213,17 @@ type
   TLccOpenPascalSpinEdit = class(TLccSpinEdit)
   private
     FDataElementInformation: TDataElementInformation;
+    {$IFDEF DELPHI}
+    FInnerGlowEffect: TInnerGlowEffect;
+    {$ENDIF}
   protected
   public
     constructor Create(TheOwner: TComponent); override;
     destructor Destroy; override;
     property DataElementInformation: TDataElementInformation read FDataElementInformation write FDataElementInformation;
+    {$IFDEF DELPHI}
+    property InnerGlowEffect: TInnerGlowEffect read FInnerGlowEffect write FInnerGlowEffect;
+    {$ENDIF}
  end;
 
   { TLccOpenPascalEdit }
@@ -224,11 +231,17 @@ type
   TLccOpenPascalEdit = class(TLccEdit)
   private
     FDataElementInformation: TDataElementInformation;
+    {$IFDEF DELPHI}
+    FInnerGlowEffect: TInnerGlowEffect;
+    {$ENDIF}
   protected
   public
     constructor Create(TheOwner: TComponent); override;
     destructor Destroy; override;
     property DataElementInformation: TDataElementInformation read FDataElementInformation write FDataElementInformation;
+    {$IFDEF DELPHI}
+    property InnerGlowEffect: TInnerGlowEffect read FInnerGlowEffect write FInnerGlowEffect;
+    {$ENDIF}
   end;
 
   { TLccOpenPascalComboBox }
@@ -236,11 +249,17 @@ type
   TLccOpenPascalComboBox = class(TLccComboBox)
   private
     FDataElementInformation: TDataElementInformation;
+    {$IFDEF DELPHI}
+    FInnerGlowEffect: TInnerGlowEffect;
+    {$ENDIF}
   protected
   public
     constructor Create(TheOwner: TComponent); override;
     destructor Destroy; override;
     property DataElementInformation: TDataElementInformation read FDataElementInformation write FDataElementInformation;
+    {$IFDEF DELPHI}
+    property InnerGlowEffect: TInnerGlowEffect read FInnerGlowEffect write FInnerGlowEffect;
+    {$ENDIF}
   end;
 
   { TLccOpenPascalTabSheet }
@@ -353,30 +372,33 @@ type
 
     procedure UpdateToolbarLabel(Info: string);
     procedure UpdateApplicationProgressCallback(Info: string);
+    // Callbacks...
+    // Called back on ever read/write stroke of the engine
     procedure OnEngineMemorySpaceAccessCallback(AnEngineMemorySpaceAccess: TLccEngineMemorySpaceAccess);
+    // Called during the building of the UI
     procedure OnEngineMemorySpaceAccessProgressCallback(AnEngineMemorySpaceAccess: TLccEngineMemorySpaceAccess);
 
     // Control Event Handler
     procedure OnPageControlChange(Sender: TObject);
-
-    // Utility methods
-    function ButtonToDataElementInformation(Sender: TObject): TDataElementInformation;  // Gets the DataElementInfo from the Editor attached to the Button
-    function ExtractElementItem(ParentElement: TLccXmlNode; Item: string; var ItemStr: LccDOMString): Boolean;
-    function FindControlByMemoryAddressPointer(Address: DWord): TLccControl;
-    function FindActivePage: TLccTabSheet;
-    procedure OnParserFrameResize(Sender: TObject);
-    procedure ResizeActiveTabScrollingWindowFrame;
-
-    // Methods to look at below...............
-    procedure DoAfterReadPage(Sender: TObject); virtual;
-    procedure DoAfterWritePage(Sender: TObject); virtual;
-
-    procedure DoClearInterface; virtual;
-    procedure DoBuildInterfaceComplete; virtual;
     procedure OnSpinEditChange(Sender: TObject);
     procedure OnEditChange(Sender: TObject);
     procedure OnComboBoxChange(Sender: TObject);
 
+
+    // Utility methods
+    function ButtonToDataElementInformation(Sender: TObject): TDataElementInformation;  // Gets the DataElementInfo from the Editor attached to the Button
+    function FindAndExtractChildElementsName(ParentElement: TLccXmlNode; Item: string; var ItemStr: LccDOMString): Boolean;
+    function FindControlByMemoryAddressPointer(Address: DWord): TLccControl;  // Finds the editor that is associated with the Address passed (valid for single tab only)
+    function FindActivePage: TLccTabSheet;
+    procedure OnParserFrameResize(Sender: TObject);
+    procedure ResizeActiveTabScrollingWindowFrame;
+
+
+    // TParser Event Handlers
+    procedure DoAfterReadPage(Sender: TObject); virtual;
+    procedure DoAfterWritePage(Sender: TObject); virtual;
+    procedure DoClearInterface; virtual;
+    procedure DoBuildInterfaceComplete; virtual;
 
     // ...............
 
@@ -384,8 +406,9 @@ type
     property ParserFrame: TLccPanel read FParserFrame write FParserFrame;  // alClient aligned to the Application Panel used as our drawing canvas
     property GlobalButtonBkGnd: TLccPanel read FGlobalButtonBkGnd write FGlobalButtonBkGnd; // alBottom aligned to the Parser Frame
     property TabControl: TLccTabControl read FTabControl write FTabControl; // alClient aligned in the Parser Frame, sibling to the GlobalButtonBkgnd
-    property EngineMemorySpaceAccess: TLccEngineMemorySpaceAccess read FEngineMemorySpaceAccess write FEngineMemorySpaceAccess;
-    property TargetNodeIdentification: TLccNodeIdentificationObject read FTargetNodeIdentification write FTargetNodeIdentification;
+    property EngineMemorySpaceAccess: TLccEngineMemorySpaceAccess read FEngineMemorySpaceAccess write FEngineMemorySpaceAccess;  // Engine that runs all the Config Mem Read Write interchanges
+    property TargetNodeIdentification: TLccNodeIdentificationObject read FTargetNodeIdentification write FTargetNodeIdentification; // The Node we interfacing with the Configuration Memory with
+    property WorkerMessage: TLccMessage read FWorkerMessage write FWorkerMessage;
 
 
     // Located in the GlobalButtonBkGnd frame
@@ -393,16 +416,11 @@ type
     property GlobalButtonWritePage: TLccOpenPascalSpeedButton read FGlobalButtonWritePage write FGlobalButtonWritePage;
     property GlobalButtonStop: TLccOpenPascalSpeedButton read FGlobalButtonStop write FGlobalButtonStop;
     property GlobalToolbarLabel: TLccLabel read FGlobalToolbarLabel write FGlobalToolbarLabel;
-
-    // Properties to look at below...............
-    property WorkerMessage: TLccMessage read FWorkerMessage write FWorkerMessage;
-
-
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
-    function Build_CDI_Interface(AnLccNode: TLccNode; ATargetNode: TLccNodeIdentificationObject; ParentControl: TLccTextBox; CDI: TLccXmlDocument; AProgressCallback: TOnCdiParserProgressCallback = nil): TLccPanel; overload;
-    function Build_CDI_Interface(AnLccNode: TLccNode; ATargetNode: TLccNodeIdentificationObject; ParentControl: TLccTextBox; CDI: String; AProgressCallback: TOnCdiParserProgressCallback = nil): TLccPanel; overload;
+    function Build_CDI_Interface(AnLccNode: TLccNode; ATargetNode: TLccNodeIdentificationObject; ParentControl: TLccTextBox; CDI: TLccXmlDocument; AProgressCallback: TOnCdiParserProgressCallback = nil; SupressIdentificationTab: Boolean = True): TLccPanel; overload;
+    function Build_CDI_Interface(AnLccNode: TLccNode; ATargetNode: TLccNodeIdentificationObject; ParentControl: TLccTextBox; CDI: String; AProgressCallback: TOnCdiParserProgressCallback = nil; SupressIdentificationTab: Boolean = True): TLccPanel; overload;
     procedure Clear_CDI_Interface(ClearLccNode: Boolean);
     procedure DoConfigMemReadReply(ANode: TObject); override;
     procedure DoConfigMemWriteReply(ANode: TObject); override;
@@ -417,6 +435,8 @@ type
     property ShowWriteBtn: Boolean read FShowWriteBtn write FShowWriteBtn;
     property ShowCompareBtn: Boolean read FShowCompareBtn write FShowCompareBtn;
     property SuppressNameAndDescription: Boolean read FSuppressNameAndDescription write FSuppressNameAndDescription;
+
+
     property OnAfterWritePage: TNotifyEvent read FOnAfterWritePage write FOnAfterWritePage;
     property OnAfterReadPage: TNotifyEvent read FOnAfterReadPage write FOnAfterReadPage;
     property OnClearInterface: TNotifyEvent read FOnClearInterface write FOnClearInterface;
@@ -493,6 +513,12 @@ constructor TLccOpenPascalComboBox.Create(TheOwner: TComponent);
 begin
   inherited Create(TheOwner);
   FDataElementInformation := nil;
+  {$IFDEF DELPHI}
+  FInnerGlowEffect := TInnerGlowEffect.Create(Self);
+  InnerGlowEffect.Parent := Self;
+  InnerGlowEffect.GlowColor := TAlphaColorRec.Yellow;
+  InnerGlowEffect.Enabled := True;
+  {$ENDIF}
 end;
 
 destructor TLccOpenPascalComboBox.Destroy;
@@ -507,6 +533,12 @@ constructor TLccOpenPascalEdit.Create(TheOwner: TComponent);
 begin
   inherited Create(TheOwner);
   FDataElementInformation := nil;
+  {$IFDEF DELPHI}
+  FInnerGlowEffect := TInnerGlowEffect.Create(Self);
+  InnerGlowEffect.Parent := Self;
+  InnerGlowEffect.GlowColor := TAlphaColorRec.Yellow;
+  InnerGlowEffect.Enabled := True;
+  {$ENDIF}
 end;
 
 destructor TLccOpenPascalEdit.Destroy;
@@ -521,7 +553,14 @@ constructor TLccOpenPascalSpinEdit.Create(TheOwner: TComponent);
 begin
   inherited Create(TheOwner);
   FDataElementInformation := nil;  // created during building of window as we don't know what control we need (if the element has a map or not) early enough
+  {$IFDEF DELPHI}
+  FInnerGlowEffect := TInnerGlowEffect.Create(Self);
+  InnerGlowEffect.Parent := Self;
+  InnerGlowEffect.GlowColor := TAlphaColorRec.Yellow;
+  InnerGlowEffect.Enabled := True;
+  {$ENDIF}
 end;
+
 destructor TLccOpenPascalSpinEdit.Destroy;
 begin
   FreeAndNil( FDataElementInformation);
@@ -641,9 +680,9 @@ begin
   Result := CreateTab(ATabControl, 'Identification');
   // Space on the Top
   CreateSpacer(Result);
-  if ExtractElementItem(IdentificationElement, 'name', ItemStr) then
+  if FindAndExtractChildElementsName(IdentificationElement, 'name', ItemStr) then
     CreateLabel(Result, ItemStr, Indent, True);
-  if ExtractElementItem(IdentificationElement, 'description', ItemStr) then
+  if FindAndExtractChildElementsName(IdentificationElement, 'description', ItemStr) then
     CreateLabel(Result, ItemStr, Indent + LABEL_DELTA_INDENT, False);
 
   // Handle the manufacturer
@@ -707,7 +746,7 @@ begin
   if XmlAttributeExists(SegmentElement, 'space') then
     AddressSpace := StrToUInt(string( XmlAttributeRead(SegmentElement, 'space')));
   // Create the tab and background panel to add to
-  ExtractElementItem(SegmentElement, 'name', ElementString);
+  FindAndExtractChildElementsName(SegmentElement, 'name', ElementString);
   Result := CreateTab(ATabControl, ElementString);
 
   // Time to build the UI for this segment
@@ -771,17 +810,22 @@ end;
 
 procedure TLccCdiParser.CreateSpinEditLayout(ParentControl: TLccPanel;
   Indent: Integer; DataElementInformation: TDataElementInformation);
+const
+  LccMaxLongint  = $7fffffff;
 var
-  SpinEdit: TLccOpenPascalEdit;
+  SpinEdit: TLccOpenPascalSpinEdit;
   ContainerPanel: TLccPanel;
 begin
   ContainerPanel := CreateBaseEditorLayout(ParentControl, DataElementInformation);
-  SpinEdit := TLccOpenPascalEdit.Create(ContainerPanel);
+  SpinEdit := TLccOpenPascalSpinEdit.Create(ContainerPanel);
   SpinEdit.DataElementInformation := DataElementInformation;
   SpinEdit.Parent := ContainerPanel;
   SpinEdit.Align := {$IFDEF DELPHI}TAlignLayout.Client{$ELSE}alClient{$ENDIF};
   {$IFDEF DELPHI}SpinEdit.Margins.Left := Indent;{$ELSE}SpinEdit.BorderSpacing.Left := Trunc(Indent);{$ENDIF}
   {$IFDEF DELPHI}SpinEdit.Margins.Right := COMMON_MARGIN;{$ELSE}SpinEdit.BorderSpacing.Right := COMMON_MARGIN;{$ENDIF}
+  SpinEdit.OnChange := {$IFNDEF DELPHI}@{$ENDIF}OnSpinEditChange;
+
+
 
   // Put a link to the editor to the buttons associated with it
   DataElementInformation.ReadMemorySpaceButton.EditObject := SpinEdit;
@@ -790,10 +834,19 @@ begin
   DataElementInformation.EditControl := SpinEdit;
 
   if lia_Default in DataElementInformation.IntAttributesValid then
-    SpinEdit.Text := IntToStr(DataElementInformation.IntDefault)
+    SpinEdit.Value := DataElementInformation.IntDefault
   else
-    SpinEdit.Text := ''
+    SpinEdit.Value := 0;
 
+  if lia_Max in DataElementInformation.IntAttributesValid then
+    SpinEdit.{$IFDEF DELPHI}Max{$ELSE}MaxValue{$ENDIF} := DataElementInformation.IntMax
+  else
+    SpinEdit.{$IFDEF DELPHI}Max{$ELSE}MaxValue{$ENDIF} := {$IFDEF DELPHI}LccMaxLongint{$ELSE}LccMaxLongint{$ENDIF};
+
+  if lia_Min in DataElementInformation.IntAttributesValid then
+    SpinEdit.{$IFDEF DELPHI}Min{$ELSE}MinValue{$ENDIF} := DataElementInformation.IntMin
+  else
+    SpinEdit.{$IFDEF DELPHI}Min{$ELSE}MinValue{$ENDIF} := {$IFDEF DELPHI}-LccMaxLongint{$ELSE}-LccMaxLongint{$ENDIF};
 end;
 
 procedure TLccCdiParser.CreateEditLayout(ParentControl: TLccPanel;
@@ -809,6 +862,7 @@ begin
   EditBox.Align := {$IFDEF DELPHI}TAlignLayout.Client{$ELSE}alClient{$ENDIF};
   {$IFDEF DELPHI}EditBox.Margins.Left := Indent;{$ELSE}EditBox.BorderSpacing.Left := Trunc(Indent);{$ENDIF}
   {$IFDEF DELPHI}EditBox.Margins.Right := COMMON_MARGIN;{$ELSE}EditBox.BorderSpacing.Right := COMMON_MARGIN;{$ENDIF}
+  EditBox.OnChange := {$IFNDEF DELPHI}@{$ENDIF}OnEditChange;
 
     // Put a link to the editor to the buttons associated with it
   DataElementInformation.ReadMemorySpaceButton.EditObject := EditBox;
@@ -838,6 +892,7 @@ begin
     ComboBox.Items.Add(string( TMapRelation(DataElementInformation.MapList.Relations[i]).Value));
   ComboBox.ItemIndex := 0;
   ComboBox.DataElementInformation := DataElementInformation;
+  ComboBox.OnChange := {$IFNDEF DELPHI}@{$ENDIF}OnComboBoxChange;
 
   // Put a link to the editor to the buttons associated with it
   DataElementInformation.ReadMemorySpaceButton.EditObject := ComboBox;
@@ -850,7 +905,7 @@ begin
     ComboBox.ItemIndex := DataElementInformation.FindMapIndexForProperty( DataElementInformation.IntDefault);
   end
   else
-    ComboBox.ItemIndex := -1;
+    ComboBox.ItemIndex := 0;
 end;
 
 procedure TLccCdiParser.DoAfterReadPage(Sender: TObject);
@@ -1143,7 +1198,7 @@ begin
       Edit := Control as TLccOpenPascalEdit;
 
       case Edit.DataElementInformation.DataType of
-        cdt_String  : Edit.Text := AnEngineMemorySpaceAccess.StreamAsString;
+        cdt_String  : Edit.Text := string( AnEngineMemorySpaceAccess.StreamAsString);
         cdt_Int     : Edit.Text := IntToStr(AnEngineMemorySpaceAccess.StreamAsInt);
         cdt_EventID : Edit.Text := EventIDToString(AnEngineMemorySpaceAccess.StreamAsEventID, True);
         cdt_Bit     : begin end;
@@ -1174,6 +1229,7 @@ begin
       end;
     end;
 
+    DoAfterReadPage(Self);
     UpdateToolbarLabel('Reading: ' + IntToStr(AnEngineMemorySpaceAccess.QueuedRequests));
   end else
   begin // Write completed
@@ -1216,6 +1272,7 @@ begin
     end;
 
      // do something interesting here.....
+    DoAfterWritePage(Self);
     UpdateToolbarLabel('Writing: ' + IntToStr(AnEngineMemorySpaceAccess.QueuedRequests));
   end;
 end;
@@ -1300,7 +1357,7 @@ begin
   end;
 end;
 
-function TLccCdiParser.ExtractElementItem(ParentElement: TLccXmlNode; Item: string;var ItemStr: LccDOMString): Boolean;
+function TLccCdiParser.FindAndExtractChildElementsName(ParentElement: TLccXmlNode; Item: string; var ItemStr: LccDOMString): Boolean;
 var
   Node: TLccXmlNode;
 begin
@@ -1796,6 +1853,7 @@ begin
   FTargetNodeIdentification := TLccNodeIdentificationObject.Create;
   CVBlockRead := 1;
 end;
+
 destructor TLccCdiParser.Destroy;
 begin
  // if Assigned(NodeManager) then
@@ -1805,7 +1863,8 @@ begin
   FreeAndNil(FTargetNodeIdentification);
   inherited Destroy;
 end;
-function TLccCdiParser.Build_CDI_Interface(AnLccNode: TLccNode; ATargetNode: TLccNodeIdentificationObject; ParentControl: TLccTextBox; CDI: TLccXmlDocument; AProgressCallback: TOnCdiParserProgressCallback = nil): TLccPanel;
+
+function TLccCdiParser.Build_CDI_Interface(AnLccNode: TLccNode; ATargetNode: TLccNodeIdentificationObject; ParentControl: TLccTextBox; CDI: TLccXmlDocument; AProgressCallback: TOnCdiParserProgressCallback = nil; SupressIdentificationTab: Boolean = True): TLccPanel;
 const
   BUTTON_HEIGHT = 40;
 var
@@ -1841,7 +1900,9 @@ begin
 
   // Background that holds everything and is passed back as the child of the ParentControl
   ParserFrame := TLccPanel.Create(ParentControl);
- // ParserFrame.Visible := False;
+
+//  ParserFrame.Visible := False;
+
   ParserFrame.Parent := ParentControl;
   ParserFrame.Align := {$IFDEF DELPHI}TAlignLayout.Client{$ELSE}alClient{$ENDIF};
   ParserFrame.OnResize := {$IFNDEF DELPHI}@{$ENDIF}OnParserFrameResize;
@@ -1875,7 +1936,8 @@ begin
         ProcessSegmentTab(TabControl, CdiRootElementChild, LABEL_MARGIN_INDENT)
       else
       if CdiRootElementChild.NodeName = 'identification' then  // Handle the Identification block
-        ProcessIdentificationTab(TabControl, CdiRootElementChild, LABEL_MARGIN_INDENT);
+        if not SupressIdentificationTab then
+          ProcessIdentificationTab(TabControl, CdiRootElementChild, LABEL_MARGIN_INDENT);
       CdiRootElementChild := CdiRootElementChild.NextSibling;
     end;
     // Allow the controls to be built so Change event are not fired the first time a tab is selected
@@ -1887,13 +1949,15 @@ begin
     TabControl.ActivePageIndex := 0;
     {$ENDIF}
   end;
+
   ParserFrame.Visible := True;
+
   TabControl.OnChange := {$IFNDEF DELPHI}@{$ENDIF}OnPageControlChange;
   OnPageControlChange(Result);
   DoBuildInterfaceComplete;
 end;
 
-function TLccCdiParser.Build_CDI_Interface(AnLccNode: TLccNode; ATargetNode: TLccNodeIdentificationObject; ParentControl: TLccTextBox; CDI: String; AProgressCallback: TOnCdiParserProgressCallback = nil): TLccPanel;
+function TLccCdiParser.Build_CDI_Interface(AnLccNode: TLccNode; ATargetNode: TLccNodeIdentificationObject; ParentControl: TLccTextBox; CDI: String; AProgressCallback: TOnCdiParserProgressCallback = nil; SupressIdentificationTab: Boolean = True): TLccPanel;
 var
   XML: TLccXmlDocument;
 begin
@@ -1902,7 +1966,7 @@ begin
   begin
     XML := XmlLoadFromText(CDI);
     try
-      Result := Build_CDI_Interface(AnLccNode, ATargetNode, ParentControl, XML, AProgressCallback);
+      Result := Build_CDI_Interface(AnLccNode, ATargetNode, ParentControl, XML, AProgressCallback, SupressIdentificationTab);
     finally
       XmlFreeDocument(XML);
     end;

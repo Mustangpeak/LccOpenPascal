@@ -1,0 +1,26 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<BorlandProject>
+	<ActiveMobileDevice>
+		<POSX-Home iOSSimARM64="_iossimulator_BF86AA35-56C3-4AB6-B6AD-6A699A8201C5"/>
+	</ActiveMobileDevice>
+	<Transactions>
+    <Transaction>2023/01/08 08:13:25.000.302,Z:\LccOpenPascal\Dephi\FMX_UserInterfaces\FMX_UserInterfaces.dproj=Z:\LccOpenPascal\Dephi\FMX_UserInterfaces\HeaderFooterApplication.dproj</Transaction>
+    <Transaction>2023/01/08 08:14:30.000.782,Z:\LccOpenPascal\Dephi\FMX_UserInterfaces\FMX_UserInterfaceApp.pas=Z:\LccOpenPascal\Dephi\FMX_UserInterfaces\HeaderFooterTemplate.pas</Transaction>
+    <Transaction>2023/01/08 08:14:30.000.782,Z:\LccOpenPascal\Dephi\FMX_UserInterfaces\FMX_UserInterfaceApp.fmx=Z:\LccOpenPascal\Dephi\FMX_UserInterfaces\HeaderFooterTemplate.fmx</Transaction>
+    <Transaction>2023/01/08 16:51:48.000.394,=Z:\LccOpenPascal\Dephi\FMX_UserInterfaces\Unit1.pas</Transaction>
+    <Transaction>2023/01/08 16:55:51.000.436,Z:\LccOpenPascal\Dephi\FMX_UserInterfaces\Frame_ComboBoxEditor.pas=Z:\LccOpenPascal\Dephi\FMX_UserInterfaces\Unit1.pas</Transaction>
+    <Transaction>2023/01/08 16:55:51.000.436,Z:\LccOpenPascal\Dephi\FMX_UserInterfaces\Frame_ComboBoxEditor.fmx=Z:\LccOpenPascal\Dephi\FMX_UserInterfaces\Unit1.fmx</Transaction>
+    <Transaction>2023/01/08 16:57:09.000.361,=Z:\LccOpenPascal\Dephi\FMX_UserInterfaces\Unit1.pas</Transaction>
+    <Transaction>2023/01/08 22:25:47.310,=Z:\LccOpenPascal\Dephi\FMX_UserInterfaces\Unit1.pas</Transaction>
+    <Transaction>2023/01/08 22:26:07.528,Z:\LccOpenPascal\Dephi\FMX_UserInterfaces\Frame_EditBoxEditor.pas=Z:\LccOpenPascal\Dephi\FMX_UserInterfaces\Unit1.pas</Transaction>
+    <Transaction>2023/01/08 22:26:07.528,Z:\LccOpenPascal\Dephi\FMX_UserInterfaces\Frame_EditBoxEditor.fmx=Z:\LccOpenPascal\Dephi\FMX_UserInterfaces\Unit1.fmx</Transaction>
+    <Transaction>2023/01/08 22:28:30.386,=Z:\LccOpenPascal\Dephi\FMX_UserInterfaces\Unit1.pas</Transaction>
+    <Transaction>2023/01/08 22:28:46.229,Z:\LccOpenPascal\Dephi\FMX_UserInterfaces\Frame_SpinEditEditor.pas=Z:\LccOpenPascal\Dephi\FMX_UserInterfaces\Unit1.pas</Transaction>
+    <Transaction>2023/01/08 22:28:46.229,Z:\LccOpenPascal\Dephi\FMX_UserInterfaces\Frame_SpinEditEditor.fmx=Z:\LccOpenPascal\Dephi\FMX_UserInterfaces\Unit1.fmx</Transaction>
+    <Transaction>2023/01/09 12:06:59.374,Z:\LccOpenPascal\Dephi\FMX_UserInterfaces\Frame_LccNodeEditor.fmx=Z:\LccOpenPascal\Dephi\FMX_UserInterfaces\Frame_ComboBoxEditor.fmx</Transaction>
+    <Transaction>2023/01/09 12:06:59.374,Z:\LccOpenPascal\Dephi\FMX_UserInterfaces\Frame_LccNodeEditor.pas=Z:\LccOpenPascal\Dephi\FMX_UserInterfaces\Frame_ComboBoxEditor.pas</Transaction>
+    <Transaction>2023/01/09 12:56:19.139,=Z:\LccOpenPascal\Dephi\FMX_UserInterfaces\Unit1.pas</Transaction>
+    <Transaction>2023/01/09 12:56:36.670,Z:\LccOpenPascal\Dephi\FMX_UserInterfaces\Frame_LccNodeEditorGroup.pas=Z:\LccOpenPascal\Dephi\FMX_UserInterfaces\Unit1.pas</Transaction>
+    <Transaction>2023/01/09 12:56:36.670,Z:\LccOpenPascal\Dephi\FMX_UserInterfaces\Frame_LccNodeEditorGroup.fmx=Z:\LccOpenPascal\Dephi\FMX_UserInterfaces\Unit1.fmx</Transaction>
+  </Transactions>
+</BorlandProject>

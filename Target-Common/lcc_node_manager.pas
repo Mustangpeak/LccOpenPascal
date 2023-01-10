@@ -345,10 +345,9 @@ begin
       try
         for i := 0 to LocalMessageList.Count - 1 do
         begin
+          LocalMessage := TLccMessage( LocalMessageList[i]);
           if Owner.GridConnect then
           begin
-            LocalMessage := TLccMessage( LocalMessageList[i]);
-
             if EqualNodeID(LocalMessage.SourceID, NULL_NODE_ID, True) and (LocalMessage.CAN.SourceAlias = 0) then    // Malformed Message with no SourceID
               LocalMessage.Free
             else begin
