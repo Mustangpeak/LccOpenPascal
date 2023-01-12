@@ -11,6 +11,9 @@ uses
   FMX.Gestures, System.Actions, FMX.ActnList, FMX.MultiView, FMX.ListView.Types,
   FMX.ListView.Appearances, FMX.ListView.Adapters.Base, FMX.ListView, FMX.Layouts,
   System.Math.Vectors, FMX.Objects, FMX.Edit, FMX.Controls3D, FMX.Layers3D, System.IOUtils,
+  FMX.Menus, FMX.Platform, FMX.ListBox, FMX.Memo.Types, FMX.ScrollBox, FMX.Memo,
+  FMX.Header, FMX.EditBox, FMX.SpinBox, System.ImageList, FMX.ImgList,
+  FMX.TreeView, FMX.Colors, FMX.Effects, FMX.SearchBox,
   lcc_node_manager,
   lcc_ethernet_server,
   lcc_node_controller,
@@ -25,11 +28,7 @@ uses
   lcc_train_server,
   lcc_alias_server,
   lcc_base_classes,
-  lcc_cdi_parser,
-
-  FMX.Menus, FMX.Platform, FMX.ListBox, FMX.Memo.Types, FMX.ScrollBox, FMX.Memo,
-  FMX.Header, FMX.EditBox, FMX.SpinBox, System.ImageList, FMX.ImgList,
-  FMX.TreeView, FMX.Colors, FMX.Effects;
+  lcc_cdi_parser;
 
 const
   FILENAME_SETTINGS = 'settings.xml';
@@ -189,6 +188,7 @@ type
     procedure TrackBarTrainsThrottleLeverChange(Sender: TObject);
     procedure SpeedButtonTrainsStopClick(Sender: TObject);
     procedure SpeedButtonLogClearClick(Sender: TObject);
+    procedure ListViewTrainRosterSearchChange(Sender: TObject);
   private
     FNodeManager: TLccNodeManager;
     FEthernetClient: TLccEthernetClient;
@@ -260,6 +260,7 @@ type
     procedure TrainTabCDILoad(TractionObject: TLccTractionObject);
     procedure TrainTabCDISelect;
     procedure RenderCDI(TractionObject: TLccTractionObject);
+    procedure SelectTrain(TractionObject: TLccTractionObject);
   end;
 
 var
@@ -414,11 +415,11 @@ var
   i: Integer;
 begin
   Result := nil;
-  for i := 0 to AListview.ItemCount - 1 do
+  for i := 0 to AListview.Items.UnfilteredItems.Count - 1 do
   begin
-    if AListview.Items[i].TagObject = ATagObject then
+    if AListview.Items.UnfilteredItems[i].TagObject = ATagObject then
     begin
-      Result := AListview.Items[i];
+      Result := AListview.Items.UnfilteredItems[i] as TListviewItem;
       Break
     end;
   end;
@@ -548,6 +549,8 @@ var
   ListItem: TListItem;
   TractionObject: TLccTractionObject;
 begin
+  TractionObject := ListViewTrainRoster.Items[ItemIndex].TagObject as TLccTractionObject;
+
   // Did we click on the Accessory to move to the Details tab?
   if ItemObject is TListItemAccessory then
   begin
@@ -558,7 +561,6 @@ begin
     TrainTabCDIClear;
 
     // Need to load the information into that tab if we can.  If not we need to call for it
-    TractionObject := ListViewTrainRoster.Items[ItemIndex].TagObject as TLccTractionObject;
     if TractionObject.SNIP.Valid then
     begin
       TrainTabDetailsLoad(TractionObject);
@@ -580,8 +582,32 @@ begin
   end else
   begin
     ListItem := ListViewTrainRoster.Items[ItemIndex];
+    ShowMessage(TractionObject.DisplayName);
     MultiViewRoster.HideMaster
   end;
+end;
+
+procedure TLccThrottleAppForm.ListViewTrainRosterSearchChange(Sender: TObject);
+var
+  I: Integer;
+  SearchBox: TSearchBox;
+  List: TListView;
+begin
+
+beep;
+  SearchBox := nil;
+  List := Sender as TListView;
+  for I := 0 to List.Controls.Count-1 do
+    if List.Controls[I].ClassType = TSearchBox then
+    begin
+      SearchBox := TSearchBox(List.Controls[I]);
+      Break;
+    end;
+  if Assigned(SearchBox) then
+  begin
+
+  end;
+ // StatusBar.Text := IntToStr(List.Items.Count) + ' list items match ' + QuotedStr(SearchBox.Text) + '.';
 end;
 
 procedure TLccThrottleAppForm.MenuItemSettingsLabelPathClick(Sender: TObject);
@@ -791,6 +817,11 @@ begin
   Result := False;
   if ListViewTrainRoster.Selected <> nil then
     Result := ListViewTrainRoster.Selected.TagObject = TractionObject
+end;
+
+procedure TLccThrottleAppForm.SelectTrain(TractionObject: TLccTractionObject);
+begin
+
 end;
 
 procedure TLccThrottleAppForm.SpeedButtonLogClearClick(Sender: TObject);

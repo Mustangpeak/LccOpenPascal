@@ -6,7 +6,8 @@ uses
   Skia.FMX,
   FMX_UserInterfaceApp in 'FMX_UserInterfaceApp.pas' {FMX_UserInterfaceForm},
   Frame_LccNodeEditor in 'Frame_LccNodeEditor.pas' {FrameLccNodeEditor: TFrame},
-  Frame_LccNodeEditorGroup in 'Frame_LccNodeEditorGroup.pas' {FrameLccNodeEditorGroup: TFrame};
+  Frame_LccNodeEditorGroup in 'Frame_LccNodeEditorGroup.pas' {FrameLccNodeEditorGroup: TFrame},
+  Frame_LccNodeEditorControl in 'Frame_LccNodeEditorControl.pas' {FrameNodeEditorControl: TFrame};
 
 {$R *.res}
 

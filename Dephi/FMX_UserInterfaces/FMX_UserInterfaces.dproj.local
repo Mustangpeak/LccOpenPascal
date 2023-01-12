@@ -17,10 +17,15 @@
     <Transaction>2023/01/08 22:28:30.386,=Z:\LccOpenPascal\Dephi\FMX_UserInterfaces\Unit1.pas</Transaction>
     <Transaction>2023/01/08 22:28:46.229,Z:\LccOpenPascal\Dephi\FMX_UserInterfaces\Frame_SpinEditEditor.pas=Z:\LccOpenPascal\Dephi\FMX_UserInterfaces\Unit1.pas</Transaction>
     <Transaction>2023/01/08 22:28:46.229,Z:\LccOpenPascal\Dephi\FMX_UserInterfaces\Frame_SpinEditEditor.fmx=Z:\LccOpenPascal\Dephi\FMX_UserInterfaces\Unit1.fmx</Transaction>
-    <Transaction>2023/01/09 12:06:59.374,Z:\LccOpenPascal\Dephi\FMX_UserInterfaces\Frame_LccNodeEditor.fmx=Z:\LccOpenPascal\Dephi\FMX_UserInterfaces\Frame_ComboBoxEditor.fmx</Transaction>
     <Transaction>2023/01/09 12:06:59.374,Z:\LccOpenPascal\Dephi\FMX_UserInterfaces\Frame_LccNodeEditor.pas=Z:\LccOpenPascal\Dephi\FMX_UserInterfaces\Frame_ComboBoxEditor.pas</Transaction>
+    <Transaction>2023/01/09 12:06:59.374,Z:\LccOpenPascal\Dephi\FMX_UserInterfaces\Frame_LccNodeEditor.fmx=Z:\LccOpenPascal\Dephi\FMX_UserInterfaces\Frame_ComboBoxEditor.fmx</Transaction>
     <Transaction>2023/01/09 12:56:19.139,=Z:\LccOpenPascal\Dephi\FMX_UserInterfaces\Unit1.pas</Transaction>
-    <Transaction>2023/01/09 12:56:36.670,Z:\LccOpenPascal\Dephi\FMX_UserInterfaces\Frame_LccNodeEditorGroup.pas=Z:\LccOpenPascal\Dephi\FMX_UserInterfaces\Unit1.pas</Transaction>
     <Transaction>2023/01/09 12:56:36.670,Z:\LccOpenPascal\Dephi\FMX_UserInterfaces\Frame_LccNodeEditorGroup.fmx=Z:\LccOpenPascal\Dephi\FMX_UserInterfaces\Unit1.fmx</Transaction>
+    <Transaction>2023/01/09 12:56:36.670,Z:\LccOpenPascal\Dephi\FMX_UserInterfaces\Frame_LccNodeEditorGroup.pas=Z:\LccOpenPascal\Dephi\FMX_UserInterfaces\Unit1.pas</Transaction>
+    <Transaction>2023/01/09 20:52:15.463,=Z:\LccOpenPascal\Dephi\FMX_UserInterfaces\Unit1.pas</Transaction>
+    <Transaction>2023/01/09 20:53:10.353,Z:\LccOpenPascal\Dephi\FMX_UserInterfaces\Frame_LccNodeEditorSegment.fmx=Z:\LccOpenPascal\Dephi\FMX_UserInterfaces\Unit1.fmx</Transaction>
+    <Transaction>2023/01/09 20:53:10.353,Z:\LccOpenPascal\Dephi\FMX_UserInterfaces\Frame_LccNodeEditorSegment.pas=Z:\LccOpenPascal\Dephi\FMX_UserInterfaces\Unit1.pas</Transaction>
+    <Transaction>2023/01/09 20:54:11.976,Z:\LccOpenPascal\Dephi\FMX_UserInterfaces\Frame_LccNodeEditorControl.pas=Z:\LccOpenPascal\Dephi\FMX_UserInterfaces\Frame_LccNodeEditorSegment.pas</Transaction>
+    <Transaction>2023/01/09 20:54:11.976,Z:\LccOpenPascal\Dephi\FMX_UserInterfaces\Frame_LccNodeEditorControl.fmx=Z:\LccOpenPascal\Dephi\FMX_UserInterfaces\Frame_LccNodeEditorSegment.fmx</Transaction>
   </Transactions>
 </BorlandProject>

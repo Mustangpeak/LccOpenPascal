@@ -7,7 +7,7 @@ uses
   FMX.Types, FMX.Graphics, FMX.Controls, FMX.Forms, FMX.Dialogs, FMX.StdCtrls,
   FMX.Controls.Presentation, FMX.Layouts, FMX.Edit, FMX.ComboEdit, FMX.Effects,
   FMX.TextLayout, FMX.Ani, FMX.Objects, FMX.EditBox, FMX.SpinBox,
-  Frame_LccNodeEditor, Frame_LccNodeEditorGroup;
+  Frame_LccNodeEditor, Frame_LccNodeEditorGroup, Frame_LccNodeEditorControl;
 
 type
 
@@ -40,12 +40,10 @@ type
     Footer: TToolBar;
     HeaderLabel: TLabel;
     SpeedButton1: TSpeedButton;
-    FramedVertScrollBox1: TFramedVertScrollBox;
+    LayoutEditorControl: TLayout;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure SpeedButton1Click(Sender: TObject);
-    procedure VertScrollBox1Resize(Sender: TObject);
-    procedure FramedVertScrollBox1Resize(Sender: TObject);
   private
     FButtonSizeManager: TFMX_LccConfigMemEditorButtonSizeManager;
     { Private declarations }
@@ -53,6 +51,7 @@ type
     { Public declarations }
 
     Group: TFrameLccNodeEditorGroup;
+    FrameNodeEditorControl: TFrameNodeEditorControl;
 
 
     property ButtonSizeManager: TFMX_LccConfigMemEditorButtonSizeManager read FButtonSizeManager write FButtonSizeManager;
@@ -84,22 +83,13 @@ begin
 
 end;
 
-procedure TFMX_UserInterfaceForm.FramedVertScrollBox1Resize(Sender: TObject);
-begin
-  if Assigned(Group) then
-  begin
-    Group.Width := FramedVertScrollBox1.ClientWidth;
-    Group.ReSizeEditorsWidth
-  end;
-end;
-
 procedure TFMX_UserInterfaceForm.SpeedButton1Click(Sender: TObject);
 var
   i: Integer;
-  Count: Integer;
+  Count, CountPerGroup: Integer;
   StringList: TStringList;
+  j: Integer;
 begin
-  Count := 2;
   StringList := TSTringList.Create;
   StringList.Add('Bob');
   StringList.Add('Sue');
@@ -107,30 +97,36 @@ begin
   StringList.Add('Mary');
   StringList.Add('Sue');
 
-  Group := TFrameLccNodeEditorGroup.Create(Self);
-  Group.Position.x := 0;
-  Group.Position.y := 0;
-  try
-    for i := 0 to 1 do
+
+  FrameNodeEditorControl := TFrameNodeEditorControl.Create(Self);
+  FrameNodeEditorControl.Align := TAlignLayout.Client;
+
+
+
+  FrameNodeEditorControl.Visible := False;
+  FrameNodeEditorControl.BeginUpdate;
+  for j := 0 to 4 do
+  begin
+    Group := FrameNodeEditorControl.AddGroup('New Group ' + IntToStr(j), 'Description', True);
+    Group.DelayEditorBuild := True;
+
+    CountPerGroup := 100;
+
+    Count := CountPerGroup div 3;
+    for i := 0 to Count - 1 do
     begin
       Group.AddComboBoxEditor('Combo Name ' + IntToStr(i), 'Combo Description', StringList, 0);
       Group.AddEditBoxEditor('Edit Name ' + IntToStr(i), 'Edit Description', 'Some Text');
       Group.AddSpinBoxEditor('Spin Name ' + IntToStr(i), 'Spin Description', 1000, 0, 2000);
-
     end;
-  finally
-    Group.Parent := FramedVertScrollBox1;
-  //  VertScrollBox1.is
-    Group.Width := FramedVertScrollBox1.ClientWidth;
   end;
+  FrameNodeEditorControl.EndUpdate;
+  FrameNodeEditorControl.Visible := True;
+
+
+  FrameNodeEditorControl.Parent := LayoutEditorControl;
 
   StringList.Free
-end;
-
-procedure TFMX_UserInterfaceForm.VertScrollBox1Resize(Sender: TObject);
-begin
-
-
 end;
 
 { TFMX_LccConfigMemEditorButtonSizeManager }

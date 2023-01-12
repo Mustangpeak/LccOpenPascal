@@ -1,12 +1,12 @@
 object FrameLccNodeEditorGroup: TFrameLccNodeEditorGroup
   Size.Width = 596.000000000000000000
-  Size.Height = 378.000000000000000000
+  Size.Height = 92.000000000000000000
   Size.PlatformDefault = False
   OnResize = FrameResize
   object LayoutGroup: TLayout
     Align = Client
     Size.Width = 596.000000000000000000
-    Size.Height = 378.000000000000000000
+    Size.Height = 92.000000000000000000
     Size.PlatformDefault = False
     TabOrder = 2
     object ToolBarGroup: TToolBar
@@ -22,7 +22,7 @@ object FrameLccNodeEditorGroup: TFrameLccNodeEditorGroup
         Size.Height = 48.000000000000000000
         Size.PlatformDefault = False
         TabOrder = 1
-        object LabelGroupName: TLabel
+        object LabelName: TLabel
           Align = Top
           StyledSettings = [Family, Size, FontColor]
           Margins.Left = 4.000000000000000000
@@ -36,9 +36,8 @@ object FrameLccNodeEditorGroup: TFrameLccNodeEditorGroup
           TextSettings.Font.StyleExt = {00070000000000000004000000}
           Text = 'Group Name'
           TabOrder = 0
-          OnClick = LabelGroupNameClick
         end
-        object LabelGroupDescription: TLabel
+        object LabelDescription: TLabel
           Align = Top
           StyledSettings = [Family, Size, FontColor]
           Margins.Left = 4.000000000000000000
@@ -69,15 +68,16 @@ object FrameLccNodeEditorGroup: TFrameLccNodeEditorGroup
       Align = Client
       ClipChildren = True
       Size.Width = 596.000000000000000000
-      Size.Height = 330.000000000000000000
+      Size.Height = 44.000000000000000000
       Size.PlatformDefault = False
       TabOrder = 1
     end
   end
   object FloatAnimationGroupExpand: TFloatAnimation
     AnimationType = Out
-    Duration = 1.000000000000000000
+    Duration = 0.500000000000000000
     Interpolation = Exponential
+    OnProcess = FloatAnimationGroupExpandProcess
     OnFinish = FloatAnimationGroupExpandFinish
     PropertyName = 'Height'
     StartValue = 0.000000000000000000

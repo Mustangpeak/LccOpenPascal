@@ -4,21 +4,16 @@ inherited FMX_UserInterfaceForm_iPhone4in: TFMX_UserInterfaceForm_iPhone4in
   DesignerMasterStyle = 2
   inherited Header: TToolBar
     Size.Width = 320.000000000000000000
-    Size.Height = 44.000000000000000000
     inherited HeaderLabel: TLabel
       Size.Width = 320.000000000000000000
-      Size.Height = 44.000000000000000000
     end
   end
   inherited Footer: TToolBar
     Position.Y = 504.000000000000000000
     Size.Width = 320.000000000000000000
-    Size.Height = 44.000000000000000000
   end
-  inherited FramedVertScrollBox1: TFramedVertScrollBox
+  inherited LayoutEditorControl: TLayout
     Size.Width = 320.000000000000000000
     Size.Height = 460.000000000000000000
-    Viewport.Width = 320.000000000000000000
-    Viewport.Height = 460.000000000000000000
   end
 end

@@ -618,7 +618,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
             Size.Width = 359.000000000000000000
             Size.Height = 439.000000000000000000
             Size.PlatformDefault = False
-            TabIndex = 2
+            TabIndex = 0
             TabOrder = 0
             TabPosition = PlatformDefault
             OnChange = TabControlTrainRosterChange
@@ -633,7 +633,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
               CustomIcon = <
                 item
                 end>
-              IsSelected = False
+              IsSelected = True
               Size.Width = 54.000000000000000000
               Size.Height = 26.000000000000000000
               Size.PlatformDefault = False
@@ -653,6 +653,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
                 Size.PlatformDefault = False
                 TabOrder = 0
                 OnItemClickEx = ListViewTrainRosterItemClickEx
+                OnSearchChange = ListViewTrainRosterSearchChange
                 SearchVisible = True
               end
             end
@@ -789,7 +790,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
               CustomIcon = <
                 item
                 end>
-              IsSelected = True
+              IsSelected = False
               Size.Width = 41.000000000000000000
               Size.Height = 26.000000000000000000
               Size.PlatformDefault = False
