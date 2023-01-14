@@ -75,11 +75,11 @@ type
   TLccNodeCDI = class
   private
     FImplemented: Boolean;   // Flags if we tried and could not get a CDI
-    FCDI: AnsiString;
+    FCDI: String;
     function GetValid: Boolean;
-    procedure SetCDI(const Value: AnsiString);
+    procedure SetCDI(const Value: string);
   public
-    property CDI: AnsiString read FCDI write SetCDI;
+    property CDI: String read FCDI write SetCDI;
     property Implemented: Boolean read FImplemented write FImplemented;
     property Valid: Boolean read GetValid;
   end;
@@ -3145,7 +3145,7 @@ begin
   Result := Implemented and (CDI <> '');
 end;
 
-procedure TLccNodeCDI.SetCDI(const Value: AnsiString);
+procedure TLccNodeCDI.SetCDI(const Value: string);
 begin
   FCDI := Value;
 end;

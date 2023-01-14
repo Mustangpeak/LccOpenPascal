@@ -1042,10 +1042,10 @@ begin
 end;
 
   {$IFNDEF LCC_MOBILE}
-    function GridConnectToJMRI(GridStr: AnsiString): AnsiString;
+    function GridConnectToJMRI(GridStr: string): string;
     var
       NPos: integer;
-      Header: PAnsiChar;
+      Header: PChar;
       i: Integer;
     begin
       Result := GridStr;
@@ -1066,7 +1066,7 @@ end;
         Result := Result + Header^ + ' ';
         Inc(Header);
       end;
-      Result := AnsiString( Trim(string( Result)));
+      Result := Trim(string( Result));
       for i := 0 to (40 - Length(Result)) do
         Result := Result + ' ';  // Pad them all to the same length
     end;

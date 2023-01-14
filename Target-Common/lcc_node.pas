@@ -209,12 +209,12 @@ type
     FUseAddresses: Boolean;
     FWritingChunk: Boolean;
     FCallbackProgress: TOnEngineMemorySpaceAccessCallback;
-    function GetStreamAsString: AnsiString;
+    function GetStreamAsString: string;
     function GetStreamAsInt: Integer;
     function GetStreamAsEventID: TEventID;
     procedure SetStreamAsEventID(AValue: TEventID);
     procedure SetStreamAsInt(Size: Integer; AValue: Integer);
-    procedure SetStreamAsString(AValue: AnsiString);
+    procedure SetStreamAsString(AValue: string);
     function GetQueuedRequests: Integer;
   protected
     property CurrentAddress: DWord read FCurrentAddress write FCurrentAddress;
@@ -247,10 +247,10 @@ type
     property ReadWrite: TLccEngineMemorySpaceReadWrite read FReadWrite write FReadWrite;
 
     property PIPHelper: TProtocolSupportedProtocols read FPIPHelper;
-    property StreamAsString: AnsiString read GetStreamAsString;
+    property StreamAsString: string read GetStreamAsString;
     property StreamAsInt: Integer read GetStreamAsInt;
     property StreamAsEventID: TEventID read GetStreamAsEventID;
-    property StringToStream: AnsiString write SetStreamAsString;
+    property StringToStream: string write SetStreamAsString;
     property IntToStream[Size: Integer]: Integer write SetStreamAsInt;
     property EventIDToStream: TEventID write SetStreamAsEventID;
     property QueuedRequests: Integer read GetQueuedRequests;
@@ -855,7 +855,7 @@ end;
 
 function TLccEngineMemorySpaceAccess.GetStreamAsEventID: TEventID;
 var
-  Hex, Temp: AnsiString;
+  Hex, Temp: string;
   i: Integer;
   B: Byte;
 begin
@@ -866,7 +866,7 @@ begin
   begin
     B := 0;
     MemoryStream.Read(B, SizeOf(B));
-    Hex := AnsiString( IntToHex(B, 2));
+    Hex := IntToHex(B, 2);
     Temp := Temp + Hex;
   end;
 
@@ -878,14 +878,14 @@ end;
 
 procedure TLccEngineMemorySpaceAccess.SetStreamAsEventID(AValue: TEventID);
 var
-  EventIDStr, Temp: AnsiString;
+  EventIDStr, Temp: string;
   StartIndex, i: Integer;
-  CharPtr: PAnsiChar;
+  CharPtr: PChar;
   B: Byte;
 begin
   MemoryStream.Position := 0;
 
-  EventIDStr := AnsiString( EventIDToString(AValue, False));
+  EventIDStr := EventIDToString(AValue, False);
 
   {$IFDEF LCC_MOBILE}
   StartIndex := 0;
@@ -912,14 +912,14 @@ end;
 
 procedure TLccEngineMemorySpaceAccess.SetStreamAsInt(Size: Integer; AValue: Integer);
 var
-  Hex, Temp: AnsiString;
-  CharPtr: PAnsiChar;
+  Hex, Temp: string;
+  CharPtr: PChar;
   B: Byte;
   StartIndex, i: Integer;
 begin
   MemoryStream.Clear;
 
-  Hex := AnsiString( IntToHex(AValue, Size * 2));
+  Hex := IntToHex(AValue, Size * 2);
 
   {$IFDEF LCC_MOBILE}
   StartIndex := 0;
@@ -944,7 +944,7 @@ begin
 end;
 
 
-procedure TLccEngineMemorySpaceAccess.SetStreamAsString(AValue: AnsiString);
+procedure TLccEngineMemorySpaceAccess.SetStreamAsString(AValue: string);
 var
   i: Integer;
   B: Byte;
@@ -1003,7 +1003,7 @@ begin
       if ReadWrite = lems_Write then
       begin
         case EngineMemorySpaceObject.DataType of
-          cdt_String  : StringToStream := AnsiString( EngineMemorySpaceObject.WriteString);
+          cdt_String  : StringToStream := EngineMemorySpaceObject.WriteString;
           cdt_Int     : IntToStream[AddressHi - AddressLo] := EngineMemorySpaceObject.WriteInteger;
           cdt_EventID : EventIDToStream := EngineMemorySpaceObject.WriteEventID;
         end;
@@ -1044,7 +1044,7 @@ end;
 
 function TLccEngineMemorySpaceAccess.GetStreamAsInt: Integer;
 var
-  Hex, Temp: AnsiString;
+  Hex, Temp: String;
   B: Byte;
   i: Integer;
 begin
@@ -1056,7 +1056,7 @@ begin
   begin
     B := 0;
     MemoryStream.Read(B, SizeOf(B));
-    Hex := AnsiString( IntToHex(B, 2));
+    Hex := IntToHex(B, 2);
     Temp := Temp + Hex;
   end;
 
@@ -1067,10 +1067,10 @@ begin
   MemoryStream.Position := 0;
 end;
 
-function TLccEngineMemorySpaceAccess.GetStreamAsString: AnsiString;
+function TLccEngineMemorySpaceAccess.GetStreamAsString: string;
 var
   i: Integer;
-  C: AnsiChar;
+  C: UTF8Char;
 begin
   Result := '';
   C := #0;
@@ -1079,7 +1079,7 @@ begin
   begin
     MemoryStream.Read(C, SizeOf(C));
     if C <> #0 then
-      Result := Result + C
+      Result := Result + string( C)
   end;
 end;
 

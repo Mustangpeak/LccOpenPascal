@@ -457,6 +457,40 @@ begin
   CurrentNodeID := StrToNodeID( DEFAULT_NODE_ID, True);
 
   // Default Paths for files
+
+ {
+
+ PathApplicationFiles := TPath.GetDocumentsPath;
+ if DirectoryExists(PathApplicationFiles) then
+ begin
+   if CreateDir(TPath.GetDocumentsPath + TPath.DirectorySeparatorChar + FOLDERNAME_APP) then
+   begin
+     beep;
+   end;
+ end;
+
+ if DirectoryExists(TPath.GetDocumentsPath + TPath.DirectorySeparatorChar + FOLDERNAME_APP) then
+ begin
+   beep;
+ end;
+
+ if FileExists(TPath.GetDocumentsPath + TPath.DirectorySeparatorChar + FOLDERNAME_APP + TPath.DirectorySeparatorChar + FILENAME_SETTINGS) then
+ begin
+   if DeleteFile(TPath.GetDocumentsPath + TPath.DirectorySeparatorChar + FOLDERNAME_APP + TPath.DirectorySeparatorChar + FILENAME_SETTINGS) then
+   begin
+     beep;
+   end;
+ end;
+
+ if FileExists(TPath.GetDocumentsPath + TPath.DirectorySeparatorChar + FOLDERNAME_APP + TPath.DirectorySeparatorChar + FILENAME_MEMORY_CONFIG) then
+ begin
+   if DeleteFile(TPath.GetDocumentsPath + TPath.DirectorySeparatorChar + FOLDERNAME_APP + TPath.DirectorySeparatorChar + FILENAME_MEMORY_CONFIG) then
+   begin
+     beep;
+   end;
+ end;
+           }
+
   PathApplicationFiles := TPath.GetDocumentsPath + TPath.DirectorySeparatorChar + FOLDERNAME_APP;
   PathSettingsFile := TPath.GetDocumentsPath + TPath.DirectorySeparatorChar + FOLDERNAME_APP + TPath.DirectorySeparatorChar + FILENAME_SETTINGS;
   PathMemoryConfig := TPath.GetDocumentsPath + TPath.DirectorySeparatorChar + FOLDERNAME_APP + TPath.DirectorySeparatorChar + FILENAME_MEMORY_CONFIG;
@@ -728,6 +762,9 @@ begin
   begin
     LocalNodeIdentification := TLccNodeIdentificationObject.Create;
     LocalNodeIdentification.AssignID(TractionObject.NodeID, TractionObject.NodeAlias);
+
+    ShowMessage(TractionObject.NodeCDI.CDI);
+
     XMLDoc := XmlLoadFromText( LccDOMString( TractionObject.NodeCDI.CDI));
     try
        CDILayoutFrame := CdiParserFrame.Build_CDI_Interface(Controller, LocalNodeIdentification, LabelTrainRosterEditContainer, XMLDoc, OnCdiParserProcessCallback);

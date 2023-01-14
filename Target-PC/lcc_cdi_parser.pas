@@ -149,10 +149,10 @@ type
     FDataDirection: TConfigDataDirection;  // Read or Write
     FDataEvent: TNodeID;
     FDataInteger: Integer;
-    FDataString: ansistring;
+    FDataString: string;
   public
     property DataDirection: TConfigDataDirection read FDataDirection write FDataDirection;
-    property DataString: ansistring read FDataString write FDataString;
+    property DataString: string read FDataString write FDataString;
     property DataInteger: Integer read FDataInteger write FDataInteger;
     property DataEvent: TNodeID read FDataEvent write FDataEvent;
     property DataBit: Byte read FDataBit write FDataBit;
@@ -1807,7 +1807,7 @@ end;
 procedure TLccCdiParser.OnEditChange(Sender: TObject);
 begin
   (Sender as TLccOpenPascalEdit).DataElementInformation.MemState := ocs_Unknown;
-  (Sender as TLccOpenPascalEdit).DataElementInformation.ConfigData.DataString := AnsiString( (Sender as TLccOpenPascalEdit).Text);
+  (Sender as TLccOpenPascalEdit).DataElementInformation.ConfigData.DataString := (Sender as TLccOpenPascalEdit).Text;
 end;
 
 procedure TLccCdiParser.OnComboBoxChange(Sender: TObject);
@@ -1834,10 +1834,12 @@ var
 begin
   {$IFDEF DELPHI}
   TabSheet := TabControl.ActiveTab as TLccOpenPascalTabSheet;
-  TabSheet.ScrollingWindowContentsPanel.Width := TabSheet.TabControl.Width - TAB_RIGHT_MARGIN;
+  if Assigned(TabSheet) then
+    TabSheet.ScrollingWindowContentsPanel.Width := TabSheet.TabControl.Width - TAB_RIGHT_MARGIN;
   {$ELSE}
   TabSheet := TabControl.ActivePage as TLccOpenPascalTabSheet;
-  TabSheet.ScrollingWindowContentsPanel.Width := TabSheet.Width - TAB_RIGHT_MARGIN;
+  if Assigned(TabSheet) then
+    TabSheet.ScrollingWindowContentsPanel.Width := TabSheet.Width - TAB_RIGHT_MARGIN;
   {$ENDIF}
 end;
 

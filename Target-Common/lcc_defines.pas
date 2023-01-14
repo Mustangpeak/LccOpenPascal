@@ -58,10 +58,10 @@ const
     DWord = Cardinal;
     QWord = UInt64;
     {$IFDEF LCC_MOBILE}
-      AnsiChar = Char;
-      AnsiString = string;
-      PAnsiString = ^string;
-      PAnsiChar = ^Char;
+ //     AnsiChar = Char;
+ //     AnsiString = string;
+//      PAnsiString = ^string;
+ //     PAnsiChar = ^Char;
     {$ENDIF}
   {$ENDIF}
 
