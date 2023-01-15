@@ -1954,6 +1954,8 @@ begin
 
   ParserFrame.Visible := True;
 
+  {$IFDEF DELPHI}ApplicationPanel.Text := '';{$ELSE}ApplicationPanel.Caption := '';{$ENDIF}
+
   TabControl.OnChange := {$IFNDEF DELPHI}@{$ENDIF}OnPageControlChange;
   OnPageControlChange(Result);
   DoBuildInterfaceComplete;

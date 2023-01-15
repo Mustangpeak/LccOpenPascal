@@ -23,7 +23,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
     Size.Height = 627.000000000000000000
     Size.PlatformDefault = False
     TabHeight = 49.000000000000000000
-    TabIndex = 3
+    TabIndex = 0
     TabOrder = 0
     TabPosition = PlatformDefault
     Sizes = (
@@ -39,7 +39,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
       CustomIcon = <
         item
         end>
-      IsSelected = False
+      IsSelected = True
       Size.Width = 103.000000000000000000
       Size.Height = 49.000000000000000000
       Size.PlatformDefault = False
@@ -618,7 +618,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
             Size.Width = 359.000000000000000000
             Size.Height = 530.000000000000000000
             Size.PlatformDefault = False
-            TabIndex = 0
+            TabIndex = 2
             TabOrder = 0
             TabPosition = PlatformDefault
             OnChange = TabControlTrainRosterChange
@@ -633,7 +633,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
               CustomIcon = <
                 item
                 end>
-              IsSelected = True
+              IsSelected = False
               Size.Width = 54.000000000000000000
               Size.Height = 26.000000000000000000
               Size.PlatformDefault = False
@@ -790,7 +790,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
               CustomIcon = <
                 item
                 end>
-              IsSelected = False
+              IsSelected = True
               Size.Width = 41.000000000000000000
               Size.Height = 26.000000000000000000
               Size.PlatformDefault = False
@@ -1044,7 +1044,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
       CustomIcon = <
         item
         end>
-      IsSelected = True
+      IsSelected = False
       Size.Width = 105.000000000000000000
       Size.Height = 49.000000000000000000
       Size.PlatformDefault = False
@@ -1280,8 +1280,8 @@ object LccThrottleAppForm: TLccThrottleAppForm
     Top = 304
   end
   object PopupMenuLabelPath: TPopupMenu
-    Left = 144
-    Top = 377
+    Left = 152
+    Top = 241
     object MenuItemSettingsLabelPath: TMenuItem
       Text = 'Copy To Clipboard'
       OnClick = MenuItemSettingsLabelPathClick
