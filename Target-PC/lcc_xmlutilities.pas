@@ -42,6 +42,7 @@ function XmlCreateRootNode(XmlDoc: TLccXmlDocument; Element, Content: domString)
 function XmlFindChildNode(XmlNode: TLccXmlNode; Name: domString): TLccXmlNode;
 function XmlFirstChild(XmlNode: TLccXmlNode): TLccXmlNode;
 function XmlFindRootNode(XmlDoc: TLccXmlDocument; RootName: domString): TLccXmlNode;
+function XmlNextSiblingNode(XmlNode: TLccXmlNode): TLccXmlNode;
 // Element value (name) functions
 function XmlFirstChildValue(XmlNode: TLccXmlNode): domString;
 function XmlNextSiblingValue(XmlNode: TLccXmlNode): domString;
@@ -52,8 +53,6 @@ procedure XmlNodeSetTextContent(XmlNode: TLccXmlNode; Text: domString);
 procedure XmlNodeSetFirstLevelTextContent(XMLDoc: TLccXmlDocument; RootElement, ChildElement, Content: domString; Force: Boolean); overload;
 procedure XmlNodeSetFirstLevelTextContent(FilePath, RootElement, ChildElement, Content: domString; Force: Boolean); overload;
 function XmlNodeFindChildNodeTextContent(TopLevelElement: TLccXmlNode; ChildNodeName: LccDOMString): LccDOMString;
-// Enumerator functions
-function XmlNextSiblingNode(XmlNode: TLccXmlNode): TLccXmlNode;
 // Attribute functions
 procedure XmlAttributeCreateAndSet(XmlDoc: TLccXmlDocument; TargetNode: TLccXmlNode; Attribute, Content: domString);
 procedure XmlAttributeForce(XmlDoc: TLccXmlDocument; TargetNode: TLccXmlNode; Attribute, Content: domString);

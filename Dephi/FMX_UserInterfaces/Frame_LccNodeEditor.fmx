@@ -6,13 +6,13 @@ object FrameLccNodeEditor: TFrameLccNodeEditor
     Align = Top
     ClipChildren = True
     Size.Width = 662.000000000000000000
-    Size.Height = 86.000000000000000000
+    Size.Height = 96.000000000000000000
     Size.PlatformDefault = False
     TabOrder = 2
     object LayoutEditor: TLayout
       Align = Client
       Size.Width = 618.000000000000000000
-      Size.Height = 86.000000000000000000
+      Size.Height = 96.000000000000000000
       Size.PlatformDefault = False
       TabOrder = 0
       object LabelName: TLabel
@@ -72,7 +72,7 @@ object FrameLccNodeEditor: TFrameLccNodeEditor
         Align = Client
         ClipChildren = True
         Size.Width = 618.000000000000000000
-        Size.Height = 38.000000000000000000
+        Size.Height = 48.000000000000000000
         Size.PlatformDefault = False
         TabOrder = 2
         object LayoutActionButtons: TLayout
@@ -80,7 +80,7 @@ object FrameLccNodeEditor: TFrameLccNodeEditor
           ClipChildren = True
           Position.X = 374.000000000000000000
           Size.Width = 200.000000000000000000
-          Size.Height = 38.000000000000000000
+          Size.Height = 48.000000000000000000
           Size.PlatformDefault = False
           TabOrder = 3
           object SpeedButtonActionCompare: TSpeedButton
@@ -90,7 +90,7 @@ object FrameLccNodeEditor: TFrameLccNodeEditor
               'alue'
             Position.X = 8.000000000000000000
             Size.Width = 64.000000000000000000
-            Size.Height = 38.000000000000000000
+            Size.Height = 48.000000000000000000
             Size.PlatformDefault = False
             Text = 'Compare'
           end
@@ -101,7 +101,7 @@ object FrameLccNodeEditor: TFrameLccNodeEditor
               'ry'
             Position.X = 72.000000000000000000
             Size.Width = 64.000000000000000000
-            Size.Height = 38.000000000000000000
+            Size.Height = 48.000000000000000000
             Size.PlatformDefault = False
             Text = 'Read'
           end
@@ -110,7 +110,7 @@ object FrameLccNodeEditor: TFrameLccNodeEditor
             Hint = 'Write the value of the editor to the nodes configuration memory'
             Position.X = 136.000000000000000000
             Size.Width = 64.000000000000000000
-            Size.Height = 38.000000000000000000
+            Size.Height = 48.000000000000000000
             Size.PlatformDefault = False
             Text = 'Write'
           end
@@ -128,7 +128,7 @@ object FrameLccNodeEditor: TFrameLccNodeEditor
           Position.X = 574.000000000000000000
           Position.Y = 4.000000000000000000
           Size.Width = 44.000000000000000000
-          Size.Height = 30.000000000000000000
+          Size.Height = 40.000000000000000000
           Size.PlatformDefault = False
           StyleLookup = 'composetoolbutton'
           OnClick = SpeedButtonShowActionsClick
@@ -140,7 +140,7 @@ object FrameLccNodeEditor: TFrameLccNodeEditor
           Padding.Right = 4.000000000000000000
           Padding.Bottom = 8.000000000000000000
           Size.Width = 374.000000000000000000
-          Size.Height = 38.000000000000000000
+          Size.Height = 48.000000000000000000
           Size.PlatformDefault = False
           TabOrder = 4
           object EditBox: TEdit
@@ -150,11 +150,11 @@ object FrameLccNodeEditor: TFrameLccNodeEditor
             Position.X = 270.000000000000000000
             Position.Y = 8.000000000000000000
             Size.Width = 100.000000000000000000
-            Size.Height = 22.000000000000000000
+            Size.Height = 32.000000000000000000
             Size.PlatformDefault = False
             OnChange = EditBoxChange
             object InnerGlowEffectEditorEditBox: TInnerGlowEffect
-              Softness = 0.400000005960464500
+              Softness = 0.400000005960464400
               GlowColor = claGold
               Opacity = 0.899999976158142100
               object ColorAnimationEditBoxInnerGlowEffect: TColorAnimation
@@ -174,11 +174,11 @@ object FrameLccNodeEditor: TFrameLccNodeEditor
             Position.X = 170.000000000000000000
             Position.Y = 8.000000000000000000
             Size.Width = 100.000000000000000000
-            Size.Height = 22.000000000000000000
+            Size.Height = 32.000000000000000000
             Size.PlatformDefault = False
             OnChange = SpinBoxChange
             object InnerGlowEffectEditorSpinBox: TInnerGlowEffect
-              Softness = 0.400000005960464500
+              Softness = 0.400000005960464400
               GlowColor = claGold
               Opacity = 0.899999976158142100
               object ColorAnimationSpinBoxInnerGlowEffect: TColorAnimation
@@ -195,12 +195,12 @@ object FrameLccNodeEditor: TFrameLccNodeEditor
             Position.X = 70.000000000000000000
             Position.Y = 8.000000000000000000
             Size.Width = 100.000000000000000000
-            Size.Height = 22.000000000000000000
+            Size.Height = 32.000000000000000000
             Size.PlatformDefault = False
             TabOrder = 5
             OnChange = ComboBoxChange
             object InnerGlowEffectEditorComboBox: TInnerGlowEffect
-              Softness = 0.400000005960464500
+              Softness = 0.400000005960464400
               GlowColor = claGold
               Opacity = 0.899999976158142100
               object ColorAnimationComboBoxInnerGlowEffect: TColorAnimation
@@ -219,13 +219,13 @@ object FrameLccNodeEditor: TFrameLccNodeEditor
       Align = Right
       Position.X = 618.000000000000000000
       Size.Width = 44.000000000000000000
-      Size.Height = 86.000000000000000000
+      Size.Height = 96.000000000000000000
       Size.PlatformDefault = False
       TabOrder = 1
       object SpeedButtonTextFolding: TSpeedButton
         Align = Client
         Size.Width = 44.000000000000000000
-        Size.Height = 86.000000000000000000
+        Size.Height = 96.000000000000000000
         Size.PlatformDefault = False
         StyleLookup = 'searchtoolbutton'
         Text = 'SpeedButtonTextFolding'

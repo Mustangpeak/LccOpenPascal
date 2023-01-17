@@ -14,3 +14,4 @@ begin
   Application.CreateForm(TLccThrottleAppForm, LccThrottleAppForm);
   Application.Run;
 end.
+

@@ -7,7 +7,8 @@ uses
   FMX.Types, FMX.Graphics, FMX.Controls, FMX.Forms, FMX.Dialogs, FMX.StdCtrls,
   FMX.Controls.Presentation, FMX.Layouts, FMX.Edit, FMX.ComboEdit, FMX.Effects,
   FMX.TextLayout, FMX.Ani, FMX.Objects, FMX.EditBox, FMX.SpinBox,
-  Frame_LccNodeEditor, Frame_LccNodeEditorGroup, Frame_LccNodeEditorControl;
+  Frame_LccNodeEditor, Frame_LccNodeEditorGroup, Frame_LccNodeEditorControl,
+  FMX.ListBox;
 
 type
 
@@ -41,9 +42,13 @@ type
     HeaderLabel: TLabel;
     SpeedButton1: TSpeedButton;
     LayoutEditorControl: TLayout;
+    SpeedButton2: TSpeedButton;
+    SpeedButton3: TSpeedButton;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure SpeedButton1Click(Sender: TObject);
+    procedure SpeedButton2Click(Sender: TObject);
+    procedure SpeedButton3Click(Sender: TObject);
   private
     FButtonSizeManager: TFMX_LccConfigMemEditorButtonSizeManager;
     { Private declarations }
@@ -127,6 +132,31 @@ begin
   FrameNodeEditorControl.Parent := LayoutEditorControl;
 
   StringList.Free
+end;
+
+procedure TFMX_UserInterfaceForm.SpeedButton2Click(Sender: TObject);
+var
+  i: Integer;
+  x: TFmxObject;
+begin
+  for i := 0 to 399 do
+    begin
+      x := TEdit.Create(Self);
+      x.Parent := Self;
+    end;
+end;
+
+procedure TFMX_UserInterfaceForm.SpeedButton3Click(Sender: TObject);
+var
+  i: Integer;
+  x: TFmxObject;
+begin
+  for i := 0 to 399 do
+    begin
+      x := TComboBox.Create(Self);
+      x.Parent := Self;
+    end;
+
 end;
 
 { TFMX_LccConfigMemEditorButtonSizeManager }

@@ -77,7 +77,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
               Margins.Bottom = 2.000000000000000000
               Position.X = 2.000000000000000000
               Size.Width = 153.000000000000000000
-              Size.Height = 33.000000000000000000
+              Size.Height = 44.000000000000000000
               Size.PlatformDefault = False
               TabOrder = 27
               Text = 'F0'
@@ -90,9 +90,9 @@ object LccThrottleAppForm: TLccThrottleAppForm
               Margins.Right = 2.000000000000000000
               Margins.Bottom = 2.000000000000000000
               Position.X = 2.000000000000000000
-              Position.Y = 665.000000000000000000
+              Position.Y = 874.000000000000000000
               Size.Width = 153.000000000000000000
-              Size.Height = 33.000000000000000000
+              Size.Height = 44.000000000000000000
               Size.PlatformDefault = False
               TabOrder = 24
               Text = 'F19'
@@ -105,9 +105,9 @@ object LccThrottleAppForm: TLccThrottleAppForm
               Margins.Right = 2.000000000000000000
               Margins.Bottom = 2.000000000000000000
               Position.X = 2.000000000000000000
-              Position.Y = 630.000000000000000000
+              Position.Y = 828.000000000000000000
               Size.Width = 153.000000000000000000
-              Size.Height = 33.000000000000000000
+              Size.Height = 44.000000000000000000
               Size.PlatformDefault = False
               TabOrder = 23
               Text = 'F18'
@@ -120,9 +120,9 @@ object LccThrottleAppForm: TLccThrottleAppForm
               Margins.Right = 2.000000000000000000
               Margins.Bottom = 2.000000000000000000
               Position.X = 2.000000000000000000
-              Position.Y = 595.000000000000000000
+              Position.Y = 782.000000000000000000
               Size.Width = 153.000000000000000000
-              Size.Height = 33.000000000000000000
+              Size.Height = 44.000000000000000000
               Size.PlatformDefault = False
               TabOrder = 22
               Text = 'F17'
@@ -135,9 +135,9 @@ object LccThrottleAppForm: TLccThrottleAppForm
               Margins.Right = 2.000000000000000000
               Margins.Bottom = 2.000000000000000000
               Position.X = 2.000000000000000000
-              Position.Y = 560.000000000000000000
+              Position.Y = 736.000000000000000000
               Size.Width = 153.000000000000000000
-              Size.Height = 33.000000000000000000
+              Size.Height = 44.000000000000000000
               Size.PlatformDefault = False
               TabOrder = 21
               Text = 'F16'
@@ -150,9 +150,9 @@ object LccThrottleAppForm: TLccThrottleAppForm
               Margins.Right = 2.000000000000000000
               Margins.Bottom = 2.000000000000000000
               Position.X = 2.000000000000000000
-              Position.Y = 525.000000000000000000
+              Position.Y = 690.000000000000000000
               Size.Width = 153.000000000000000000
-              Size.Height = 33.000000000000000000
+              Size.Height = 44.000000000000000000
               Size.PlatformDefault = False
               TabOrder = 20
               Text = 'F15'
@@ -165,9 +165,9 @@ object LccThrottleAppForm: TLccThrottleAppForm
               Margins.Right = 2.000000000000000000
               Margins.Bottom = 2.000000000000000000
               Position.X = 2.000000000000000000
-              Position.Y = 490.000000000000000000
+              Position.Y = 644.000000000000000000
               Size.Width = 153.000000000000000000
-              Size.Height = 33.000000000000000000
+              Size.Height = 44.000000000000000000
               Size.PlatformDefault = False
               TabOrder = 19
               Text = 'F14'
@@ -180,9 +180,9 @@ object LccThrottleAppForm: TLccThrottleAppForm
               Margins.Right = 2.000000000000000000
               Margins.Bottom = 2.000000000000000000
               Position.X = 2.000000000000000000
-              Position.Y = 455.000000000000000000
+              Position.Y = 598.000000000000000000
               Size.Width = 153.000000000000000000
-              Size.Height = 33.000000000000000000
+              Size.Height = 44.000000000000000000
               Size.PlatformDefault = False
               TabOrder = 18
               Text = 'F13'
@@ -195,9 +195,9 @@ object LccThrottleAppForm: TLccThrottleAppForm
               Margins.Right = 2.000000000000000000
               Margins.Bottom = 2.000000000000000000
               Position.X = 2.000000000000000000
-              Position.Y = 420.000000000000000000
+              Position.Y = 552.000000000000000000
               Size.Width = 153.000000000000000000
-              Size.Height = 33.000000000000000000
+              Size.Height = 44.000000000000000000
               Size.PlatformDefault = False
               TabOrder = 17
               Text = 'F12'
@@ -210,9 +210,9 @@ object LccThrottleAppForm: TLccThrottleAppForm
               Margins.Right = 2.000000000000000000
               Margins.Bottom = 2.000000000000000000
               Position.X = 2.000000000000000000
-              Position.Y = 385.000000000000000000
+              Position.Y = 506.000000000000000000
               Size.Width = 153.000000000000000000
-              Size.Height = 33.000000000000000000
+              Size.Height = 44.000000000000000000
               Size.PlatformDefault = False
               TabOrder = 16
               Text = 'F11'
@@ -225,9 +225,9 @@ object LccThrottleAppForm: TLccThrottleAppForm
               Margins.Right = 2.000000000000000000
               Margins.Bottom = 2.000000000000000000
               Position.X = 2.000000000000000000
-              Position.Y = 350.000000000000000000
+              Position.Y = 460.000000000000000000
               Size.Width = 153.000000000000000000
-              Size.Height = 33.000000000000000000
+              Size.Height = 44.000000000000000000
               Size.PlatformDefault = False
               TabOrder = 26
               Text = 'F10'
@@ -240,9 +240,9 @@ object LccThrottleAppForm: TLccThrottleAppForm
               Margins.Right = 2.000000000000000000
               Margins.Bottom = 2.000000000000000000
               Position.X = 2.000000000000000000
-              Position.Y = 35.000000000000000000
+              Position.Y = 46.000000000000000000
               Size.Width = 153.000000000000000000
-              Size.Height = 33.000000000000000000
+              Size.Height = 44.000000000000000000
               Size.PlatformDefault = False
               TabOrder = 0
               Text = 'F1'
@@ -255,9 +255,9 @@ object LccThrottleAppForm: TLccThrottleAppForm
               Margins.Right = 2.000000000000000000
               Margins.Bottom = 2.000000000000000000
               Position.X = 2.000000000000000000
-              Position.Y = 70.000000000000000000
+              Position.Y = 92.000000000000000000
               Size.Width = 153.000000000000000000
-              Size.Height = 33.000000000000000000
+              Size.Height = 44.000000000000000000
               Size.PlatformDefault = False
               TabOrder = 1
               Text = 'F2'
@@ -270,9 +270,9 @@ object LccThrottleAppForm: TLccThrottleAppForm
               Margins.Right = 2.000000000000000000
               Margins.Bottom = 2.000000000000000000
               Position.X = 2.000000000000000000
-              Position.Y = 105.000000000000000000
+              Position.Y = 138.000000000000000000
               Size.Width = 153.000000000000000000
-              Size.Height = 33.000000000000000000
+              Size.Height = 44.000000000000000000
               Size.PlatformDefault = False
               TabOrder = 2
               Text = 'F3'
@@ -285,9 +285,9 @@ object LccThrottleAppForm: TLccThrottleAppForm
               Margins.Right = 2.000000000000000000
               Margins.Bottom = 2.000000000000000000
               Position.X = 2.000000000000000000
-              Position.Y = 140.000000000000000000
+              Position.Y = 184.000000000000000000
               Size.Width = 153.000000000000000000
-              Size.Height = 33.000000000000000000
+              Size.Height = 44.000000000000000000
               Size.PlatformDefault = False
               TabOrder = 3
               Text = 'F4'
@@ -300,9 +300,9 @@ object LccThrottleAppForm: TLccThrottleAppForm
               Margins.Right = 2.000000000000000000
               Margins.Bottom = 2.000000000000000000
               Position.X = 2.000000000000000000
-              Position.Y = 175.000000000000000000
+              Position.Y = 230.000000000000000000
               Size.Width = 153.000000000000000000
-              Size.Height = 33.000000000000000000
+              Size.Height = 44.000000000000000000
               Size.PlatformDefault = False
               TabOrder = 4
               Text = 'F5'
@@ -315,9 +315,9 @@ object LccThrottleAppForm: TLccThrottleAppForm
               Margins.Right = 2.000000000000000000
               Margins.Bottom = 2.000000000000000000
               Position.X = 2.000000000000000000
-              Position.Y = 210.000000000000000000
+              Position.Y = 276.000000000000000000
               Size.Width = 153.000000000000000000
-              Size.Height = 33.000000000000000000
+              Size.Height = 44.000000000000000000
               Size.PlatformDefault = False
               TabOrder = 5
               Text = 'F6'
@@ -330,9 +330,9 @@ object LccThrottleAppForm: TLccThrottleAppForm
               Margins.Right = 2.000000000000000000
               Margins.Bottom = 2.000000000000000000
               Position.X = 2.000000000000000000
-              Position.Y = 245.000000000000000000
+              Position.Y = 322.000000000000000000
               Size.Width = 153.000000000000000000
-              Size.Height = 33.000000000000000000
+              Size.Height = 44.000000000000000000
               Size.PlatformDefault = False
               TabOrder = 6
               Text = 'F7'
@@ -345,9 +345,9 @@ object LccThrottleAppForm: TLccThrottleAppForm
               Margins.Right = 2.000000000000000000
               Margins.Bottom = 2.000000000000000000
               Position.X = 2.000000000000000000
-              Position.Y = 280.000000000000000000
+              Position.Y = 368.000000000000000000
               Size.Width = 153.000000000000000000
-              Size.Height = 33.000000000000000000
+              Size.Height = 44.000000000000000000
               Size.PlatformDefault = False
               TabOrder = 7
               Text = 'F8'
@@ -360,9 +360,9 @@ object LccThrottleAppForm: TLccThrottleAppForm
               Margins.Right = 2.000000000000000000
               Margins.Bottom = 2.000000000000000000
               Position.X = 2.000000000000000000
-              Position.Y = 315.000000000000000000
+              Position.Y = 414.000000000000000000
               Size.Width = 153.000000000000000000
-              Size.Height = 33.000000000000000000
+              Size.Height = 44.000000000000000000
               Size.PlatformDefault = False
               TabOrder = 8
               Text = 'F9'
@@ -375,9 +375,9 @@ object LccThrottleAppForm: TLccThrottleAppForm
               Margins.Right = 2.000000000000000000
               Margins.Bottom = 2.000000000000000000
               Position.X = 2.000000000000000000
-              Position.Y = 700.000000000000000000
+              Position.Y = 920.000000000000000000
               Size.Width = 153.000000000000000000
-              Size.Height = 33.000000000000000000
+              Size.Height = 44.000000000000000000
               Size.PlatformDefault = False
               TabOrder = 25
               Text = 'F20'
@@ -390,9 +390,9 @@ object LccThrottleAppForm: TLccThrottleAppForm
               Margins.Right = 2.000000000000000000
               Margins.Bottom = 2.000000000000000000
               Position.X = 2.000000000000000000
-              Position.Y = 735.000000000000000000
+              Position.Y = 966.000000000000000000
               Size.Width = 153.000000000000000000
-              Size.Height = 33.000000000000000000
+              Size.Height = 44.000000000000000000
               Size.PlatformDefault = False
               TabOrder = 9
               Text = 'F21'
@@ -405,9 +405,9 @@ object LccThrottleAppForm: TLccThrottleAppForm
               Margins.Right = 2.000000000000000000
               Margins.Bottom = 2.000000000000000000
               Position.X = 2.000000000000000000
-              Position.Y = 770.000000000000000000
+              Position.Y = 1012.000000000000000000
               Size.Width = 153.000000000000000000
-              Size.Height = 33.000000000000000000
+              Size.Height = 44.000000000000000000
               Size.PlatformDefault = False
               TabOrder = 10
               Text = 'F22'
@@ -420,9 +420,9 @@ object LccThrottleAppForm: TLccThrottleAppForm
               Margins.Right = 2.000000000000000000
               Margins.Bottom = 2.000000000000000000
               Position.X = 2.000000000000000000
-              Position.Y = 805.000000000000000000
+              Position.Y = 1058.000000000000000000
               Size.Width = 153.000000000000000000
-              Size.Height = 33.000000000000000000
+              Size.Height = 44.000000000000000000
               Size.PlatformDefault = False
               TabOrder = 11
               Text = 'F23'
@@ -435,9 +435,9 @@ object LccThrottleAppForm: TLccThrottleAppForm
               Margins.Right = 2.000000000000000000
               Margins.Bottom = 2.000000000000000000
               Position.X = 2.000000000000000000
-              Position.Y = 840.000000000000000000
+              Position.Y = 1104.000000000000000000
               Size.Width = 153.000000000000000000
-              Size.Height = 33.000000000000000000
+              Size.Height = 44.000000000000000000
               Size.PlatformDefault = False
               TabOrder = 12
               Text = 'F24'
@@ -450,9 +450,9 @@ object LccThrottleAppForm: TLccThrottleAppForm
               Margins.Right = 2.000000000000000000
               Margins.Bottom = 2.000000000000000000
               Position.X = 2.000000000000000000
-              Position.Y = 875.000000000000000000
+              Position.Y = 1150.000000000000000000
               Size.Width = 153.000000000000000000
-              Size.Height = 33.000000000000000000
+              Size.Height = 44.000000000000000000
               Size.PlatformDefault = False
               TabOrder = 13
               Text = 'F25'
@@ -465,9 +465,9 @@ object LccThrottleAppForm: TLccThrottleAppForm
               Margins.Right = 2.000000000000000000
               Margins.Bottom = 2.000000000000000000
               Position.X = 2.000000000000000000
-              Position.Y = 910.000000000000000000
+              Position.Y = 1196.000000000000000000
               Size.Width = 153.000000000000000000
-              Size.Height = 33.000000000000000000
+              Size.Height = 44.000000000000000000
               Size.PlatformDefault = False
               TabOrder = 14
               Text = 'F26'
@@ -480,9 +480,9 @@ object LccThrottleAppForm: TLccThrottleAppForm
               Margins.Right = 2.000000000000000000
               Margins.Bottom = 2.000000000000000000
               Position.X = 2.000000000000000000
-              Position.Y = 945.000000000000000000
+              Position.Y = 1242.000000000000000000
               Size.Width = 153.000000000000000000
-              Size.Height = 33.000000000000000000
+              Size.Height = 44.000000000000000000
               Size.PlatformDefault = False
               TabOrder = 15
               Text = 'F27'
@@ -497,7 +497,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
             TabOrder = 1
             object Layout1: TLayout
               Align = Bottom
-              Position.Y = 389.000000000000000000
+              Position.Y = 480.000000000000000000
               Size.Width = 241.000000000000000000
               Size.Height = 50.000000000000000000
               Size.PlatformDefault = False
@@ -535,7 +535,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
             object LayoutTrainsThrottleLeverBkgnd: TLayout
               Align = Client
               Size.Width = 241.000000000000000000
-              Size.Height = 389.000000000000000000
+              Size.Height = 480.000000000000000000
               Size.PlatformDefault = False
               TabOrder = 1
               object TrackBarTrainsThrottleLever: TTrackBar
@@ -549,7 +549,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
                 Scale.X = 3.000000000000000000
                 Scale.Y = 3.000000000000000000
                 Size.Width = 19.000000000000000000
-                Size.Height = 121.666671752929700000
+                Size.Height = 152.000000000000000000
                 Size.PlatformDefault = False
                 TabOrder = 0
                 Value = 100.000000000000000000
@@ -559,7 +559,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
                 Align = Right
                 Position.X = 128.000000000000000000
                 Size.Width = 113.000000000000000000
-                Size.Height = 389.000000000000000000
+                Size.Height = 480.000000000000000000
                 Size.PlatformDefault = False
                 TabOrder = 1
                 object LabelTrainsSpeedHeader: TLabel
@@ -1275,6 +1275,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
   end
   object TimerLogin: TTimer
     Enabled = False
+    Interval = 2500
     OnTimer = TimerLoginTimer
     Left = 48
     Top = 304

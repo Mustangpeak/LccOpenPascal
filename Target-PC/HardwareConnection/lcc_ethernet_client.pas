@@ -281,6 +281,7 @@ begin
       Connecting := False;
       ConnectionInfo.ErrorMessage := E.Message;
       ErrorOnExit := True;
+      FRunning := False;
     end;
   end;
 end;

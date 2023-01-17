@@ -9,6 +9,9 @@
         <Projects Include="LccThrottleApp\LccThrottleApp.dproj">
             <Dependencies/>
         </Projects>
+        <Projects Include="CDI_Parser_MultiDevice\CdiParserMultiDevice.dproj">
+            <Dependencies/>
+        </Projects>
     </ItemGroup>
     <ProjectExtensions>
         <Borland.Personality>Default.Personality.12</Borland.Personality>
@@ -35,14 +38,23 @@
     <Target Name="LccThrottleApp:Make">
         <MSBuild Projects="LccThrottleApp\LccThrottleApp.dproj" Targets="Make"/>
     </Target>
+    <Target Name="CdiParserMultiDevice">
+        <MSBuild Projects="CDI_Parser_MultiDevice\CdiParserMultiDevice.dproj"/>
+    </Target>
+    <Target Name="CdiParserMultiDevice:Clean">
+        <MSBuild Projects="CDI_Parser_MultiDevice\CdiParserMultiDevice.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="CdiParserMultiDevice:Make">
+        <MSBuild Projects="CDI_Parser_MultiDevice\CdiParserMultiDevice.dproj" Targets="Make"/>
+    </Target>
     <Target Name="Build">
-        <CallTarget Targets="FMX_UserInterfaces;LccThrottleApp"/>
+        <CallTarget Targets="FMX_UserInterfaces;LccThrottleApp;CdiParserMultiDevice"/>
     </Target>
     <Target Name="Clean">
-        <CallTarget Targets="FMX_UserInterfaces:Clean;LccThrottleApp:Clean"/>
+        <CallTarget Targets="FMX_UserInterfaces:Clean;LccThrottleApp:Clean;CdiParserMultiDevice:Clean"/>
     </Target>
     <Target Name="Make">
-        <CallTarget Targets="FMX_UserInterfaces:Make;LccThrottleApp:Make"/>
+        <CallTarget Targets="FMX_UserInterfaces:Make;LccThrottleApp:Make;CdiParserMultiDevice:Make"/>
     </Target>
     <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
 </Project>

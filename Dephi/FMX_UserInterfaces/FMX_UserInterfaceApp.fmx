@@ -31,6 +31,18 @@ object FMX_UserInterfaceForm: TFMX_UserInterfaceForm
         Text = 'Create'
         OnClick = SpeedButton1Click
       end
+      object SpeedButton2: TSpeedButton
+        Position.X = 193.000000000000000000
+        Position.Y = 14.000000000000000000
+        Text = 'SpeedButton2'
+        OnClick = SpeedButton2Click
+      end
+      object SpeedButton3: TSpeedButton
+        Position.X = 281.000000000000000000
+        Position.Y = 14.000000000000000000
+        Text = 'SpeedButton3'
+        OnClick = SpeedButton3Click
+      end
     end
   end
   object Footer: TToolBar
