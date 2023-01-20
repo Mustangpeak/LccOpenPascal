@@ -113,7 +113,7 @@ type
 
   TOnEngineMemorySpaceAccessCallback = procedure(AnEngineMemorySpaceAccess: TLccEngineMemorySpaceAccess) of object;
 
-  TLccEngineState = (lesIdle, lesRunning, lesStopped, lesComplete, lesError);
+  TLccEngineState = (lesIdle, lesRunning, lesStopped, lesComplete, lesError, lesFlushed);
 
   { TLccEngineBase }
 
@@ -140,6 +140,7 @@ type
     destructor Destroy; override;
     procedure Start; virtual;
     procedure Stop; virtual;
+    procedure FlushStop; virtual;
     procedure Reset; virtual;
     procedure Process(SourceMessage: TLccMessage); virtual; abstract;
   end;
@@ -229,11 +230,11 @@ type
     procedure WriteNextChunk;
     procedure ValidatePIPAndProceed;
     procedure ValidateAddressSpaceAndProceed(SourceMessage: TLccMessage);
-    procedure FlushMemorySpaceQueue;
     function NextMemorySpaceObjectFromQueue: Boolean;
     procedure CallbackAndNextMemorySpace;
     procedure StartOperation;
   public
+
     property AddressLo: DWord read FAddressLo write FAddressLo;
     property AddressHi: DWord read FAddressHi write FAddressHi;
     property CallBack: TOnEngineMemorySpaceAccessCallback read FCallback write FCallback;
@@ -258,6 +259,7 @@ type
 
     constructor Create(AnOwner: TLccNode); override;
     destructor Destroy; override;
+    procedure FlushMemorySpaceQueue(SendCallbacks: Boolean);
     procedure Start; override;
     procedure Reset; override;
     procedure Process(SourceMessage: TLccMessage); override;
@@ -577,6 +579,11 @@ begin
   FEngineState := lesError;
 end;
 
+procedure TLccEngineBase.FlushStop;
+begin
+  FEngineState := lesFlushed;
+end;
+
 procedure TLccEngineBase.Start;
 begin
   FEngineState := lesRunning;
@@ -796,24 +803,42 @@ function TLccEngineMemorySpaceAccess.Assign(
   ACallback: TOnEngineMemorySpaceAccessCallback;
   ACallBackProgress: TOnEngineMemorySpaceAccessCallback = nil): TLccEngineMemorySpaceObject;
 begin
+  Result := nil;
   // Need to Assign everthing first.. maybe you can add in while its running... but it was not envisioned to do so
   Assert(EngineState = lesIdle, 'TMemorySpaceReadEngine.Assign is running');
 
-  Result := TLccEngineMemorySpaceObject.Create(AReadWrite, AMemorySpace, AnIsString, AnAddressLo, AnAddressHi, AnUseAddresses, ATargetNodeID, ATargetAliasID, ACallback, ACallbackProgress);
-  if Assigned(Result) then
-    MemorySpaceQueue.Add(Result);
+  if Assigned(OwnerNode) and ((ATargetAliasID <> 0) or not NullNodeID(ATargetNodeID)) then
+  begin
+    Result := TLccEngineMemorySpaceObject.Create(AReadWrite, AMemorySpace, AnIsString, AnAddressLo, AnAddressHi, AnUseAddresses, ATargetNodeID, ATargetAliasID, ACallback, ACallbackProgress);
+    if Assigned(Result) then
+      MemorySpaceQueue.Add(Result);
+  end;
 end;
 
-procedure TLccEngineMemorySpaceAccess.FlushMemorySpaceQueue;
+procedure TLccEngineMemorySpaceAccess.FlushMemorySpaceQueue(SendCallbacks: Boolean);
 var
   i: Integer;
+  MemorySpaceObject: TLccEngineMemorySpaceObject;
+  OldState: TLccEngineState;
 begin
+  OldState := FEngineState;
+  Stop;
   try
     for i := 0 to MemorySpaceQueue.Count - 1 do
-      TObject(MemorySpaceQueue[i]).Free;
+    begin
+      MemorySpaceObject := TLccEngineMemorySpaceObject( MemorySpaceQueue[i]);
+      if SendCallbacks then
+      begin
+        FlushStop;
+        if Assigned(MemorySpaceObject.CallBack) then
+          MemorySpaceObject.CallBack(Self);
+      end;
+      MemorySpaceObject.Free;
+    end;
   finally
     MemorySpaceQueue.Clear;
   end;
+  FEngineState := OldState;
 end;
 
 constructor TLccEngineMemorySpaceAccess.Create(AnOwner: TLccNode);
@@ -826,7 +851,7 @@ end;
 
 destructor TLccEngineMemorySpaceAccess.Destroy;
 begin
-  FlushMemorySpaceQueue;
+  FlushMemorySpaceQueue(False);
   FreeAndNil(FPIPHelper);
   FreeAndNil(FMemoryStream);
   inherited Destroy;
@@ -1093,7 +1118,7 @@ procedure TLccEngineMemorySpaceAccess.Reset;
 begin
   inherited Reset;
   AddressSpaceValid := False;
-  FlushMemorySpaceQueue;
+  FlushMemorySpaceQueue(False);
   MemoryStream.Clear;
   PIPHelper.Valid := False;
 end;
@@ -1103,7 +1128,7 @@ var
   ReplyPending: Boolean;
   ReplyEstimatedTime: extended;    // In Seconds
   DecodedMemorySpace: Byte;
-
+  MessageAddress: DWord;
 begin
   if EngineState = lesRunning then
   begin
@@ -1163,7 +1188,12 @@ begin
                      case DecodedMemorySpace of
                        MSI_ACDI_USER,
                        MSI_CONFIG,
-                       MSI_TRACTION_FUNCTION_CONFIG : if DecodedMemorySpace = MemorySpace then HandleWriteReply(SourceMessage);
+                       MSI_TRACTION_FUNCTION_CONFIG :
+                         begin
+                           MessageAddress := SourceMessage.ExtractDataBytesAsDWord(2);
+                            if (DecodedMemorySpace = MemorySpace) and (CurrentAddress = MessageAddress) then
+                              HandleWriteReply(SourceMessage);
+                         end;
                        MSI_TRACTION_FDI,
                        MSI_ALL,
                        MSI_CDI,
@@ -1193,7 +1223,12 @@ begin
                        MSI_ACDI_USER,
                        MSI_TRACTION_FDI,
                        MSI_CONFIG,
-                       MSI_TRACTION_FUNCTION_CONFIG :if DecodedMemorySpace = MemorySpace then HandleReadReply(SourceMessage);
+                       MSI_TRACTION_FUNCTION_CONFIG :
+                         begin
+                           MessageAddress := SourceMessage.ExtractDataBytesAsDWord(2);
+                            if (DecodedMemorySpace = MemorySpace) and (CurrentAddress = MessageAddress) then
+                              HandleReadReply(SourceMessage);
+                         end;
                      end;
                    end;
                  MCP_READ_REPLY_FAILURE,

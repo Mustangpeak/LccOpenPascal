@@ -141,7 +141,8 @@ var
 begin
   for i := 0 to 399 do
     begin
-      x := TEdit.Create(Self);
+      x := TFrameLccNodeEditorGroup.Create(Self);
+      x.Name := 'TFrameLccNodeEditor' + IntToStr(i);
       x.Parent := Self;
     end;
 end;

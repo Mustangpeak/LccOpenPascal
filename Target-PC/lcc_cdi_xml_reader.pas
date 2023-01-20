@@ -576,6 +576,7 @@ var
   RootChildName : LccDOMString;
 begin
   Result := False;
+  ClearChildElements;
   FAutoLoadConfigMem := DoAutoLoadConfigMem;
   if Assigned(XMLDocument) then
   begin
@@ -662,6 +663,7 @@ end;
 
 function TLccCdiRoot.LoadFromCDI(CDIFile: string): Boolean;
 begin
+  XmlFreeDocument(FXMLDocument);
   XMLDocument := XmlLoadFromText(CDIFile);
   Result := Assigned(XMLDocument);
 end;

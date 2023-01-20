@@ -27,8 +27,11 @@ uses
   lcc_node_messages,
   lcc_train_server,
   lcc_alias_server,
-  lcc_base_classes,
-  lcc_cdi_parser;
+  lcc_cdi_xml_reader,
+  Frame_LccNodeEditorControl,
+  Frame_LccNodeEditorGroup,
+  Frame_LccNodeEditor,
+  lcc_base_classes;
 
 const
   FILENAME_SETTINGS = 'settings.xml';
@@ -203,15 +206,15 @@ type
     FPathApplicationFiles: string;
     FPathMemoryConfig: string;
     FActiveTrainObject: TListViewItem;
-    FCdiParserFrame: TLccCdiParser;
-    FCDILayoutFrame: TLayout;
+    FCdiData: TLccCdiRoot;
+    FNodeEditor: TFrameNodeEditorControl;
     { Private declarations }
 
   protected
 
-    property CDILayoutFrame: TLayout read FCDILayoutFrame write FCDILayoutFrame;
     procedure XmlLoadSettingsFromFile;
     procedure XmlWriteDefaultFile;
+    procedure BuildNodeEditor;
 
   public
     { Public declarations }
@@ -228,7 +231,8 @@ type
     property PathSettingsFile: string read FPathSettingsFile write FPathSettingsFile;
     property PathMemoryConfig: string read FPathMemoryConfig write FPathMemoryConfig;
     property ActiveTrainObject: TListViewItem read FActiveTrainObject write FActiveTrainObject;
-    property CdiParserFrame: TLccCdiParser read FCdiParserFrame write FCdiParserFrame;
+    property CdiData: TLccCdiRoot read FCdiData write FCdiData;
+    property NodeEditor: TFrameNodeEditorControl read FNodeEditor write FNodeEditor;
 
     // Callbacks
     procedure OnNodeLogin(Sender: TObject; LccSourceNode: TLccNode);
@@ -248,7 +252,6 @@ type
 
     procedure OnEngineMemorySpaceAccessCallback(MemorySpaceAccessEngine: TLccEngineMemorySpaceAccess);
     procedure OnEngineMemorySpaceAccessProgressCallback(AEngineMemorySpaceAccess: TLccEngineMemorySpaceAccess);
-    procedure OnCdiParserProcessCallback(ACdiParser: TLccCdiParser; ProgressInfo: string);
 
     function ValidEditBoxKey(Key: Word): Boolean;
     function ConnectionLogin: Boolean;
@@ -350,6 +353,32 @@ begin
     XmlNodeSetFirstLevelTextContent(PathSettingsFile, 'settings', 'port', EditSettingsPort.Text, True);
 end;
 
+procedure TLccThrottleAppForm.BuildNodeEditor;
+var
+  i: Integer;
+  ChildCdiNode: TLccCidCore;
+  Group: TFrameLccNodeEditorGroup;
+begin
+  NodeEditor.Visible := True;
+  for i := 0 to CdiData.ChildElementCount - 1 do
+  begin
+    ChildCdiNode := CdiData.ChildElement[i];
+    if ChildCdiNode is TLccCdiSegment then
+    begin
+      Group := NodeEditor.AddGroup(ChildCdiNode.Name, ChildCdiNode.Description, True);
+      Group.TagObject := ChildCdiNode;
+
+   //   RunNode(CDI.ChildElement[i], 1);
+    end else
+    if ChildCdiNode is TLccCdiAcdi then
+    begin
+    end else
+    if ChildCdiNode is TLccCdiIdentification then
+    begin
+    end;
+  end;
+end;
+
 procedure TLccThrottleAppForm.ButtonFnClick(Sender: TObject);
 begin
   beep;
@@ -438,9 +467,13 @@ begin
   // Local field setup
 
   // Lcc library setup
-  NodeManager := TLccNodeManager.Create(nil, True);
-  EthernetClient := TLccEthernetClient.Create(nil, NodeManager);
-  CdiParserFrame := TLccCdiParser.Create(nil);
+  FNodeManager := TLccNodeManager.Create(nil, True);
+  FEthernetClient := TLccEthernetClient.Create(nil, NodeManager);
+  FCdiData := TLccCdiRoot.Create(nil);
+  FNodeEditor := TFrameNodeEditorControl.Create(Self);
+  NodeEditor.Align := TAlignLayout.Client;
+  NodeEditor.Parent := LabelTrainRosterEditContainer;
+  NodeEditor.Visible := False;
 
   EthernetClient.OnConnectionStateChange := OnClientServerConnectionChange;
   EthernetClient.OnErrorMessage := OnClientServerErrorMessage;
@@ -501,7 +534,7 @@ begin
   NodeManager.ReleaseAliasAll;
   FreeAndNil(FEthernetClient);
   FreeAndNil(FNodeManager);
-  FreeAndNil(FCdiParserFrame);
+  FreeAndNil(FCdiData);
 end;
 
 procedure TLccThrottleAppForm.FormKeyUp(Sender: TObject; var Key: Word; var KeyChar: Char; Shift: TShiftState);
@@ -660,13 +693,14 @@ begin
 
 end;
 
+{
 procedure TLccThrottleAppForm.OnCdiParserProcessCallback(ACdiParser: TLccCdiParser; ProgressInfo: string);
 begin
   LabelTrainRosterEdit.BeginUpdate;
   LabelTrainRosterEdit.Text := ProgressInfo;
   LabelTrainRosterEdit.EndUpdate;
   Application.ProcessMessages;
-end;
+end;  }
 
 procedure TLccThrottleAppForm.OnClientServerConnectionChange(Sender: TObject; Info: TLccHardwareConnectionInfo);
 begin
@@ -754,24 +788,13 @@ begin
 end;
 
 procedure TLccThrottleAppForm.RenderCDI(TractionObject: TLccTractionObject);
-var
-  XMLDoc: TLccXmlDocument;
-  LocalNodeIdentification: TLccNodeIdentificationObject;
 begin
   if TractionObject.NodeCDI.Valid then
   begin
-    LocalNodeIdentification := TLccNodeIdentificationObject.Create;
-    LocalNodeIdentification.AssignID(TractionObject.NodeID, TractionObject.NodeAlias);
-
-    ShowMessage(TractionObject.NodeCDI.CDI);
-
-    XMLDoc := XmlLoadFromText( LccDOMString( TractionObject.NodeCDI.CDI));
-    try
-       CDILayoutFrame := CdiParserFrame.Build_CDI_Interface(Controller, LocalNodeIdentification, LabelTrainRosterEditContainer, XMLDoc, OnCdiParserProcessCallback);
-    finally
-      XmlFreeDocument(XMLDoc);
-      LocalNodeIdentification.Free;
-    end;
+    CdiData.LoadFromCDI( TractionObject.NodeCDI.CDI);
+    CdiData.SetTargetNode(TractionObject.NodeID, TractionObject.NodeAlias);
+    CdiData.BuildTree(False);
+    BuildNodeEditor;
   end;
 end;
 
@@ -911,15 +934,8 @@ end;
 
 procedure TLccThrottleAppForm.TrainTabCDIClear;
 begin
-  // Clear Tab 2, CDI
-  if Assigned(CDILayoutFrame) then
-  begin
-    try
-      CdiParserFrame.Clear_CDI_Interface(False);
-    finally
-      CDILayoutFrame := nil;
-    end;
-  end;
+  NodeEditor.Clear;
+  NodeEditor.Visible := False;
 end;
 
 procedure TLccThrottleAppForm.TrainTabCDILoad(TractionObject: TLccTractionObject);

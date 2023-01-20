@@ -160,6 +160,7 @@ public
   function ExtractDataBytesAsNodeID(StartIndex: Integer; var ANodeID: TNodeID): TNodeID;
   function ExtractDataBytesAsString(StartIndex, Count: Integer): String;
   function ExtractDataBytesAsWord(StartIndex: Integer): Word;
+  function ExtractDataBytesAsDWord(StartIndex: Integer): DWORD;
   function ExtractDataBytesAsHex(StartByteIndex, EndByteIndex: Integer): string;
   function DestinationMatchs(TestAliasID: Word; TestNodeID: TNodeID): Boolean;
   function ExtractNodeIdentifications(ForceEvaluation, IgnoreCANMessages: Boolean): TLccNodeIdentificationObjectList;
@@ -833,6 +834,17 @@ begin
     2 : Result := MSI_ALL;
     3 : Result := MSI_CDI;
   end;
+end;
+
+function TLccMessage.ExtractDataBytesAsDWord(StartIndex: Integer): DWORD;
+begin
+  Result := DataArray[StartIndex];
+  Result := Result shl 8;
+  Result := Result or DataArray[StartIndex+1];
+  Result := Result shl 8;
+  Result := Result or DataArray[StartIndex+2];
+  Result := Result shl 8;
+  Result := Result or DataArray[StartIndex+3];
 end;
 
 function TLccMessage.ExtractDataBytesAsEventID(StartIndex: Integer): TEventID;

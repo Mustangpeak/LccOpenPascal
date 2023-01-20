@@ -1277,12 +1277,12 @@ object LccThrottleAppForm: TLccThrottleAppForm
     Enabled = False
     Interval = 2500
     OnTimer = TimerLoginTimer
-    Left = 48
-    Top = 304
+    Left = 128
+    Top = 24
   end
   object PopupMenuLabelPath: TPopupMenu
-    Left = 152
-    Top = 241
+    Left = 264
+    Top = 33
     object MenuItemSettingsLabelPath: TMenuItem
       Text = 'Copy To Clipboard'
       OnClick = MenuItemSettingsLabelPathClick
@@ -1290,8 +1290,8 @@ object LccThrottleAppForm: TLccThrottleAppForm
   end
   object GestureManager1: TGestureManager
     Sensitivity = 80.000000000000000000
-    Left = 208
-    Top = 137
+    Left = 192
+    Top = 9
     GestureData = <
       item
         Control = TabControlMain
@@ -1305,8 +1305,8 @@ object LccThrottleAppForm: TLccThrottleAppForm
       end>
   end
   object ActionList1: TActionList
-    Left = 256
-    Top = 256
+    Left = 328
+    Top = 40
     object ActionTabMainNext: TNextTabAction
       Category = 'Tab'
       TabControl = TabControlMain

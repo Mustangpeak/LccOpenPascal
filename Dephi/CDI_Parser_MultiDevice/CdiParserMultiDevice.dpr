@@ -4,7 +4,7 @@ uses
   System.StartUpCopy,
   FMX.Forms,
   Cdi_Parser in 'Cdi_Parser.pas' {FormCdiParser},
-  lcc_cdi_xml_reader in 'lcc_cdi_xml_reader.pas';
+  unit_custom_fmx_listview in 'unit_custom_fmx_listview.pas';
 
 {$R *.res}
 
