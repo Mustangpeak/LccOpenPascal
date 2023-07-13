@@ -1,22 +1,22 @@
 object Form1: TForm1
   Left = 550
-  Height = 610
+  Height = 640
   Top = 153
   Width = 743
   BorderStyle = bsSingle
   Caption = 'Dual Throttle [LccOpenPascal]'
-  ClientHeight = 610
+  ClientHeight = 640
   ClientWidth = 743
   OnCloseQuery = FormCloseQuery
   OnCreate = FormCreate
   LCLVersion = '2.2.4.0'
   object PanelThrottleConsistEdit1: TPanel
     Left = 0
-    Height = 560
+    Height = 590
     Top = 50
     Width = 370
     Align = alLeft
-    ClientHeight = 560
+    ClientHeight = 590
     ClientWidth = 370
     TabOrder = 0
     object PanelThrottleEthernet: TPanel
@@ -75,7 +75,7 @@ object Form1: TForm1
     object StatusBarThrottle1: TStatusBar
       Left = 1
       Height = 18
-      Top = 541
+      Top = 571
       Width = 368
       Panels = <      
         item
@@ -86,7 +86,7 @@ object Form1: TForm1
     end
     object PageControlThrottle1: TPageControl
       Left = 1
-      Height = 492
+      Height = 522
       Top = 49
       Width = 368
       ActivePage = TabSheetThrottle1Throttle
@@ -95,15 +95,15 @@ object Form1: TForm1
       TabOrder = 2
       object TabSheetThrottle1Throttle: TTabSheet
         Caption = 'Throttle'
-        ClientHeight = 462
+        ClientHeight = 492
         ClientWidth = 362
         object PanelThrottleFace1: TPanel
           Left = 0
-          Height = 462
+          Height = 492
           Top = 0
           Width = 362
           Align = alClient
-          ClientHeight = 462
+          ClientHeight = 492
           ClientWidth = 362
           TabOrder = 0
           object PanelThrottleAssign1: TPanel
@@ -135,7 +135,7 @@ object Form1: TForm1
               Left = 16
               Height = 18
               Top = 32
-              Width = 100
+              Width = 104
               Caption = 'Long Address'
               TabOrder = 1
             end
@@ -154,8 +154,8 @@ object Form1: TForm1
               ChildSizing.ShrinkVertical = crsScaleChilds
               ChildSizing.Layout = cclLeftToRightThenTopToBottom
               ChildSizing.ControlsPerLine = 1
-              ClientHeight = 59
-              ClientWidth = 89
+              ClientHeight = 50
+              ClientWidth = 87
               ItemIndex = 0
               Items.Strings = (
                 'Default'
@@ -177,18 +177,18 @@ object Form1: TForm1
               Left = 18
               Height = 18
               Top = 56
-              Width = 166
+              Width = 169
               Caption = 'Ask to allow throttle steal'
               TabOrder = 3
             end
           end
           object PanelThrottleKeypad1: TPanel
             Left = 1
-            Height = 219
+            Height = 249
             Top = 242
             Width = 360
             Align = alClient
-            ClientHeight = 219
+            ClientHeight = 249
             ClientWidth = 360
             TabOrder = 1
             object SpeedButtonFunction0: TSpeedButton
@@ -471,15 +471,15 @@ object Form1: TForm1
       end
       object TabSheetThrottle1ServiceMode: TTabSheet
         Caption = 'Service Mode'
-        ClientHeight = 462
+        ClientHeight = 492
         ClientWidth = 362
         object PanelThrottle1ServiceMode: TPanel
           Left = 0
-          Height = 462
+          Height = 492
           Top = 0
           Width = 362
           Align = alClient
-          ClientHeight = 462
+          ClientHeight = 492
           ClientWidth = 362
           TabOrder = 0
           object Label10: TLabel
@@ -644,7 +644,7 @@ object Form1: TForm1
       Left = 8
       Height = 16
       Top = 16
-      Width = 177
+      Width = 176
       Caption = 'Command Station IP Address'
       ParentColor = False
     end
@@ -669,11 +669,11 @@ object Form1: TForm1
   end
   object PanelThrottle2: TPanel
     Left = 370
-    Height = 560
+    Height = 590
     Top = 50
     Width = 370
     Align = alLeft
-    ClientHeight = 560
+    ClientHeight = 590
     ClientWidth = 370
     TabOrder = 2
     object PanelThrottleEthernet1: TPanel
@@ -732,7 +732,7 @@ object Form1: TForm1
     object StatusBarThrottle2: TStatusBar
       Left = 1
       Height = 18
-      Top = 541
+      Top = 571
       Width = 368
       Panels = <      
         item
@@ -743,7 +743,7 @@ object Form1: TForm1
     end
     object PageControlThrottle2: TPageControl
       Left = 1
-      Height = 492
+      Height = 522
       Top = 49
       Width = 368
       ActivePage = TabSheetThrottle2Throttle
@@ -752,15 +752,15 @@ object Form1: TForm1
       TabOrder = 2
       object TabSheetThrottle2Throttle: TTabSheet
         Caption = 'Throttle'
-        ClientHeight = 462
+        ClientHeight = 492
         ClientWidth = 362
         object PanelThrottleFace2: TPanel
           Left = 0
-          Height = 462
+          Height = 492
           Top = 0
           Width = 362
           Align = alClient
-          ClientHeight = 462
+          ClientHeight = 492
           ClientWidth = 362
           TabOrder = 0
           object PanelThrottleAssign2: TPanel
@@ -792,7 +792,7 @@ object Form1: TForm1
               Left = 16
               Height = 18
               Top = 32
-              Width = 100
+              Width = 104
               Caption = 'Long Address'
               TabOrder = 1
             end
@@ -811,8 +811,8 @@ object Form1: TForm1
               ChildSizing.ShrinkVertical = crsScaleChilds
               ChildSizing.Layout = cclLeftToRightThenTopToBottom
               ChildSizing.ControlsPerLine = 1
-              ClientHeight = 59
-              ClientWidth = 87
+              ClientHeight = 50
+              ClientWidth = 85
               ItemIndex = 0
               Items.Strings = (
                 'Default'
@@ -834,18 +834,18 @@ object Form1: TForm1
               Left = 18
               Height = 18
               Top = 56
-              Width = 166
+              Width = 169
               Caption = 'Ask to allow throttle steal'
               TabOrder = 3
             end
           end
           object PanelThrottleKeypad2: TPanel
             Left = 1
-            Height = 381
+            Height = 411
             Top = 80
             Width = 360
             Align = alClient
-            ClientHeight = 381
+            ClientHeight = 411
             ClientWidth = 360
             TabOrder = 1
             object SpeedButtonFunction12: TSpeedButton
@@ -1021,32 +1021,32 @@ object Form1: TForm1
             end
             object ScrollBox1: TScrollBox
               Left = 8
-              Height = 150
+              Height = 184
               Top = 208
               Width = 334
-              HorzScrollBar.Page = 276
-              VertScrollBar.Increment = 14
-              VertScrollBar.Page = 148
+              HorzScrollBar.Page = 280
+              VertScrollBar.Increment = 17
+              VertScrollBar.Page = 172
               VertScrollBar.Smooth = True
               VertScrollBar.Tracking = True
-              ClientHeight = 148
-              ClientWidth = 317
+              ClientHeight = 182
+              ClientWidth = 332
               TabOrder = 1
               OnClick = ScrollBox1Click
               object Panel1: TPanel
                 Left = 0
                 Height = 56
                 Top = 0
-                Width = 317
+                Width = 332
                 Align = alTop
                 ClientHeight = 56
-                ClientWidth = 317
+                ClientWidth = 332
                 TabOrder = 0
                 object CheckBox1: TCheckBox
                   Left = 136
                   Height = 18
                   Top = 0
-                  Width = 68
+                  Width = 72
                   Caption = 'Reverse'
                   TabOrder = 0
                 end
@@ -1054,7 +1054,7 @@ object Form1: TForm1
                   Left = 136
                   Height = 18
                   Top = 16
-                  Width = 132
+                  Width = 136
                   Caption = 'Function 0 Forward'
                   TabOrder = 1
                 end
@@ -1062,7 +1062,7 @@ object Form1: TForm1
                   Left = 136
                   Height = 18
                   Top = 32
-                  Width = 139
+                  Width = 143
                   Caption = 'Function All Forward'
                   TabOrder = 2
                 end
@@ -1086,16 +1086,16 @@ object Form1: TForm1
                 Left = 0
                 Height = 58
                 Top = 56
-                Width = 317
+                Width = 332
                 Align = alTop
                 ClientHeight = 58
-                ClientWidth = 317
+                ClientWidth = 332
                 TabOrder = 1
                 object CheckBox4: TCheckBox
                   Left = 136
                   Height = 18
                   Top = 0
-                  Width = 68
+                  Width = 72
                   Caption = 'Reverse'
                   TabOrder = 0
                 end
@@ -1103,7 +1103,7 @@ object Form1: TForm1
                   Left = 136
                   Height = 18
                   Top = 16
-                  Width = 132
+                  Width = 136
                   Caption = 'Function 0 Forward'
                   TabOrder = 1
                 end
@@ -1111,7 +1111,7 @@ object Form1: TForm1
                   Left = 136
                   Height = 18
                   Top = 32
-                  Width = 139
+                  Width = 143
                   Caption = 'Function All Forward'
                   TabOrder = 2
                 end
@@ -1135,16 +1135,16 @@ object Form1: TForm1
                 Left = 0
                 Height = 58
                 Top = 114
-                Width = 317
+                Width = 332
                 Align = alTop
                 ClientHeight = 58
-                ClientWidth = 317
+                ClientWidth = 332
                 TabOrder = 2
                 object CheckBox7: TCheckBox
                   Left = 136
                   Height = 18
                   Top = 0
-                  Width = 68
+                  Width = 72
                   Caption = 'Reverse'
                   TabOrder = 0
                 end
@@ -1152,7 +1152,7 @@ object Form1: TForm1
                   Left = 136
                   Height = 18
                   Top = 16
-                  Width = 132
+                  Width = 136
                   Caption = 'Function 0 Forward'
                   TabOrder = 1
                 end
@@ -1160,7 +1160,7 @@ object Form1: TForm1
                   Left = 136
                   Height = 18
                   Top = 32
-                  Width = 139
+                  Width = 143
                   Caption = 'Function All Forward'
                   TabOrder = 2
                 end
@@ -1186,20 +1186,20 @@ object Form1: TForm1
       end
       object TabSheetThrottle2Consists: TTabSheet
         Caption = 'Consists'
-        ClientHeight = 462
+        ClientHeight = 492
         ClientWidth = 362
         object PanelConsistWizard2: TPanel
           Left = 0
-          Height = 462
+          Height = 492
           Top = 0
           Width = 362
           Align = alClient
-          ClientHeight = 462
+          ClientHeight = 492
           ClientWidth = 362
           TabOrder = 0
           object PageControlConsists2: TPageControl
             Left = 1
-            Height = 460
+            Height = 490
             Top = 1
             Width = 360
             ActivePage = TabSheetConsistNew2
@@ -1208,11 +1208,11 @@ object Form1: TForm1
             TabOrder = 0
             object TabSheetConsistNew2: TTabSheet
               Caption = 'Create'
-              ClientHeight = 430
+              ClientHeight = 460
               ClientWidth = 354
               object TreeViewConsistWizard2: TTreeView
                 Left = 161
-                Height = 430
+                Height = 460
                 Top = 0
                 Width = 193
                 Align = alClient
@@ -1222,11 +1222,11 @@ object Form1: TForm1
               end
               object PanelConsistCreate2: TPanel
                 Left = 0
-                Height = 430
+                Height = 460
                 Top = 0
                 Width = 161
                 Align = alLeft
-                ClientHeight = 430
+                ClientHeight = 460
                 ClientWidth = 161
                 TabOrder = 1
                 object EditConsistAddress2: TEdit
@@ -1249,7 +1249,7 @@ object Form1: TForm1
                   Left = 5
                   Height = 18
                   Top = 56
-                  Width = 100
+                  Width = 104
                   Caption = 'Long Address'
                   TabOrder = 1
                 end
@@ -1267,8 +1267,8 @@ object Form1: TForm1
                   ChildSizing.ShrinkVertical = crsScaleChilds
                   ChildSizing.Layout = cclLeftToRightThenTopToBottom
                   ChildSizing.ControlsPerLine = 1
-                  ClientHeight = 56
-                  ClientWidth = 89
+                  ClientHeight = 47
+                  ClientWidth = 87
                   ItemIndex = 0
                   Items.Strings = (
                     '14 Step'
@@ -1314,7 +1314,7 @@ object Form1: TForm1
                   Left = 5
                   Height = 18
                   Top = 176
-                  Width = 122
+                  Width = 126
                   Caption = 'Reverse Direction'
                   TabOrder = 4
                 end
@@ -1322,11 +1322,11 @@ object Form1: TForm1
             end
             object TabSheetConsists2: TTabSheet
               Caption = 'Existing'
-              ClientHeight = 430
+              ClientHeight = 460
               ClientWidth = 354
               object TreeViewConsists2: TTreeView
                 Left = 156
-                Height = 430
+                Height = 460
                 Top = 0
                 Width = 198
                 Align = alClient
@@ -1334,11 +1334,11 @@ object Form1: TForm1
               end
               object PanelConsistRelease2: TPanel
                 Left = 0
-                Height = 430
+                Height = 460
                 Top = 0
                 Width = 156
                 Align = alLeft
-                ClientHeight = 430
+                ClientHeight = 460
                 ClientWidth = 156
                 Enabled = False
                 TabOrder = 1

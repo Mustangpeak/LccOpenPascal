@@ -1056,6 +1056,8 @@ begin
       end;
     end;
     SendMessageFunc(Self, WorkerMessage);
+
+    (NodeManager as INodeManagerTractionCallbacks).DoTractionListenerAttached(Self, SourceMessage);
   end
 end;
 
@@ -1076,6 +1078,8 @@ begin
     else
       WorkerMessage.LoadTractionListenerDetachReply(NodeID, AliasID, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias, ListenerNodeID, ERROR_PERMANENT_INVALID_ARGUMENTS);
     SendMessageFunc(Self, WorkerMessage);
+
+    (NodeManager as INodeManagerTractionCallbacks).DoTractionListenerDetached(Self, SourceMessage);
   end;
 end;
 

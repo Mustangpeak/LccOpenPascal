@@ -229,8 +229,8 @@ type
     procedure OnMemoryConfigWrite2(Sender: TLccTrainController; ConfigMemAddress: LongWord; Value: LongWord; ErrorCode: Byte; ErrorMsg: string);
 
     // The Controller is the Controller Node created in the NodeManager
- //   procedure ControllerTrainAssigned1(Sender: TLccTrainController; Reason: TControllerTrainAssignResult);
- //   procedure ControllerTrainAssigned2(Sender: TLccTrainController; Reason: TControllerTrainAssignResult);
+  //  procedure ControllerTrainAssigned1(Sender: TLccTrainController; Reason: TControllerTrainAssignResult);
+  //  procedure ControllerTrainAssigned2(Sender: TLccTrainController; Reason: TControllerTrainAssignResult);
 
     procedure ControllerTrainReleased1(Sender: TLccTrainController);
     procedure ControllerTrainReleased2(Sender: TLccTrainController);
@@ -254,7 +254,7 @@ type
     procedure ReleaseTrain2;
 
     procedure OnAliasMappingChange(Sender: TObject; LccSourceNode: TLccNode; AnAliasMapping: TLccAliasMapping; IsMapped: Boolean);
-    procedure OnTractionRegisterChange(TractionServer: TLccTractionServer; LccNode: TObject; TractionObject: TLccTractionObject; IsRegistered: Boolean);
+    procedure OnTractionRegisterChange(TractionObject: TLccTractionObject; IsRegistered: Boolean);
 
     procedure OnLccTractionUpdateSNIP1(Sender: TObject; LccSourceNode: TLccNode; Index: Integer);
     procedure OnLccTractionUpdateTrainSNIP1(Sender: TObject; LccSourceNode: TLccNode; Index: Integer);
@@ -751,10 +751,10 @@ begin
           ControllerNode1 := NodeManager1.AddNodeByClass('', TLccTrainController, True, NULL_NODE_ID) as TLccTrainController;
         if Assigned(ControllerNode1) then
         begin
-          ControllerNode1. TractionServer.OnRegisterChange := @OnTractionRegisterChange
+          ControllerNode1.TractionServer.OnRegisterChange := @OnTractionRegisterChange
 
         end;
-   {     ControllerNode1.OnTrainAssigned := @ControllerTrainAssigned1;
+     {   ControllerNode1.OnTrainAssigned := @ControllerTrainAssigned1;
         ControllerNode1.OnTrainReleased := @ControllerTrainReleased1;
         ControllerNode1.OnControllerRequestTakeover := @OnControllerReqestTakeover1;
         ControllerNode1.OnQuerySpeedReply := @OnControllerQuerySpeedReply1;
@@ -765,8 +765,8 @@ begin
         ControllerNode1.OnDetachListenerReply := @OnControllerDetachListenerReply1;
         ControllerNode1.OnQueryListenerGetCount := @OnControllerQueryListenerGetCount1;
         ControllerNode1.OnQueryListenerIndex := @OnControllerQueryListenerIndex1;
-        ControllerNode1.OnQueryConfigurationReply := @OnQueryConfigurationReply1;     }
-        PageControlThrottle1.Enabled := True;
+        ControllerNode1.OnQueryConfigurationReply := @OnQueryConfigurationReply1;
+        PageControlThrottle1.Enabled := True;    }
       end;
     lcsDisconnecting :
       begin
@@ -1123,7 +1123,7 @@ begin
     FormServerInfo.RemoveAliasMap(AnAliasMapping);
 end;
 
-procedure TForm1.OnTractionRegisterChange(TractionServer: TLccTractionServer; LccNode: TObject; TractionObject: TLccTractionObject; IsRegistered: Boolean);
+procedure TForm1.OnTractionRegisterChange(TractionObject: TLccTractionObject; IsRegistered: Boolean);
 begin
   if IsRegistered then
     FormServerInfo.AddTrainObject(TractionObject)
@@ -1268,7 +1268,7 @@ end;
 
 procedure TForm1.OnNodeManager1IDChange(Sender: TObject; LccSourceNode: TLccNode);
 begin
-  LabelNodeID1.Caption := 'NodeID: ' + LccSourceNode.NodeIDStr;
+  LabelNodeID1.Caption := 'NodeID: ' + LccSourceNode.NodeIDStr[True];
 end;
 
 
@@ -1279,7 +1279,7 @@ end;
 
 procedure TForm1.OnNodeManager2IDChange(Sender: TObject; LccSourceNode: TLccNode);
 begin
-  LabelNodeID2.Caption := 'NodeID: ' + LccSourceNode.NodeIDStr;
+  LabelNodeID2.Caption := 'NodeID: ' + LccSourceNode.NodeIDStr[True];
 end;
 
 end.

@@ -140,8 +140,8 @@ type
     procedure OnNodeManagerAliasRelease(Sender: TObject; ALccNode: TLccNode);
     procedure OnNodeManagerNodeDestroy(Sender: TObject; ALccNode: TLccNode);
 
-    procedure OnNodeTractionListenerAttach(Sender: TObject; LccNode: TLccNode; AMessage: TLccMessage; var DoDefault: Boolean);
-    procedure OnNodeTractionListenerDetach(Sender: TObject; LccNode: TLccNode; AMessage: TLccMessage; var DoDefault: Boolean);
+    procedure OnNodeTractionListenerAttached(Sender: TObject; LccNode: TLccNode; AMessage: TLccMessage);
+    procedure OnNodeTractionListenerDetached(Sender: TObject; LccNode: TLccNode; AMessage: TLccMessage);
     procedure OnNodeTractionListenerQuery(Sender: TObject; LccNode: TLccNode; AMessage: TLccMessage; var DoDefault: Boolean);
 
     // Other
@@ -151,7 +151,7 @@ type
 
     function TrainNodeToCaption(ATrainNode: TLccTrainDccNode): string;
     function FindSingleLevelNodeWithData(ParentNode: TTreeNode; const NodeData: Pointer): TTreeNode;
-    procedure RebuildTrainListview;
+    procedure RebuildTrainTreeview;
     procedure ReleaseAliasOnTrains;
     procedure NodeIsGoingAway(LccSourceNode: TLccNode);
 
@@ -367,8 +367,8 @@ begin
   NodeManager.OnNodeAliasIDChanged := @OnNodeManagerAliasIDChanged;
   NodeManager.OnNodeIDChanged := @OnNodeManagerIDChanged;
   NodeManager.OnNodeLogin := @OnNodeManagerNodeLogin;
-  NodeManager.OnNodeTractionListenerAttach := @OnNodeTractionListenerAttach;
-  NodeManager.OnNodeTractionListenerDetach := @OnNodeTractionListenerDetach;
+  NodeManager.OnNodeTractionListenerAttached := @OnNodeTractionListenerAttached;
+  NodeManager.OnNodeTractionListenerDetached := @OnNodeTractionListenerDetached;
   NodeManager.OnNodeTractionListenerQuery := @OnNodeTractionListenerQuery;
   NodeManager.OnAliasMappingChange := @OnAliasMappingChange;
   NodeManager.OnAliasRelease := @OnNodeManagerAliasRelease;
@@ -783,22 +783,22 @@ begin
   NodeIsGoingAway(ALccNode);
 end;
 
-procedure TFormTrainCommander.OnNodeTractionListenerAttach(Sender: TObject;
-  LccNode: TLccNode; AMessage: TLccMessage; var DoDefault: Boolean);
+procedure TFormTrainCommander.OnNodeTractionListenerAttached(Sender: TObject;
+  LccNode: TLccNode; AMessage: TLccMessage);
 begin
-  RebuildTrainListview;
+  RebuildTrainTreeview;
 end;
 
-procedure TFormTrainCommander.OnNodeTractionListenerDetach(Sender: TObject;
-  LccNode: TLccNode; AMessage: TLccMessage; var DoDefault: Boolean);
+procedure TFormTrainCommander.OnNodeTractionListenerDetached(Sender: TObject;
+  LccNode: TLccNode; AMessage: TLccMessage);
 begin
-  RebuildTrainListview ;
+  RebuildTrainTreeview;
 end;
 
 procedure TFormTrainCommander.OnNodeTractionListenerQuery(Sender: TObject;
   LccNode: TLccNode; AMessage: TLccMessage; var DoDefault: Boolean);
 begin
-
+  RebuildTrainTreeview;
 end;
 
 procedure TFormTrainCommander.OnAliasMappingChange(Sender: TObject; LccSourceNode: TLccNode; AnAliasMapping: TLccAliasMapping; IsMapped: Boolean);
@@ -836,9 +836,9 @@ begin
   end;
 
   if ATrainNode.DccLongAddress then
-    Result := IntToStr(ATrainNode.DccAddress) + ' Long ' + SpeedStep + ' [' + ATrainNode.AliasIDStr + ']' + ' [' + ATrainNode.NodeIDStr[True] + ']'
+    Result := IntToStr(ATrainNode.DccAddress) + ' Long ' + SpeedStep + ' [Listeners: ' + IntToStr(ATrainNode.Listeners.Count) + '] [' + ATrainNode.AliasIDStr + ']' + ' [' + ATrainNode.NodeIDStr[True] + ']'
   else
-    Result := IntToStr(ATrainNode.DccAddress) + ' Short ' + SpeedStep + ' [' + ATrainNode.AliasIDStr + ']' + ' [' + ATrainNode.NodeIDStr[True] + ']';
+    Result := IntToStr(ATrainNode.DccAddress) + ' Short ' + SpeedStep + ' [Listeners: ' + IntToStr(ATrainNode.Listeners.Count) + '] [' + ATrainNode.AliasIDStr + ']' + ' [' + ATrainNode.NodeIDStr[True] + ']';
 end;
 
 function TFormTrainCommander.FindSingleLevelNodeWithData(ParentNode: TTreeNode;
@@ -852,7 +852,7 @@ begin
     Result := Result.GetNextSibling;
 end;
 
-procedure TFormTrainCommander.RebuildTrainListview;
+procedure TFormTrainCommander.RebuildTrainTreeview;
 var
   ListenerTrainNode, ParentTrainNode: TLccTrainDccNode;
   ParentTreeNode, ChildTreeNode: TTreeNode;
