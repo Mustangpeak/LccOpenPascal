@@ -2284,6 +2284,7 @@ begin
               end
             end else
             begin
+
               WorkerMessage.LoadAMD(NodeID, AliasID);
               SendMessageFunc(Self, WorkerMessage);
             end;

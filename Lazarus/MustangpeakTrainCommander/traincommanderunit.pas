@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ComCtrls, ExtCtrls,
-  StdCtrls, Spin, Buttons,
+  StdCtrls, Spin, Buttons, laz.VirtualTrees,
   lcc_ethernet_server,
   lcc_defines,
   lcc_node,
@@ -28,6 +28,8 @@ uses
   lcc_xmlutilities,
   lcc_utilities,
   lcc_cdi_parser;
+ // lcc_syn_ethenet_server;
+  //lcc_syn_ethenet_client;
 
 
 const

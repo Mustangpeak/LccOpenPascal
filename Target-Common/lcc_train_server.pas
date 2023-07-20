@@ -74,8 +74,10 @@ type
     destructor Destroy; override;
     function DisplayName: string;
   end;
+
   TOnLccServerRegisterChange = procedure(TractionObject: TLccTractionObject; IsRegistered: Boolean) of object;
   TOnLccServerChange = procedure(TractionObject: TLccTractionObject) of object;
+  TOnLccServerChangeWithMessage = procedure(TractionObject: TLccTractionObject; SourceMessage: TLccMessage) of object;
 
 
   { TLccTractionServer }
@@ -87,10 +89,11 @@ type
     FGridConnect: Boolean;
     FOnEmergencyStopChange: TOnLccServerChange;
     FOnFunctionChange: TOnLccServerChange;
-    FOnListenerAttach: TOnLccServerChange;
-    FOnListenerDetach: TOnLccServerChange;
-    FOnListenerManageRelease: TOnLccServerChange;
-    FOnListenerManageReserve: TOnLccServerChange;
+    FOnListenerAttach: TOnLccServerChangeWithMessage;
+    FOnListenerDetach: TOnLccServerChangeWithMessage;
+    FOnListenerManageRelease: TOnLccServerChangeWithMessage;
+    FOnListenerManageReserve: TOnLccServerChangeWithMessage;
+    FOnListenerQuery: TOnLccServerChangeWithMessage;
     FOnRegisterChange: TOnLccServerRegisterChange;
     FOnSNIPChange: TOnLccServerChange;
     FOnSpeedChange: TOnLccServerChange;
@@ -110,10 +113,11 @@ type
     procedure DoSpeedChange(TractionObject: TLccTractionObject);
     procedure DoFunctionChange(TractionObject: TLccTractionObject);
     procedure DoEmergencyStopChange(TractionObject: TLccTractionObject);
-    procedure DoListenerAttach(TractionObject: TLccTractionObject);
-    procedure DoListenerDetach(TractionObject: TLccTractionObject);
-    procedure DoListenerManageReserve(TractionObject: TLccTractionObject);
-    procedure DoListenerManageRelease(TractionObject: TLccTractionObject);
+    procedure DoListenerAttach(TractionObject: TLccTractionObject; SourceMessage: TLccMessage);
+    procedure DoListenerDetach(TractionObject: TLccTractionObject; SourceMessage: TLccMessage);
+    procedure DoListenerQuery(TractionObject: TLccTractionObject; SourceMessage: TLccMessage);
+    procedure DoListenerManageReserve(TractionObject: TLccTractionObject; SourceMessage: TLccMessage);
+    procedure DoListenerManageRelease(TractionObject: TLccTractionObject; SourceMessage: TLccMessage);
 
     procedure HandleProducerIdentifiedAll(ALccNode: TObject; SourceMessage: TLccMessage);
     procedure HandleSimpleNodeInfoReply( SourceMessage: TLccMessage);
@@ -154,13 +158,16 @@ type
     property OnSpeedChange: TOnLccServerChange read FOnSpeedChange write FOnSpeedChange;
     property OnFunctionChange: TOnLccServerChange read FOnFunctionChange write FOnFunctionChange;
     property OnEmergencyStopChange: TOnLccServerChange read FOnEmergencyStopChange write FOnEmergencyStopChange;
-    property OnListenerAttach: TOnLccServerChange read FOnListenerAttach write FOnListenerAttach;
-    property OnListenerDetach: TOnLccServerChange read FOnListenerDetach write FOnListenerDetach;
-    property OnListenerManageReserve: TOnLccServerChange read FOnListenerManageReserve write FOnListenerManageReserve;
-    property OnListenerManageRelease: TOnLccServerChange read FOnListenerManageRelease write FOnListenerManageRelease;
+    property OnListenerAttach: TOnLccServerChangeWithMessage read FOnListenerAttach write FOnListenerAttach;  // TractionObject cound be nil as you don't have to be a train to be a listener
+    property OnListenerDetach: TOnLccServerChangeWithMessage read FOnListenerDetach write FOnListenerDetach;  // TractionObject cound be nil as you don't have to be a train to be a listener
+    property OnListenerQuery: TOnLccServerChangeWithMessage read FOnListenerQuery write FOnListenerQuery;     // TractionObject cound be nil as you don't have to be a train to be a listener
+    property OnListenerManageReserve: TOnLccServerChangeWithMessage read FOnListenerManageReserve write FOnListenerManageReserve;  // TractionObject cound be nil as you don't have to be a train to be a Manage
+    property OnListenerManageRelease: TOnLccServerChangeWithMessage read FOnListenerManageRelease write FOnListenerManageRelease;  // TractionObject cound be nil as you don't have to be a train to be a Manage
 
     procedure ProcessMessageLCC(ALccNode: TObject; SourceMessage: TLccMessage); virtual;
   end;
+
+
 implementation
 
 uses
@@ -296,28 +303,34 @@ begin
     OnEmergencyStopChange(TractionObject);
 end;
 
-procedure TLccTractionServer.DoListenerAttach(TractionObject: TLccTractionObject);
+procedure TLccTractionServer.DoListenerAttach(TractionObject: TLccTractionObject; SourceMessage: TLccMessage);
 begin
   if Assigned(OnListenerAttach) then
-    OnListenerAttach(TractionObject);
+    OnListenerAttach(TractionObject, SourceMessage);
 end;
 
-procedure TLccTractionServer.DoListenerDetach(TractionObject: TLccTractionObject);
+procedure TLccTractionServer.DoListenerDetach(TractionObject: TLccTractionObject; SourceMessage: TLccMessage);
 begin
   if Assigned(OnListenerDetach) then
-    OnListenerDetach(TractionObject);
+    OnListenerDetach(TractionObject, SourceMessage);
 end;
 
-procedure TLccTractionServer.DoListenerManageReserve(TractionObject: TLccTractionObject);
+procedure TLccTractionServer.DoListenerQuery(TractionObject: TLccTractionObject; SourceMessage: TLccMessage);
+begin
+  if Assigned(OnListenerQuery) then
+    OnListenerManageReserve(TractionObject, SourceMessage);
+end;
+
+procedure TLccTractionServer.DoListenerManageReserve(TractionObject: TLccTractionObject; SourceMessage: TLccMessage);
 begin
   if Assigned(OnListenerManageReserve) then
-    OnListenerManageReserve(TractionObject);
+    OnListenerManageReserve(TractionObject, SourceMessage);
 end;
 
-procedure TLccTractionServer.DoListenerManageRelease(TractionObject: TLccTractionObject);
+procedure TLccTractionServer.DoListenerManageRelease(TractionObject: TLccTractionObject; SourceMessage: TLccMessage);
 begin
   if Assigned(OnListenerManageRelease) then
-    OnListenerManageRelease(TractionObject);
+    OnListenerManageRelease(TractionObject, SourceMessage);
 end;
 
 procedure TLccTractionServer.HandleProducerIdentifiedAll(ALccNode: TObject; SourceMessage: TLccMessage);
@@ -451,56 +464,38 @@ begin
 end;
 
 procedure TLccTractionServer.HandleTractionListenerAttach(SourceMessage: TLccMessage);
-var
-  TractionObject: TLccTractionObject;
 begin
-  TractionObject := Find(SourceMessage.DestID);
-  if Assigned(TractionObject) then
-  begin
-    // User can just read the Listener property in the LccNode (only works with internal trains nodes)
-    DoListenerAttach(TractionObject);
-  end;
+  // User can just read the Listener property in the LccNode (only works with internal trains nodes)
+  // A non Train can be a Listener so pass the raw message too
+  DoListenerAttach(Find(SourceMessage.DestID), SourceMessage);
 end;
 
 procedure TLccTractionServer.HandleTractionListenerDetach(SourceMessage: TLccMessage);
-var
-  TractionObject: TLccTractionObject;
 begin
-  TractionObject := Find(SourceMessage.DestID);
-  if Assigned(TractionObject) then
-  begin
-    // User can just read the Listener property in the LccNode (only works with internal trains nodes)
-    DoListenerDetach(TractionObject);
-  end;
+  // User can just read the Listener property in the LccNode (only works with internal trains nodes)
+  // A non Train can be a Listener so pass the raw message too
+  DoListenerDetach(Find(SourceMessage.DestID), SourceMessage);
 end;
 
 procedure TLccTractionServer.HandleTractionListenerQuery(SourceMessage: TLccMessage);
 begin
-  // Do Nothing: Just a query won't change the database
+  // User can just read the Listener property in the LccNode (only works with internal trains nodes)
+  // A non Train can be a Listener so pass the raw message too
+  DoListenerQuery(Find(SourceMessage.DestID), SourceMessage);
 end;
 
 procedure TLccTractionServer.HandleTractionManageReserve(SourceMessage: TLccMessage);
-var
-  TractionObject: TLccTractionObject;
 begin
-  TractionObject := Find(SourceMessage.DestID);
-  if Assigned(TractionObject) then
-  begin
-    // User can just read the Manage property in the LccNode (only works with internal trains nodes)
-    DoListenerManageReserve(TractionObject);
-  end;
+  // User can just read the Listener property in the LccNode (only works with internal trains nodes)
+  // A non Train can Manage too so pass the raw message too
+  DoListenerManageReserve(Find(SourceMessage.DestID), SourceMessage);
 end;
 
 procedure TLccTractionServer.HandleTractionManageRelease(SourceMessage: TLccMessage);
-var
-  TractionObject: TLccTractionObject;
 begin
-  TractionObject := Find(SourceMessage.DestID);
-  if Assigned(TractionObject) then
-  begin
-    // User can just read the Manage property in the LccNode (only works with internal trains nodes)
-    DoListenerManageRelease(TractionObject);
-  end;
+  // User can just read the Listener property in the LccNode (only works with internal trains nodes)
+  // A non Train can Manage too so pass the raw message too
+  DoListenerManageRelease(Find(SourceMessage.DestID), SourceMessage)
 end;
 
 procedure TLccTractionServer.HandleTractionSetSpeed(SourceMessage: TLccMessage);

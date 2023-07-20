@@ -29,6 +29,7 @@ uses
   IdComponent,
   IdGlobal,
   IdException,
+  IdSocketHandle,
   lcc_threaded_circulararray,
   lcc_utilities,
   lcc_defines,
@@ -388,6 +389,7 @@ var
   TxStr: string;
   TxList: TStringList;
   DynamicByteArray: TLccDynamicByteArray;
+  IdSocketHandle: TIdSocketHandle;
 begin
   FRunning := True;
   Connecting := True;
@@ -418,8 +420,9 @@ begin
         end;
 
         IdTCPServer.Bindings.Clear;
-        IdTCPServer.Bindings.Add.Port := 12021;
-        IdTCPServer.Bindings.Add.IP := (ConnectionInfo as TLccEthernetConnectionInfo).ListenerIP;
+        IdSocketHandle := IdTCPServer.Bindings.Add;
+        IdSocketHandle.Port := 12021;
+        IdSocketHandle.IP := (ConnectionInfo as TLccEthernetConnectionInfo).ListenerIP;
 
         IdTCPServer.Active := True;
 

@@ -139,8 +139,8 @@ type
   protected
     // TODO: should these be [Weak] on ARC systems?
     FScheduler: TIdScheduler;
+    FThread: TIdThreadWithTask;
   public
-    FThread: TIdThreadWithTask;  // Get rid of the ugly casting hack that make the Verifty Method Calls (-CR) fail ( replaces casts with "as" )
     constructor Create(AScheduler: TIdScheduler; AThread: TIdThreadWithTask); reintroduce;
     destructor Destroy; override;
     //
@@ -218,8 +218,7 @@ var
   LThread: TIdThreadWithTask;
 begin
   Assert(AYarn<>nil);
- // LYarn := TIdYarnOfThread(AYarn);
- LYarn := (AYarn as TIdYarnOfThread);
+  LYarn := TIdYarnOfThread(AYarn);
   LThread := LYarn.Thread;
   if (LThread <> nil) and (not LThread.Suspended) then begin
     // Is still running and will free itself

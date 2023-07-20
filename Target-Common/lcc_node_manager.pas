@@ -507,6 +507,11 @@ begin
         LocalNodeID := NULL_NODE_ID;
         AliasServer.AddMapping(AMessage.ExtractDataBytesAsNodeID(0, LocalNodeID), AMessage.CAN.SourceAlias);
       end;
+    MTI_CAN_AME :
+      begin
+        if AMessage.DataCount = 0 then
+          AliasServer.Clear;
+      end;
   end;
 
   case AMessage.MTI of
@@ -515,6 +520,11 @@ begin
       begin
         LocalNodeID := NULL_NODE_ID;
         AliasServer.AddMapping(AMessage.ExtractDataBytesAsNodeID(0, LocalNodeID), AMessage.CAN.SourceAlias);
+      end;
+    MTI_VERIFY_NODE_ID_NUMBER :
+      begin
+        if AMessage.DataCount = 0 then
+          AliasServer.Clear;
       end;
   end;
 end;

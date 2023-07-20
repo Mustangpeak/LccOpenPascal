@@ -1,12 +1,12 @@
 object FormTrainCommander: TFormTrainCommander
-  Left = 264
-  Height = 565
-  Top = 183
-  Width = 1241
+  Left = 216
+  Height = 563
+  Top = 172
+  Width = 1238
   Align = alBottom
   Caption = 'Train Commander [LccOpenPascal]'
-  ClientHeight = 565
-  ClientWidth = 1241
+  ClientHeight = 563
+  ClientWidth = 1238
   OnCloseQuery = FormCloseQuery
   OnCreate = FormCreate
   OnDestroy = FormDestroy
@@ -16,10 +16,10 @@ object FormTrainCommander: TFormTrainCommander
     Left = 0
     Height = 96
     Top = 0
-    Width = 1241
+    Width = 1238
     Align = alTop
     ClientHeight = 96
-    ClientWidth = 1241
+    ClientWidth = 1238
     TabOrder = 0
     object CheckBoxAutoConnect: TCheckBox
       Left = 192
@@ -217,17 +217,17 @@ object FormTrainCommander: TFormTrainCommander
   object PanelConnections: TPanel
     Left = 0
     Height = 102
-    Top = 445
-    Width = 1241
+    Top = 443
+    Width = 1238
     Align = alBottom
     ClientHeight = 102
-    ClientWidth = 1241
+    ClientWidth = 1238
     TabOrder = 1
     object ListviewConnections: TListView
       Left = 1
       Height = 100
       Top = 1
-      Width = 1239
+      Width = 1236
       Align = alClient
       Columns = <      
         item
@@ -245,22 +245,22 @@ object FormTrainCommander: TFormTrainCommander
     Cursor = crVSplit
     Left = 0
     Height = 9
-    Top = 337
-    Width = 1241
+    Top = 335
+    Width = 1238
     Align = alBottom
     ResizeAnchor = akBottom
   end
   object SplitterTrains: TSplitter
     Left = 267
-    Height = 241
+    Height = 239
     Top = 96
     Width = 5
   end
   object StatusBarMain: TStatusBar
     Left = 0
     Height = 18
-    Top = 547
-    Width = 1241
+    Top = 545
+    Width = 1238
     Panels = <    
       item
         Width = 420
@@ -278,12 +278,12 @@ object FormTrainCommander: TFormTrainCommander
   end
   object PanelTrains: TPanel
     Left = 0
-    Height = 241
+    Height = 239
     Top = 96
     Width = 267
     Align = alLeft
     Caption = 'PanelTrains'
-    ClientHeight = 241
+    ClientHeight = 239
     ClientWidth = 267
     TabOrder = 5
     object PanelTrainsHeader: TPanel
@@ -311,7 +311,7 @@ object FormTrainCommander: TFormTrainCommander
     end
     object TreeViewTrains: TTreeView
       Left = 1
-      Height = 216
+      Height = 214
       Top = 24
       Width = 265
       Align = alClient
@@ -324,9 +324,9 @@ object FormTrainCommander: TFormTrainCommander
   end
   object MemoLog: TMemo
     Left = 272
-    Height = 241
+    Height = 239
     Top = 96
-    Width = 969
+    Width = 966
     Align = alClient
     ScrollBars = ssVertical
     TabOrder = 6
@@ -334,8 +334,8 @@ object FormTrainCommander: TFormTrainCommander
   object MemoComPort: TMemo
     Left = 0
     Height = 90
-    Top = 346
-    Width = 1241
+    Top = 344
+    Width = 1238
     Align = alBottom
     Lines.Strings = (
       'MemoComPort'
@@ -347,8 +347,8 @@ object FormTrainCommander: TFormTrainCommander
     Cursor = crVSplit
     Left = 0
     Height = 9
-    Top = 436
-    Width = 1241
+    Top = 434
+    Width = 1238
     Align = alBottom
     ResizeAnchor = akBottom
   end

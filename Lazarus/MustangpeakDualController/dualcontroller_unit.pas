@@ -9,7 +9,8 @@ uses
   StdCtrls, Buttons, lcc_node_manager, lcc_ethernet_client, lcc_node,
   lcc_node_controller, lcc_node_messages, lcc_defines, lcc_node_train, lcc_math_float16,
   throttle_takeover_request_form, lcc_common_classes, lcc_ethernet_common,
-  Contnrs, form_logging, form_visual_server, lcc_alias_server, lcc_train_server;
+  Contnrs, form_logging, form_visual_server, lcc_alias_server, lcc_train_server,
+  lcc_utilities;
 
 type
 
@@ -229,17 +230,17 @@ type
     procedure OnMemoryConfigWrite2(Sender: TLccTrainController; ConfigMemAddress: LongWord; Value: LongWord; ErrorCode: Byte; ErrorMsg: string);
 
     // The Controller is the Controller Node created in the NodeManager
-  //  procedure ControllerTrainAssigned1(Sender: TLccTrainController; Reason: TControllerTrainAssignResult);
-  //  procedure ControllerTrainAssigned2(Sender: TLccTrainController; Reason: TControllerTrainAssignResult);
+    procedure ControllerTrainAssigned1(Sender: TLccTrainController);
+    procedure ControllerTrainAssigned2(Sender: TLccTrainController);
 
     procedure ControllerTrainReleased1(Sender: TLccTrainController);
     procedure ControllerTrainReleased2(Sender: TLccTrainController);
 
-    procedure OnControllerQuerySpeedReply1(Sender: TLccTrainController; SetSpeed, CommandSpeed, ActualSpeed: THalfFloat; Status: Byte);
-    procedure OnControllerQueryFunctionReply1(Sender: TLccTrainController; Address: DWORD; Value: Word);
+    procedure OnTrainServerSpeedChange1(TractionObject: TLccTractionObject);
+    procedure OnTrainServerFunctionChange1(TractionObject: TLccTractionObject);
 
-    procedure OnControllerQuerySpeedReply2(Sender: TLccTrainController; SetSpeed, CommandSpeed, ActualSpeed: THalfFloat; Status: Byte);
-    procedure OnControllerQueryFunctionReply2(Sender: TLccTrainController; Address: DWORD; Value: Word);
+    procedure OnTrainServerSpeedChange2(TractionObject: TLccTractionObject);
+    procedure OnTrainServerFunctionChange2(TractionObject: TLccTractionObject);
 
     procedure OnControllerReqestTakeover1(Sender: TLccTrainController; var Allow: Boolean);
     procedure OnControllerReqestTakeover2(Sender: TLccTrainController; var Allow: Boolean);
@@ -754,9 +755,10 @@ begin
           ControllerNode1.TractionServer.OnRegisterChange := @OnTractionRegisterChange
 
         end;
-     {   ControllerNode1.OnTrainAssigned := @ControllerTrainAssigned1;
-        ControllerNode1.OnTrainReleased := @ControllerTrainReleased1;
-        ControllerNode1.OnControllerRequestTakeover := @OnControllerReqestTakeover1;
+
+        ControllerNode1.TractionServer.OnControllerAssign := @ControllerTrainAssigned1;
+        ControllerNode1.TractionServer.OnControllerRelease := @ControllerTrainReleased1;
+     {   ControllerNode1.OnControllerRequestTakeover := @OnControllerReqestTakeover1;
         ControllerNode1.OnQuerySpeedReply := @OnControllerQuerySpeedReply1;
         ControllerNode1.OnQueryFunctionReply := @OnControllerQueryFunctionReply1;
         ControllerNode1.OnSearchResult := @OnControllerSearchResult1;
@@ -874,27 +876,19 @@ procedure TForm1.OnMemoryConfigWrite2(Sender: TLccTrainController;
 begin
 
 end;
-     {
-procedure TForm1.ControllerTrainAssigned1(Sender: TLccTrainController;
-  Reason: TControllerTrainAssignResult);
+
+procedure TForm1.ControllerTrainAssigned1(Sender: TLccTrainController);
 begin
-  case Reason of
-    tarAssigned :
-      begin
-        ControllerNode1.QuerySpeed;
-        ControllerNode1.QueryFunctions;
-        PanelThrottleKeypad1.Enabled := True;
-        SpeedButtonThrottleAssign1.Caption := 'Release Train';
-      end;
-    tarFailTrainRefused      : ShowMessage('Train refused assignment to controller');
-    tarFailControllerRefused : ShowMessage('Current controller refused to release train');
-  else
-    ShowMessage('Unknown ControllerTrainAssigned1 result');
+  if Sender.AssignedTrain.IsAssigned then
+  begin
+    ControllerNode1.QuerySpeed;
+    ControllerNode1.QueryFunctions;
+    PanelThrottleKeypad1.Enabled := True;
+    SpeedButtonThrottleAssign1.Caption := 'Release Train';
   end;
 end;
 
-procedure TForm1.ControllerTrainAssigned2(Sender: TLccTrainController;
-  Reason: TControllerTrainAssignResult);
+procedure TForm1.ControllerTrainAssigned2(Sender: TLccTrainController);
 begin
   case Reason of
     tarAssigned :
@@ -909,7 +903,7 @@ begin
   else
     ShowMessage('Unknown ControllerTrainAssigned2 result');
   end;
-end;       }
+end;
 
 procedure TForm1.ControllerTrainReleased1(Sender: TLccTrainController);
 begin
@@ -923,75 +917,77 @@ begin
   SpeedButtonThrottleAssign2.Caption := 'Allocate Train';
 end;
 
-procedure TForm1.OnControllerQueryFunctionReply1(Sender: TLccTrainController;
-  Address: DWORD; Value: Word);
+procedure TForm1.OnTrainServerFunctionChange1(TractionObject: TLccTractionObject);
 begin
-{  ControllerNode1.Functions[Address] := Value;
-  case Address of
-    0 : begin if Value = 0 then SpeedButtonFunction0.ImageIndex := 0 else SpeedButtonFunction0.ImageIndex := 1; end;
-    1 : begin if Value = 0 then SpeedButtonFunction1.ImageIndex := 0 else SpeedButtonFunction1.ImageIndex := 1; end;
-    2 : begin if Value = 0 then SpeedButtonFunction2.ImageIndex := 0 else SpeedButtonFunction2.ImageIndex := 1; end;
-    3 : begin if Value = 0 then SpeedButtonFunction3.ImageIndex := 0 else SpeedButtonFunction3.ImageIndex := 1; end;
-    4 : begin if Value = 0 then SpeedButtonFunction4.ImageIndex := 0 else SpeedButtonFunction4.ImageIndex := 1; end;
-    5 : begin if Value = 0 then SpeedButtonFunction5.ImageIndex := 0 else SpeedButtonFunction5.ImageIndex := 1; end;
-    6 : begin if Value = 0 then SpeedButtonFunction6.ImageIndex := 0 else SpeedButtonFunction6.ImageIndex := 1; end;
-    7 : begin if Value = 0 then SpeedButtonFunction7.ImageIndex := 0 else SpeedButtonFunction7.ImageIndex := 1; end;
-    8 : begin if Value = 0 then SpeedButtonFunction8.ImageIndex := 0 else SpeedButtonFunction8.ImageIndex := 1; end;
-    9 : begin if Value = 0 then SpeedButtonFunction9.ImageIndex := 0 else SpeedButtonFunction9.ImageIndex := 1; end;
-    10 : begin if Value = 0 then SpeedButtonFunction10.ImageIndex := 0 else SpeedButtonFunction10.ImageIndex := 1; end;
-    11 : begin if Value = 0 then SpeedButtonFunction11.ImageIndex := 0 else SpeedButtonFunction11.ImageIndex := 1; end;
-  end;  }
-end;
-
-procedure TForm1.OnControllerQueryFunctionReply2(Sender: TLccTrainController;
-  Address: DWORD; Value: Word);
-begin
- {   ControllerNode2.Functions[Address] := Value;
-    case Address of
-     0 : begin if Value = 0 then SpeedButtonFunction12.ImageIndex := 0 else SpeedButtonFunction12.ImageIndex := 1; end;
-     1 : begin if Value = 0 then SpeedButtonFunction13.ImageIndex := 0 else SpeedButtonFunction13.ImageIndex := 1; end;
-     2 : begin if Value = 0 then SpeedButtonFunction14.ImageIndex := 0 else SpeedButtonFunction14.ImageIndex := 1; end;
-     3 : begin if Value = 0 then SpeedButtonFunction15.ImageIndex := 0 else SpeedButtonFunction15.ImageIndex := 1; end;
-     4 : begin if Value = 0 then SpeedButtonFunction16.ImageIndex := 0 else SpeedButtonFunction16.ImageIndex := 1; end;
-     5 : begin if Value = 0 then SpeedButtonFunction17.ImageIndex := 0 else SpeedButtonFunction17.ImageIndex := 1; end;
-     6 : begin if Value = 0 then SpeedButtonFunction18.ImageIndex := 0 else SpeedButtonFunction18.ImageIndex := 1; end;
-     7 : begin if Value = 0 then SpeedButtonFunction19.ImageIndex := 0 else SpeedButtonFunction19.ImageIndex := 1; end;
-     8 : begin if Value = 0 then SpeedButtonFunction20.ImageIndex := 0 else SpeedButtonFunction20.ImageIndex := 1; end;
-     9 : begin if Value = 0 then SpeedButtonFunction21.ImageIndex := 0 else SpeedButtonFunction21.ImageIndex := 1; end;
-     10 : begin if Value = 0 then SpeedButtonFunction22.ImageIndex := 0 else SpeedButtonFunction22.ImageIndex := 1; end;
-     11 : begin if Value = 0 then SpeedButtonFunction23.ImageIndex := 0 else SpeedButtonFunction23.ImageIndex := 1; end;
-    end;     }
-end;
-
-procedure TForm1.OnControllerQuerySpeedReply1(Sender: TLccTrainController;
-  SetSpeed, CommandSpeed, ActualSpeed: THalfFloat; Status: Byte);
-begin
-  TrackBarThrottle1.Position := Abs( Round(HalfToFloat(SetSpeed)));
-
-  if HalfIsNegative(SetSpeed) then
+  if EqualNodeID(ControllerNode1.NodeID, TractionObject.Controller.Node, false) then
   begin
-    SpeedButtonForward1.ImageIndex := -1;
-    SpeedButtonReverse1.ImageIndex := 2;
-  end else
-  begin
-    SpeedButtonForward1.ImageIndex := 2;
-    SpeedButtonReverse1.ImageIndex := -1;
+    if TractionObject.Functions[0] = 0 then SpeedButtonFunction0.ImageIndex := 0 else SpeedButtonFunction0.ImageIndex := 1;
+    if TractionObject.Functions[1] = 0 then SpeedButtonFunction1.ImageIndex := 0 else SpeedButtonFunction1.ImageIndex := 1;
+    if TractionObject.Functions[2] = 0 then SpeedButtonFunction2.ImageIndex := 0 else SpeedButtonFunction2.ImageIndex := 1;
+    if TractionObject.Functions[3] = 0 then SpeedButtonFunction3.ImageIndex := 0 else SpeedButtonFunction3.ImageIndex := 1;
+    if TractionObject.Functions[4] = 0 then SpeedButtonFunction4.ImageIndex := 0 else SpeedButtonFunction4.ImageIndex := 1;
+    if TractionObject.Functions[5] = 0 then SpeedButtonFunction5.ImageIndex := 0 else SpeedButtonFunction5.ImageIndex := 1;
+    if TractionObject.Functions[6] = 0 then SpeedButtonFunction6.ImageIndex := 0 else SpeedButtonFunction6.ImageIndex := 1;
+    if TractionObject.Functions[7] = 0 then SpeedButtonFunction7.ImageIndex := 0 else SpeedButtonFunction7.ImageIndex := 1;
+    if TractionObject.Functions[8] = 0 then SpeedButtonFunction8.ImageIndex := 0 else SpeedButtonFunction8.ImageIndex := 1;
+    if TractionObject.Functions[9] = 0 then SpeedButtonFunction9.ImageIndex := 0 else SpeedButtonFunction9.ImageIndex := 1;
+    if TractionObject.Functions[10] = 0 then SpeedButtonFunction10.ImageIndex := 0 else SpeedButtonFunction10.ImageIndex := 1;
+    if TractionObject.Functions[11] = 0 then SpeedButtonFunction11.ImageIndex := 0 else SpeedButtonFunction11.ImageIndex := 1;
   end;
 end;
 
-procedure TForm1.OnControllerQuerySpeedReply2(Sender: TLccTrainController;
-  SetSpeed, CommandSpeed, ActualSpeed: THalfFloat; Status: Byte);
+procedure TForm1.OnTrainServerFunctionChange2(TractionObject: TLccTractionObject);
 begin
-  TrackBarThrottle2.Position := Abs( Round(HalfToFloat(SetSpeed)));
+  if EqualNodeID(ControllerNode2.NodeID, TractionObject.Controller.Node, false) then
+  begin
+    if TractionObject.Functions[0] = 0 then SpeedButtonFunction12.ImageIndex := 0 else SpeedButtonFunction0.ImageIndex := 1;
+    if TractionObject.Functions[1] = 0 then SpeedButtonFunction13.ImageIndex := 0 else SpeedButtonFunction1.ImageIndex := 1;
+    if TractionObject.Functions[2] = 0 then SpeedButtonFunction14.ImageIndex := 0 else SpeedButtonFunction2.ImageIndex := 1;
+    if TractionObject.Functions[3] = 0 then SpeedButtonFunction15.ImageIndex := 0 else SpeedButtonFunction3.ImageIndex := 1;
+    if TractionObject.Functions[4] = 0 then SpeedButtonFunction16.ImageIndex := 0 else SpeedButtonFunction4.ImageIndex := 1;
+    if TractionObject.Functions[5] = 0 then SpeedButtonFunction17.ImageIndex := 0 else SpeedButtonFunction5.ImageIndex := 1;
+    if TractionObject.Functions[6] = 0 then SpeedButtonFunction18.ImageIndex := 0 else SpeedButtonFunction6.ImageIndex := 1;
+    if TractionObject.Functions[7] = 0 then SpeedButtonFunction19.ImageIndex := 0 else SpeedButtonFunction7.ImageIndex := 1;
+    if TractionObject.Functions[8] = 0 then SpeedButtonFunction20.ImageIndex := 0 else SpeedButtonFunction8.ImageIndex := 1;
+    if TractionObject.Functions[9] = 0 then SpeedButtonFunction21.ImageIndex := 0 else SpeedButtonFunction9.ImageIndex := 1;
+    if TractionObject.Functions[10] = 0 then SpeedButtonFunction22.ImageIndex := 0 else SpeedButtonFunction10.ImageIndex := 1;
+    if TractionObject.Functions[11] = 0 then SpeedButtonFunction23.ImageIndex := 0 else SpeedButtonFunction11.ImageIndex := 1;
+  end;
+end;
 
-  if HalfIsNegative(SetSpeed) then
+procedure TForm1.OnTrainServerSpeedChange1(TractionObject: TLccTractionObject);
+begin
+  if EqualNodeID(ControllerNode1.NodeID, TractionObject.Controller.Node, false) then
   begin
-    SpeedButtonForward2.ImageIndex := -1;
-    SpeedButtonReverse2.ImageIndex := 2;
-  end else
+    TrackBarThrottle1.Position := Abs( Round(HalfToFloat(TractionObject.SpeedSet)));
+
+    if HalfIsNegative(TractionObject.SpeedSet) then
+    begin
+      SpeedButtonForward1.ImageIndex := -1;
+      SpeedButtonReverse1.ImageIndex := 2;
+    end else
+    begin
+      SpeedButtonForward1.ImageIndex := 2;
+      SpeedButtonReverse1.ImageIndex := -1;
+    end;
+  end;
+end;
+
+procedure TForm1.OnTrainServerSpeedChange2(TractionObject: TLccTractionObject);
+begin
+  if EqualNodeID(ControllerNode2.NodeID, TractionObject.Controller.Node, false) then
   begin
-    SpeedButtonForward2.ImageIndex := 2;
-    SpeedButtonReverse2.ImageIndex := -1;
+    TrackBarThrottle1.Position := Abs( Round(HalfToFloat(TractionObject.SpeedSet)));
+
+    if HalfIsNegative(TractionObject.SpeedSet) then
+    begin
+      SpeedButtonForward1.ImageIndex := -1;
+      SpeedButtonReverse1.ImageIndex := 2;
+    end else
+    begin
+      SpeedButtonForward1.ImageIndex := 2;
+      SpeedButtonReverse1.ImageIndex := -1;
+    end;
   end;
 end;
 

@@ -128,6 +128,10 @@ if TargetOS = &apos;linux&apos; then
           </Linking>
         </CompilerOptions>
       </Item3>
+      <SharedMatrixOptions Count="2">
+        <Item1 ID="829270481337" Type="IDEMacro" MacroName="LCLWidgetType" Value="cocoa"/>
+        <Item2 ID="342356827358" Type="IDEMacro" MacroName="LCLWidgetType" Value="carbon"/>
+      </SharedMatrixOptions>
     </BuildModes>
     <PublishOptions>
       <Version Value="2"/>
@@ -136,13 +140,16 @@ if TargetOS = &apos;linux&apos; then
     <RunParams>
       <FormatVersion Value="2"/>
     </RunParams>
-    <RequiredPackages Count="2">
+    <RequiredPackages Count="3">
       <Item1>
-        <PackageName Value="MemDSLaz"/>
+        <PackageName Value="laz.virtualtreeview_package"/>
       </Item1>
       <Item2>
-        <PackageName Value="LCL"/>
+        <PackageName Value="MemDSLaz"/>
       </Item2>
+      <Item3>
+        <PackageName Value="LCL"/>
+      </Item3>
     </RequiredPackages>
     <Units Count="11">
       <Unit0>
@@ -207,7 +214,7 @@ if TargetOS = &apos;linux&apos; then
     </Target>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir)"/>
-      <OtherUnitFiles Value="..\..\Target-PC;..\..\Target-PC\HardwareConnection;..\..\Target-Common;..\..\Target-PC\Synapse_LCC"/>
+      <OtherUnitFiles Value="..\..\Target-PC;..\..\Target-PC\HardwareConnection;..\..\Target-Common;..\..\Target-PC\HardwareConnection\Indy_Lcc\Core;..\..\Target-PC\HardwareConnection\Indy_Lcc\Protocols;..\..\Target-PC\HardwareConnection\Indy_Lcc\System;..\..\Target-PC\HardwareConnection\TLazSerial;..\..\Target-PC\HardwareConnection\Synapse"/>
       <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
     </SearchPaths>
     <Conditionals Value="if TargetOS = &apos;darwin&apos; then
@@ -236,7 +243,6 @@ if TargetOS = &apos;linux&apos; then
         <OverflowChecks Value="True"/>
         <StackChecks Value="True"/>
       </Checks>
-      <VerifyObjMethodCallValidity Value="True"/>
       <TargetCPU Value="x86_64"/>
       <TargetOS Value="darwin"/>
       <Optimizations>

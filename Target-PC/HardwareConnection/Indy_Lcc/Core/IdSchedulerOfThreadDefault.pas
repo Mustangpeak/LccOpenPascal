@@ -92,9 +92,9 @@ begin
   ActiveYarns.Add(Result);
 end;
 
-//type
- // TIdYarnOfThreadAccess = class(TIdYarnOfThread)
- // end;
+type
+  TIdYarnOfThreadAccess = class(TIdYarnOfThread)
+  end;
 
 procedure TIdSchedulerOfThreadDefault.ReleaseYarn(AYarn: TIdYarn);
 //only gets called from YarnOf(Fiber/Thread).Destroy
@@ -103,8 +103,10 @@ var
 begin
   //take posession of the thread
   LThread := TIdYarnOfThread(AYarn).Thread;
-  TIdYarnOfThread(AYarn).FThread := nil;
- // TIdYarnOfThreadAccess(AYarn).FThread := nil;
+  {$push}
+  {$objectChecks off}
+  TIdYarnOfThreadAccess(AYarn).FThread := nil;
+  {$pop}
   //Currently LThread can =nil. Is that a valid condition?
   //Assert(LThread<>nil);
 

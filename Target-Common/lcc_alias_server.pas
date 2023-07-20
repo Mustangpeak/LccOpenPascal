@@ -55,6 +55,9 @@ type
     FMappingRequestList: TThreadList;   // Mappings that have only one ID and waiting for a message to come in to fill them out and move them to the MappingList
     FWorkerMappingRequestList: TList;
 
+  protected
+    procedure FlushOldMappingWithAlias(AnAlias: Word);
+
   public
     property MappingList: TThreadList read FMappingList write FMappingList;
     property MappingRequestList: TThreadList read FMappingRequestList write FMappingRequestList;
@@ -72,6 +75,9 @@ type
     function FindMapping(ANodeID: TNodeID): TLccAliasMapping; overload;
     function FindMapping(ANodeID: TNodeID; AnAliasID: Word): TLccAliasMapping; overload;
     function AddMapping(ANodeID: TNodeID; AnAlias: Word): TLccAliasMapping;
+
+    // These are for internal virtual nodes to deal with Alias messages.  If the Receive Message Thread finds a message with a node that is not mapped that could be a
+    // node that is internal to this application.  That said there needs to be a mechinism for the receive thread to function the same as if it was an external node by
     procedure AddMappingRequest(ANodeID: TNodeID; AnAlias: Word);
     function MarkForRemovalByAlias(AnAlias: Word): TLccAliasMapping;
     procedure MappingRequestLiveTimeIncreaseAndDeleteAbandoned(MaxAbandonTimeCount: Word);
@@ -86,6 +92,27 @@ uses
   lcc_base_classes;
 
 { TLccAliasServer }
+
+procedure TLccAliasServer.FlushOldMappingWithAlias(AnAlias: Word);
+var
+  i: Integer;
+  List: TList;
+begin
+  // Remove any old mappings with is alias
+  List := MappingList.LockList;
+  try
+    for i := List.Count - 1 downto 0 do
+    begin
+      if TLccAliasMapping(List[i]).NodeAlias = AnAlias then
+      begin
+        TObject(List[i]).Free;
+        List.Delete(i);
+      end;
+    end;
+  finally
+    MappingList.UnLockList
+  end;
+end;
 
 constructor TLccAliasServer.Create;
 begin
@@ -247,6 +274,7 @@ begin
     Result := FindMapping(AnAlias);
     if not Assigned(Result) then
     begin
+      FlushOldMappingWithAlias(AnAlias);
       Result := TLccAliasMapping.Create;
       Result.NodeID := ANodeID;
       Result.NodeAlias := AnAlias;
