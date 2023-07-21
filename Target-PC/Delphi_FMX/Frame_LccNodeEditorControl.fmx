@@ -1,15 +1,15 @@
 object FrameNodeEditorControl: TFrameNodeEditorControl
-  Size.Width = 420.000000000000000000
+  Size.Width = 511.000000000000000000
   Size.Height = 442.000000000000000000
   Size.PlatformDefault = False
   object FramedVertScrollBox: TFramedVertScrollBox
     Align = Client
-    Size.Width = 420.000000000000000000
+    Size.Width = 511.000000000000000000
     Size.Height = 442.000000000000000000
     Size.PlatformDefault = False
     TabOrder = 2
-    OnResize = FramedVertScrollBoxResize
-    Viewport.Width = 416.000000000000000000
+    OnResized = FramedVertScrollBoxResized
+    Viewport.Width = 507.000000000000000000
     Viewport.Height = 438.000000000000000000
   end
 end

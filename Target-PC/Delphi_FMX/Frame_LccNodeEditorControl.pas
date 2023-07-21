@@ -5,36 +5,36 @@ interface
 uses
   System.SysUtils, System.Types, System.UITypes, System.Classes, System.Variants,
   FMX.Types, FMX.Graphics, FMX.Controls, FMX.Forms, FMX.Dialogs, FMX.StdCtrls,
-  FMX.Layouts, Frame_LccNodeEditorGroup, Frame_LccNodeEditor;
+  FMX.Layouts, Frame_LccNodeEditorGroup, Frame_LccNodeEditor, FMX.Objects;
 
 type
   TFrameNodeEditorControl = class(TFrame)
     FramedVertScrollBox: TFramedVertScrollBox;
-    procedure FramedVertScrollBoxResize(Sender: TObject);
+    procedure FramedVertScrollBoxResized(Sender: TObject);
   private
+    FRootGroups: TList;
     FUniqueEditCounter: UInt64;
-    FGroupList: TList;
-    function GetGroupCount: Integer;
+    FRootGroup: TFrameLccNodeEditorGroup;
+    FLockCount: Integer;
     { Private declarations }
   protected
+    property RootGroups: TList read FRootGroups write FRootGroups;
     property UniqueEditCounter: UInt64 read FUniqueEditCounter write FUniqueEditCounter;
-    property GroupList: TList read FGroupList write FGroupList;
-
-    function GenerateUniqueEditCounter: Integer;
-    procedure LinkToLastGroup(AGroup: TFrameLccNodeEditorGroup);
   public
     { Public declarations }
-    property GroupCount: Integer read GetGroupCount;
+    property LockCount: Integer read FLockCount write FLockCount;
+    property RootGroup: TFrameLccNodeEditorGroup read FRootGroup write FRootGroup;
 
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
 
-    function AddGroup(AName, ADescription: String; IsCollapsed: Boolean): TFrameLccNodeEditorGroup;
     procedure Clear;
-    function LastGroupTop: single;
-    function LastGroupBottom: single;
-    function LastGroup: TFrameLccNodeEditorGroup;
-    function FirstGroup: TFrameLccNodeEditorGroup;
+
+    procedure Lock;
+    procedure UnLock;
+    function GenerateUniqueEditCounter: Integer;
+    procedure Rebuild;
+    procedure ResizeGroupsAndEditorsWidths;
   end;
 
 implementation
@@ -43,72 +43,48 @@ implementation
 
 { TFrame1 }
 
-function TFrameNodeEditorControl.AddGroup(AName, ADescription: String; IsCollapsed: Boolean): TFrameLccNodeEditorGroup;
-begin
-  Result := TFrameLccNodeEditorGroup.Create(FramedVertScrollBox);
-  Result.Collapsed := IsCollapsed;
-  Result.Parent := FramedVertScrollBox;
-
-  Result.Name := 'GroupEditor' + IntToStr(GenerateUniqueEditCounter);;
-  if AName <> '' then
-    Result.LabelName.Text := AName
-  else
-    Result.LabelName.Visible := False;
-  if ADescription <> '' then
-    Result.LabelDescription.Text := ADescription
-  else
-    Result.LabelDescription.Visible := False;
-
-  Result.Position.x := 0;
-  Result.Position.y := LastGroupBottom;
-
-  LinkToLastGroup(Result);
-
-  // Now officially in the list
-  GroupList.Add(Result);
-end;
-
 procedure TFrameNodeEditorControl.Clear;
 var
   i: Integer;
 begin
   try
-    for i := 0 to GroupCount - 1 do
-      TObject( GroupList[i]).Free;
+    for i := 0 to RootGroups.Count - 1 do
+      TObject(RootGroups[i]).Free;
   finally
-    GroupList.Clear;
+    RootGroups.Clear;
   end;
 end;
 
 constructor TFrameNodeEditorControl.Create(AOwner: TComponent);
 begin
   // The Create call will call events like Resize.. crazy but true so make sure things are ready for that
-  FGroupList := TList.Create;
   inherited;
+
+  RootGroups := TList.Create;
+
+  RootGroup := TFrameLccNodeEditorGroup.Create(Self);
+  RootGroup.Name := 'GroupRoot' + IntToStr(GenerateUniqueEditCounter);
+  RootGroup.LabelName.Text := 'OpenLCB';
+  RootGroup.LabelDescription.Text := 'CDI Editor';
+  RootGroup.Parent := FramedVertScrollBox;
+  RootGroup.OwnerControl := Self;
+  RootGroup.Collapsed := False;
+  RootGroup.Visible := True;
 end;
 
 destructor TFrameNodeEditorControl.Destroy;
 begin
   Clear;
-  GroupList.Free;
+  FreeAndNil(FRootGroups);
+  RootGroup.Clear;
+  FreeAndNil(FRootGroup);
   inherited;
 end;
 
-function TFrameNodeEditorControl.FirstGroup: TFrameLccNodeEditorGroup;
+procedure TFrameNodeEditorControl.FramedVertScrollBoxResized(Sender: TObject);
 begin
-  Result := nil;
-  if GroupList.Count > 0 then
-    Result := TFrameLccNodeEditorGroup( GroupList[0]);
-end;
-
-procedure TFrameNodeEditorControl.FramedVertScrollBoxResize(Sender: TObject);
-var
-  i: Integer;
-begin
-  // The Groups are not Aligned since you can't do that in a ScrollBox so we need to
-  // readjust the widths manually
-  for i := GroupList.Count - 1 downto 0 do
-     TFrameLccNodeEditorGroup( GroupList[i]).Width := FramedVertScrollBox.ClientWidth;
+  if LockCount <> 0 then Exit;
+  ResizeGroupsAndEditorsWidths;
 end;
 
 function TFrameNodeEditorControl.GenerateUniqueEditCounter: Integer;
@@ -117,40 +93,37 @@ begin
   Inc(FUniqueEditCounter);
 end;
 
-function TFrameNodeEditorControl.GetGroupCount: Integer;
+procedure TFrameNodeEditorControl.Lock;
 begin
-  Result := GroupList.Count;
+  Inc(FLockCount);
 end;
 
-function TFrameNodeEditorControl.LastGroup: TFrameLccNodeEditorGroup;
+procedure TFrameNodeEditorControl.Rebuild;
 begin
-   Result := nil;
-  if GroupList.Count > 0 then
-    Result := TFrameLccNodeEditorGroup( GroupList[GroupList.Count -1]);
+  if LockCount <> 0 then Exit;
+
+  ResizeGroupsAndEditorsWidths;
+  RootGroup.ReCalculateGroupLayout;
 end;
 
-function TFrameNodeEditorControl.LastGroupBottom: single;
+procedure TFrameNodeEditorControl.ResizeGroupsAndEditorsWidths;
 begin
-  Result := 0;
-  if GroupList.Count > 0 then
-    Result := TFrameLccNodeEditorGroup( GroupList[GroupList.Count - 1]).Position.y +
-      TFrameLccNodeEditorGroup( GroupList[GroupList.Count - 1]).Height;
-end;
+  if LockCount <> 0 then Exit;
 
-function TFrameNodeEditorControl.LastGroupTop: single;
-begin
-  Result := 0;
-  if GroupList.Count > 0 then
-    Result := TFrameLccNodeEditorGroup( GroupList[GroupList.Count - 1]).Position.y;
-end;
-
-procedure TFrameNodeEditorControl.LinkToLastGroup(AGroup: TFrameLccNodeEditorGroup);
-begin
-  if GroupList.Count > 0 then
+  if Assigned(RootGroup) then
   begin
-    TFrameLccNodeEditorGroup( GroupList[GroupList.Count - 1]).NextGroup := AGroup;
-    AGroup.PrevGroup :=  TFrameLccNodeEditorGroup( GroupList[GroupList.Count - 1]);
+    RootGroup.Width := FramedVertScrollBox.ClientWidth;
+    RootGroup.ReCalculateChildWidths(FramedVertScrollBox.ClientWidth)
   end;
+end;
+
+procedure TFrameNodeEditorControl.UnLock;
+begin
+  Dec(FLockCount);
+  if LockCount < 0 then
+    LockCount := 0;
+  if LockCount = 0 then
+    Rebuild;
 end;
 
 end.

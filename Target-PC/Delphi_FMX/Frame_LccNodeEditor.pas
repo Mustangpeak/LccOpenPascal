@@ -7,7 +7,7 @@ uses
   FMX.Types, FMX.Graphics, FMX.Controls, FMX.Forms, FMX.Dialogs, FMX.StdCtrls,
   FMX.Effects, FMX.Edit, FMX.ComboEdit, FMX.Controls.Presentation, FMX.Layouts,
   FMX.Ani, FMX.Colors, FMX.Filter.Effects, FMX.EditBox, FMX.SpinBox, FMX.Text,
-  FMX.ListBox;
+  FMX.ListBox, FMX.TextLayout;
 
 const
   ANIMATION_DURATION = 0.2;
@@ -15,7 +15,6 @@ const
 
 type
   TFrameLccNodeEditor = class(TFrame)
-    FrameLayoutEditor: TLayout;
     LabelName: TLabel;
     LabelDescription: TLabel;
     LayoutEditorControl: TLayout;
@@ -23,15 +22,9 @@ type
     SpeedButtonActionRead: TSpeedButton;
     SpeedButtonActionCompare: TSpeedButton;
     InnerGlowEffectEditorComboBox: TInnerGlowEffect;
-    FloatAnimationDescription: TFloatAnimation;
-    FloatAnimationName: TFloatAnimation;
     LayoutActionButtons: TLayout;
     SpeedButtonShowActions: TSpeedButton;
     FloatAnimationShowActions: TFloatAnimation;
-    SpeedButtonTextFolding: TSpeedButton;
-    LayoutEditor: TLayout;
-    LayoutTextFolding: TLayout;
-    FloatAnimationLayoutTextFolding: TFloatAnimation;
     LayoutEditorContainer: TLayout;
     EditBox: TEdit;
     SpinBox: TSpinBox;
@@ -41,13 +34,8 @@ type
     ColorAnimationEditBoxInnerGlowEffect: TColorAnimation;
     ColorAnimationSpinBoxInnerGlowEffect: TColorAnimation;
     ComboBox: TComboBox;
-    procedure LabelNameClick(Sender: TObject);
-    procedure LabelDescriptionClick(Sender: TObject);
-    procedure FloatAnimationNameFinish(Sender: TObject);
-    procedure FloatAnimationDescriptionFinish(Sender: TObject);
+    LayoutContainer: TLayout;
     procedure SpeedButtonShowActionsClick(Sender: TObject);
-    procedure FloatAnimationLayoutTextFoldingFinish(Sender: TObject);
-    procedure SpeedButtonTextFoldingClick(Sender: TObject);
     procedure ComboBoxChange(Sender: TObject);
     procedure EditBoxChange(Sender: TObject);
     procedure SpinBoxChange(Sender: TObject);
@@ -55,10 +43,6 @@ type
     procedure ColorAnimationEditBoxInnerGlowEffectFinish(Sender: TObject);
     procedure ColorAnimationSpinBoxInnerGlowEffectFinish(Sender: TObject);
   private
-    FDescriptionExpanded: Boolean;
-    FNameExpanded: Boolean;
-    FDescriptionShowing: Boolean;
-    FOldDescriptionHeight: single;
     FActionsExpanded: Boolean;
     FGlowColorChanged: TAlphaColor;
     FGlowColorUnknown: TAlphaColor;
@@ -66,20 +50,21 @@ type
     FPreChangeSpinBoxValue: double;
     FPreChangeEditBoxValue: String;
     FPreChangeComboBoxValue: Integer;
-    function GetRealHeight: single;
+    FBoundingHeight: single;
+    function GetBoundingHeight: single;
     { Private declarations }
   protected
     property PreChangeSpinBoxValue: double read FPreChangeSpinBoxValue write FPreChangeSpinBoxValue;
     property PreChangeEditBoxValue: String read FPreChangeEditBoxValue write FPreChangeEditBoxValue;
     property PreChangeComboBoxValue: Integer read FPreChangeComboBoxValue write FPreChangeComboBoxValue;
+
+    function GetTextHeight(const T: TTextSettings; const Width: Single; const Text: string): Integer;
+
   public
     { Public declarations }
     property ActionsExpanded: Boolean read FActionsExpanded write FActionsExpanded;
-    property NameExpanded: Boolean read FNameExpanded write FNameExpanded;
-    property DescriptionExpanding: Boolean read FDescriptionShowing write FDescriptionShowing;
-    property DescriptionExpanded: Boolean read FDescriptionExpanded write FDescriptionExpanded;
-    property OldDescriptionHeight: single read FOldDescriptionHeight write FOldDescriptionHeight;
-    property RealHeight: single read GetRealHeight;
+    property BoundingHeight: single read GetBoundingHeight write FBoundingHeight;
+
 
     property GlowColorValid: TAlphaColor read FGlowColorValid write FGlowColorValid;
     property GlowColorChanged: TAlphaColor read FGlowColorChanged write FGlowColorChanged;
@@ -97,11 +82,49 @@ type
     procedure LoadSpinEdit(AValue: Integer; AMin, AMax: double); overload;
     procedure LoadSpinEdit(AValue: single; AMin, AMax: double); overload;
     procedure LoadSpinEditValueType(AValueType: TNumValueType);
+
+    function ReCalculateAndRepositionContentsHeight: single;
   end;
 
 implementation
 
 {$R *.fmx}
+
+function TFrameLccNodeEditor.ReCalculateAndRepositionContentsHeight: single;
+// This repositions the contents of the editor and resize the frame to fit these items
+const
+  EDITOR_CONTROL_HEIGHT = 44;
+var
+  NameH, DescriptionH: single;
+begin
+  NameH := 0;
+  DescriptionH := 0;
+
+  if LabelName.Text <> '' then
+    NameH := GetTextHeight(LabelName.TextSettings, Width -
+                                                   LabelName.Margins.Left -
+                                                   LabelName.Margins.Right,
+                                                   LabelName.Text);
+  if LabelDescription.Text <> '' then
+    DescriptionH := GetTextHeight(LabelDescription.TextSettings, Width -
+                                                                 LabelDescription.Margins.Left -
+                                                                 LabelDescription.Margins.Right,
+                                                                 LabelDescription.Text);
+
+  Result := DescriptionH +
+                     NameH +
+                     EDITOR_CONTROL_HEIGHT +
+                     LabelName.Margins.Top +
+                     LabelName.Margins.Bottom +
+                     LabelDescription.Margins.Top +
+                     LabelDescription.Margins.Bottom;
+
+  Height := Result;
+  LayoutContainer.Height := Result;
+  LabelName.Height := NameH;
+  LabelDescription.Height := DescriptionH;
+  FBoundingHeight := Result;
+end;
 
 procedure TFrameLccNodeEditor.ColorAnimationComboBoxInnerGlowEffectFinish(Sender: TObject);
 begin
@@ -143,7 +166,6 @@ constructor TFrameLccNodeEditor.Create(AOwner: TComponent);
 begin
   inherited;
   LayoutActionButtons.Width := 0;
-  LayoutTextFolding.Width := 0;
 
   GlowColorChanged := TAlphaColorRec.Red;
   GlowColorUnknown := TAlphaColorRec.Yellow;
@@ -208,161 +230,34 @@ begin
   EditBox.Visible := False;
 end;
 
-procedure TFrameLccNodeEditor.FloatAnimationDescriptionFinish(Sender: TObject);
+function TFrameLccNodeEditor.GetBoundingHeight: single;
 begin
-  FloatAnimationDescription.Enabled := False;
-
-  // Is this the finish of the Description expanding?
-  if DescriptionExpanded then
-  begin
-    // Yes so show the Folding button to give a hint to the user to restore it
-    FloatAnimationLayoutTextFolding.Duration := ANIMATION_DURATION;
-    FloatAnimationLayoutTextFolding.Inverse := False;
-    FloatAnimationLayoutTextFolding.StartValue := 0;
-    FloatAnimationLayoutTextFolding.StopValue := 44;
-    FloatAnimationLayoutTextFolding.Enabled := True;
-    FloatAnimationLayoutTextFolding.Start;
-  end;
+  Result := FBoundingHeight;
 end;
 
-procedure TFrameLccNodeEditor.FloatAnimationLayoutTextFoldingFinish(Sender: TObject);
+function TFrameLccNodeEditor.GetTextHeight(const T: TTextSettings; const Width: Single; const Text: string): Integer;
+var
+  Layout: TTextLayout;
 begin
-  FloatAnimationLayoutTextFolding.Enabled := False;
-end;
-
-procedure TFrameLccNodeEditor.FloatAnimationNameFinish(Sender: TObject);
-begin
-  FloatAnimationName.Enabled := False;
-
-  // Is the finish of the Name height changing part of the description expanding/shrinking?
-  if DescriptionExpanding then
-  begin
-    // Yes so finish up the sequence and expand or shrink the description
-    if DescriptionExpanded then
-    begin
-      DescriptionExpanded := False;
-      DescriptionExpanding := False;
-
-      // Collapse Description back to normal
-      FloatAnimationDescription.AnimationType := TAnimationType.Out;
-      FloatAnimationDescription.StartValue := LabelDescription.Height;
-      FloatAnimationDescription.StopValue := OldDescriptionHeight;
-      FloatAnimationDescription.Duration := ANIMATION_DURATION;
-      FloatAnimationDescription.Inverse := False;
-      FloatAnimationDescription.Enabled := True;
-      FloatAnimationDescription.Start;
-    end else
-    begin
-      DescriptionExpanded := True;
-
-      // Expand Description to full height
-      FloatAnimationDescription.StartValue := LabelDescription.Height;
-      FloatAnimationDescription.StopValue := Self.Height + 7;
-      FloatAnimationDescription.AnimationType := TAnimationType.Out;
-      FloatAnimationDescription.Duration := ANIMATION_DURATION;
-      FloatAnimationDescription.Inverse := False;
-      FloatAnimationDescription.Enabled := True;
-      FloatAnimationDescription.Start;
+  // Create a TTextLayout to measure text dimensions
+  Layout := TTextLayoutManager.DefaultTextLayout.Create;
+  try
+    Layout.BeginUpdate;
+    try
+      // Initialize layout parameters with those of the drawable
+      Layout.Font.Assign(T.Font);
+      Layout.VerticalAlign := T.VertAlign;
+      Layout.HorizontalAlign := T.HorzAlign;
+      Layout.WordWrap := T.WordWrap;
+      Layout.Trimming := T.Trimming;
+      Layout.MaxSize := TPointF.Create(Width, TTextLayout.MaxLayoutSize.Y);
+      Layout.Text := Text;
+    finally
+      Layout.EndUpdate;
     end;
-  end else
-  begin // Not the Description Expanding so must be the Name Expanding finishing
-
-    // Is the Name expanded?
-    if NameExpanded then
-    begin
-     // Yes so show the Folding button to give a hint to the user to restore it
-      FloatAnimationLayoutTextFolding.Duration := ANIMATION_DURATION;
-      FloatAnimationLayoutTextFolding.Inverse := False;
-      FloatAnimationLayoutTextFolding.StartValue := 0;
-      FloatAnimationLayoutTextFolding.StopValue := 44;
-      FloatAnimationLayoutTextFolding.Enabled := True;
-      FloatAnimationLayoutTextFolding.Start;
-    end;
-  end;
-end;
-
-function TFrameLccNodeEditor.GetRealHeight: single;
-begin
-  Result := LayoutEditor.Height;
-end;
-
-procedure TFrameLccNodeEditor.LabelDescriptionClick(Sender: TObject);
-begin
-  if not NameExpanded then
-  begin  // Is the Description currently expanded?
-    if DescriptionExpanded then
-    begin
-
-      // Yes so hide the Folding button
-      FloatAnimationLayoutTextFolding.Duration := ANIMATION_DURATION;
-      FloatAnimationLayoutTextFolding.Inverse := False;
-      FloatAnimationLayoutTextFolding.StartValue := 44;
-      FloatAnimationLayoutTextFolding.StopValue := 0;
-      FloatAnimationLayoutTextFolding.Enabled := True;
-      FloatAnimationLayoutTextFolding.Start;
-
-      // Collapse the name first
-      FloatAnimationName.AnimationType := TAnimationType.In;
-      FloatAnimationName.Duration := ANIMATION_DURATION;
-      FloatAnimationName.Inverse := True;
-      FloatAnimationName.Enabled := True;
-      FloatAnimationName.Start;
-
-    end else
-    begin
-      DescriptionExpanding := True;
-
-      OldDescriptionHeight := LabelDescription.Height;
-
-      // Collapse the name first
-      FloatAnimationName.StartValue := LabelName.Height;
-      FloatAnimationName.StopValue := 0;
-      FloatAnimationName.Duration := ANIMATION_DURATION;
-      FloatAnimationName.AnimationType := TAnimationType.Out;
-      FloatAnimationName.Inverse := False;
-      FloatAnimationName.Enabled := True;
-      FloatAnimationName.Start;
-
-    end;
-  end;
-end;
-
-procedure TFrameLccNodeEditor.LabelNameClick(Sender: TObject);
-begin
-  // If the Description is expanded then don't do anything
-  if not DescriptionExpanded then
-  begin
-    // Is the Name currently expanded?
-    if NameExpanded then
-    begin
-      NameExpanded := False;
-
-       // Yes so hide the Folding button
-      FloatAnimationLayoutTextFolding.Duration := ANIMATION_DURATION;
-      FloatAnimationLayoutTextFolding.Inverse := False;
-      FloatAnimationLayoutTextFolding.StartValue := LayoutTextFolding.Width;
-      FloatAnimationLayoutTextFolding.StopValue := 0;
-      FloatAnimationLayoutTextFolding.Enabled := True;
-      FloatAnimationLayoutTextFolding.Start;
-
-      // Now shrink the Name
-      FloatAnimationName.Inverse := True;
-      FloatAnimationName.AnimationType := TAnimationType.In;
-      FloatAnimationName.Inverse := True;
-      FloatAnimationName.Duration := ANIMATION_DURATION;
-      FloatAnimationName.Enabled := True;
-      FloatAnimationName.Start;
-    end else
-    begin
-      NameExpanded := True;
-      FloatAnimationName.StartValue := LabelName.Height;
-      FloatAnimationName.StopValue := LayoutEditorControl.Height + LabelDescription.Height + LabelName.Height;
-      FloatAnimationName.AnimationType := TAnimationType.Out;
-      FloatAnimationName.Inverse := False;
-      FloatAnimationName.Duration := ANIMATION_DURATION;
-      FloatAnimationName.Enabled := True;
-      FloatAnimationName.Start;
-    end;
+    Result := Round(Layout.Height * 1.1);   // 10% margin
+  finally
+    Layout.Free;
   end;
 end;
 
@@ -447,15 +342,6 @@ begin
 
   end;
 
-end;
-
-procedure TFrameLccNodeEditor.SpeedButtonTextFoldingClick(Sender: TObject);
-begin
-  if NameExpanded then
-    LabelNameClick(Self)
-  else
-  if DescriptionExpanded then
-    LabelDescriptionClick(Self)
 end;
 
 procedure TFrameLccNodeEditor.SpinBoxChange(Sender: TObject);
