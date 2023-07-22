@@ -756,8 +756,8 @@ begin
 
         end;
 
-        ControllerNode1.TractionServer.OnControllerAssign := @ControllerTrainAssigned1;
-        ControllerNode1.TractionServer.OnControllerRelease := @ControllerTrainReleased1;
+     //   ControllerNode1.TractionServer.OnControllerAssign := @ControllerTrainAssigned1;
+     //   ControllerNode1.TractionServer.OnControllerRelease := @ControllerTrainReleased1;
      {   ControllerNode1.OnControllerRequestTakeover := @OnControllerReqestTakeover1;
         ControllerNode1.OnQuerySpeedReply := @OnControllerQuerySpeedReply1;
         ControllerNode1.OnQueryFunctionReply := @OnControllerQueryFunctionReply1;
@@ -881,8 +881,8 @@ procedure TForm1.ControllerTrainAssigned1(Sender: TLccTrainController);
 begin
   if Sender.AssignedTrain.IsAssigned then
   begin
-    ControllerNode1.QuerySpeed;
-    ControllerNode1.QueryFunctions;
+  //  ControllerNode1.QuerySpeed;
+ //   ControllerNode1.QueryFunctions;
     PanelThrottleKeypad1.Enabled := True;
     SpeedButtonThrottleAssign1.Caption := 'Release Train';
   end;
@@ -890,7 +890,7 @@ end;
 
 procedure TForm1.ControllerTrainAssigned2(Sender: TLccTrainController);
 begin
-  case Reason of
+{  case Reason of
     tarAssigned :
       begin
         ControllerNode2.QuerySpeed;
@@ -902,7 +902,7 @@ begin
     tarFailControllerRefused : ShowMessage('Current controller refused to release train');
   else
     ShowMessage('Unknown ControllerTrainAssigned2 result');
-  end;
+  end;    }
 end;
 
 procedure TForm1.ControllerTrainReleased1(Sender: TLccTrainController);
