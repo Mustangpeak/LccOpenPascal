@@ -509,7 +509,7 @@ begin
       end;
     MTI_CAN_AME :
       begin
-        if AMessage.DataCount = 0 then
+        if AMessage.DataCount = 0 then      // A global AME will repoplulate the entire database so this will flush invalid mappings as well since they won't respond anymore
           AliasServer.Clear;
       end;
   end;
@@ -523,7 +523,7 @@ begin
       end;
     MTI_VERIFY_NODE_ID_NUMBER :
       begin
-        if AMessage.DataCount = 0 then
+        if AMessage.DataCount = 0 then     // A global Verify Node ID will repoplulate the entire database so this will flush invalid mappings as well since they won't respond anymore
           AliasServer.Clear;
       end;
   end;
