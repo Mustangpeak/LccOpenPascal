@@ -68,7 +68,7 @@ type
     property TractionServer;
 
     constructor Create(ANodeManager: {$IFDEF DELPHI}TComponent{$ELSE}TObject{$ENDIF}; CdiXML: string; GridConnectLink: Boolean); override;
-    function AddTrain(ADccAddress: Word; ALongAddress: Boolean; ASpeedStep: TLccDccSpeedStep): TLccTrainDccNode;
+    function AddTrain(CdiXML: string; ADccAddress: Word; ALongAddress: Boolean; ASpeedStep: TLccDccSpeedStep): TLccTrainDccNode;  // Null CDI for default train node CDI
     procedure ClearTrains;
     function FindTrainByLccNodeID(ANodeID: TNodeID): TLccTrainDccNode;
     function FindTrainByDccAddress(DccAddress: Word; IsLongAddress: Boolean): TLccTrainDccNode;
@@ -83,11 +83,11 @@ implementation
 uses
   lcc_node_manager;
 
-function TLccCommandStationNode.AddTrain(ADccAddress: Word; ALongAddress: Boolean; ASpeedStep: TLccDccSpeedStep): TLccTrainDccNode;
+function TLccCommandStationNode.AddTrain(CdiXML: string; ADccAddress: Word; ALongAddress: Boolean; ASpeedStep: TLccDccSpeedStep): TLccTrainDccNode;
 begin
   if Assigned(NodeManager) then
   begin
-  Result := (NodeManager as TLccNodeManager).AddNodeByClass('', TLccTrainDccNode, False, NULL_NODE_ID) as TLccTrainDccNode;
+  Result := (NodeManager as TLccNodeManager).AddNodeByClass(CdiXML, TLccTrainDccNode, False, NULL_NODE_ID) as TLccTrainDccNode;
     if Assigned(Result) then
     begin
       Result.DccAddress := ADccAddress;
@@ -249,6 +249,8 @@ begin
 
               if Assigned(ATrain) then
               begin
+                // A Train has been already created by this Search Event ID once, it may have not yet finished logging in before
+                // some impatient controller trys again so don't create another train node if it is not finished yet just wait.
                 if ATrain.Permitted then  // Once it logs in and becomes permitted it will send this message if not permitted yet
                 begin
                   WorkerMessage.LoadProducerIdentified(ATrain.NodeID, ATrain.AliasID, ReturnEvent, evs_Valid);
