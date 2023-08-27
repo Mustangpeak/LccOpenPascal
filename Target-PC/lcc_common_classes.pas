@@ -143,6 +143,7 @@ type
 
     // Decendants must override this to tell the Node Manager if this Connection is used to move Lcc packets or not (HTTP server, ComPort with custom protocol server are examples on "no")
     function IsLccLink: Boolean; virtual; abstract;
+    function IsSelf(Test: TObject): Boolean;
 
   public
     // True if the Manager is capabable of receiveing/sending messages on the wire... getter must be overridden
@@ -219,9 +220,24 @@ end;
 { TLccHardwareConnectionManager }
 
 procedure TLccHardwareConnectionManager.DoReceiveMessage(LccMessage: TLccMessage);
+var
+  i: Integer;
+  ConnectionLink: IHardwareConnectionManagerLink;
 begin
   if Assigned(OnLccMessageReceive) then
     OnLccMessageReceive(Self, LccMessage);
+
+  NodeManager.HardwarewareConnectionList.Lock;
+  try
+    for i := 0 to NodeManager.HardwarewareConnectionList.Count - 1 do
+    begin
+      ConnectionLink := (NodeManager.HardwarewareConnectionList[i] as IHardwareConnectionManagerLink);
+      if ConnectionLink.IsLccLink and ConnectionLink.GetConnected and not ConnectionLink.IsSelf(self) then
+        ConnectionLink.SendMessage(LccMessage);
+    end;
+  finally
+    NodeManager.HardwarewareConnectionList.UnLock
+  end;
 end;
 
 procedure TLccHardwareConnectionManager.DoSendMessage(ALccMessage: TLccMessage);
@@ -240,6 +256,11 @@ procedure TLccHardwareConnectionManager.DoErrorMessage(Thread: TLccConnectionThr
 begin
   if Assigned(OnErrorMessage) then
     OnErrorMessage(Thread, ConnectionInfo);
+end;
+
+function TLccHardwareConnectionManager.IsSelf(Test: TObject): Boolean;
+begin
+  Result := Test = self;
 end;
 
 procedure TLccHardwareConnectionManager.SendMessage(ALccMessage: TLccMessage);

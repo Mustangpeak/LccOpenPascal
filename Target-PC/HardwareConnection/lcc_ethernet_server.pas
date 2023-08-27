@@ -123,6 +123,11 @@ type
     property ConnectionContextList: TLccContextsList read FConnectionContextList write FConnectionContextList;
     property Owner: TLccEthernetServer read FOwner write FOwner;
 
+    function ReceiveContextDataAsString(AContext: TIdContext): string; virtual;
+    function ReceiveContextDataAsBytes(AContext: TIdContext): TIdBytes; virtual;
+    procedure SendContextDataAsString(AContext: TIdContext; AString: string); virtual;
+    procedure SendContextDataAsBytes(AContext: TIdContext; ABytes: TIdBytes); virtual;
+
     procedure IdTCPServerConnect(AContext: TIdContext); virtual;
     procedure IdTCPServerDisconnect(AContext: TIdContext); virtual;
     procedure IdTCPServerExecute(AContext: TIdContext); virtual;
@@ -162,19 +167,6 @@ type
   end;
 
 
-  { TWebSocketIOHandlerHack }
-
-  TWebSocketIOHandlerHack = class(TIdIOHandler)
-  public
-  //  function ReadBytes: TArray<byte>;
-    function ReadBytes: TIdBytes; reintroduce;
-    function ReadString: string;
-
-  //  procedure WriteBytes(RawData: TArray<byte>);
-    procedure WriteBytes(RawData: TIdBytes);
-    procedure WriteString(const str: string);
-  end;
-
   { TLccConnectionWebsocketContext }
 
   TLccConnectionWebsocketContext = class(TLccConnectionContext)
@@ -197,6 +189,11 @@ type
     property IdServerIOHandlerSSLOpenSSL: TIdServerIOHandlerSSLOpenSSL read FIdServerIOHandlerSSLOpenSSL write FIdServerIOHandlerSSLOpenSSL;
     property HashSHA1: TIdHashSHA1 read FHashSHA1 write FHashSHA1;
 
+    function ReceiveContextDataAsString(AContext: TIdContext): string; override;
+    function ReceiveContextDataAsBytes(AContext: TIdContext): TIdBytes; override;
+    procedure SendContextDataAsString(AContext: TIdContext; AString: string); override;
+    procedure SendContextDataAsBytes(AContext: TIdContext; ABytes: TIdBytes); override;
+
     procedure IdTCPServerExecute(AContext: TIdContext); override;
   public
     constructor Create(CreateSuspended: Boolean; AnOwner: TLccHardwareConnectionManager; AConnectionInfo: TLccHardwareConnectionInfo); override;
@@ -217,93 +214,6 @@ type
 
 implementation
 
-{ TWebSocketIOHandlerHack }
-
-function TWebSocketIOHandlerHack.ReadBytes: TIdBytes;
-var
-  l: byte;
-  b: array [0..7] of byte;
-  i, DecodedSize: int64;
-  Mask: array [0..3] of byte;
-begin
-  // https://stackoverflow.com/questions/8125507/how-can-i-send-and-receive-websocket-messages-on-the-server-side
-
-  // Strip off the header from the data
-  try
-    if ReadByte = $81 then
-    begin
-      l := ReadByte;
-      case l of
-        $FE:
-          begin
-            b[1] := ReadByte; b[0] := ReadByte;
-            b[2] := 0; b[3] := 0; b[4] := 0; b[5] := 0; b[6] := 0; b[7] := 0;
-            DecodedSize := Int64(b);
-          end;
-        $FF:
-          begin
-            b[7] := ReadByte; b[6] := ReadByte; b[5] := ReadByte; b[4] := ReadByte;
-            b[3] := ReadByte; b[2] := ReadByte; b[1] := ReadByte; b[0] := ReadByte;
-            DecodedSize := Int64(b);
-          end;
-        else
-          DecodedSize := l - 128;
-      end;
-      Mask[0] := ReadByte; Mask[1] := ReadByte; Mask[2] := ReadByte; Mask[3] := ReadByte;
-
-      if DecodedSize < 1 then
-      begin
-        result := [];
-        exit;
-      end;
-
-      SetLength(result, DecodedSize);
-      inherited ReadBytes(TIdBytes(result), DecodedSize, False);
-      for i := 0 to DecodedSize - 1 do
-        result[i] := result[i] xor Mask[i mod 4];
-    end;
-  except
-  end;
-end;
-
-function TWebSocketIOHandlerHack.ReadString: string;
-begin
-  Result := string( IndyTextEncoding_UTF8.GetString(ReadBytes));
-end;
-
-procedure TWebSocketIOHandlerHack.WriteBytes(RawData: TIdBytes);
-var
- // Msg: TArray<byte>;
-  Msg: TIdBytes;
-begin
-  // https://stackoverflow.com/questions/8125507/how-can-i-send-and-receive-websocket-messages-on-the-server-side
-
-  // Add the header to the data
-
-  Msg := [$81];
-
-  if Length(RawData) <= 125 then
-    Msg := Msg + [Length(RawData)]
-  else if (Length(RawData) >= 126) and (Length(RawData) <= 65535) then
-    Msg := Msg + [126, (Length(RawData) shr 8) and 255, Length(RawData) and 255]
-  else
-    Msg := Msg + [127, (int64(Length(RawData)) shr 56) and 255, (int64(Length(RawData)) shr 48) and 255,
-      (int64(Length(RawData)) shr 40) and 255, (int64(Length(RawData)) shr 32) and 255,
-      (Length(RawData) shr 24) and 255, (Length(RawData) shr 16) and 255, (Length(RawData) shr 8) and 255, Length(RawData) and 255];
-
-  Msg := Msg + RawData;
-
-  try
-    Write(TIdBytes(Msg), Length(Msg));
-  except
-  end;
-end;
-
-procedure TWebSocketIOHandlerHack.WriteString(const str: string);
-begin
-  WriteBytes(IndyTextEncoding_UTF8.GetBytes( UnicodeString( str)));
-end;
-
 { TLccWebSocketListener }
 
 constructor TLccWebSocketListener.Create(CreateSuspended: Boolean; AnOwner: TLccHardwareConnectionManager; AConnectionInfo: TLccHardwareConnectionInfo);
@@ -320,13 +230,114 @@ begin
   inherited Destroy;
 end;
 
+function TLccWebSocketListener.ReceiveContextDataAsString(AContext: TIdContext): string;
+begin
+  Result := string( IndyTextEncoding_UTF8.GetString(ReceiveContextDataAsBytes(AContext)));
+end;
+
+function TLccWebSocketListener.ReceiveContextDataAsBytes(AContext: TIdContext): TIdBytes;
+var
+  l: byte;
+  b: array [0..7] of byte;
+  i, DecodedSize: int64;
+  Mask: array [0..3] of byte;
+  io: TIdIOHandler;
+begin
+  // https://stackoverflow.com/questions/8125507/how-can-i-send-and-receive-websocket-messages-on-the-server-side
+
+  // Strip off the header from the data
+  try
+    io := AContext.Connection.IOHandler;
+    if io.ReadByte = $81 then
+    begin
+      l := io.ReadByte;
+      case l of
+        $FE:
+          begin
+            b[1] := io.ReadByte; b[0] := io.ReadByte;
+            b[2] := 0; b[3] := 0; b[4] := 0; b[5] := 0; b[6] := 0; b[7] := 0;
+            DecodedSize := Int64(b);
+          end;
+        $FF:
+          begin
+            b[7] := io.ReadByte; b[6] := io.ReadByte; b[5] := io.ReadByte; b[4] := io.ReadByte;
+            b[3] := io.ReadByte; b[2] := io.ReadByte; b[1] := io.ReadByte; b[0] := io.ReadByte;
+            DecodedSize := Int64(b);
+          end;
+        else
+          DecodedSize := l - 128;
+      end;
+      Mask[0] := io.ReadByte; Mask[1] := io.ReadByte; Mask[2] := io.ReadByte; Mask[3] := io.ReadByte;
+
+      if DecodedSize < 1 then
+      begin
+        Result := [];
+        exit;
+      end;
+
+      SetLength(Result, DecodedSize);
+      io.ReadBytes(TIdBytes(Result), DecodedSize, False);
+      for i := 0 to DecodedSize - 1 do
+        Result[i] := Result[i] xor Mask[i mod 4];
+    end;
+  except
+  end;
+end;
+
+procedure TLccWebSocketListener.SendContextDataAsString(AContext: TIdContext; AString: string);
+begin
+  SendContextDataAsBytes(AContext, IndyTextEncoding_UTF8.GetBytes( UnicodeString( AString)));
+end;
+
+procedure TLccWebSocketListener.SendContextDataAsBytes(AContext: TIdContext; ABytes: TIdBytes);
+var
+  Msg: TIdBytes;
+begin
+  // https://stackoverflow.com/questions/8125507/how-can-i-send-and-receive-websocket-messages-on-the-server-side
+
+  // Add the header to the data
+
+  // No mask from Server to Client
+  if Length(ABytes) <= 125 then
+  begin
+    SetLength(Msg, 2);
+    Msg[0] := $81;
+    Msg[1] := Length(ABytes)
+  end else if (Length(ABytes) >= 126) and (Length(ABytes) <= 65535) then
+  begin
+    SetLength(Msg, 4);
+    Msg[0] := $81;
+    Msg[1] := 126;
+    Msg[2] := (Length(ABytes) shr 8) and 255;
+    Msg[3] := Length(ABytes) and 255;
+  end else
+  begin
+    SetLength(Msg, 10);
+    Msg[0] := $81;
+    Msg[1] := 127;
+    Msg[2] := (int64(Length(ABytes)) shr 56) and 255;
+    Msg[3] := (int64(Length(ABytes)) shr 48) and 255;
+    Msg[4] := (int64(Length(ABytes)) shr 40) and 255;
+    Msg[5] := (int64(Length(ABytes)) shr 32) and 255;
+    Msg[6] := (Length(ABytes) shr 24) and 255;
+    Msg[7] := (Length(ABytes) shr 16) and 255;
+    Msg[8] := (Length(ABytes) shr 8) and 255;
+    Msg[9] :=  Length(ABytes) and 255
+  end;
+
+  Msg := Msg + ABytes;     // Works because we are in Delphi mode in this unit
+
+  try
+    inherited SendContextDataAsBytes(AContext, Msg);
+  except
+  end;
+end;
+
 procedure TLccWebSocketListener.IdTCPServerExecute(AContext: TIdContext);
 var
   Bytes: TIdBytes;
   msg, SecWebSocketKey, Hash: string;
   ParsedHeaders: TDictionary<string, string>;
-  IOHanderHack: TWebSocketIOHandlerHack;
-  IOHandler: TIdIOHandler;
   ConnectionContext: TLccConnectionWebsocketContext;
 begin
 
@@ -374,30 +385,7 @@ begin
       ParsedHeaders.Free;
     end;
   end else
-  begin
-    // At this point we are upgraded with the handshake and now Websocket packets are coming
-    // that need decoding
-
-    IOHanderHack := TWebSocketIOHandlerHack(AContext.Connection.IOHandler);
-
-    if (ConnectionInfo as TLccEthernetConnectionInfo).GridConnect then
-    begin
-      msg := IOHanderHack.ReadString;
-      ConnectionContextList.AddGridConnectStringByContext(AContext, msg, Owner.NodeManager);
-
-    end else
-    begin // TCP
-
-    end;
-
-
-
-    if msg = '' then
-      exit;
-
-
-    //inherited IdTCPServerExecute(AContext);
-  end;
+    inherited IdTCPServerExecute(AContext);
 end;
 
 { TLccWebSocketServer }
@@ -821,6 +809,45 @@ begin
   inherited Destroy;
 end;
 
+function TLccEthernetListener.ReceiveContextDataAsString(AContext: TIdContext): string;
+var
+  AChar: AnsiChar;
+begin
+  Result := '';
+  while not AContext.Connection.IOHandler.InputBufferIsEmpty and AContext.Connection.IOHandler.Connected do
+  begin
+    AChar := AnsiChar(AContext.Connection.IOHandler.ReadByte);
+    Result := Result + string(AChar);
+  end;
+end;
+
+function TLccEthernetListener.ReceiveContextDataAsBytes(AContext: TIdContext): TIdBytes;
+begin
+  Result := nil;
+  while not AContext.Connection.IOHandler.InputBufferIsEmpty and AContext.Connection.IOHandler.Connected do
+  begin
+    // Slow but simple
+    SetLength(Result, Length(Result) + 1);
+    Result[Length(Result)-1] := AContext.Connection.IOHandler.ReadByte;
+  end;
+end;
+
+procedure TLccEthernetListener.SendContextDataAsString(AContext: TIdContext; AString: string);
+var
+  iByte: Integer;
+begin
+  for iByte := 1 to Length(AString) do
+    AContext.Connection.IOHandler.Write(Ord( AString[iByte]));
+end;
+
+procedure TLccEthernetListener.SendContextDataAsBytes(AContext: TIdContext; ABytes: TIdBytes);
+var
+  iByte: Integer;
+begin
+  for iByte := 0 to Length(ABytes) - 1 do
+    AContext.Connection.IOHandler.Write(ABytes[iByte]);
+end;
+
 procedure TLccEthernetListener.IdTCPServerConnect(AContext: TIdContext);
 begin
   ConnectionContextList.AddContext(AContext);
@@ -856,12 +883,11 @@ end;
 procedure TLccEthernetListener.IdTCPServerExecute(AContext: TIdContext);
 var
   AString: string;
-  AChar: AnsiChar;
   List: TList;
-  iContext, iByte: Integer;
+  iContext, iByte, i: Integer;
   OtherContext: TIdContext;
 //  AByte: Byte;
-  TcpMessage: TLccDynamicByteArray;
+  TcpMessage: TIdBytes;
 begin
 
   // Messages sent to the Listener from all the Connections (Contexts)
@@ -869,12 +895,8 @@ begin
   if (ConnectionInfo as TLccEthernetConnectionInfo).GridConnect then
   begin
   // Well well this just got more complicated... Need to have a separate buffer for each Context...
-    AString := '';
-    while not AContext.Connection.IOHandler.InputBufferIsEmpty and AContext.Connection.IOHandler.Connected do
-    begin
-      AChar := AnsiChar(AContext.Connection.IOHandler.ReadByte);
-      AString := AString + string(AChar);
-    end;
+
+    AString := ReceiveContextDataAsString(AContext);
 
     // Put the string in the correct context (each context is a connection to the server so keep the messages sorted per context)... do I need to do this?  Unsure.
     // the main Execute method will pick this up and pass them along... another reason is to allow this thread to be a hub and relay the messages from one context
@@ -882,6 +904,16 @@ begin
     if AString <> '' then
     begin
       ConnectionContextList.AddGridConnectStringByContext(AContext, AString, Owner.NodeManager);
+
+   //   Owner.NodeManager.HardwarewareConnectionList.Lock;
+   //   try
+   //     for i := 0 to List.Count - 1 do
+    //    begin
+    //      (Owner.NodeManager.HardwarewareConnectionList.Items[i] as IHardwareConnectionManagerLink).SendMessage(nil);
+    //    end;
+    //  finally
+    //     Owner.NodeManager.HardwarewareConnectionList.Unlock;
+   //   end;
 
       if Owner.Hub then
       begin
@@ -892,10 +924,7 @@ begin
             OtherContext := TIdContext(List[iContext]);
             if OtherContext <> AContext then
               if OtherContext.Connection.Connected then
-              begin
-                for iByte := 1 to Length(AString) do
-                  OtherContext.Connection.IOHandler.Write(Ord( AString[iByte]));
-              end;
+                SendContextDataAsString(OtherContext, AString);
           end;
         finally
           IdTCPServer.Contexts.UnlockList;
@@ -904,13 +933,7 @@ begin
     end;
   end else
   begin
-    TcpMessage := nil;
-    while not AContext.Connection.IOHandler.InputBufferIsEmpty and AContext.Connection.IOHandler.Connected do
-    begin
-      // Slow but simple
-      SetLength(TcpMessage, Length(TcpMessage) + 1);
-      TcpMessage[Length(TcpMessage)-1] := AContext.Connection.IOHandler.ReadByte;
-    end;
+    TcpMessage := ReceiveContextDataAsBytes(AContext);
 
     if Length(TcpMessage) > 0 then
     begin
@@ -925,10 +948,7 @@ begin
             OtherContext := TIdContext(List[iContext]);
             if OtherContext <> AContext then
               if OtherContext.Connection.Connected then
-              begin
-                for iByte := 0 to Length(TcpMessage) - 1 do
-                  OtherContext.Connection.IOHandler.Write(TcpMessage[iByte]);
-              end;
+                SendContextDataAsBytes(OtherContext, TcpMessage);
           end;
         finally
           IdTCPServer.Contexts.UnlockList;

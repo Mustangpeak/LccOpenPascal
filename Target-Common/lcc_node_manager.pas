@@ -39,6 +39,7 @@ type
   IHardwareConnectionManagerLink = interface
     ['{619C8E64-69C3-94A6-B6FE-B16B6CB57A45}']
     procedure SendMessage(AMessage: TLccMessage);
+    function IsSelf(Test: TObject): Boolean;
     function IsLccLink: Boolean;
     function GetConnected: Boolean;
 //    if the node manager has no more active threads in its links then it should free all nodes and alias maps since it is no longer connected to any LCC networks and everythinbg is stale.
