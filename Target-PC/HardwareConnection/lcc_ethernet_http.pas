@@ -30,10 +30,7 @@ uses
   lcc_defines,
   lcc_node_messages,
   lcc_app_common_settings,
-  lcc_node_messages_can_assembler_disassembler,
-  lcc_common_classes,
-  lcc_ethernet_common,
-  lcc_ethernet_server;
+  lcc_node_messages_can_assembler_disassembler;
 
 
 implementation

@@ -259,7 +259,7 @@ begin
               end else
               if SourceMessage.TractionSearchIsForceAllocate then
               begin
-                ATrain := AddTrain(SearchDccAddress, LongAddressOnly, NMRA_SpeedStep);
+                ATrain := AddTrain('', SearchDccAddress, LongAddressOnly, NMRA_SpeedStep);
                 ATrain.SearchEvent := ReturnEvent; // Store to send later as we don't have an alias or a login for the node yet
                 ATrain.Login(NULL_NODE_ID);
               end

@@ -20,7 +20,8 @@
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="unitMainForm"/>
-        <CursorPos X="198" Y="19"/>
+        <TopLine Value="194"/>
+        <CursorPos X="58" Y="210"/>
         <UsageCount Value="440"/>
         <Loaded Value="True"/>
         <LoadedDesigner Value="True"/>
@@ -30,21 +31,21 @@
         <EditorIndex Value="-1"/>
         <TopLine Value="121"/>
         <CursorPos Y="127"/>
-        <UsageCount Value="171"/>
+        <UsageCount Value="98"/>
       </Unit>
       <Unit>
         <Filename Value="../../Target-PC/lcc_common_classes.pas"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="232"/>
         <CursorPos Y="246"/>
-        <UsageCount Value="165"/>
+        <UsageCount Value="92"/>
       </Unit>
       <Unit>
         <Filename Value="../../Target-PC/HardwareConnection/lcc_ethernet_common.pas"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="200"/>
         <CursorPos X="43" Y="218"/>
-        <UsageCount Value="168"/>
+        <UsageCount Value="95"/>
       </Unit>
       <Unit>
         <Filename Value="../../Target-Common/lcc_node_manager.pas"/>
@@ -59,42 +60,42 @@
         <EditorIndex Value="-1"/>
         <TopLine Value="405"/>
         <CursorPos X="3" Y="422"/>
-        <UsageCount Value="172"/>
+        <UsageCount Value="99"/>
       </Unit>
       <Unit>
         <Filename Value="../../Target-PC/HardwareConnection/lcc_ethernet_server.pas"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="595"/>
         <CursorPos X="11" Y="612"/>
-        <UsageCount Value="170"/>
+        <UsageCount Value="97"/>
       </Unit>
       <Unit>
         <Filename Value="../../Target-Common/lcc_node_controller.pas"/>
-        <IsVisibleTab Value="True"/>
         <EditorIndex Value="4"/>
-        <TopLine Value="95"/>
-        <CursorPos X="85" Y="137"/>
+        <TopLine Value="73"/>
+        <CursorPos X="115" Y="126"/>
         <UsageCount Value="210"/>
         <Loaded Value="True"/>
       </Unit>
       <Unit>
         <Filename Value="../../Target-Common/lcc_train_server.pas"/>
         <EditorIndex Value="-1"/>
-        <UsageCount Value="102"/>
+        <UsageCount Value="29"/>
       </Unit>
       <Unit>
         <Filename Value="../../Target-Common/lcc_node.pas"/>
+        <IsVisibleTab Value="True"/>
         <EditorIndex Value="8"/>
-        <TopLine Value="306"/>
-        <CursorPos X="52" Y="321"/>
+        <TopLine Value="115"/>
+        <CursorPos X="128" Y="135"/>
         <UsageCount Value="208"/>
         <Loaded Value="True"/>
       </Unit>
       <Unit>
         <Filename Value="../../Target-Common/lcc_node_traindatabase.pas"/>
         <EditorIndex Value="5"/>
-        <TopLine Value="474"/>
-        <CursorPos X="3" Y="474"/>
+        <TopLine Value="41"/>
+        <CursorPos X="172" Y="58"/>
         <UsageCount Value="169"/>
         <Loaded Value="True"/>
       </Unit>
@@ -110,29 +111,22 @@
         <Filename Value="../../Target-Common/lcc_alias_server.pas"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="61"/>
-        <UsageCount Value="157"/>
+        <UsageCount Value="84"/>
       </Unit>
       <Unit>
         <Filename Value="../../Target-Common/lcc_node_train.pas"/>
         <EditorIndex Value="2"/>
         <TopLine Value="287"/>
         <CursorPos X="30" Y="290"/>
-        <UsageCount Value="95"/>
+        <UsageCount Value="459"/>
         <Loaded Value="True"/>
-      </Unit>
-      <Unit>
-        <Filename Value="../../Target-Common/lcc_protocol_utilities.pas"/>
-        <EditorIndex Value="-1"/>
-        <TopLine Value="752"/>
-        <CursorPos X="44" Y="774"/>
-        <UsageCount Value="11"/>
       </Unit>
       <Unit>
         <Filename Value="../../Target-PC/lcc_cdi_parser.pas"/>
         <EditorIndex Value="1"/>
         <TopLine Value="391"/>
         <CursorPos X="96" Y="407"/>
-        <UsageCount Value="66"/>
+        <UsageCount Value="430"/>
         <Loaded Value="True"/>
       </Unit>
       <Unit>
@@ -140,7 +134,7 @@
         <EditorIndex Value="6"/>
         <TopLine Value="16"/>
         <CursorPos X="17" Y="70"/>
-        <UsageCount Value="66"/>
+        <UsageCount Value="430"/>
         <Loaded Value="True"/>
       </Unit>
     </Units>
@@ -148,86 +142,6 @@
       <Define0 Value="LOG_MAPPING"/>
     </OtherDefines>
     <JumpHistory HistoryIndex="29">
-      <Position>
-        <Filename Value="../../Target-Common/lcc_node_commandstation.pas"/>
-        <Caret Line="62" Column="44" TopLine="52"/>
-      </Position>
-      <Position>
-        <Filename Value="../../Target-Common/lcc_node_controller.pas"/>
-        <Caret Line="130" Column="18" TopLine="98"/>
-      </Position>
-      <Position>
-        <Filename Value="../../Target-Common/lcc_node_controller.pas"/>
-        <Caret Line="364" Column="3" TopLine="362"/>
-      </Position>
-      <Position>
-        <Filename Value="../../Target-Common/lcc_node_controller.pas"/>
-        <Caret Line="101" Column="46" TopLine="91"/>
-      </Position>
-      <Position>
-        <Filename Value="../../Target-Common/lcc_node_traindatabase.pas"/>
-        <Caret Line="146" Column="19" TopLine="117"/>
-      </Position>
-      <Position>
-        <Filename Value="../../Target-Common/lcc_node_traindatabase.pas"/>
-        <Caret Line="528" Column="22" TopLine="498"/>
-      </Position>
-      <Position>
-        <Filename Value="../../Target-Common/lcc_node_traindatabase.pas"/>
-        <Caret Line="146" Column="20" TopLine="123"/>
-      </Position>
-      <Position>
-        <Filename Value="../../Target-Common/lcc_node_traindatabase.pas"/>
-        <Caret Line="525" Column="12" TopLine="499"/>
-      </Position>
-      <Position>
-        <Filename Value="../../Target-Common/lcc_node_traindatabase.pas"/>
-        <Caret Line="144" Column="14" TopLine="143"/>
-      </Position>
-      <Position>
-        <Filename Value="../../Target-Common/lcc_node_commandstation.pas"/>
-        <Caret Line="70" Column="17" TopLine="52"/>
-      </Position>
-      <Position>
-        <Filename Value="../../Target-Common/lcc_node_commandstation.pas"/>
-        <Caret Line="135" Column="3" TopLine="133"/>
-      </Position>
-      <Position>
-        <Filename Value="../../Target-Common/lcc_node_commandstation.pas"/>
-        <Caret Line="75" Column="17" TopLine="52"/>
-      </Position>
-      <Position>
-        <Filename Value="../../Target-Common/lcc_node_commandstation.pas"/>
-        <Caret Line="228" Column="27" TopLine="204"/>
-      </Position>
-      <Position>
-        <Filename Value="../../Target-Common/lcc_node_commandstation.pas"/>
-        <Caret Line="74" Column="14" TopLine="57"/>
-      </Position>
-      <Position>
-        <Filename Value="../../Target-Common/lcc_node_commandstation.pas"/>
-        <Caret Line="163" Column="3" TopLine="157"/>
-      </Position>
-      <Position>
-        <Filename Value="../../Target-Common/lcc_node_commandstation.pas"/>
-        <Caret Line="73" Column="14" TopLine="56"/>
-      </Position>
-      <Position>
-        <Filename Value="../../Target-Common/lcc_node_commandstation.pas"/>
-        <Caret Line="185" Column="3" TopLine="179"/>
-      </Position>
-      <Position>
-        <Filename Value="../../Target-Common/lcc_node_commandstation.pas"/>
-        <Caret Line="72" Column="14" TopLine="55"/>
-      </Position>
-      <Position>
-        <Filename Value="../../Target-Common/lcc_node_commandstation.pas"/>
-        <Caret Line="145" Column="3" TopLine="139"/>
-      </Position>
-      <Position>
-        <Filename Value="../../Target-Common/lcc_node_commandstation.pas"/>
-        <Caret Line="71" Column="15" TopLine="54"/>
-      </Position>
       <Position>
         <Filename Value="../../Target-Common/lcc_node_commandstation.pas"/>
         <Caret Line="86" Column="50" TopLine="80"/>
@@ -267,6 +181,86 @@
       <Position>
         <Filename Value="../../Target-Common/lcc_node_controller.pas"/>
         <Caret Line="335" Column="3" TopLine="332"/>
+      </Position>
+      <Position>
+        <Filename Value="unitmainform.pas"/>
+        <Caret Line="6" Column="165"/>
+      </Position>
+      <Position>
+        <Filename Value="unitmainform.pas"/>
+        <Caret Line="620" TopLine="618"/>
+      </Position>
+      <Position>
+        <Filename Value="unitmainform.pas"/>
+        <Caret Line="329" Column="3" TopLine="327"/>
+      </Position>
+      <Position>
+        <Filename Value="../../Target-Common/lcc_node_traindatabase.pas"/>
+        <Caret Line="95" Column="42" TopLine="91"/>
+      </Position>
+      <Position>
+        <Filename Value="../../Target-Common/lcc_node_traindatabase.pas"/>
+        <Caret Line="124" Column="20" TopLine="91"/>
+      </Position>
+      <Position>
+        <Filename Value="../../Target-Common/lcc_node_traindatabase.pas"/>
+        <Caret Line="72" Column="35" TopLine="66"/>
+      </Position>
+      <Position>
+        <Filename Value="unitmainform.pas"/>
+        <Caret Line="210" Column="58" TopLine="194"/>
+      </Position>
+      <Position>
+        <Filename Value="../../Target-Common/lcc_node_traindatabase.pas"/>
+        <Caret Line="36" Column="3" TopLine="18"/>
+      </Position>
+      <Position>
+        <Filename Value="../../Target-Common/lcc_node_traindatabase.pas"/>
+        <Caret Line="122" Column="16" TopLine="99"/>
+      </Position>
+      <Position>
+        <Filename Value="../../Target-Common/lcc_node_traindatabase.pas"/>
+        <Caret Line="263" Column="3" TopLine="260"/>
+      </Position>
+      <Position>
+        <Filename Value="../../Target-Common/lcc_node_traindatabase.pas"/>
+        <Caret Line="124" Column="15" TopLine="105"/>
+      </Position>
+      <Position>
+        <Filename Value="../../Target-Common/lcc_node_traindatabase.pas"/>
+        <Caret Line="200" Column="3" TopLine="201"/>
+      </Position>
+      <Position>
+        <Filename Value="../../Target-Common/lcc_node_traindatabase.pas"/>
+        <Caret Line="124" Column="15" TopLine="107"/>
+      </Position>
+      <Position>
+        <Filename Value="../../Target-Common/lcc_node_traindatabase.pas"/>
+        <Caret Line="200" Column="3" TopLine="194"/>
+      </Position>
+      <Position>
+        <Filename Value="../../Target-Common/lcc_node_traindatabase.pas"/>
+        <Caret Line="125" Column="15" TopLine="107"/>
+      </Position>
+      <Position>
+        <Filename Value="../../Target-Common/lcc_node_traindatabase.pas"/>
+        <Caret Line="155" Column="3" TopLine="152"/>
+      </Position>
+      <Position>
+        <Filename Value="../../Target-Common/lcc_node_traindatabase.pas"/>
+        <Caret Line="114" Column="15" TopLine="105"/>
+      </Position>
+      <Position>
+        <Filename Value="../../Target-Common/lcc_node_traindatabase.pas"/>
+        <Caret Line="243" Column="3" TopLine="240"/>
+      </Position>
+      <Position>
+        <Filename Value="../../Target-Common/lcc_node_traindatabase.pas"/>
+        <Caret Line="124" Column="15" TopLine="97"/>
+      </Position>
+      <Position>
+        <Filename Value="../../Target-Common/lcc_node_traindatabase.pas"/>
+        <Caret Line="200" Column="3" TopLine="194"/>
       </Position>
     </JumpHistory>
     <RunParams>

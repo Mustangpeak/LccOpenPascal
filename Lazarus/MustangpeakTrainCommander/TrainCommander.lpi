@@ -151,7 +151,7 @@ if TargetOS = &apos;linux&apos; then
         <PackageName Value="LCL"/>
       </Item3>
     </RequiredPackages>
-    <Units Count="11">
+    <Units Count="10">
       <Unit0>
         <Filename Value="TrainCommander.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -174,36 +174,32 @@ if TargetOS = &apos;linux&apos; then
         <IsPartOfProject Value="True"/>
       </Unit3>
       <Unit4>
-        <Filename Value="..\..\Target-PC\HardwareConnection\lcc_ethernet_websocket.pas"/>
+        <Filename Value="..\..\Target-PC\HardwareConnection\lcc_ethernet_http.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit4>
       <Unit5>
-        <Filename Value="..\..\Target-PC\HardwareConnection\lcc_ethernet_http.pas"/>
-        <IsPartOfProject Value="True"/>
-      </Unit5>
-      <Unit6>
         <Filename Value="servervisualunit.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="FormServerInfo"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
+      </Unit5>
+      <Unit6>
+        <Filename Value="..\..\Target-Common\lcc_common_objects.pas"/>
+        <IsPartOfProject Value="True"/>
       </Unit6>
       <Unit7>
-        <Filename Value="..\..\Target-Common\lcc_common_objects.pas"/>
+        <Filename Value="..\..\Target-Common\lcc_node_traindatabase.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit7>
       <Unit8>
-        <Filename Value="..\..\Target-Common\lcc_node_traindatabase.pas"/>
+        <Filename Value="..\..\Target-Common\lcc_listener_tree.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit8>
       <Unit9>
-        <Filename Value="..\..\Target-Common\lcc_listener_tree.pas"/>
-        <IsPartOfProject Value="True"/>
-      </Unit9>
-      <Unit10>
         <Filename Value="..\..\Target-Common\lcc_base_classes.pas"/>
         <IsPartOfProject Value="True"/>
-      </Unit10>
+      </Unit9>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
