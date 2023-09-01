@@ -1,6 +1,6 @@
 unit lcc_ethernet_server;
 
-{$IFDEF FPC}
+{$IFDEF LCC_FPC}
 {$mode delphi}{$H+}
 {$ENDIF}
 
@@ -11,7 +11,7 @@ interface
 uses
   Classes,
   SysUtils,
-  {$IFDEF FPC}
+  {$IFDEF LCC_FPC}
     Generics.Collections,
     strutils,
     {$IFNDEF FPC_CONSOLE_APP}
@@ -586,7 +586,7 @@ begin
                 begin
          //         ConnectionInfo.LccMessage.CopyToTarget(WorkerMessage);
          //         if not Terminated then
-         //           Synchronize({$IFDEF FPC}@{$ENDIF}RequestErrorMessageSent);
+         //           Synchronize({$IFDEF LCC_FPC}@{$ENDIF}RequestErrorMessageSent);
                 end;
               imgcr_False,
               imgcr_UnknownError :

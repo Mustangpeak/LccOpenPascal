@@ -1,6 +1,6 @@
 unit lcc_base_classes;
 
-{$IFDEF FPC}
+{$IFDEF LCC_FPC}
 {$mode ObjFPC}{$H+}
 {$ENDIF}
 

@@ -1,6 +1,6 @@
 unit lcc_alias_server;
 
-{$IFDEF FPC}
+{$IFDEF LCC_FPC}
 {$mode objfpc}{$H+}
 {$ENDIF}
 
@@ -14,16 +14,13 @@ uses
 
   Classes,
   SysUtils,
-  {$IFDEF FPC}
-    contnrs,
-    LazLogger,
-    {$IFNDEF FPC_CONSOLE_APP}
-      ExtCtrls,
-    {$ENDIF}
-  {$ELSE}
+  {$IFNDEF LCC_FPC}
     System.Types,
     FMX.Types,
     System.Generics.Collections,
+  {$ENDIF}
+  {$IFDEF WEB_APP}
+    generics.collections,
   {$ENDIF}
   lcc_defines,
   lcc_utilities;

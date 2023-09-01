@@ -1,6 +1,6 @@
 unit lcc_common_classes;
 
-{$IFDEF FPC}
+{$IFDEF LCC_FPC}
 {$mode objfpc}{$H+}
 {$ENDIF}
 
@@ -11,7 +11,7 @@ interface
 uses
   Classes,
   SysUtils,
-  {$IFDEF FPC}
+  {$IFDEF LCC_FPC}
   syncobjs,
     {$IFNDEF FPC_CONSOLE_APP}Forms, {$ENDIF}
   {$ELSE}
@@ -19,7 +19,7 @@ uses
   System.SyncObjs,
   {$ENDIF}
 
-  {$IFDEF FPC}
+  {$IFDEF LCC_FPC}
   {$ELSE}
     System.Generics.Collections,
     System.Types,
@@ -378,7 +378,7 @@ begin
   if ContextOfThread then
   begin
     if not SuppressMessage then
-      Synchronize({$IFDEF FPC}@{$ENDIF}ErrorMessage);
+      Synchronize({$IFDEF LCC_FPC}@{$ENDIF}ErrorMessage);
     HandleSendConnectionNotification(lcsDisconnected);
     Terminate;
   end else
@@ -395,7 +395,7 @@ begin
   if ContextOfThread then
   begin
     ConnectionInfo.ConnectionState := NewConnectionState;
-    Synchronize({$IFDEF FPC}@{$ENDIF}ConnectionStateChange);
+    Synchronize({$IFDEF LCC_FPC}@{$ENDIF}ConnectionStateChange);
   end else
   begin
     ConnectionInfo.ConnectionState := NewConnectionState;

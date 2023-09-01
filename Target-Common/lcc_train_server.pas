@@ -1,17 +1,17 @@
 unit lcc_train_server;
-{$IFDEF FPC}
+
+{$IFDEF LCC_FPC}
 {$mode objfpc}{$H+}
 {$ENDIF}
+
 interface
 {$I ..\lcc_compilers.inc}
+
 uses
   Classes,
   SysUtils,
-  {$IFDEF FPC}
+  {$IFDEF LCC_FPC}
     contnrs,
-    {$IFNDEF FPC_CONSOLE_APP}
-      ExtCtrls,
-    {$ENDIF}
   {$ELSE}
     System.Types,
     FMX.Types,
@@ -21,6 +21,8 @@ uses
   lcc_node_messages,
   lcc_utilities,
   lcc_math_float16;
+
+
 type
   TLccTrainControllerResult = (tcr_Ok, tcr_ControllerRefused, tcr_TrainRefused);
   TLccTractionServer = class; // forward
@@ -98,7 +100,7 @@ type
     FOnSNIPChange: TOnLccServerChange;
     FOnSpeedChange: TOnLccServerChange;
     FOnTrainSNIPChange: TOnLccServerChange;
-    {$IFDEF DELPHI}
+    {$IFDEF LCC_DELPHI}
     FList: TObjectList<TLccTractionObject>;
     {$ELSE}
     FList: TObjectList;
@@ -144,7 +146,7 @@ type
     function Remove(TestNodeID: TNodeID): TLccTractionObject;
     function Find(TestNodeID: TNodeID): TLccTractionObject;
     procedure Clear;
-    {$IFDEF DELPHI}
+    {$IFDEF LCC_DELPHI}
     property List: TObjectList<TLccTractionObject> read FList write FList;
     {$ELSE}
     property List: TObjectList read FList write FList;
@@ -537,7 +539,7 @@ end;
 
 constructor TLccTractionServer.Create(IsGridConnect: Boolean);
 begin
-  {$IFDEF DELPHI}
+  {$IFDEF LCC_DELPHI}
   FList := TObjectList<TLccTractionObject>.Create(False);
   {$ELSE}
   FList := TObjectList.Create(False);

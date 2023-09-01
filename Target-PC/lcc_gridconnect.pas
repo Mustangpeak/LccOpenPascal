@@ -1,6 +1,6 @@
 unit lcc_gridconnect;
 
-{$IFDEF FPC}
+{$IFDEF LCC_FPC}
 {$mode objfpc}{$H+}
 {$ENDIF}
 
@@ -74,7 +74,7 @@ var
   i, Len: Integer;
   GridConnectStrPtr: PChar;
 begin
-  {$IFDEF FPC}
+  {$IFDEF LCC_FPC}
   GridConnectStrPtr := @GridConnectStr[1];
   {$ELSE}
   GridConnectStrPtr := @GridConnectStr[Low(GridConnectStr)];

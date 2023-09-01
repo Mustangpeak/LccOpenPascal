@@ -1,6 +1,6 @@
 unit lcc_node_traindatabase;
 
-{$IFDEF FPC}
+{$IFDEF LCC_FPC}
 {$mode objfpc}{$H+}
 {$ENDIF}
 
@@ -11,11 +11,8 @@ interface
 uses
   Classes,
   SysUtils,
-  {$IFDEF FPC}
+  {$IFDEF LCC_FPC}
     contnrs,
-    {$IFNDEF FPC_CONSOLE_APP}
-      ExtCtrls,
-    {$ENDIF}
   {$ELSE}
     System.Types,
     FMX.Types,
@@ -28,8 +25,7 @@ uses
   lcc_node,
   lcc_base_classes,
   lcc_alias_server,
-  lcc_train_server,
-  lcc_listener_tree;
+  lcc_train_server;
 
 
 type
@@ -141,7 +137,7 @@ type
     property EngineListenerInfo: TLccEngineRetrieveListenerInfo read FEngineListenerInfo write FEngineListenerInfo;
     property TractionServer: TLccTractionServer read FTractionServer;
 
-    constructor Create(ANodeManager: {$IFDEF DELPHI}TComponent{$ELSE}TObject{$ENDIF}; CdiXML: string; GridConnectLink: Boolean); override;
+    constructor Create(ANodeManager: {$IFDEF LCC_DELPHI}TComponent{$ELSE}TObject{$ENDIF}; CdiXML: string; GridConnectLink: Boolean); override;
     destructor Destroy; override;
     function ProcessMessageLCC(SourceMessage: TLccMessage): Boolean; override;
   end;
@@ -456,19 +452,19 @@ end;
 procedure TLccEngineSearchAndAllocateTrain.Assign(DccAddress: Word; IsLongAddress: Boolean; SpeedSteps: TLccDccSpeedStep; ACallback: TOnLccEngineSearchAndAllocateTrainCallback);
 begin
   Callback := ACallback;
-  EngineSearchTrain.Assign(DccAddress, IsLongAddress, SpeedSteps, {$IFNDEF DELPHI}@{$ENDIF}SearchTrainCa1lback);
+  EngineSearchTrain.Assign(DccAddress, IsLongAddress, SpeedSteps, {$IFNDEF LCC_DELPHI}@{$ENDIF}SearchTrainCa1lback);
 end;
 
 procedure TLccEngineSearchAndAllocateTrain.Assign(SearchString: string; IsLongAddress: Boolean; SpeedSteps: TLccDccSpeedStep; ACallback: TOnLccEngineSearchAndAllocateTrainCallback);
 begin
   Callback := ACallback;
-  EngineSearchTrain.Assign(SearchString, IsLongAddress, SpeedSteps, {$IFNDEF DELPHI}@{$ENDIF}SearchTrainCa1lback);
+  EngineSearchTrain.Assign(SearchString, IsLongAddress, SpeedSteps, {$IFNDEF LCC_DELPHI}@{$ENDIF}SearchTrainCa1lback);
 end;
 
 procedure TLccEngineSearchAndAllocateTrain.Assign(SearchString: string; TrackProtocolFlags: Word; ACallback: TOnLccEngineSearchAndAllocateTrainCallback);
 begin
   Callback := ACallback;
-  EngineSearchTrain.Assign(SearchString, TrackProtocolFlags, {$IFNDEF DELPHI}@{$ENDIF}SearchTrainCa1lback);
+  EngineSearchTrain.Assign(SearchString, TrackProtocolFlags, {$IFNDEF LCC_DELPHI}@{$ENDIF}SearchTrainCa1lback);
 end;
 
 { TLccTractionServerNode }
@@ -499,7 +495,7 @@ begin
   end;
 end;
 
-constructor TLccTractionServerNode.Create(ANodeManager: {$IFDEF DELPHI}TComponent{$ELSE}TObject{$ENDIF}; CdiXML: string; GridConnectLink: Boolean);
+constructor TLccTractionServerNode.Create(ANodeManager: {$IFDEF LCC_DELPHI}TComponent{$ELSE}TObject{$ENDIF}; CdiXML: string; GridConnectLink: Boolean);
 begin
   inherited Create(ANodeManager, CdiXML, GridConnectLink);
   FTractionServer := TLccTractionServer.Create(GridConnectLink);

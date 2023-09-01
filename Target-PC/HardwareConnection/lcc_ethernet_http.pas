@@ -1,6 +1,6 @@
 unit lcc_ethernet_http;
 
-{$IFDEF FPC}
+{$IFDEF LCC_FPC}
 {$mode objfpc}{$H+}
 {$ENDIF}
 
@@ -11,7 +11,7 @@ interface
 uses
   Classes,
   SysUtils,
-  {$IFDEF FPC}
+  {$IFDEF LCC_FPC}
     {$IFNDEF FPC_CONSOLE_APP}
       LResources,
       Forms,

@@ -1,6 +1,6 @@
 unit lcc_cdi_xml_reader;
 
-{$IFDEF FPC}
+{$IFDEF LCC_FPC}
 {$mode objfpc}{$H+}
 {$ENDIF}
 
@@ -9,7 +9,7 @@ interface
 {$I ../lcc_compilers.inc}
 
  uses
-  {$IFDEF DELPHI}
+  {$IFDEF LCC_DELPHI}
   System.Classes,
   System.SysUtils,
   {$ELSE}

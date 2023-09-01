@@ -1,5 +1,5 @@
 unit lcc_ethernet_client;
-{$IFDEF FPC}
+{$IFDEF LCC_FPC}
 {$mode objfpc}{$H+}
 {$ENDIF}
 
@@ -7,7 +7,7 @@ unit lcc_ethernet_client;
 interface
 uses
   Classes, SysUtils,
-  {$IFDEF FPC}
+  {$IFDEF LCC_FPC}
     {$IFNDEF FPC_CONSOLE_APP}
       LResources,
       Forms,
@@ -205,9 +205,9 @@ begin
   try
     idTCPClient.IPVersion := Id_IPv4;
     idTCPClient.ConnectTimeout := 0;
-    idTCPClient.OnConnected     := {$IFDEF FPC}@{$ENDIF}OnClientConnected;
-    idTCPClient.OnDisconnected  := {$IFDEF FPC}@{$ENDIF}OnClientDisconnected;
-    idThreadComponent.OnRun := {$IFDEF FPC}@{$ENDIF}OnThreadComponentRun;
+    idTCPClient.OnConnected     := {$IFDEF LCC_FPC}@{$ENDIF}OnClientConnected;
+    idTCPClient.OnDisconnected  := {$IFDEF LCC_FPC}@{$ENDIF}OnClientDisconnected;
+    idThreadComponent.OnRun := {$IFDEF LCC_FPC}@{$ENDIF}OnThreadComponentRun;
     if (ConnectionInfo as TLccEthernetConnectionInfo).AutoResolveIP then
     begin
       {$IFDEF LCC_WINDOWS}
@@ -343,7 +343,7 @@ begin
                 Owner.NodeManager.ReceiveMessageServerThread.ReceiveMessageServerAddMessage(WorkerMessage);
                 try
                   if not Terminated then
-                    Synchronize({$IFDEF FPC}@{$ENDIF}ReceiveMessage);  // WorkerMessage contains the message
+                    Synchronize({$IFDEF LCC_FPC}@{$ENDIF}ReceiveMessage);  // WorkerMessage contains the message
                 except
                 end;
               end;
@@ -351,7 +351,7 @@ begin
               begin
        //         ConnectionInfo.LccMessage.CopyToTarget(WorkerMessage);
        //       if not Terminated then
-       //         Synchronize({$IFDEF FPC}@{$ENDIF}RequestErrorMessageSent);
+       //         Synchronize({$IFDEF LCC_FPC}@{$ENDIF}RequestErrorMessageSent);
               end;
             imgcr_False,
             imgcr_UnknownError :
@@ -375,7 +375,7 @@ begin
           Owner.NodeManager.ReceiveMessageServerThread.ReceiveMessageServerAddMessage(WorkerMessage);
           try
             if not Terminated then
-              Synchronize({$IFDEF FPC}@{$ENDIF}ReceiveMessage);  // WorkerMessage contains the message
+              Synchronize({$IFDEF LCC_FPC}@{$ENDIF}ReceiveMessage);  // WorkerMessage contains the message
           except
           end;
         end

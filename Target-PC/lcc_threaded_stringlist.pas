@@ -1,6 +1,6 @@
 ﻿unit lcc_threaded_stringlist;
 
-{$IFDEF FPC}
+{$IFDEF LCC_FPC}
 {$mode objfpc}{$H+}
 {$ENDIF}
 
@@ -10,7 +10,7 @@ interface
 
 uses
   Classes,
-  {$IFDEF FPC}
+  {$IFDEF LCC_FPC}
   syncobjs,
   {$ELSE}
   System.SyncObjs,
@@ -227,7 +227,7 @@ function TThreadStringList.GetText: PChar;
 begin
   LockList;
   try
-    {$IFDEF FPC}
+    {$IFDEF LCC_FPC}
     Result := FStringList.GetText;
     {$ELSE}
     Result := PChar( FStringList.Text);

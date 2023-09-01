@@ -1,6 +1,6 @@
 unit lcc_node_manager;
 
-{$IFDEF FPC}
+{$IFDEF LCC_FPC}
 {$mode objfpc}{$H+}
 {$ENDIF}
 
@@ -11,11 +11,8 @@ interface
 uses
   Classes,
   SysUtils,
-  {$IFDEF FPC}
+  {$IFDEF LCC_FPC}
     contnrs,
-    {$IFNDEF FPC_CONSOLE_APP}
-    ExtCtrls,
-    {$ENDIF}
   {$ELSE}
     System.Types,
     FMX.Types,
@@ -367,7 +364,7 @@ begin
               // Pull the message apart and find all the Nodes it requires then test them againt the AliasMapping Database.
               // If they are not there then push the Alias or NodeID (from a message payload) into the Alias Mapping Request list to Send that node a message
               // to Verify it
-              if LocalMessage.ExtractNodeIdentificationToCallback({$IFNDEF DELPHI}@{$ENDIF}NodeIdentificationToCallbackProc, True, True) then
+              if LocalMessage.ExtractNodeIdentificationToCallback({$IFNDEF LCC_DELPHI}@{$ENDIF}NodeIdentificationToCallbackProc, True, True) then
                 LocalValidatedMessageList.Add(LocalMessageList[i])
               else begin
                 LocalMessage.AbandonCount := 0;
@@ -393,7 +390,7 @@ begin
           try
             try
               ReceivedMessage := TLccMessage(LocalValidatedMessageList[i]);
-              Synchronize({$IFDEF FPC}@{$ENDIF}ReceiveMessageSyncronize);
+              Synchronize({$IFDEF LCC_FPC}@{$ENDIF}ReceiveMessageSyncronize);
             finally
               FreeAndNil(FReceivedMessage);
             end;
@@ -417,7 +414,7 @@ begin
           for i := 0 to LocalUnValidatedMessageList.Count - 1 do
           begin
             LocalMessage := TLccMessage( LocalUnValidatedMessageList[i]);
-            if LocalMessage.ExtractNodeIdentificationToCallback({$IFNDEF DELPHI}@{$ENDIF}NodeIdentificationToCallbackProc, True, True) then
+            if LocalMessage.ExtractNodeIdentificationToCallback({$IFNDEF LCC_DELPHI}@{$ENDIF}NodeIdentificationToCallbackProc, True, True) then
             begin
               LocalValidatedMessageList.Add(LocalMessage);
               LocalUnValidatedMessageList[i] := nil;
@@ -792,7 +789,7 @@ begin
   FReceiveMessageServerThread.Suspended := False;
 
   _100msTimer := TLccTimer.Create(nil);
-  _100msTimer.OnTimer := {$IFNDEF DELPHI}@{$ENDIF}On_100msTimer;
+  _100msTimer.OnTimer := {$IFNDEF LCC_DELPHI}@{$ENDIF}On_100msTimer;
   _100msTimer.Interval := 100;
   _100msTimer.Enabled := True;
 end;
@@ -800,7 +797,7 @@ end;
 function TLccNodeManager.AddNode(CdiXML: string; AutoLogin: Boolean): TLccNode;
 begin
   Result := TLccNode.Create(Self, CdiXML, GridConnect);
-  Result.SendMessageFunc := {$IFDEF FPC}@{$ENDIF}SendMessage;
+  Result.SendMessageFunc := {$IFDEF LCC_FPC}@{$ENDIF}SendMessage;
   Nodes.Add(Result);
   DoCreateLccNode(Result);
   if AutoLogin then
@@ -813,7 +810,7 @@ begin
   if Assigned(NodeClass) then
   begin
     Result := NodeClass.Create(Self, CdiXML, GridConnect);
-    Result.SendMessageFunc := {$IFDEF FPC}@{$ENDIF}SendMessage;
+    Result.SendMessageFunc := {$IFDEF LCC_FPC}@{$ENDIF}SendMessage;
     Nodes.Add(Result);
     DoCreateLccNode(Result);
     if AutoLogin then

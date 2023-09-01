@@ -1,6 +1,6 @@
 unit lcc_threaded_circulararray;
 
-{$IFDEF FPC}
+{$IFDEF LCC_FPC}
 {$mode objfpc}{$H+}
 {$ENDIF}
 
@@ -10,7 +10,7 @@ interface
 
 uses
   Classes,
-  {$IFDEF FPC}
+  {$IFDEF LCC_FPC}
   syncobjs,
   {$ELSE}
   System.SyncObjs,

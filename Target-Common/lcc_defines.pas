@@ -1,6 +1,6 @@
 unit lcc_defines;
 
-{$IFDEF FPC}
+{$IFDEF LCC_FPC}
 {$mode objfpc}{$H+}
 {$ENDIF}
 
@@ -9,11 +9,15 @@ interface
 {$I ..\lcc_compilers.inc}
 
 uses
-  {$IFDEF FPC}
-    {$IFDEF FPC_CONSOLE_APP}
-      fptimer,
+  {$IFDEF LCC_FPC}
+    {$IFNDEF WEB_APP}
+     {$IFDEF FPC_CONSOLE_APP}
+       fptimer,
+     {$ELSE}
+       ExtCtrls,
+     {$ENDIF}
     {$ELSE}
-      ExtCtrls,
+      timer,
     {$ENDIF}
   {$ELSE}
     FMX.Types,
@@ -53,7 +57,7 @@ const
   MAX_MULTIFRAME_LEN        = 12;
   MAX_SUPPORTEDPROTOCOL_LEN = 6;
 
-  {$IFDEF DELPHI}    // Must be Delphi
+  {$IFDEF LCC_DELPHI}    // Must be Delphi
   type
     DWord = Cardinal;
     QWord = UInt64;
@@ -79,17 +83,23 @@ type
   TLccSupportedProtocolArray = array[0..MAX_SUPPORTEDPROTOCOL_LEN] of Byte;
 
   TNodeID = array[0..1] of DWord;
+  {$IFNDEF WEB_APP}
   PNodeID = ^TNodeID;
+  {$ENDIF}
 
   TFunctionStatesArray = array[0..28] of Word;
   TLccDynamicByteArray = array of Byte;
+  {$IFNDEF WEB_APP}
   PLccDynamicByteArray = ^TLccDynamicByteArray;
+  {$ENDIF}
 
 type
   TDatagramArray = array[0..MAX_DATAGRAM_LENGTH-1] of Byte;
 
   TEventID = array[0..MAX_EVENT_LEN-1] of Byte;
+  {$IFNDEF WEB_APP}
   PEventID = ^TEventID;
+  {$ENDIF}
 
   THexArray = TEventID;
 

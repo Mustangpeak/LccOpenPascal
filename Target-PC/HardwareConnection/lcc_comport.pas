@@ -1,6 +1,6 @@
 unit lcc_comport;
 
-{$IFDEF FPC}
+{$IFDEF LCC_FPC}
 {$mode objfpc}{$H+}
 {$ENDIF}
 
@@ -11,7 +11,7 @@ interface
 uses
   Classes,
   SysUtils,
-  {$IFDEF FPC}
+  {$IFDEF LCC_FPC}
     {$IFNDEF FPC_CONSOLE_APP}
       LResources,
       Forms,
@@ -352,7 +352,7 @@ begin
                   ConnectionInfo.MessageStr := GridConnectBufferToString(GridConnectStrPtr^);
                   if not RawData then
                     ConnectionInfo.LccMessage.LoadByGridConnectStr(ConnectionInfo.MessageStr);
-                  Synchronize({$IFDEF FPC}@{$ENDIF}ReceiveMessage);
+                  Synchronize({$IFDEF LCC_FPC}@{$ENDIF}ReceiveMessage);
                 end;
               end;
             end;

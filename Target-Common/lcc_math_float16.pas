@@ -1,6 +1,6 @@
 unit lcc_math_float16;
 
-{$IFDEF FPC}
+{$IFDEF LCC_FPC}
 {$mode objfpc}{$H+}
 {$ENDIF}
 
@@ -96,8 +96,9 @@ begin
   end;
 
   // Reinterpret LongWord as Single
+  {$IFNDEF WEB_APP}
   Result := PSingle(@Dst)^;
-
+  {$ENDIF}
 end;
 
 function FloatToHalf(Float: Single): THalfFloat;
@@ -105,7 +106,9 @@ var
   Src: LongWord;
   Sign, Exp, Mantissa: LongInt;
 begin
+  {$IFNDEF WEB_APP}
   Src := PLongWord(@Float)^;
+  {$ENDIF}
   // Extract sign, exponent, and mantissa from Single number
   Sign := Src shr 31;
   Exp := LongInt((Src and $7F800000) shr 23) - 127 + 15;

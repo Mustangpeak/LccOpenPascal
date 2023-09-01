@@ -1,6 +1,6 @@
 unit lcc_node_messages_can_assembler_disassembler;
 
-{$IFDEF FPC}
+{$IFDEF LCC_FPC}
 {$mode objfpc}{$H+}
 {$ENDIF}
 
@@ -11,14 +11,14 @@ interface
 uses
   Classes,
   SysUtils,
-  {$IFDEF FPC}
+  {$IFDEF LCC_FPC}
     contnrs,
   {$ELSE}
     System.Generics.Collections,
   {$ENDIF}
 
   {$IFDEF LCC_WINDOWS}
-    {$IFNDEF FPC}
+    {$IFNDEF LCC_FPC}
     System.Types,
     {$ENDIF}
   {$ENDIF}
@@ -39,7 +39,7 @@ type
 
 TLccGridConnectMessageAssembler = class
 private
-  {$IFDEF DELPHI}
+  {$IFDEF LCC_DELPHI}
   FInProcessMessageList: TObjectList<TLccMessage>;
   {$ELSE}
   FInProcessMessageList: TObjectList;
@@ -50,7 +50,7 @@ protected
   property WorkerMessage: TLccMessage read FWorkerMessage write FWorkerMessage;
 public
   property Count: Integer read GetCount;
-  {$IFDEF DELPHI}
+  {$IFDEF LCC_DELPHI}
   property Messages: TObjectList<TLccMessage> read FInProcessMessageList write FInProcessMessageList;
   {$ELSE}
   property Messages: TObjectList read FInProcessMessageList write FInProcessMessageList;
@@ -106,7 +106,7 @@ end;
 constructor TLccGridConnectMessageAssembler.Create;
 begin
   inherited Create;
-  {$IFDEF DELPHI}
+  {$IFDEF LCC_DELPHI}
    FInProcessMessageList := TObjectList<TLccMessage>.Create;
   {$ELSE}
   FInProcessMessageList := TObjectList.Create;

@@ -1,6 +1,6 @@
 unit lcc_node_commandstation;
 
-{$IFDEF FPC}
+{$IFDEF LCC_FPC}
 {$mode objfpc}{$H+}
 {$ENDIF}
 
@@ -11,10 +11,7 @@ interface
 uses
   SysUtils,
   Classes,
-  {$IFDEF FPC}
-    {$IFNDEF FPC_CONSOLE_APP}
-      ExtCtrls,
-    {$ENDIF}
+  {$IFDEF LCC_FPC}
   {$ELSE}
     System.Types,
     FMX.Types,
@@ -67,7 +64,7 @@ type
   public
     property TractionServer;
 
-    constructor Create(ANodeManager: {$IFDEF DELPHI}TComponent{$ELSE}TObject{$ENDIF}; CdiXML: string; GridConnectLink: Boolean); override;
+    constructor Create(ANodeManager: {$IFDEF LCC_DELPHI}TComponent{$ELSE}TObject{$ENDIF}; CdiXML: string; GridConnectLink: Boolean); override;
     function AddTrain(CdiXML: string; ADccAddress: Word; ALongAddress: Boolean; ASpeedStep: TLccDccSpeedStep): TLccTrainDccNode;  // Null CDI for default train node CDI
     procedure ClearTrains;
     function FindTrainByLccNodeID(ANodeID: TNodeID): TLccTrainDccNode;
@@ -130,7 +127,7 @@ begin
   ProtocolMemoryOptions.LowSpace := MSI_TRACTION_FUNCTION_CONFIG;
 end;
 
-constructor TLccCommandStationNode.Create(ANodeManager: {$IFDEF DELPHI}TComponent{$ELSE}TObject{$ENDIF}; CdiXML: string; GridConnectLink: Boolean);
+constructor TLccCommandStationNode.Create(ANodeManager: {$IFDEF LCC_DELPHI}TComponent{$ELSE}TObject{$ENDIF}; CdiXML: string; GridConnectLink: Boolean);
 begin
   inherited Create(ANodeManager, CdiXML, GridConnectLink);
   TractionServer.Enabled := True;

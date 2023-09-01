@@ -1,6 +1,6 @@
 unit lcc_protocol_utilities;
 
-{$IFDEF FPC}
+{$IFDEF LCC_FPC}
 {$mode objfpc}{$H+}
 {$ENDIF}
 
@@ -11,11 +11,8 @@ interface
 uses
   Classes,
   SysUtils,
-  {$IFDEF FPC}
+  {$IFDEF LCC_FPC}
     contnrs,
-    {$IFNDEF FPC_CONSOLE_APP}
-      ExtCtrls,
-    {$ENDIF}
   {$ELSE}
     System.Types,
     FMX.Types,
@@ -137,7 +134,7 @@ type
   TProtocolEvents = class(TNodeProtocolBase)
   private
     FAutoGenerate: TLccEventAutoGenerate;
-    {$IFDEF DELPHI}
+    {$IFDEF LCC_DELPHI}
     FEventList: TObjectList<TLccEvent>;
     {$ELSE}
     FEventList: TObjectList;
@@ -146,7 +143,7 @@ type
     function GetEvent(Index: Integer): TLccEvent;
     function GetEventIDAsStr(Index: Integer): String;
   protected
-    {$IFDEF DELPHI}
+    {$IFDEF LCC_DELPHI}
     property EventList: TObjectList<TLccEvent> read FEventList write FEventList;
     {$ELSE}
     property EventList: TObjectList read FEventList write FEventList;
@@ -188,7 +185,7 @@ type
 
   TProtocolMemoryInfo = class(TNodeProtocolBase)
   private
-    {$IFDEF DELPHI}
+    {$IFDEF LCC_DELPHI}
     FList: TObjectList<TConfigMemAddressSpaceInfoObject>;
     {$ELSE}
     FList: TObjectList;
@@ -196,7 +193,7 @@ type
     function GetAddressSpace(Index: Integer): TConfigMemAddressSpaceInfoObject;
     function GetCount: Integer;
   protected
-    {$IFDEF DELPHI}
+    {$IFDEF LCC_DELPHI}
      property List: TObjectList<TConfigMemAddressSpaceInfoObject> read FList write FList;
     {$ELSE}
      property List: TObjectList read FList write FList;
@@ -604,7 +601,7 @@ end;
 constructor TProtocolEvents.Create;
 begin
   inherited Create;
-  {$IFDEF DELPHI}
+  {$IFDEF LCC_DELPHI}
   FEventList := TObjectList<TLccEvent>.Create;
   {$ELSE}
   FEventList := TObjectList.Create;
@@ -657,7 +654,7 @@ var
 begin
   try
     for i := 0 to EventList.Count - 1 do
-    {$IFDEF FPC}
+    {$IFDEF LCC_FPC}
       TObject( EventList[i]).Free;
     {$ELSE}
       EventList[i].Free;
@@ -712,7 +709,7 @@ end;
 constructor TProtocolMemoryInfo.Create;
 begin
   inherited Create;
-  {$IFDEF DELPHI}
+  {$IFDEF LCC_DELPHI}
   List := TObjectList<TConfigMemAddressSpaceInfoObject>.Create;
   {$ELSE}
   List := TObjectList.Create;

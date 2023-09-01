@@ -1,6 +1,6 @@
  unit lcc_cdi_parser;
 
-{$IFDEF FPC}
+{$IFDEF LCC_FPC}
 {$mode objfpc}{$H+}
 {$ENDIF}
 
@@ -13,7 +13,7 @@ interface
 uses
   Classes,
   SysUtils,
-  {$IFDEF FPC}
+  {$IFDEF LCC_FPC}
     {$IFNDEF FPC_CONSOLE_APP}
       ExtCtrls,
       ComCtrls,
@@ -68,7 +68,7 @@ const
 
 type
   TLccOpenPascalSpeedButton = class;
-  {$IFDEF FPC}
+  {$IFDEF LCC_FPC}
     TLccPanel = TPanel;
     TLccTabControl = TPageControl;
     TLccTabSheet = TTabSheet;
@@ -213,7 +213,7 @@ type
   TLccOpenPascalSpinEdit = class(TLccSpinEdit)
   private
     FDataElementInformation: TDataElementInformation;
-    {$IFDEF DELPHI}
+    {$IFDEF LCC_DELPHI}
     FInnerGlowEffect: TInnerGlowEffect;
     {$ENDIF}
   protected
@@ -221,7 +221,7 @@ type
     constructor Create(TheOwner: TComponent); override;
     destructor Destroy; override;
     property DataElementInformation: TDataElementInformation read FDataElementInformation write FDataElementInformation;
-    {$IFDEF DELPHI}
+    {$IFDEF LCC_DELPHI}
     property InnerGlowEffect: TInnerGlowEffect read FInnerGlowEffect write FInnerGlowEffect;
     {$ENDIF}
  end;
@@ -231,7 +231,7 @@ type
   TLccOpenPascalEdit = class(TLccEdit)
   private
     FDataElementInformation: TDataElementInformation;
-    {$IFDEF DELPHI}
+    {$IFDEF LCC_DELPHI}
     FInnerGlowEffect: TInnerGlowEffect;
     {$ENDIF}
   protected
@@ -239,7 +239,7 @@ type
     constructor Create(TheOwner: TComponent); override;
     destructor Destroy; override;
     property DataElementInformation: TDataElementInformation read FDataElementInformation write FDataElementInformation;
-    {$IFDEF DELPHI}
+    {$IFDEF LCC_DELPHI}
     property InnerGlowEffect: TInnerGlowEffect read FInnerGlowEffect write FInnerGlowEffect;
     {$ENDIF}
   end;
@@ -249,7 +249,7 @@ type
   TLccOpenPascalComboBox = class(TLccComboBox)
   private
     FDataElementInformation: TDataElementInformation;
-    {$IFDEF DELPHI}
+    {$IFDEF LCC_DELPHI}
     FInnerGlowEffect: TInnerGlowEffect;
     {$ENDIF}
   protected
@@ -257,7 +257,7 @@ type
     constructor Create(TheOwner: TComponent); override;
     destructor Destroy; override;
     property DataElementInformation: TDataElementInformation read FDataElementInformation write FDataElementInformation;
-    {$IFDEF DELPHI}
+    {$IFDEF LCC_DELPHI}
     property InnerGlowEffect: TInnerGlowEffect read FInnerGlowEffect write FInnerGlowEffect;
     {$ENDIF}
   end;
@@ -337,7 +337,7 @@ type
     function CreateSpacer(ParentControl: TLccPanel): TLccLabel;
 
     // These all live within the base elements that need to be alTop aligned
-    function CreateButton(AContainerParent: TLccPanel; ACaption: LccDOMString; OnClickFunc: TNotifyEvent; Enable: Boolean; AWidth: single; AnAlign: {$IFDEF DELPHI}TAlignLayout{$ELSE}TAlign{$ENDIF}): TLccOpenPascalSpeedButton;
+    function CreateButton(AContainerParent: TLccPanel; ACaption: LccDOMString; OnClickFunc: TNotifyEvent; Enable: Boolean; AWidth: single; AnAlign: {$IFDEF LCC_DELPHI}TAlignLayout{$ELSE}TAlign{$ENDIF}): TLccOpenPascalSpeedButton;
     procedure CreateSpinEditLayout(ParentControl: TLccPanel; Indent: Integer; DataElementInformation: TDataElementInformation);
     procedure CreateEditLayout(ParentControl: TLccPanel; Indent: Integer; DataElementInformation: TDataElementInformation);
     procedure CreateComboBoxListLayout(ParentControl: TLccPanel; Indent: Integer; DataElementInformation: TDataElementInformation);
@@ -513,7 +513,7 @@ constructor TLccOpenPascalComboBox.Create(TheOwner: TComponent);
 begin
   inherited Create(TheOwner);
   FDataElementInformation := nil;
-  {$IFDEF DELPHI}
+  {$IFDEF LCC_DELPHI}
   FInnerGlowEffect := TInnerGlowEffect.Create(Self);
   InnerGlowEffect.Parent := Self;
   InnerGlowEffect.GlowColor := TAlphaColorRec.Yellow;
@@ -533,7 +533,7 @@ constructor TLccOpenPascalEdit.Create(TheOwner: TComponent);
 begin
   inherited Create(TheOwner);
   FDataElementInformation := nil;
-  {$IFDEF DELPHI}
+  {$IFDEF LCC_DELPHI}
   FInnerGlowEffect := TInnerGlowEffect.Create(Self);
   InnerGlowEffect.Parent := Self;
   InnerGlowEffect.GlowColor := TAlphaColorRec.Yellow;
@@ -553,7 +553,7 @@ constructor TLccOpenPascalSpinEdit.Create(TheOwner: TComponent);
 begin
   inherited Create(TheOwner);
   FDataElementInformation := nil;  // created during building of window as we don't know what control we need (if the element has a map or not) early enough
-  {$IFDEF DELPHI}
+  {$IFDEF LCC_DELPHI}
   FInnerGlowEffect := TInnerGlowEffect.Create(Self);
   InnerGlowEffect.Parent := Self;
   InnerGlowEffect.GlowColor := TAlphaColorRec.Yellow;
@@ -571,15 +571,15 @@ end;
 
 function TLccCdiParser.CreateButton(AContainerParent: TLccPanel;
   ACaption: LccDOMString; OnClickFunc: TNotifyEvent; Enable: Boolean;
-  AWidth: single; AnAlign: {$IFDEF DELPHI}TAlignLayout{$ELSE}TAlign{$ENDIF}): TLccOpenPascalSpeedButton;
+  AWidth: single; AnAlign: {$IFDEF LCC_DELPHI}TAlignLayout{$ELSE}TAlign{$ENDIF}): TLccOpenPascalSpeedButton;
 begin
   Result := TLccOpenPascalSpeedButton.Create(AContainerParent);
-  Result.Width := {$IFDEF DELPHI}AWidth{$ELSE}Trunc(AWidth){$ENDIF};
-  Result.{$IFDEF DELPHI}Text{$ELSE}Caption{$ENDIF} := string( ACaption);
+  Result.Width := {$IFDEF LCC_DELPHI}AWidth{$ELSE}Trunc(AWidth){$ENDIF};
+  Result.{$IFDEF LCC_DELPHI}Text{$ELSE}Caption{$ENDIF} := string( ACaption);
   Result.OnClick := OnClickFunc;
   Result.Enabled := Enable;
   Result.Align := AnAlign;
-  {$IFDEF DELPHI}
+  {$IFDEF LCC_DELPHI}
   Result.Padding.Left := 4;
   Result.Padding.Right := 4;
   Result.Padding.Top := 4;
@@ -598,14 +598,14 @@ begin
   if ACaption <> '' then
   begin
     Result := TLccLabel.Create(ParentControl);
-    {$IFDEF DELPHI}Result.StyledSettings := Result.StyledSettings-[TStyledSetting.Style];{$ENDIF}
+    {$IFDEF LCC_DELPHI}Result.StyledSettings := Result.StyledSettings-[TStyledSetting.Style];{$ENDIF}
     if Bold then
-      {$IFDEF DELPHI}Result.TextSettings.Font.Style := [TFontStyle.fsBold]{$ELSE}Result.Font.Style := [fsBold]{$ENDIF};
-    Result.{$IFDEF DELPHI}Text{$ELSE}Caption{$ENDIF} := string( ACaption);
-    Result.{$IFDEF DELPHI}Position.Y{$ELSE}Top{$ENDIF} := ParentControl.Height;   // Make sure it stacks in the right order;
-    Result.Align := {$IFDEF DELPHI}TAlignLayout.Top{$ELSE}alTop{$ENDIF};
+      {$IFDEF LCC_DELPHI}Result.TextSettings.Font.Style := [TFontStyle.fsBold]{$ELSE}Result.Font.Style := [fsBold]{$ENDIF};
+    Result.{$IFDEF LCC_DELPHI}Text{$ELSE}Caption{$ENDIF} := string( ACaption);
+    Result.{$IFDEF LCC_DELPHI}Position.Y{$ELSE}Top{$ENDIF} := ParentControl.Height;   // Make sure it stacks in the right order;
+    Result.Align := {$IFDEF LCC_DELPHI}TAlignLayout.Top{$ELSE}alTop{$ENDIF};
     Result.WordWrap := True;
-    {$IFDEF DELPHI}Result.Margins.Left := Indent;{$ELSE}Result.BorderSpacing.Left := Trunc(Indent);{$ENDIF}
+    {$IFDEF LCC_DELPHI}Result.Margins.Left := Indent;{$ELSE}Result.BorderSpacing.Left := Trunc(Indent);{$ENDIF}
     Result.Parent := ParentControl;
   end;
 end;
@@ -622,7 +622,7 @@ var
 begin
   if ACaption = '' then
     ACaption := 'Unknown';
-  {$IFDEF DELPHI}
+  {$IFDEF LCC_DELPHI}
   // Create new Tab and connect it to the TabControl
   LocalTab := TLccOpenPascalTabSheet.Create(ATabControl);
   LocalTab.Text := ACaption;
@@ -716,7 +716,7 @@ begin
     CreateSpacer(Result);
   // Space on the bottom
   LastLabel := CreateSpacer(Result);
-  {$IFDEF DELPHI}
+  {$IFDEF LCC_DELPHI}
   Result.Height := LastLabel.Position.Y + LastLabel.Height;
   {$ELSE}
   Result.Height := LastLabel.Top + LastLabel.Height;
@@ -729,7 +729,7 @@ var
   MemoryAddressPointer: Int64;
   ElementString: LccDOMString;
   AddressSpace: DWord;
-  {$IFDEF DELPHI}
+  {$IFDEF LCC_DELPHI}
   LastLabel: TLccLabel;
   {$ELSE}
   i: Integer;
@@ -753,7 +753,7 @@ begin
   Result.Visible := False;
   ProcessElementForUISegment(Result, SegmentElement, MemoryAddressPointer, Indent, AddressSpace);
   // Space on the bottom
-  {$IFDEF DELPHI}
+  {$IFDEF LCC_DELPHI}
   LastLabel := CreateSpacer(Result);
   Result.Height := LastLabel.Position.Y + LastLabel.Height;
   Result.Visible := True;
@@ -780,10 +780,10 @@ begin
   UpdateApplicationProgressCallback('Creating Editor ' + IntToStr(EditorElementCount));
 
   Result := TLccPanel.Create(ParentControl);
-  {$IFNDEF DELPHI}Result.Caption := '';{$ENDIF};
-  Result.{$IFDEF DELPHI}Position.Y{$ELSE}Top{$ENDIF} := ParentControl.Height;   // Make sure it stacks in the right order;
-  Result.Align := {$IFDEF DELPHI}TAlignLayout.Top{$ELSE}alTop{$ENDIF};
-  {$IFNDEF DELPHI}Result.BevelOuter := bvNone;{$ENDIF}
+  {$IFNDEF LCC_DELPHI}Result.Caption := '';{$ENDIF};
+  Result.{$IFDEF LCC_DELPHI}Position.Y{$ELSE}Top{$ENDIF} := ParentControl.Height;   // Make sure it stacks in the right order;
+  Result.Align := {$IFDEF LCC_DELPHI}TAlignLayout.Top{$ELSE}alTop{$ENDIF};
+  {$IFNDEF LCC_DELPHI}Result.BevelOuter := bvNone;{$ENDIF}
   Result.Parent := ParentControl;
 
   if (3*BASE_BUTTON_WIDTH) >  Trunc(ParentControl.Width / 3) then
@@ -799,9 +799,9 @@ begin
     WriteStr := 'Write';
     CompareStr := 'Compare';
   end;
-  DataElementInformation.ReadMemorySpaceButton := CreateButton(Result, ReadStr, {$IFNDEF DELPHI}@{$ENDIF}OnButtonReadClick, False, ButtonWidth, {$IFDEF DELPHI}TAlignLayout.Right{$ELSE}alRight{$ENDIF});
-  DataElementInformation.WriteMemorySpaceButton := CreateButton(Result, WriteStr, {$IFNDEF DELPHI}@{$ENDIF}OnButtonWriteClick, False, ButtonWidth, {$IFDEF DELPHI}TAlignLayout.Right{$ELSE}alRight{$ENDIF});
-  DataElementInformation.CompareMemorySpaceButton := CreateButton(Result, CompareStr, {$IFNDEF DELPHI}@{$ENDIF}OnButtonCompareClick, False, ButtonWidth, {$IFDEF DELPHI}TAlignLayout.Right{$ELSE}alRight{$ENDIF});
+  DataElementInformation.ReadMemorySpaceButton := CreateButton(Result, ReadStr, {$IFNDEF LCC_DELPHI}@{$ENDIF}OnButtonReadClick, False, ButtonWidth, {$IFDEF LCC_DELPHI}TAlignLayout.Right{$ELSE}alRight{$ENDIF});
+  DataElementInformation.WriteMemorySpaceButton := CreateButton(Result, WriteStr, {$IFNDEF LCC_DELPHI}@{$ENDIF}OnButtonWriteClick, False, ButtonWidth, {$IFDEF LCC_DELPHI}TAlignLayout.Right{$ELSE}alRight{$ENDIF});
+  DataElementInformation.CompareMemorySpaceButton := CreateButton(Result, CompareStr, {$IFNDEF LCC_DELPHI}@{$ENDIF}OnButtonCompareClick, False, ButtonWidth, {$IFDEF LCC_DELPHI}TAlignLayout.Right{$ELSE}alRight{$ENDIF});
   DataElementInformation.ReadMemorySpaceButton.Visible := ShowReadBtn;
   DataElementInformation.WriteMemorySpaceButton.Visible := ShowWriteBtn;
   DataElementInformation.CompareMemorySpaceButton.Visible := ShowCompareBtn;
@@ -820,10 +820,10 @@ begin
   SpinEdit := TLccOpenPascalSpinEdit.Create(ContainerPanel);
   SpinEdit.DataElementInformation := DataElementInformation;
   SpinEdit.Parent := ContainerPanel;
-  SpinEdit.Align := {$IFDEF DELPHI}TAlignLayout.Client{$ELSE}alClient{$ENDIF};
-  {$IFDEF DELPHI}SpinEdit.Margins.Left := Indent;{$ELSE}SpinEdit.BorderSpacing.Left := Trunc(Indent);{$ENDIF}
-  {$IFDEF DELPHI}SpinEdit.Margins.Right := COMMON_MARGIN;{$ELSE}SpinEdit.BorderSpacing.Right := COMMON_MARGIN;{$ENDIF}
-  SpinEdit.OnChange := {$IFNDEF DELPHI}@{$ENDIF}OnSpinEditChange;
+  SpinEdit.Align := {$IFDEF LCC_DELPHI}TAlignLayout.Client{$ELSE}alClient{$ENDIF};
+  {$IFDEF LCC_DELPHI}SpinEdit.Margins.Left := Indent;{$ELSE}SpinEdit.BorderSpacing.Left := Trunc(Indent);{$ENDIF}
+  {$IFDEF LCC_DELPHI}SpinEdit.Margins.Right := COMMON_MARGIN;{$ELSE}SpinEdit.BorderSpacing.Right := COMMON_MARGIN;{$ENDIF}
+  SpinEdit.OnChange := {$IFNDEF LCC_DELPHI}@{$ENDIF}OnSpinEditChange;
 
 
 
@@ -839,14 +839,14 @@ begin
     SpinEdit.Value := 0;
 
   if lia_Max in DataElementInformation.IntAttributesValid then
-    SpinEdit.{$IFDEF DELPHI}Max{$ELSE}MaxValue{$ENDIF} := DataElementInformation.IntMax
+    SpinEdit.{$IFDEF LCC_DELPHI}Max{$ELSE}MaxValue{$ENDIF} := DataElementInformation.IntMax
   else
-    SpinEdit.{$IFDEF DELPHI}Max{$ELSE}MaxValue{$ENDIF} := {$IFDEF DELPHI}LccMaxLongint{$ELSE}LccMaxLongint{$ENDIF};
+    SpinEdit.{$IFDEF LCC_DELPHI}Max{$ELSE}MaxValue{$ENDIF} := {$IFDEF LCC_DELPHI}LccMaxLongint{$ELSE}LccMaxLongint{$ENDIF};
 
   if lia_Min in DataElementInformation.IntAttributesValid then
-    SpinEdit.{$IFDEF DELPHI}Min{$ELSE}MinValue{$ENDIF} := DataElementInformation.IntMin
+    SpinEdit.{$IFDEF LCC_DELPHI}Min{$ELSE}MinValue{$ENDIF} := DataElementInformation.IntMin
   else
-    SpinEdit.{$IFDEF DELPHI}Min{$ELSE}MinValue{$ENDIF} := {$IFDEF DELPHI}-LccMaxLongint{$ELSE}-LccMaxLongint{$ENDIF};
+    SpinEdit.{$IFDEF LCC_DELPHI}Min{$ELSE}MinValue{$ENDIF} := {$IFDEF LCC_DELPHI}-LccMaxLongint{$ELSE}-LccMaxLongint{$ENDIF};
 end;
 
 procedure TLccCdiParser.CreateEditLayout(ParentControl: TLccPanel;
@@ -859,10 +859,10 @@ begin
   EditBox := TLccOpenPascalEdit.Create(ContainerPanel);
   EditBox.DataElementInformation := DataElementInformation;
   EditBox.Parent := ContainerPanel;
-  EditBox.Align := {$IFDEF DELPHI}TAlignLayout.Client{$ELSE}alClient{$ENDIF};
-  {$IFDEF DELPHI}EditBox.Margins.Left := Indent;{$ELSE}EditBox.BorderSpacing.Left := Trunc(Indent);{$ENDIF}
-  {$IFDEF DELPHI}EditBox.Margins.Right := COMMON_MARGIN;{$ELSE}EditBox.BorderSpacing.Right := COMMON_MARGIN;{$ENDIF}
-  EditBox.OnChange := {$IFNDEF DELPHI}@{$ENDIF}OnEditChange;
+  EditBox.Align := {$IFDEF LCC_DELPHI}TAlignLayout.Client{$ELSE}alClient{$ENDIF};
+  {$IFDEF LCC_DELPHI}EditBox.Margins.Left := Indent;{$ELSE}EditBox.BorderSpacing.Left := Trunc(Indent);{$ENDIF}
+  {$IFDEF LCC_DELPHI}EditBox.Margins.Right := COMMON_MARGIN;{$ELSE}EditBox.BorderSpacing.Right := COMMON_MARGIN;{$ENDIF}
+  EditBox.OnChange := {$IFNDEF LCC_DELPHI}@{$ENDIF}OnEditChange;
 
     // Put a link to the editor to the buttons associated with it
   DataElementInformation.ReadMemorySpaceButton.EditObject := EditBox;
@@ -884,15 +884,15 @@ begin
   ComboBox := TLccOpenPascalComboBox.Create(ContainerPanel);
   ComboBox.DataElementInformation := DataElementInformation;
   ComboBox.Parent := ContainerPanel;
-  {$IFNDEF DELPHI}ComboBox.Style := csDropDownList;{$ENDIF}
-  ComboBox.Align := {$IFDEF DELPHI}TAlignLayout.Client{$ELSE}alClient{$ENDIF};
-  {$IFDEF DELPHI}ComboBox.Margins.Left := Indent;{$ELSE}ComboBox.BorderSpacing.Left := Trunc(Indent);{$ENDIF}
-  {$IFDEF DELPHI}ComboBox.Margins.Right := COMMON_MARGIN;{$ELSE}ComboBox.BorderSpacing.Right := COMMON_MARGIN;{$ENDIF}
+  {$IFNDEF LCC_DELPHI}ComboBox.Style := csDropDownList;{$ENDIF}
+  ComboBox.Align := {$IFDEF LCC_DELPHI}TAlignLayout.Client{$ELSE}alClient{$ENDIF};
+  {$IFDEF LCC_DELPHI}ComboBox.Margins.Left := Indent;{$ELSE}ComboBox.BorderSpacing.Left := Trunc(Indent);{$ENDIF}
+  {$IFDEF LCC_DELPHI}ComboBox.Margins.Right := COMMON_MARGIN;{$ELSE}ComboBox.BorderSpacing.Right := COMMON_MARGIN;{$ENDIF}
   for i := 0 to DataElementInformation.MapList.Count - 1 do
     ComboBox.Items.Add(string( TMapRelation(DataElementInformation.MapList.Relations[i]).Value));
   ComboBox.ItemIndex := 0;
   ComboBox.DataElementInformation := DataElementInformation;
-  ComboBox.OnChange := {$IFNDEF DELPHI}@{$ENDIF}OnComboBoxChange;
+  ComboBox.OnChange := {$IFNDEF LCC_DELPHI}@{$ENDIF}OnComboBoxChange;
 
   // Put a link to the editor to the buttons associated with it
   DataElementInformation.ReadMemorySpaceButton.EditObject := ComboBox;
@@ -1057,9 +1057,9 @@ begin
   begin
     EngineMemorySpaceAccess.Reset;
     case Info.DataType of
-      cdt_String   : EngineMemorySpaceAccess.Assign(lems_Read, MSI_CONFIG, True, Info.MemoryAddressPointer, Info.MemoryAddressPointerHi, True, TargetNodeIdentification.NodeID, TargetNodeIdentification.Alias, {$IFNDEF DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessCallback, {$IFNDEF DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessProgressCallback);
-      cdt_Int      : EngineMemorySpaceAccess.Assign(lems_Read, MSI_CONFIG, False, Info.MemoryAddressPointer, Info.MemoryAddressPointerHi, True, TargetNodeIdentification.NodeID, TargetNodeIdentification.Alias, {$IFNDEF DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessCallback, {$IFNDEF DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessProgressCallback);
-      cdt_EventID  : EngineMemorySpaceAccess.Assign(lems_Read, MSI_CONFIG, False, Info.MemoryAddressPointer, Info.MemoryAddressPointerHi, True, TargetNodeIdentification.NodeID, TargetNodeIdentification.Alias, {$IFNDEF DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessCallback, {$IFNDEF DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessProgressCallback);
+      cdt_String   : EngineMemorySpaceAccess.Assign(lems_Read, MSI_CONFIG, True, Info.MemoryAddressPointer, Info.MemoryAddressPointerHi, True, TargetNodeIdentification.NodeID, TargetNodeIdentification.Alias, {$IFNDEF LCC_DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessCallback, {$IFNDEF DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessProgressCallback);
+      cdt_Int      : EngineMemorySpaceAccess.Assign(lems_Read, MSI_CONFIG, False, Info.MemoryAddressPointer, Info.MemoryAddressPointerHi, True, TargetNodeIdentification.NodeID, TargetNodeIdentification.Alias, {$IFNDEF LCC_DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessCallback, {$IFNDEF DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessProgressCallback);
+      cdt_EventID  : EngineMemorySpaceAccess.Assign(lems_Read, MSI_CONFIG, False, Info.MemoryAddressPointer, Info.MemoryAddressPointerHi, True, TargetNodeIdentification.NodeID, TargetNodeIdentification.Alias, {$IFNDEF LCC_DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessCallback, {$IFNDEF DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessProgressCallback);
       cdt_Bit      : begin end;
     end;
     EngineMemorySpaceAccess.Start;
@@ -1084,7 +1084,7 @@ begin
                        if ExtractStringFromElementUIToStoreInConfigMem(Info, AString) then
                        begin
                          // Need to queue up the data we want to write to the memory space
-                         EngineMemorySpaceObject := EngineMemorySpaceAccess.Assign(lems_Write, MSI_CONFIG, True, Info.MemoryAddressPointer, Info.MemoryAddressPointerHi, True, TargetNodeIdentification.NodeID, TargetNodeIdentification.Alias, {$IFNDEF DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessCallback, {$IFNDEF DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessProgressCallback);
+                         EngineMemorySpaceObject := EngineMemorySpaceAccess.Assign(lems_Write, MSI_CONFIG, True, Info.MemoryAddressPointer, Info.MemoryAddressPointerHi, True, TargetNodeIdentification.NodeID, TargetNodeIdentification.Alias, {$IFNDEF LCC_DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessCallback, {$IFNDEF DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessProgressCallback);
                          EngineMemorySpaceObject.WriteString := AString;
                        end;
                      end;
@@ -1093,7 +1093,7 @@ begin
                        if ExtractIntFromElementUIToStoreInConfigMem(Info, AnInteger) then
                        begin
                          // Need to queue up the data we want to write to the memory space
-                         EngineMemorySpaceObject := EngineMemorySpaceAccess.Assign(lems_Write, MSI_CONFIG, False, Info.MemoryAddressPointer, Info.MemoryAddressPointerHi, True, TargetNodeIdentification.NodeID, TargetNodeIdentification.Alias, {$IFNDEF DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessCallback, {$IFNDEF DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessProgressCallback);
+                         EngineMemorySpaceObject := EngineMemorySpaceAccess.Assign(lems_Write, MSI_CONFIG, False, Info.MemoryAddressPointer, Info.MemoryAddressPointerHi, True, TargetNodeIdentification.NodeID, TargetNodeIdentification.Alias, {$IFNDEF LCC_DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessCallback, {$IFNDEF DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessProgressCallback);
                          EngineMemorySpaceObject.WriteInteger := AnInteger;
                        end;
                      end;
@@ -1102,7 +1102,7 @@ begin
                        if ExtractEventIDFromElementUIToStoreInConfigMem(Info, AnEventID) then
                        begin
                          // Need to queue up the data we want to write to the memory space
-                         EngineMemorySpaceObject := EngineMemorySpaceAccess.Assign(lems_Write, MSI_CONFIG, False, Info.MemoryAddressPointer, Info.MemoryAddressPointerHi, True, TargetNodeIdentification.NodeID, TargetNodeIdentification.Alias, {$IFNDEF DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessCallback, {$IFNDEF DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessProgressCallback);
+                         EngineMemorySpaceObject := EngineMemorySpaceAccess.Assign(lems_Write, MSI_CONFIG, False, Info.MemoryAddressPointer, Info.MemoryAddressPointerHi, True, TargetNodeIdentification.NodeID, TargetNodeIdentification.Alias, {$IFNDEF LCC_DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessCallback, {$IFNDEF DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessProgressCallback);
                          EngineMemorySpaceObject.WriteEventID := AnEventID;
                        end;
                      end;
@@ -1126,9 +1126,9 @@ procedure TLccCdiParser.DoButtonReadPageClick(Sender: TObject);
     if Assigned(Info) then
     begin
       case Info.DataType of
-        cdt_String   : EngineMemorySpaceAccess.Assign(lems_Read, MSI_CONFIG, True, Info.MemoryAddressPointer, Info.MemoryAddressPointerHi, True, TargetNodeIdentification.NodeID, TargetNodeIdentification.Alias, {$IFNDEF DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessCallback, {$IFNDEF DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessProgressCallback);
-        cdt_Int      : EngineMemorySpaceAccess.Assign(lems_Read, MSI_CONFIG, False, Info.MemoryAddressPointer, Info.MemoryAddressPointerHi, True, TargetNodeIdentification.NodeID, TargetNodeIdentification.Alias, {$IFNDEF DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessCallback, {$IFNDEF DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessProgressCallback);
-        cdt_EventID  : EngineMemorySpaceAccess.Assign(lems_Read, MSI_CONFIG, False, Info.MemoryAddressPointer, Info.MemoryAddressPointerHi, True, TargetNodeIdentification.NodeID, TargetNodeIdentification.Alias, {$IFNDEF DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessCallback, {$IFNDEF DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessProgressCallback);
+        cdt_String   : EngineMemorySpaceAccess.Assign(lems_Read, MSI_CONFIG, True, Info.MemoryAddressPointer, Info.MemoryAddressPointerHi, True, TargetNodeIdentification.NodeID, TargetNodeIdentification.Alias, {$IFNDEF LCC_DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessCallback, {$IFNDEF DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessProgressCallback);
+        cdt_Int      : EngineMemorySpaceAccess.Assign(lems_Read, MSI_CONFIG, False, Info.MemoryAddressPointer, Info.MemoryAddressPointerHi, True, TargetNodeIdentification.NodeID, TargetNodeIdentification.Alias, {$IFNDEF LCC_DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessCallback, {$IFNDEF DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessProgressCallback);
+        cdt_EventID  : EngineMemorySpaceAccess.Assign(lems_Read, MSI_CONFIG, False, Info.MemoryAddressPointer, Info.MemoryAddressPointerHi, True, TargetNodeIdentification.NodeID, TargetNodeIdentification.Alias, {$IFNDEF LCC_DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessCallback, {$IFNDEF DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessProgressCallback);
         cdt_Bit      : begin end;
       end;
     end;
@@ -1174,7 +1174,7 @@ end;
 
 procedure TLccCdiParser.UpdateToolbarLabel(Info: string);
 begin
-  GlobalToolbarLabel.{$IFDEF DELPHI}Text{$ELSE}Caption{$ENDIF} := Info
+  GlobalToolbarLabel.{$IFDEF LCC_DELPHI}Text{$ELSE}Caption{$ENDIF} := Info
 end;
 
 procedure TLccCdiParser.UpdateApplicationProgressCallback(Info: string);
@@ -1299,7 +1299,7 @@ procedure TLccCdiParser.DoButtonWritePageClick(Sender: TObject);
                          if ExtractStringFromElementUIToStoreInConfigMem(Info, AString) then
                          begin
                            // Need to queue up the data we want to write to the memory space
-                           EngineMemorySpaceObject := EngineMemorySpaceAccess.Assign(lems_Write, MSI_CONFIG, True, Info.MemoryAddressPointer, Info.MemoryAddressPointerHi, True, TargetNodeIdentification.NodeID, TargetNodeIdentification.Alias, {$IFNDEF DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessCallback, {$IFNDEF DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessProgressCallback);
+                           EngineMemorySpaceObject := EngineMemorySpaceAccess.Assign(lems_Write, MSI_CONFIG, True, Info.MemoryAddressPointer, Info.MemoryAddressPointerHi, True, TargetNodeIdentification.NodeID, TargetNodeIdentification.Alias, {$IFNDEF LCC_DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessCallback, {$IFNDEF DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessProgressCallback);
                            EngineMemorySpaceObject.WriteString := AString;
                          end;
                        end;
@@ -1308,7 +1308,7 @@ procedure TLccCdiParser.DoButtonWritePageClick(Sender: TObject);
                          if ExtractIntFromElementUIToStoreInConfigMem(Info, AnInteger) then
                          begin
                            // Need to queue up the data we want to write to the memory space
-                           EngineMemorySpaceObject := EngineMemorySpaceAccess.Assign(lems_Write, MSI_CONFIG, False, Info.MemoryAddressPointer, Info.MemoryAddressPointerHi, True, TargetNodeIdentification.NodeID, TargetNodeIdentification.Alias, {$IFNDEF DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessCallback, {$IFNDEF DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessProgressCallback);
+                           EngineMemorySpaceObject := EngineMemorySpaceAccess.Assign(lems_Write, MSI_CONFIG, False, Info.MemoryAddressPointer, Info.MemoryAddressPointerHi, True, TargetNodeIdentification.NodeID, TargetNodeIdentification.Alias, {$IFNDEF LCC_DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessCallback, {$IFNDEF DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessProgressCallback);
                            EngineMemorySpaceObject.WriteInteger := AnInteger;
                          end;
                        end;
@@ -1317,7 +1317,7 @@ procedure TLccCdiParser.DoButtonWritePageClick(Sender: TObject);
                          if ExtractEventIDFromElementUIToStoreInConfigMem(Info, AnEventID) then
                          begin
                            // Need to queue up the data we want to write to the memory space
-                           EngineMemorySpaceObject := EngineMemorySpaceAccess.Assign(lems_Write, MSI_CONFIG, False, Info.MemoryAddressPointer, Info.MemoryAddressPointerHi, True, TargetNodeIdentification.NodeID, TargetNodeIdentification.Alias, {$IFNDEF DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessCallback, {$IFNDEF DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessProgressCallback);
+                           EngineMemorySpaceObject := EngineMemorySpaceAccess.Assign(lems_Write, MSI_CONFIG, False, Info.MemoryAddressPointer, Info.MemoryAddressPointerHi, True, TargetNodeIdentification.NodeID, TargetNodeIdentification.Alias, {$IFNDEF LCC_DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessCallback, {$IFNDEF DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessProgressCallback);
                            EngineMemorySpaceObject.WriteEventID := AnEventID;
                          end;
                        end;
@@ -1426,7 +1426,7 @@ begin
       if ApplicationPanel.Components[i] is TLccTabControl then
       begin
         PageControl := TLccTabControl( ApplicationPanel.Components[i]);
-        Result := PageControl.{$IFDEF DELPHI}ActiveTab{$ELSE}ActivePage{$ENDIF};
+        Result := PageControl.{$IFDEF LCC_DELPHI}ActiveTab{$ELSE}ActivePage{$ENDIF};
       end;
     end;
   end;
@@ -1832,7 +1832,7 @@ procedure TLccCdiParser.ResizeActiveTabScrollingWindowFrame;
 var
   TabSheet: TLccOpenPascalTabSheet;
 begin
-  {$IFDEF DELPHI}
+  {$IFDEF LCC_DELPHI}
   TabSheet := TabControl.ActiveTab as TLccOpenPascalTabSheet;
   if Assigned(TabSheet) then
     TabSheet.ScrollingWindowContentsPanel.Width := TabSheet.TabControl.Width - TAB_RIGHT_MARGIN;
@@ -1906,26 +1906,26 @@ begin
 //  ParserFrame.Visible := False;
 
   ParserFrame.Parent := ParentControl;
-  ParserFrame.Align := {$IFDEF DELPHI}TAlignLayout.Client{$ELSE}alClient{$ENDIF};
-  ParserFrame.OnResize := {$IFNDEF DELPHI}@{$ENDIF}OnParserFrameResize;
+  ParserFrame.Align := {$IFDEF LCC_DELPHI}TAlignLayout.Client{$ELSE}alClient{$ENDIF};
+  ParserFrame.OnResize := {$IFNDEF LCC_DELPHI}@{$ENDIF}OnParserFrameResize;
   Result := ParserFrame;
   // Bottom aligned Panel to hold the Read/Write all Buttons
   GlobalButtonBkGnd := TLccPanel.Create(ParserFrame);
-  GlobalButtonBkGnd.Align := {$IFDEF DELPHI}TAlignLayout.Bottom{$ELSE}alBottom{$ENDIF};
-  {$IFNDEF DELPHI}GlobalButtonBkGnd.BevelOuter := bvNone;{$ENDIF}
+  GlobalButtonBkGnd.Align := {$IFDEF LCC_DELPHI}TAlignLayout.Bottom{$ELSE}alBottom{$ENDIF};
+  {$IFNDEF LCC_DELPHI}GlobalButtonBkGnd.BevelOuter := bvNone;{$ENDIF}
   GlobalButtonBkGnd.Parent := ParserFrame;
   GlobalButtonBkGnd.Height := BUTTON_HEIGHT;
-  GlobalButtonReadPage := CreateButton(GlobalButtonBkGnd, 'Read All', {$IFNDEF DELPHI}@{$ENDIF}DoButtonReadPageClick, False, (GlobalButtonBkGnd.Width/3)-2, {$IFDEF DELPHI}TAlignLayout.Right{$ELSE}alRight{$ENDIF});
-  GlobalButtonWritePage := CreateButton(GlobalButtonBkGnd, 'Write All', {$IFNDEF DELPHI}@{$ENDIF}DoButtonWritePageClick, False, (GlobalButtonBkGnd.Width/3)-2, {$IFDEF DELPHI}TAlignLayout.Right{$ELSE}alRight{$ENDIF});
-  GlobalButtonStop := CreateButton(GlobalButtonBkGnd, 'Abort', {$IFNDEF DELPHI}@{$ENDIF}DoButtonStopClick, False, (GlobalButtonBkGnd.Width/3)-2, {$IFDEF DELPHI}TAlignLayout.Right{$ELSE}alRight{$ENDIF});
+  GlobalButtonReadPage := CreateButton(GlobalButtonBkGnd, 'Read All', {$IFNDEF LCC_DELPHI}@{$ENDIF}DoButtonReadPageClick, False, (GlobalButtonBkGnd.Width/3)-2, {$IFDEF LCC_DELPHI}TAlignLayout.Right{$ELSE}alRight{$ENDIF});
+  GlobalButtonWritePage := CreateButton(GlobalButtonBkGnd, 'Write All', {$IFNDEF LCC_DELPHI}@{$ENDIF}DoButtonWritePageClick, False, (GlobalButtonBkGnd.Width/3)-2, {$IFDEF LCC_DELPHI}TAlignLayout.Right{$ELSE}alRight{$ENDIF});
+  GlobalButtonStop := CreateButton(GlobalButtonBkGnd, 'Abort', {$IFNDEF LCC_DELPHI}@{$ENDIF}DoButtonStopClick, False, (GlobalButtonBkGnd.Width/3)-2, {$IFDEF LCC_DELPHI}TAlignLayout.Right{$ELSE}alRight{$ENDIF});
   GlobalToolbarLabel := TLccLabel.Create(GlobalButtonBkGnd);
-  GlobalToolbarLabel.Align := {$IFDEF DELPHI}TAlignLayout.Bottom{$ELSE}alBottom{$ENDIF};
+  GlobalToolbarLabel.Align := {$IFDEF LCC_DELPHI}TAlignLayout.Bottom{$ELSE}alBottom{$ENDIF};
   GlobalToolbarLabel.Parent := GlobalButtonBkGnd;
   UpdateToolbarLabel('');
 
   // TabControl that is client aligned with the FooterBkGnd
   TabControl := TLccTabControl.Create(ParentControl);
-  TabControl.Align := {$IFDEF DELPHI}TAlignLayout.Client{$ELSE}alClient{$ENDIF};
+  TabControl.Align := {$IFDEF LCC_DELPHI}TAlignLayout.Client{$ELSE}alClient{$ENDIF};
   TabControl.Parent := ParserFrame;
   UpdateToolbarLabel('');
   CdiRootElement := XmlFindRootNode(CDI, 'cdi');
@@ -1943,7 +1943,7 @@ begin
       CdiRootElementChild := CdiRootElementChild.NextSibling;
     end;
     // Allow the controls to be built so Change event are not fired the first time a tab is selected
-    {$IFDEF DELPHI}
+    {$IFDEF LCC_DELPHI}
     TabControl.TabIndex := TabControl.TabCount - 1;
     TabControl.TabIndex := 0;
     {$ELSE}
@@ -1954,9 +1954,9 @@ begin
 
   ParserFrame.Visible := True;
 
-  {$IFDEF DELPHI}ApplicationPanel.Text := '';{$ELSE}ApplicationPanel.Caption := '';{$ENDIF}
+  {$IFDEF LCC_DELPHI}ApplicationPanel.Text := '';{$ELSE}ApplicationPanel.Caption := '';{$ENDIF}
 
-  TabControl.OnChange := {$IFNDEF DELPHI}@{$ENDIF}OnPageControlChange;
+  TabControl.OnChange := {$IFNDEF LCC_DELPHI}@{$ENDIF}OnPageControlChange;
   OnPageControlChange(Result);
   DoBuildInterfaceComplete;
 end;

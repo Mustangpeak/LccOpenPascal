@@ -1,6 +1,6 @@
 unit lcc_ethernet_tcp;
 
-{$IFDEF FPC}
+{$IFDEF LCC_FPC}
 {$mode objfpc}{$H+}
 {$ENDIF}
 
@@ -10,7 +10,7 @@ interface
 
  uses
   Classes, SysUtils,
-  {$IFNDEF FPC}
+  {$IFNDEF LCC_FPC}
     Types,
   {$ENDIF}
   lcc_defines;

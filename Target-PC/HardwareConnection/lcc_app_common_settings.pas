@@ -1,6 +1,6 @@
 unit lcc_app_common_settings;
 
-{$IFDEF FPC}
+{$IFDEF LCC_FPC}
 {$mode objfpc}{$H+}
 {$ENDIF}
 
@@ -10,7 +10,7 @@ interface
 
 uses
   Classes, SysUtils,
-  {$IFDEF FPC}
+  {$IFDEF LCC_FPC}
     {$IFDEF FPC_CONSOLE_APP}
       syncobjs,
     {$ELSE}
@@ -25,7 +25,7 @@ uses
       syncobjs,
     {$ENDIF}
   {$ENDIF}
-  {$IFNDEF FPC}
+  {$IFNDEF LCC_FPC}
   Types,
   System.SyncObjs,
   {$ENDIF}
@@ -312,7 +312,7 @@ implementation
 
 procedure Register;
 begin
-  {$IFDEF FPC}
+  {$IFDEF LCC_FPC}
  // {$I TLccSettings.lrs}
   {$ENDIF}
   RegisterComponents('LCC',[TLccSettings]);
@@ -470,7 +470,7 @@ var
   Temp: QWord;
 begin
   NodeID := Trim(NodeID);
-  {$IFDEF FPC}
+  {$IFDEF LCC_FPC}
   Temp := StrToQWord(NodeID);
   {$ELSE}
   Temp := StrToInt64(NodeID);
@@ -481,7 +481,7 @@ end;
 
 function TGeneralSettings.NodeIDAsVal: QWord;
 begin
- {$IFDEF FPC}
+ {$IFDEF LCC_FPC}
   Result := StrToQWord(NodeID);
   {$ELSE}
   Result := StrToInt64(NodeID);

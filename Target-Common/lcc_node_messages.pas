@@ -1,6 +1,6 @@
 unit lcc_node_messages;
 
-{$IFDEF FPC}
+{$IFDEF LCC_FPC}
 {$mode objfpc}{$H+}
 {$ENDIF}
 
@@ -943,7 +943,7 @@ begin
   if GridConnectStr <> '' then
   begin
     ZeroFields;
-    {$IFDEF FPC}
+    {$IFDEF LCC_FPC}
     ZeroIndex := False;
     {$ELSE}
     ZeroIndex := Low(GridConnectStr) = 0;   // Decide if we are LCC_MOBILE or not automatically

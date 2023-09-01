@@ -1,6 +1,6 @@
 unit lcc_node;
 
-{$IFDEF FPC}
+{$IFDEF LCC_FPC}
 {$mode objfpc}{$H+}
 {$ENDIF}
 
@@ -14,12 +14,8 @@ uses
   Classes,
   SysUtils,
   Math,
-  {$IFDEF FPC}
+  {$IFDEF LCC_FPC}
     contnrs,
-    LazLogger,
-    {$IFNDEF FPC_CONSOLE_APP}
-      ExtCtrls,
-    {$ENDIF}
   {$ELSE}
     System.Types,
     FMX.Types,
@@ -82,7 +78,7 @@ type
 
   TDatagramQueue = class
   private
-    {$IFDEF DELPHI}
+    {$IFDEF LCC_DELPHI}
     FQueue: TObjectList<TLccMessage>;
     {$ELSE}
     FQueue: TObjectList;
@@ -90,7 +86,7 @@ type
     FSendMessageFunc: TOnMessageEvent;
     function GetCount: Integer;
   protected
-    {$IFDEF DELPHI}
+    {$IFDEF LCC_DELPHI}
     property Queue: TObjectList<TLccMessage> read FQueue write FQueue;
     {$ELSE}
     property Queue: TObjectList read FQueue write FQueue;
@@ -288,7 +284,7 @@ type
     FSeedNodeID: TNodeID;
     FWorkerMessageForAckMessages: TLccMessage;
     FInitialized: Boolean;
-    FNodeManager: {$IFDEF DELPHI}TComponent{$ELSE}TObject{$ENDIF};
+    FNodeManager: {$IFDEF LCC_DELPHI}TComponent{$ELSE}TObject{$ENDIF};
     FSendMessageFunc: TOnMessageEvent;
     FStreamManufacturerData: TMemoryStream;        // Stream containing the Manufacturer Data stored like the User data with Fixed Offsets for read only data
                                                    // SNIP uses this structure to create a packed version of this information (null separated strings) +
@@ -426,7 +422,7 @@ type
 
 
     property Enabled: Boolean read FEnabled write FEnabled;  // Internally used.. Set true by "LogIn" and false in "ReleaseAlias" so a new LogIn must be called
-    property NodeManager:{$IFDEF DELPHI}TComponent{$ELSE}TObject{$ENDIF} read FNodeManager write FNodeManager;
+    property NodeManager:{$IFDEF LCC_DELPHI}TComponent{$ELSE}TObject{$ENDIF} read FNodeManager write FNodeManager;
     property StreamCdi: TMemoryStream read FStreamCdi write FStreamCdi;
     property StreamConfig: TMemoryStream read FStreamConfig write FStreamConfig;
     property StreamManufacturerData: TMemoryStream read FStreamManufacturerData write FStreamManufacturerData;
@@ -482,7 +478,7 @@ type
     property AliasIDStr: String read GetAliasIDStr;
     property Permitted: Boolean read FPermitted;
 
-    constructor Create(ANodeManager: {$IFDEF DELPHI}TComponent{$ELSE}TObject{$ENDIF}; CdiXML: string; GridConnectLink: Boolean); virtual;
+    constructor Create(ANodeManager: {$IFDEF LCC_DELPHI}TComponent{$ELSE}TObject{$ENDIF}; CdiXML: string; GridConnectLink: Boolean); virtual;
     destructor Destroy; override;
 
     procedure Login(ANodeID: TNodeID); virtual;
@@ -677,7 +673,7 @@ var
   NextCount: Integer;
   ByteArray: array of Byte;
   i: Integer;
-  {$IFDEF DELPHI}
+  {$IFDEF LCC_DELPHI}
   B: Byte;
   {$ENDIF}
 begin
@@ -699,7 +695,7 @@ begin
       SetLength(ByteArray, NextCount);
       for i := 0 to NextCount - 1 do
       begin
-        {$IFDEF DELPHI}
+        {$IFDEF LCC_DELPHI}
           MemoryStream.Read(B, 1);
           ByteArray[i] := B;
         {$ELSE}
@@ -1277,7 +1273,7 @@ end;
 constructor TDatagramQueue.Create;
 begin
   inherited Create;
-  {$IFDEF DELPHI}
+  {$IFDEF LCC_DELPHI}
   Queue := TObjectList<TLccMessage>.Create;
   {$ELSE}
   Queue := TObjectList.Create;
@@ -1287,7 +1283,7 @@ end;
 
 destructor TDatagramQueue.Destroy;
 begin
-  {$IFDEF FPC}
+  {$IFDEF LCC_FPC}
   FreeAndNil(FQueue);
   {$ELSE}
     Queue.DisposeOf;
@@ -1835,7 +1831,7 @@ begin
   Result := True;
 end;
 
-constructor TLccNode.Create(ANodeManager: {$IFDEF DELPHI}TComponent{$ELSE}TObject{$ENDIF}; CdiXML: string; GridConnectLink: Boolean);
+constructor TLccNode.Create(ANodeManager: {$IFDEF LCC_DELPHI}TComponent{$ELSE}TObject{$ENDIF}; CdiXML: string; GridConnectLink: Boolean);
 var
   i, Counter: Integer;
 begin

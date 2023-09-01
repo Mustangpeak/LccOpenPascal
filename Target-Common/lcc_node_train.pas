@@ -1,6 +1,6 @@
 unit lcc_node_train;
 
-{$IFDEF FPC}
+{$IFDEF LCC_FPC}
 {$mode objfpc}{$H+}
 {$ENDIF}
 
@@ -14,11 +14,8 @@ uses
 
   Classes,
   SysUtils,
-  {$IFDEF FPC}
+  {$IFDEF LCC_FPC}
     contnrs,
-    {$IFNDEF FPC_CONSOLE_APP}
-      ExtCtrls,
-    {$ENDIF}
   {$ELSE}
     System.Types,
     FMX.Types,
@@ -41,7 +38,7 @@ const
   // 128 step is a direct mapping with the high bit the direction
   const
   _28_STEP_TABLE: array[0..28] of Byte = (
-    {$IFNDEF FPC}
+    {$IFNDEF LCC_FPC}
     $00,    // Stop
     $02,    // Step 1
     $12,    // Step 2
@@ -105,7 +102,7 @@ const
   );
 
   _14_STEP_TABLE: array[0..14] of Byte = (
-    {$IFNDEF FPC}
+    {$IFNDEF LCC_FPC}
     $00,    // Stop
     $02,    // Step 1
     $03,    // Step 3
@@ -356,7 +353,7 @@ type
     property OnSendMessageComPort: TMessageComPort read FOnSendMessageComPort write FOnSendMessageComPort;
     property SearchEvent: TEventID read FSearchEvent write FSearchevent;  // The TractionSearch Event associated with this train
 
-    constructor Create(ANodeManager: {$IFDEF DELPHI}TComponent{$ELSE}TObject{$ENDIF}; CdiXML: String; GridConnectLink: Boolean); override;
+    constructor Create(ANodeManager: {$IFDEF LCC_DELPHI}TComponent{$ELSE}TObject{$ENDIF}; CdiXML: String; GridConnectLink: Boolean); override;
     destructor Destroy; override;
 
     procedure On_100msTimer(Sender: TObject); override;
@@ -629,7 +626,7 @@ end;
 
 { TLccTrainDccNode }
 
-constructor TLccTrainDccNode.Create(ANodeManager: {$IFDEF DELPHI}TComponent{$ELSE}TObject{$ENDIF}; CdiXML: String; GridConnectLink: Boolean);
+constructor TLccTrainDccNode.Create(ANodeManager: {$IFDEF LCC_DELPHI}TComponent{$ELSE}TObject{$ENDIF}; CdiXML: String; GridConnectLink: Boolean);
 begin
   inherited Create(ANodeManager, CdiXML, GridConnectLink);
   FListeners := TListenerList.Create;
@@ -641,7 +638,7 @@ procedure TLccTrainDccNode.BeforeLogin;
 var
   DccAddressStr: string;
   i: Integer;
-  {$IFDEF DELPHI}
+  {$IFDEF LCC_DELPHI}
   B: Byte;
   {$ENDIF}
 begin
@@ -684,7 +681,7 @@ begin
   // TODO... this should be a persistent Stream if the user changes the name in the Configuration Dialog
   //         save to a file with the DccAddress as the filename??????
   StreamConfig.Position := ADDRESS_USER_NAME;
-  {$IFDEF DELPHI}
+  {$IFDEF LCC_DELPHI}
   StreamConfig.ReadData(B);
   if B = 0 then
   {$ELSE}
@@ -768,27 +765,27 @@ begin
           FunctionMask := FunctionMask and not $10                                // Clear Bit 4
         else
           FunctionMask := FunctionMask or $10;                                    // Set Bit 4
-      FunctionMask := FunctionMask or {$IFNDEF FPC}$80{$ELSE}%10000000{$ENDIF};                                // Opcode bits
+      FunctionMask := FunctionMask or {$IFNDEF LCC_FPC}$80{$ELSE}%10000000{$ENDIF};                                // Opcode bits
     end else
     if FunctionAddress < 9 then
     begin
       FunctionMask := (AllDccFunctionBitsEncoded shr 5) and $0F;
-      FunctionMask := FunctionMask or  {$IFNDEF FPC}$B0{$ELSE}%10110000{$ENDIF};                               // Opcode bits
+      FunctionMask := FunctionMask or  {$IFNDEF LCC_FPC}$B0{$ELSE}%10110000{$ENDIF};                               // Opcode bits
     end else
     if FunctionAddress < 13 then
     begin
       FunctionMask := (AllDccFunctionBitsEncoded shr 9) and $0F;
-      FunctionMask := FunctionMask or {$IFNDEF FPC}$A0{$ELSE}%10100000{$ENDIF};                               // Opcode bits
+      FunctionMask := FunctionMask or {$IFNDEF LCC_FPC}$A0{$ELSE}%10100000{$ENDIF};                               // Opcode bits
     end else
     if FunctionAddress < 21 then
     begin
       FunctionMask := AllDccFunctionBitsEncoded shr 13;
-      FunctionExtendedCode := {$IFNDEF FPC}$DE{$ELSE}%11011110{$ENDIF};
+      FunctionExtendedCode := {$IFNDEF LCC_FPC}$DE{$ELSE}%11011110{$ENDIF};
     end else
     if FunctionAddress < 29 then
     begin
       FunctionMask := AllDccFunctionBitsEncoded shr 21;
-      FunctionExtendedCode := {$IFNDEF FPC}$DF{$ELSE}%11011111{$ENDIF};
+      FunctionExtendedCode := {$IFNDEF LCC_FPC}$DF{$ELSE}%11011111{$ENDIF};
     end;
 
     // Now create the DCC Packet
@@ -872,7 +869,7 @@ begin
               Inc(LocalSpeedStep);   // 1 = EStop
             if IsForward then
               LocalSpeedStep := LocalSpeedStep or $80;
-            DccLoadPacket(Result, AddressHi, AddressLo, {$IFNDEF FPC}$3F{$ELSE}%00111111{$ENDIF}, LocalSpeedStep, 0, 4);
+            DccLoadPacket(Result, AddressHi, AddressLo, {$IFNDEF LCC_FPC}$3F{$ELSE}%00111111{$ENDIF}, LocalSpeedStep, 0, 4);
           end;
 
   end;
