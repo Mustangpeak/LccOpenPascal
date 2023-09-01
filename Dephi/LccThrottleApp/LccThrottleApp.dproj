@@ -6,7 +6,7 @@
         <MainSource>LccThrottleApp.dpr</MainSource>
         <Base>True</Base>
         <Config Condition="'$(Config)'==''">Debug</Config>
-        <Platform Condition="'$(Platform)'==''">Win64</Platform>
+        <Platform Condition="'$(Platform)'==''">Android</Platform>
         <TargetedPlatforms>693267</TargetedPlatforms>
         <AppType>Application</AppType>
     </PropertyGroup>
@@ -140,7 +140,7 @@
         <DCC_S>false</DCC_S>
         <DCC_F>false</DCC_F>
         <DCC_K>false</DCC_K>
-        <DCC_UnitSearchPath>C:\LccOpenPascal\Target-Common;C:\LccOpenPascal\Target-PC;C:\LccOpenPascal\Target-PC\HardwareConnection;C:\LccOpenPascal\Target-PC\HardwareConnection\Indy_Lcc\Core;C:\LccOpenPascal\Target-PC\HardwareConnection\Indy_Lcc\Protocols;C:\LccOpenPascal\Target-PC\HardwareConnection\Indy_Lcc\System;Z:\LccOpenPascal\Target-Common;Z:\LccOpenPascal\Target-PC;Z:\LccOpenPascal\Target-PC\HardwareConnection;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
+        <DCC_UnitSearchPath>C:\LccOpenPascal\Target-PC\Delphi_FMX;C:\LccOpenPascal\Target-Common;C:\LccOpenPascal\Target-PC;C:\LccOpenPascal\Target-PC\HardwareConnection;C:\LccOpenPascal\Target-PC\HardwareConnection\Indy_Lcc\Core;C:\LccOpenPascal\Target-PC\HardwareConnection\Indy_Lcc\Protocols;C:\LccOpenPascal\Target-PC\HardwareConnection\Indy_Lcc\System;$(DCC_UnitSearchPath)</DCC_UnitSearchPath>
         <DCC_Define>SKIA;$(DCC_Define)</DCC_Define>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base_Android)'!=''">

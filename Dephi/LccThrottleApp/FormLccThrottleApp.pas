@@ -365,7 +365,7 @@ begin
     ChildCdiNode := CdiData.ChildElement[i];
     if ChildCdiNode is TLccCdiSegment then
     begin
-      Group := NodeEditor.AddGroup(ChildCdiNode.Name, ChildCdiNode.Description, True);
+      Group := NodeEditor.RootGroup.AddSubGroup(NodeEditor, NodeEditor.RootGroup, ChildCdiNode.Name, ChildCdiNode.Description, True);
       Group.TagObject := ChildCdiNode;
 
    //   RunNode(CDI.ChildElement[i], 1);

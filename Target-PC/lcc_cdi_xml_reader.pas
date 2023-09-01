@@ -318,7 +318,7 @@ begin
       True,
       EngineMemoryAccess.TargetNodeID,
       EngineMemoryAccess.TargetAlias,
-      {$IFNDEF DELPHI}@{$ENDIF}AnElementEventId.CallbackReadConfigurationMemory,
+      {$IFNDEF LCC_DELPHI}@{$ENDIF}AnElementEventId.CallbackReadConfigurationMemory,
       nil);
 
   AnElementEventId.EnumerateElement(Node);   // no child can modify the address as "offset" is not defined for defined children
@@ -360,7 +360,7 @@ begin
       True,
       EngineMemoryAccess.TargetNodeID,
       EngineMemoryAccess.TargetAlias,
-      {$IFNDEF DELPHI}@{$ENDIF}AnElementInt.CallbackReadConfigurationMemory,
+      {$IFNDEF LCC_DELPHI}@{$ENDIF}AnElementInt.CallbackReadConfigurationMemory,
       nil);
 
   AnElementInt.EnumerateElement(Node);   // no child can modify the address as "offset" is not defined for defined children
@@ -395,7 +395,7 @@ begin
       True,
       EngineMemoryAccess.TargetNodeID,
       EngineMemoryAccess.TargetAlias,
-      {$IFNDEF DELPHI}@{$ENDIF}AnElementStr.CallbackReadConfigurationMemory,
+      {$IFNDEF LCC_DELPHI}@{$ENDIF}AnElementStr.CallbackReadConfigurationMemory,
       nil);
 
   AnElementStr.EnumerateElement(Node);   // no child can modify the address as "offset" is not defined for defined children

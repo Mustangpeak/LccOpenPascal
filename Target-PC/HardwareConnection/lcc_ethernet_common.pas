@@ -283,10 +283,11 @@ implementation
     function NetAddrToStr (Entry : in_addr) : String;
     Var
       Dummy: String;
-      i, j: Longint;
+   //  j,
+      i: Longint;
     begin
       NetAddrToStr := '';
-      j := entry.s_addr;
+  //    j := entry.s_addr;
       For i := 1 to 4 do
        begin
   //       Dummy := IntToStr( PArray4Int(j)^[i]);        // Crashes Delphi

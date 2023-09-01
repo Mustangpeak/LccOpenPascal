@@ -100,7 +100,7 @@ type
     destructor Destroy; override;
     function AddContext(AContext: TIdContext): TLccConnectionContext;
     procedure AddGridConnectStringByContext(AContext: TIdContext; AString: string; NodeManager: TLccNodeManager);
-    procedure AddTcpDataByContext(AContext: TIdContext; ADataArray: TLccDynamicByteArray; NodeManager: TLccNodeManager);
+    procedure AddTcpDataByContext(AContext: TIdContext; ADataArray: TIdBytes; NodeManager: TLccNodeManager);
     procedure Clear;
     function FindContext(AContext: TIdContext): TLccConnectionContext;
     function RemoveContext(AContext: TIdContext): Boolean;
@@ -605,7 +605,7 @@ begin
   end;
 end;
 
-procedure TLccContextsList.AddTcpDataByContext(AContext: TIdContext; ADataArray: TLccDynamicByteArray; NodeManager: TLccNodeManager);
+procedure TLccContextsList.AddTcpDataByContext(AContext: TIdContext; ADataArray: TIdBytes; NodeManager: TLccNodeManager);
 var
   ContextList:  TList;
   iContext, iDataArray: Integer;
@@ -884,7 +884,7 @@ procedure TLccEthernetListener.IdTCPServerExecute(AContext: TIdContext);
 var
   AString: string;
   List: TList;
-  iContext, iByte, i: Integer;
+  iContext: Integer;
   OtherContext: TIdContext;
 //  AByte: Byte;
   TcpMessage: TIdBytes;
@@ -973,6 +973,7 @@ begin   {
 end;
 
 function TLccEthernetListener.ParseHeader(const msg: string): TDictionary<string, string>;
+{$IFDEF LCC_FPC}
 var
   lines, SplittedLine: TStringArray;
   line: string;
@@ -986,6 +987,23 @@ begin
       Result.AddOrSetValue(Trim(SplittedLine[0]), Trim(SplittedLine[1]));
   end;
 end;
+{$ELSE}
+var
+  lines: TArray<string>;
+  line: string;
+  SplittedLine: TArray<string>;
+begin
+  result := TDictionary<string, string>.Create;
+  lines := msg.Split([#13#10]);
+  for line in lines do
+  begin
+    SplittedLine := line.Split([': ']);
+    if Length(SplittedLine) > 1 then
+      result.AddOrSetValue(Trim(SplittedLine[0]), Trim(SplittedLine[1]));
+  end;
+end;
+
+{$ENDIF}
 
 procedure TLccEthernetListener.ReceiveMessage;
 begin

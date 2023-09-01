@@ -32,7 +32,7 @@ object TabbedForm: TTabbedForm
     Size.Height = 519.000000000000000000
     Size.PlatformDefault = False
     TabHeight = 49.000000000000000000
-    TabIndex = 0
+    TabIndex = 2
     TabOrder = 1
     TabPosition = PlatformDefault
     Sizes = (
@@ -48,7 +48,7 @@ object TabbedForm: TTabbedForm
       CustomIcon = <
         item
         end>
-      IsSelected = True
+      IsSelected = False
       Size.Width = 95.000000000000000000
       Size.Height = 49.000000000000000000
       Size.PlatformDefault = False
@@ -90,7 +90,7 @@ object TabbedForm: TTabbedForm
       CustomIcon = <
         item
         end>
-      IsSelected = False
+      IsSelected = True
       Size.Width = 95.000000000000000000
       Size.Height = 49.000000000000000000
       Size.PlatformDefault = False
