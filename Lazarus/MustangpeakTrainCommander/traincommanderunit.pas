@@ -18,7 +18,6 @@ uses
   lcc_comport,
   LazSynaSer,
  // lcc_ethernet_http,
-//  lcc_ethernet_websocket,
   lcc_common_classes,
   lcc_ethernet_common,
   servervisualunit,

@@ -1,12 +1,12 @@
 unit lcc_ethernet_server;
 
+{$I ../../lcc_compilers.inc}
+
 {$IFDEF LCC_FPC}
 {$mode delphi}{$H+}
 {$ENDIF}
 
 interface
-
-{$I ../../lcc_compilers.inc}
 
 uses
   Classes,

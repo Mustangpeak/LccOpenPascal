@@ -1,12 +1,12 @@
 unit lcc_cdi_xml_reader;
 
+{$I ..\lcc_compilers.inc}
+
 {$IFDEF LCC_FPC}
 {$mode objfpc}{$H+}
 {$ENDIF}
 
 interface
-
-{$I ../lcc_compilers.inc}
 
  uses
   {$IFDEF LCC_DELPHI}

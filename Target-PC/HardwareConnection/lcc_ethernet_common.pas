@@ -1,12 +1,14 @@
 unit lcc_ethernet_common;
 
+{$I ../../lcc_compilers.inc}
+
 {$IFDEF LCC_FPC}
 {$mode objfpc}{$H+}
 {$ENDIF}
 
 interface
 
-{$I ../../lcc_compilers.inc}
+
 
 uses
   Classes,
@@ -64,23 +66,17 @@ type
 
   TLccEthernetConnectionInfo = class(TLccHardwareConnectionInfo)
   private
-    FAutoResolve: Boolean;
-    FClientIP: string;
-    FClientPort: word;
-    FHeartbeat: Integer;
-    FLingerTime: Integer;
-    FListenerIP: string;
-    FListenerPort: word;
-    FSuppressConnectionResetError: Boolean;
+    FAutoResolve: Boolean;           // IN
+    FClientIP: string;               // IN
+    FClientPort: word;               // IN
+    FListenerIP: string;             // IN
+    FListenerPort: word;             // IN
   public
     property AutoResolveIP: Boolean read FAutoResolve write FAutoResolve;                     // Tries to autoresolve the local unique netword IP of the machine
     property ClientIP: string read FClientIP write FClientIP;
     property ClientPort: word read FClientPort write FClientPort;
-    property HeartbeatRate: Integer read FHeartbeat write FHeartbeat;
     property ListenerIP: string read FListenerIP write FListenerIP;
     property ListenerPort: word read FListenerPort write FListenerPort;
-    property LingerTime: Integer read FLingerTime write FLingerTime;
-    property SuppressConnectionResetError: Boolean read FSuppressConnectionResetError write FSuppressConnectionResetError;
 
     constructor Create;
     function Clone: TLccHardwareConnectionInfo; override;
@@ -357,7 +353,6 @@ implementation
 constructor TLccEthernetConnectionInfo.Create;
 begin
   inherited;
-  FSuppressConnectionResetError := True;
 end;
 
 function TLccEthernetConnectionInfo.Clone: TLccHardwareConnectionInfo;
@@ -368,9 +363,6 @@ begin
   (Result as TLccEthernetConnectionInfo).ClientPort := (Self as TLccEthernetConnectionInfo).ClientPort;
   (Result as TLccEthernetConnectionInfo).ListenerIP := (Self as TLccEthernetConnectionInfo).ListenerIP;
   (Result as TLccEthernetConnectionInfo).ListenerPort := (Self as TLccEthernetConnectionInfo).ListenerPort;
-  (Result as TLccEthernetConnectionInfo).HeartbeatRate := (Self as TLccEthernetConnectionInfo).HeartbeatRate;
-  (Result as TLccEthernetConnectionInfo).LingerTime := (Self as TLccEthernetConnectionInfo).LingerTime;
-  (Result as TLccEthernetConnectionInfo).SuppressConnectionResetError := (Self as TLccEthernetConnectionInfo).SuppressConnectionResetError;
 end;
 
 

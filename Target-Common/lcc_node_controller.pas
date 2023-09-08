@@ -1,12 +1,13 @@
 unit lcc_node_controller;
 
+{$I ..\lcc_compilers.inc}
+
 {$IFDEF LCC_FPC}
 {$mode objfpc}{$H+}
 {$ENDIF}
 
 interface
 
-{$I ..\lcc_compilers.inc}
 
 {.$DEFINE DISABLE_STATE_TIMEOUTS_FOR_DEBUG}
 

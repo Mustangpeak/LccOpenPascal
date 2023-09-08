@@ -1,12 +1,12 @@
 unit lcc_comport;
 
+{$I ../../lcc_compilers.inc}
+
 {$IFDEF LCC_FPC}
 {$mode objfpc}{$H+}
 {$ENDIF}
 
 interface
-
-{$I ../../lcc_compilers.inc}
 
 uses
   Classes,

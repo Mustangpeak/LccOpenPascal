@@ -1,25 +1,25 @@
 unit lcc_common_classes;
 
+
+{$I ..\lcc_compilers.inc}
+
 {$IFDEF LCC_FPC}
 {$mode objfpc}{$H+}
 {$ENDIF}
 
 interface
 
-{$I ../lcc_compilers.inc}
-
 uses
   Classes,
   SysUtils,
-  {$IFDEF LCC_FPC}
+  {$IFDEF FPC}
   syncobjs,
-    {$IFNDEF FPC_CONSOLE_APP}Forms, {$ENDIF}
   {$ELSE}
   FMX.Forms,
   System.SyncObjs,
   {$ENDIF}
 
-  {$IFDEF LCC_FPC}
+  {$IFDEF FPC}
   {$ELSE}
     System.Generics.Collections,
     System.Types,
@@ -45,17 +45,15 @@ type
 
   TLccHardwareConnectionInfo = class
   private
-    FConnectionState: TLccConnectionState;
-    FErrorMessage: String;
-    FGridConnect: Boolean;
-    FHub: Boolean;
-    FLccMessage: TLccMessage;
-    FMessageStr: String;
-    FSleepCofunt: Integer;
-    FSleepCount: Integer;
-    FSuppressErrorMessages: Boolean;
+    FConnectionState: TLccConnectionState;       // OUT
+    FErrorMessage: String;                       // OUT
+    FGridConnect: Boolean;                       // IN
+    FHub: Boolean;                               // IN
+    FLccMessage: TLccMessage;                    // OUT
+    FMessageStr: String;                         // OUT
+    FSuppressErrorMessages: Boolean;             // IN
   public
-    MessageArray: TLccDynamicByteArray;                                         // Contains the TCP Protocol message bytes of not using GridConnect
+    MessageArray: TLccDynamicByteArray;                                         // Contains the TCP Protocol message bytes if not using GridConnect
 
     constructor Create;
     destructor Destroy; override;
@@ -68,7 +66,6 @@ type
     property Hub: Boolean read FHub write FHub;
     property LccMessage: TLccMessage read FLccMessage write FLccMessage;
     property MessageStr: String read FMessageStr write FMessageStr;             // Contains the string for the resulting message from the thread
-    property SleepCount: Integer read FSleepCount write FSleepCofunt;
     property SuppressErrorMessages: Boolean read FSuppressErrorMessages write FSuppressErrorMessages;
   end;
 
@@ -205,7 +202,6 @@ begin
   Result.Hub := Hub;
   Result.MessageStr := MessageStr;
   Result.MessageArray := MessageArray;
-  Result.SleepCount := SleepCount;
   Result.FLccMessage := TLccMessage.Create;
   Result.SuppressErrorMessages := SuppressErrorMessages;
 end;
@@ -378,7 +374,7 @@ begin
   if ContextOfThread then
   begin
     if not SuppressMessage then
-      Synchronize({$IFDEF LCC_FPC}@{$ENDIF}ErrorMessage);
+      Synchronize({$IFDEF FPC}@{$ENDIF}ErrorMessage);
     HandleSendConnectionNotification(lcsDisconnected);
     Terminate;
   end else
@@ -395,7 +391,7 @@ begin
   if ContextOfThread then
   begin
     ConnectionInfo.ConnectionState := NewConnectionState;
-    Synchronize({$IFDEF LCC_FPC}@{$ENDIF}ConnectionStateChange);
+    Synchronize({$IFDEF FPC}@{$ENDIF}ConnectionStateChange);
   end else
   begin
     ConnectionInfo.ConnectionState := NewConnectionState;

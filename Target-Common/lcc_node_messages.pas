@@ -1,12 +1,12 @@
 unit lcc_node_messages;
 
+{$I ..\lcc_compilers.inc}
+
 {$IFDEF LCC_FPC}
 {$mode objfpc}{$H+}
 {$ENDIF}
 
 interface
-
-{$I ..\lcc_compilers.inc}
 
 uses
   Classes,
@@ -305,11 +305,6 @@ implementation
 var
   CaptureTime: Longword;
 
-
-function IsPrintableChar(C: Char): Boolean;
-begin
-  Result := ((Ord( C) >= 32) and (Ord( C) <= 126)) { or ((Ord( C) >= 128) and (Ord( C) <= 255)) }
-end;
 
 function MTI_ToString(MTI: DWord): String;
 begin

@@ -1,14 +1,13 @@
 unit lcc_node;
 
+
+{$I ..\lcc_compilers.inc}
+
 {$IFDEF LCC_FPC}
 {$mode objfpc}{$H+}
 {$ENDIF}
 
-{.$DEFINE LOG_MAPPING}
-
 interface
-
-{$I ..\lcc_compilers.inc}
 
 uses
   Classes,

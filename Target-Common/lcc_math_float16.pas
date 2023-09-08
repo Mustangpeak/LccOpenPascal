@@ -1,10 +1,10 @@
 unit lcc_math_float16;
 
+{$I ..\lcc_compilers.inc}
+
 {$IFDEF LCC_FPC}
 {$mode objfpc}{$H+}
 {$ENDIF}
-
-{$I ..\lcc_compilers.inc}
 
 interface
 

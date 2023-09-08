@@ -1,12 +1,12 @@
 unit lcc_utilities;
 
+{$I ..\lcc_compilers.inc}
+
 {$IFDEF LCC_FPC}
 {$mode objfpc}{$H+}
 {$ENDIF}
 
 interface
-
-{$I ..\lcc_compilers.inc}
 
 uses
   Classes,
@@ -36,6 +36,7 @@ uses
   function _Highest(Data: DWORD): Byte;
   function _Highest1(Data: QWord): Byte;
   function _Highest2(Data: QWord): Byte;
+  function IsPrintableChar(C: Char): Boolean;
 
   function StreamReadByte(AStream: TStream): Byte;
   procedure StreamWriteByte(AStream: TStream; AByte: Byte);
@@ -47,6 +48,12 @@ implementation
 
 uses
   lcc_node_messages;
+
+
+function IsPrintableChar(C: Char): Boolean;
+begin
+  Result := ((Ord( C) >= 32) and (Ord( C) <= 126)) { or ((Ord( C) >= 128) and (Ord( C) <= 255)) }
+end;
 
 
 function FormatStrToInt(AStr: string): string;
@@ -495,11 +502,6 @@ begin
    else
     Result := 'Unknown MTI';
   end;
-end;
-
-function IsPrintableChar(C: Char): Boolean;
-begin
-  Result := ((Ord( C) >= 32) and (Ord( C) <= 126)) { or ((Ord( C) >= 128) and (Ord( C) <= 255))}
 end;
 
 function RawHelperDataToStr(Message: TLccMessage; ASCII: Boolean): string;

@@ -1,12 +1,13 @@
  unit lcc_cdi_parser;
 
+{$I ..\lcc_compilers.inc}
+
 {$IFDEF LCC_FPC}
 {$mode objfpc}{$H+}
 {$ENDIF}
 
 interface
 
-{$I ../lcc_compilers.inc}
 
 {.$DEFINE PRINT_MEM_LOCATIONS}
 

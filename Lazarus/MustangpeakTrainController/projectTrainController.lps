@@ -78,7 +78,7 @@
       <Unit>
         <Filename Value="../../Target-Common/lcc_train_server.pas"/>
         <EditorIndex Value="1"/>
-        <UsageCount Value="29"/>
+        <UsageCount Value="30"/>
         <Loaded Value="True"/>
       </Unit>
       <Unit>
@@ -168,7 +168,7 @@
         <EditorIndex Value="2"/>
         <TopLine Value="101"/>
         <CursorPos X="17" Y="3"/>
-        <UsageCount Value="10"/>
+        <UsageCount Value="11"/>
         <Loaded Value="True"/>
       </Unit>
       <Unit>
@@ -245,15 +245,24 @@
         <Filename Value="../../lcc_compilers.inc"/>
         <IsVisibleTab Value="True"/>
         <EditorIndex Value="4"/>
-        <CursorPos X="3" Y="7"/>
-        <UsageCount Value="10"/>
+        <TopLine Value="3"/>
+        <CursorPos X="39" Y="15"/>
+        <UsageCount Value="11"/>
+        <Loaded Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="../../../Indy/Lib/Core/IdCompilerDefines.inc"/>
+        <EditorIndex Value="5"/>
+        <TopLine Value="802"/>
+        <CursorPos X="19" Y="1630"/>
+        <UsageCount Value="11"/>
         <Loaded Value="True"/>
       </Unit>
     </Units>
     <OtherDefines Count="1">
       <Define0 Value="LOG_MAPPING"/>
     </OtherDefines>
-    <JumpHistory HistoryIndex="5">
+    <JumpHistory HistoryIndex="6">
       <Position>
         <Filename Value="unitmainform.pas"/>
         <Caret Line="210" Column="58"/>
@@ -277,6 +286,14 @@
       <Position>
         <Filename Value="unitmainform.pas"/>
         <Caret Line="26" Column="9" TopLine="13"/>
+      </Position>
+      <Position>
+        <Filename Value="../../lcc_compilers.inc"/>
+        <Caret Line="7" Column="3"/>
+      </Position>
+      <Position>
+        <Filename Value="../../../Indy/Lib/Core/IdCompilerDefines.inc"/>
+        <Caret Line="1630" Column="19" TopLine="802"/>
       </Position>
     </JumpHistory>
     <RunParams>

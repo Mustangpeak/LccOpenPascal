@@ -1,7 +1,9 @@
 unit lcc_base_classes;
 
+{$I ..\lcc_compilers.inc}
+
 {$IFDEF LCC_FPC}
-{$mode ObjFPC}{$H+}
+{$mode objfpc}{$H+}
 {$ENDIF}
 
 interface
@@ -26,11 +28,13 @@ type
     FAlias: Word;
     FNodeID: TNodeID;
     FAbandonCount: Integer;
+    function GetValid: Boolean;  // Valid means one or the other is non zero, not that is is mapped
   public
     property NodeID: TNodeID read FNodeID write FNodeID;
     property Alias: Word read FAlias write FAlias;
     property Active: Boolean read FActive write FActive;
     property AbandonCount: Integer read FAbandonCount write FAbandonCount;
+    property Valid: Boolean read GetValid;
 
     procedure AssignID(ANodeID: TNodeID; AnAlias: Word); overload;
     procedure AssignID(ANodeIdentification: TLccNodeIdentificationObject); overload;
@@ -39,12 +43,11 @@ type
     function Compare(TestMapping: TLccAliasMapping): Boolean overload;
     function CompareEitherOr(TestObject: TLccNodeIdentificationObject): Boolean; overload;
     function CompareEitherOr(TestMapping: TLccAliasMapping): Boolean; overload;
-    function Valid: Boolean;  // Valid means one or the other is non zero, not that is is mapped
   end;
 
 
 
-  // List that manages multiple Node Identification IDs
+  // List that manages multiple Node Identification ID pairs
 
   { TLccNodeIdentificationObjectList }
 
@@ -169,6 +172,11 @@ end;
 
 { TLccNodeIdentificationObject }
 
+function TLccNodeIdentificationObject.GetValid: Boolean;
+begin
+  Result := (Alias <> 0) or ((NodeID[0] <> 0) or (NodeID[1] <> 0))
+end;
+
 procedure TLccNodeIdentificationObject.AssignID(ANodeID: TNodeID; AnAlias: Word);
 begin
   Alias := AnAlias;
@@ -211,10 +219,6 @@ begin
   Result := (TestMapping.NodeAlias = Alias) or ((TestMapping.NodeID[0] = NodeID[0]) and (TestMapping.NodeID[0] = NodeID[0]))
 end;
 
-function TLccNodeIdentificationObject.Valid: Boolean;
-begin
-  Result := (Alias <> 0) or ((NodeID[0] <> 0) or (NodeID[1] <> 0))
-end;
 
 { TLccNodeIdentificationObjectList }
 
