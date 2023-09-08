@@ -79,7 +79,7 @@ type
     FGridConnectHelper: TGridConnectHelper;
     FGridConnectMessageAssembler: TLccGridConnectMessageAssembler;
     FOutgoingCircularArray: TThreadedCircularArray;
-    FOutgoingGridConnect: TThreadStringList;
+    FOutgoingGridConnectList: TThreadStringList;
     FOwner: TLccHardwareConnectionManager;
     FTcpDecodeStateMachine: TOPStackcoreTcpDecodeStateMachine;
     FWorkerMessage: TLccMessage;
@@ -87,8 +87,9 @@ type
   protected
     FRunning: Boolean;
 
-    procedure SetConnecting(AValue: Boolean); virtual;
+    procedure SetConnecting(AValue: Boolean); virtual;   // virtual property setter
 
+    procedure OutgoingAddToBuffer(AMessage: TLccMessage);
     procedure ConnectionStateChange; virtual;
 
   public
@@ -103,7 +104,7 @@ type
     property Connecting: Boolean read FConnecting write SetConnecting;
     property ErrorOnExit: Boolean read FErrorOnExit write FErrorOnExit;
     property GridConnectHelper: TGridConnectHelper read FGridConnectHelper;
-    property OutgoingGridConnect: TThreadStringList read FOutgoingGridConnect write FOutgoingGridConnect;
+    property OutgoingGridConnectList: TThreadStringList read FOutgoingGridConnectList write FOutgoingGridConnectList;
     property OutgoingCircularArray: TThreadedCircularArray read FOutgoingCircularArray write FOutgoingCircularArray;
     property Owner: TLccHardwareConnectionManager read FOwner;
     property Running: Boolean read FRunning write FRunning;
@@ -129,7 +130,7 @@ type
     FCriticalSection: TCriticalSection;
 
     // Decendents only know what connected means to them
-    function GetConnected: Boolean; virtual; abstract;
+    function GetConnected: Boolean; virtual; abstract;    // IHardwareConnectionManagerLink
     function GetConnecting: Boolean; virtual; abstract;
 
     // Event call methods
@@ -139,8 +140,8 @@ type
     procedure DoErrorMessage(Thread: TLccConnectionThread; ConnectionInfo: TLccHardwareConnectionInfo); virtual;
 
     // Decendants must override this to tell the Node Manager if this Connection is used to move Lcc packets or not (HTTP server, ComPort with custom protocol server are examples on "no")
-    function IsLccLink: Boolean; virtual; abstract;
-    function IsSelf(Test: TObject): Boolean;
+    function IsLccLink: Boolean; virtual; abstract;   // IHardwareConnectionManagerLink
+    function IsSelf(Test: TObject): Boolean;          // IHardwareConnectionManagerLink
 
   public
     // True if the Manager is capabable of receiveing/sending messages on the wire... getter must be overridden
@@ -160,7 +161,7 @@ type
     // When a thread owned by the manager receives a message it will call these centraized methods
     // ----------------------
     // Decendant must override this.  The Node Manager calls this when its nodes needs to send a message to the "wire".
-    procedure SendMessage(ALccMessage: TLccMessage); virtual;
+    procedure SendMessage(ALccMessage: TLccMessage); virtual;   // IHardwareConnectionManagerLink
     // Puts a GridConnect string in the buffer to be sent without needing to deal with a TLccMessage as not all links are LCC, using custom GridConnect for the UART to the Command Station
     procedure SendMessageRawGridConnect(GridConnectStr: String); virtual;
     // When a thread owned by the manager receives a message it will call this centraized method
@@ -170,7 +171,6 @@ type
     // ----------------------
 
     function OpenConnection(ConnectionInfo: TLccHardwareConnectionInfo): TLccConnectionThread; virtual;
-    function OpenConnectionWithLccSettings: TLccConnectionThread; virtual;
     procedure CloseConnection; virtual;
 
   published
@@ -285,11 +285,6 @@ begin
   FHub := ConnectionInfo.Hub;
 end;
 
-function TLccHardwareConnectionManager.OpenConnectionWithLccSettings: TLccConnectionThread;
-begin
-  Result := nil;   // Override
-end;
-
 procedure TLccHardwareConnectionManager.CloseConnection;
 begin
 
@@ -340,8 +335,8 @@ begin
   FConnectionInfo.FMessageStr := '';
   FWorkerMessage := TLccMessage.Create;
   FOutgoingCircularArray := TThreadedCircularArray.Create;
-  FOutgoingGridConnect := TThreadStringList.Create;
-  OutgoingGridConnect.Delimiter := #10;
+  FOutgoingGridConnectList := TThreadStringList.Create;
+  OutgoingGridConnectList.Delimiter := #10;
   FTcpDecodeStateMachine := TOPStackcoreTcpDecodeStateMachine.Create;
   FGridConnectHelper := TGridConnectHelper.Create;
   FGridConnectMessageAssembler := TLccGridConnectMessageAssembler.Create;
@@ -351,7 +346,7 @@ destructor TLccConnectionThread.Destroy;
 begin
   FreeAndNil(FWorkerMessage);
   FreeAndNil(FOutgoingCircularArray);
-  FreeAndNil(FOutgoingGridConnect);
+  FreeAndNil(FOutgoingGridConnectList);
   FreeAndNil(FTcpDecodeStateMachine);
   FreeAndNil(FGridConnectHelper);
   FreeAndNil(FGridConnectMessageAssembler);
@@ -367,6 +362,19 @@ procedure TLccConnectionThread.SetConnecting(AValue: Boolean);
 begin
   if FConnecting=AValue then Exit;
   FConnecting:=AValue;
+end;
+
+procedure TLccConnectionThread.OutgoingAddToBuffer(AMessage: TLccMessage);
+var
+  LocalChunk: TLccDynamicByteArray;
+begin
+  if ConnectionInfo.GridConnect then
+    OutgoingGridConnectList.Add(AMessage.ConvertToGridConnectStr(#10, False))
+  else begin
+    LocalChunk := nil;
+    if AMessage.ConvertToLccTcp(LocalChunk) then
+      OutgoingCircularArray.AddChunk(LocalChunk);
+  end;
 end;
 
 procedure TLccConnectionThread.HandleErrorAndDisconnect(SuppressMessage: Boolean; ContextOfThread: Boolean);

@@ -56,13 +56,13 @@ type
     FSoftwareHandshake: Boolean;
     FStopBits: Integer;
   public
-    property ComPort: String read FComPort write FComPort;                     // Comport
-    property Baud: Integer read FBaud write FBaud;                      // Define connection speed. Baud rate can be from 50 to 4000000 bits per second. (it depends on your hardware!))
-    property Bits: Integer read FBits write FBits;                      // Number of bits in communication.
-    property Parity: Char read FParity write FParity;                        // Define communication parity (N - None, O - Odd, E - Even, M - Mark or S - Space)
-    property StopBits: Integer read FStopBits write FStopBits;                   // Use constants SB1, SB1andHalf, SB2
-    property SoftwareHandshake: Boolean read FSoftwareHandshake write FSoftwareHandshake;          // Enable XON/XOFF handshake.
-    property HardwareHandShake: Boolean read FHardwareHandshake write FHardwareHandshake;         // Enable CTS/RTS handshake
+    property ComPort: String read FComPort write FComPort;                                  // Comport
+    property Baud: Integer read FBaud write FBaud;                                          // Define connection speed. Baud rate can be from 50 to 4000000 bits per second. (it depends on your hardware!))
+    property Bits: Integer read FBits write FBits;                                          // Number of bits in communication.
+    property Parity: Char read FParity write FParity;                                       // Define communication parity (N - None, O - Odd, E - Even, M - Mark or S - Space)
+    property StopBits: Integer read FStopBits write FStopBits;                              // Use constants SB1, SB1andHalf, SB2
+    property SoftwareHandshake: Boolean read FSoftwareHandshake write FSoftwareHandshake;   // Enable XON/XOFF handshake.
+    property HardwareHandShake: Boolean read FHardwareHandshake write FHardwareHandshake;   // Enable CTS/RTS handshake
 
     function Clone: TLccHardwareConnectionInfo; override;
   end;
@@ -113,7 +113,7 @@ type
 
     function FormatComPortString(ComPort: string): string;
     function OpenConnection(ConnectionInfo: TLccHardwareConnectionInfo): TLccConnectionThread; override;
-    function OpenConnectionWithLccSettings: TLccConnectionThread; override;
+
     procedure SendMessageRawGridConnect(GridConnectStr: String); override;
   published
     { Published declarations }
@@ -170,7 +170,7 @@ end;
 procedure TLccComPort.SendMessageRawGridConnect(GridConnectStr: String);
 begin
   if Assigned(FComPortThread) then
-    ComPortThread.OutgoingGridConnect.Add(GridConnectStr + #10);
+    ComPortThread.OutgoingGridConnectList.Add(GridConnectStr + #10);
 end;
 
 constructor TLccComPort.Create(AOwner: TComponent; ANodeManager: TLccNodeManager);
@@ -211,62 +211,6 @@ begin
   ComPortThread.RawData := RawData;
   ComPortThread.Suspended := False;
   Result := ComPortThread;
-end;
-
-function TLccComPort.OpenConnectionWithLccSettings: TLccConnectionThread;
-var
-  AComPortConnectionInfo: TLccComPortConnectionInfo;
-begin
-  if Assigned(LccSettings) then
-  begin
-    AComPortConnectionInfo := TLccComPortConnectionInfo.Create;
-    try
-      AComPortConnectionInfo.Baud := LccSettings.ComPort.BaudRate;
-      AComPortConnectionInfo.ComPort := FormatComPortString(LccSettings.ComPort.Port);
-
-      case LccSettings.ComPort.StopBits of
-        cpsb_1_StopBit   : AComPortConnectionInfo.StopBits := SB1;
-        cpsb_1_5_StopBit : AComPortConnectionInfo.StopBits := SB1andHalf;
-        cpsb_2_StopBit   : AComPortConnectionInfo.StopBits := SB2;
-      end;
-
-      case LccSettings.ComPort.DataBits of
-        cpdb_8_Bits : AComPortConnectionInfo.Bits :=  8;
-        cpdb_9_Bits : AComPortConnectionInfo.Bits :=  9;
-      end;
-
-      case LccSettings.ComPort.FlowControl of
-        cpf_None      :
-          begin
-            AComPortConnectionInfo.HardwareHandShake := False;
-            AComPortConnectionInfo.SoftwareHandshake := False;
-          end;
-        cpf_CTS_RTS,                // Hardware with CTS/RTS
-        cpf_DTR_DSR :              // Hardware with DTR/DSR
-          begin
-            AComPortConnectionInfo.HardwareHandShake := True;
-            AComPortConnectionInfo.SoftwareHandshake := False;
-          end;
-        cpf_XON_XOFF :            // Software;
-          begin
-            AComPortConnectionInfo.HardwareHandShake := False;
-            AComPortConnectionInfo.SoftwareHandshake := True;
-          end;
-      end;
-
-      case LccSettings.ComPort.Parity of
-        cpp_None    : AComPortConnectionInfo.Parity := 'N';
-        cpp_Even    : AComPortConnectionInfo.Parity := 'E';
-        cpp_Odd     : AComPortConnectionInfo.Parity := 'O';
-        cpp_Mark    : AComPortConnectionInfo.Parity := 'M';
-        cpp_Space   : AComPortConnectionInfo.Parity := 'S';
-      end;
-
-      Result := OpenConnection(AComPortConnectionInfo);
-    finally
-      AComPortConnectionInfo.Free;
-    end;
-  end;
 end;
 
 { TLccComPortThread }
@@ -317,13 +261,13 @@ begin
             begin
                // Get all the strings from the outgoing buffer into a single concatinated string
               TxStr := '';
-              TxList := OutgoingGridConnect.LockList;
+              TxList := OutgoingGridConnectList.LockList;
               try
                 for i := 0 to TxList.Count - 1 do
                   TxStr := TxStr + TxList[i] + #10;
                 TxList.Clear;
               finally
-                OutgoingGridConnect.UnlockList;
+                OutgoingGridConnectList.UnlockList;
               end;
 
               // Outside of the threaded string list (so not to block the main thread sending more messages)

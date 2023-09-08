@@ -8,6 +8,7 @@ uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ComCtrls, ExtCtrls,
   StdCtrls, Buttons,
   lcc_ethernet_server,
+  lcc_ethernet_client,
   lcc_defines,
   lcc_node,
   lcc_node_manager,

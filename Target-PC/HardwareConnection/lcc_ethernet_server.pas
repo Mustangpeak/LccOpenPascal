@@ -110,7 +110,7 @@ type
 
   { TLccEthernetListener }
 
-  TLccEthernetListener = class(TLccBaseEthernetThread)
+  TLccEthernetListener = class(TLccConnectionThread)
   private
     FConnectionContextList: TLccContextsList;
     FIdTCPServer: TIdTCPServer;
@@ -145,7 +145,7 @@ type
 
   { TLccEthernetServer }
 
-  TLccEthernetServer = class(TLccEthernetHardwareConnectionManager)
+  TLccEthernetServer = class(TLccHardwareConnectionManager)
   private
     FListenerThread: TLccEthernetListener;
     { Private declarations }
@@ -727,13 +727,13 @@ begin
               begin
                 // Get all the strings from the outgoing buffer into a single concatinated string
                 TxStr := '';
-                TxList := OutgoingGridConnect.LockList;
+                TxList := OutgoingGridConnectList.LockList;
                 try
                   for i := 0 to TxList.Count - 1 do
                     TxStr := TxStr + TxList[i] + #10;
                   TxList.Clear;
                 finally
-                  OutgoingGridConnect.UnlockList;
+                  OutgoingGridConnectList.UnlockList;
                 end;
 
                 // Outside of the threaded string list (so not to block the main thread sending more messages)
@@ -1091,7 +1091,7 @@ begin
   CriticalSectionEnter;
   try
     if Assigned(ListenerThread) then
-      ListenerThread.AddToOutgoingBuffer(ALccMessage);
+      ListenerThread.OutgoingAddToBuffer(ALccMessage);
   finally
   end;
     CriticalSectionLeave;
