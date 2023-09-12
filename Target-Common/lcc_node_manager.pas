@@ -106,12 +106,6 @@ type
   ENodeIdentificationObjectIsNull = class(Exception);
 
 
-  TDelayedMessage = class
-  public
- //   property AMessage: TLccMessage read FAMessage write FAMessage;
- //   property
-  end;
-
   { TReceiveMessageServerThread }
 
   TReceiveMessageServerThread = class(TThread)

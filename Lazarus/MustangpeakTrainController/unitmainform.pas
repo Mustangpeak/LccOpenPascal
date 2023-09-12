@@ -177,7 +177,7 @@ type
     FConsistPanelShown: Boolean;
     FController: TLccTrainController;
     FDetailsTractionObject: TLccTractionObject;
-    FEthernetClient: TLccEthernetClient;
+    FEthernetClient: TLccEthernetClientThreadManager;
     FNodeManager: TLccNodeManager;
     FShownOnce: Boolean;
     FLEDArray: TLEDShapeArray;
@@ -222,7 +222,7 @@ type
 
   public
     property Controller: TLccTrainController read FController write FController;
-    property EthernetClient: TLccEthernetClient read FEthernetClient write FEthernetClient;
+    property EthernetClient: TLccEthernetClientThreadManager read FEthernetClient write FEthernetClient;
     property NodeManager: TLccNodeManager read FNodeManager write FNodeManager;
     property BitmapDetails: TBitmap read FBitmapDetails write FBitmapDetails;
   end;
@@ -240,7 +240,7 @@ implementation
 procedure TFormTrainController.FormCreate(Sender: TObject);
 begin
   NodeManager := TLccNodeManager.Create(nil, IS_GRIDCONNECT);
-  EthernetClient := TLccEthernetClient.Create(nil, NodeManager);
+  EthernetClient := TLccEthernetClientThreadManager.Create(nil, NodeManager);
   BitmapDetails := TBitmap.Create;
   CDIParser := TLccCdiParser.Create(nil);
   ImageListMain.GetBitmap(ICON_MORE_DOTS_IMAGE_INDEX, BitmapDetails);

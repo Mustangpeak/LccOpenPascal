@@ -52,7 +52,12 @@ uses
 
 type
 
-  TLccEthernetListener = class;
+  TLccEthernetServerThread = class;
+
+  // One of these days need to figure out how to create a custom Indy context class. Now
+  // Indy taking the context threads, serializes them to the one method in the Listener
+  // and I then have to unserialize them and create structures keeping track of each context
+  // separatly.  Lot of wasted effort
 
   { TLccConnectionContext }
 
@@ -78,12 +83,12 @@ type
 
   TLccConnectionContextClass = class of TLccConnectionContext;
 
-  { TLccContextsList }
+  { TLccConnectionContextList }
 
-  TLccContextsList = class(Classes.TThreadList)
+  TLccConnectionContextList = class(Classes.TThreadList)
   private
     FDefaultContextClass: TLccConnectionContextClass;
-    FOwner: TLccEthernetListener;
+    FOwnerListenerThread: TLccEthernetServerThread;
     FWorkerMessage: TLccMessage;
     function GetCount: Integer;
     function GetGridConnectContext(Index: Integer): TLccConnectionContext;
@@ -93,10 +98,10 @@ type
   public
     property Count: Integer read GetCount;
     property GridConnectContext[Index: Integer]: TLccConnectionContext read GetGridConnectContext;
-    property Owner: TLccEthernetListener read FOwner;
+    property OwnerListenerThread: TLccEthernetServerThread read FOwnerListenerThread;
     property DefaultContextClass: TLccConnectionContextClass read FDefaultContextClass write FDefaultContextClass;
 
-    constructor Create(AnOwner: TLccEthernetListener);
+    constructor Create(AnOwner: TLccEthernetServerThread);
     destructor Destroy; override;
     function AddContext(AContext: TIdContext): TLccConnectionContext;
     procedure AddGridConnectStringByContext(AContext: TIdContext; AString: string; NodeManager: TLccNodeManager);
@@ -106,22 +111,23 @@ type
     function RemoveContext(AContext: TIdContext): Boolean;
   end;
 
-  TLccEthernetServer = class; // forward
+  TLccEthernetServerThreadManager = class; // forward
 
-  { TLccEthernetListener }
 
-  TLccEthernetListener = class(TLccConnectionThread)
+  // Is a common class for Ethernet/WebSocket/Http listeners to be servers
+
+  { TLccEthernetServerThread }
+
+  TLccEthernetServerThread = class(TLccConnectionThread)
   private
-    FConnectionContextList: TLccContextsList;
+    FConnectionContextList: TLccConnectionContextList;
     FIdTCPServer: TIdTCPServer;
-    FOwner: TLccEthernetServer;
   protected
     property Running: Boolean read FRunning;
     property IdTCPServer: TIdTCPServer read FIdTCPServer write FIdTCPServer;
     // List that contains the contexts (threads) the server is serviceing.
     // Allows us to keep the data coming in/going out associated with each context
-    property ConnectionContextList: TLccContextsList read FConnectionContextList write FConnectionContextList;
-    property Owner: TLccEthernetServer read FOwner write FOwner;
+    property ConnectionContextList: TLccConnectionContextList read FConnectionContextList write FConnectionContextList;
 
     function ReceiveContextDataAsString(AContext: TIdContext): string; virtual;
     function ReceiveContextDataAsBytes(AContext: TIdContext): TIdBytes; virtual;
@@ -131,27 +137,26 @@ type
     procedure IdTCPServerConnect(AContext: TIdContext); virtual;
     procedure IdTCPServerDisconnect(AContext: TIdContext); virtual;
     procedure IdTCPServerExecute(AContext: TIdContext); virtual;
-    procedure IdTCPServerStatus(ASender: TObject; const AStatus: TIdStatus; const AStatusText: string); virtual;
 
     function ParseHeader(const msg: string): TDictionary<string, string>;
-    procedure ReceiveMessage;  // For Syncronize
+    procedure ReceiveMessageFromContextViaSyncronize;  // For Syncronize
     procedure SetConnecting(AValue: Boolean); override;
 
     procedure Execute; override;
   public
-    constructor Create(CreateSuspended: Boolean; AnOwner: TLccHardwareConnectionManager; AConnectionInfo: TLccHardwareConnectionInfo); override;
+    constructor Create(CreateSuspended: Boolean; AnOwner: TLccConnectionThreadManager; AConnectionInfo: TLccHardwareConnectionInfo); override;
     destructor Destroy; override;
   end;
 
-  { TLccEthernetServer }
+  { TLccEthernetServerThreadManager }
 
-  TLccEthernetServer = class(TLccHardwareConnectionManager)
+  TLccEthernetServerThreadManager = class(TLccConnectionThreadManager)
   private
-    FListenerThread: TLccEthernetListener;
+    FServerListener: TLccEthernetServerThread;
     { Private declarations }
   protected
     { Protected declarations }
-    function CreateListenerObject(AConnectionInfo: TLccEthernetConnectionInfo): TLccEthernetListener; virtual;
+    function CreateListenerObject(AConnectionInfo: TLccEthernetConnectionInfo): TLccEthernetServerThread; virtual;
     function IsLccLink: Boolean; override;
     function GetConnected: Boolean; override;
     function GetConnecting: Boolean; override;
@@ -159,7 +164,7 @@ type
     procedure DoReceiveMessage(LccMessage: TLccMessage); override;
   public
     { Public declarations }
-    property ListenerThread: TLccEthernetListener read FListenerThread write FListenerThread;
+    property ServerListener: TLccEthernetServerThread read FServerListener write FServerListener;
 
     function OpenConnection(AConnectionInfo: TLccHardwareConnectionInfo): TLccConnectionThread; override;
     procedure CloseConnection;  override;
@@ -167,21 +172,22 @@ type
   end;
 
 
-  { TLccConnectionWebsocketContext }
+  { TLccWebsocketConnectionContext }
 
-  TLccConnectionWebsocketContext = class(TLccConnectionContext)
+  TLccWebsocketConnectionContext = class(TLccConnectionContext)
   private
     FUpgraded: Boolean;
   public
     property Upgraded: Boolean read FUpgraded write FUpgraded;
   end;
 
-  TLccConnectionWebsocketContextClass = class of TLccConnectionWebsocketContext;
+  TLccWebsocketConnectionContextClass
+    = class of TLccWebsocketConnectionContext;
 
 
-  { TLccWebSocketListener }
+  { TLccWebSocketServerThread }
 
-  TLccWebSocketListener = class(TLccEthernetListener)
+  TLccWebSocketServerThread = class(TLccEthernetServerThread)
   private
     FHashSHA1: TIdHashSHA1;
     FIdServerIOHandlerSSLOpenSSL: TIdServerIOHandlerSSLOpenSSL;
@@ -196,16 +202,16 @@ type
 
     procedure IdTCPServerExecute(AContext: TIdContext); override;
   public
-    constructor Create(CreateSuspended: Boolean; AnOwner: TLccHardwareConnectionManager; AConnectionInfo: TLccHardwareConnectionInfo); override;
+    constructor Create(CreateSuspended: Boolean; AnOwner: TLccConnectionThreadManager; AConnectionInfo: TLccHardwareConnectionInfo); override;
     destructor Destroy; override;
   end;
 
 
-  { TLccWebSocketServer }
+  { TLccWebSocketServerThreadManager }
 
-  TLccWebSocketServer = class(TLccEthernetServer)
+  TLccWebSocketServerThreadManager = class(TLccEthernetServerThreadManager)
   protected
-    function CreateListenerObject(AConnectionInfo: TLccEthernetConnectionInfo): TLccEthernetListener; override;
+    function CreateListenerObject(AConnectionInfo: TLccEthernetConnectionInfo): TLccEthernetServerThread; override;
   public
     procedure InitSSL(AIdServerIOHandlerSSLOpenSSL: TIdServerIOHandlerSSLOpenSSL);
 
@@ -214,9 +220,9 @@ type
 
 implementation
 
-{ TLccWebSocketListener }
+{ TLccWebSocketServerThread }
 
-constructor TLccWebSocketListener.Create(CreateSuspended: Boolean; AnOwner: TLccHardwareConnectionManager; AConnectionInfo: TLccHardwareConnectionInfo);
+constructor TLccWebSocketServerThread.Create(CreateSuspended: Boolean; AnOwner: TLccConnectionThreadManager; AConnectionInfo: TLccHardwareConnectionInfo);
 begin
   inherited Create(CreateSuspended, AnOwner, AConnectionInfo);
 
@@ -224,18 +230,18 @@ begin
   IdServerIOHandlerSSLOpenSSL := nil;
 end;
 
-destructor TLccWebSocketListener.Destroy;
+destructor TLccWebSocketServerThread.Destroy;
 begin
   HashSHA1.Free;
   inherited Destroy;
 end;
 
-function TLccWebSocketListener.ReceiveContextDataAsString(AContext: TIdContext): string;
+function TLccWebSocketServerThread.ReceiveContextDataAsString(AContext: TIdContext): string;
 begin
   Result := string( IndyTextEncoding_UTF8.GetString(ReceiveContextDataAsBytes(AContext)));
 end;
 
-function TLccWebSocketListener.ReceiveContextDataAsBytes(AContext: TIdContext): TIdBytes;
+function TLccWebSocketServerThread.ReceiveContextDataAsBytes(AContext: TIdContext): TIdBytes;
 var
   l: byte;
   b: array [0..7] of byte;
@@ -284,12 +290,12 @@ begin
   end;
 end;
 
-procedure TLccWebSocketListener.SendContextDataAsString(AContext: TIdContext; AString: string);
+procedure TLccWebSocketServerThread.SendContextDataAsString(AContext: TIdContext; AString: string);
 begin
   SendContextDataAsBytes(AContext, IndyTextEncoding_UTF8.GetBytes( UnicodeString( AString)));
 end;
 
-procedure TLccWebSocketListener.SendContextDataAsBytes(AContext: TIdContext; ABytes: TIdBytes);
+procedure TLccWebSocketServerThread.SendContextDataAsBytes(AContext: TIdContext; ABytes: TIdBytes);
 var
   Msg: TIdBytes;
 begin
@@ -333,17 +339,17 @@ begin
   end;
 end;
 
-procedure TLccWebSocketListener.IdTCPServerExecute(AContext: TIdContext);
+procedure TLccWebSocketServerThread.IdTCPServerExecute(AContext: TIdContext);
 var
   Bytes: TIdBytes;
   msg, SecWebSocketKey, Hash: string;
   ParsedHeaders: TDictionary<string, string>;
-  ConnectionContext: TLccConnectionWebsocketContext;
+  ConnectionContext: TLccWebsocketConnectionContext;
 begin
 
   Bytes := [];
 
-  ConnectionContext := ConnectionContextList.AddContext(AContext) as TLccConnectionWebsocketContext;
+  ConnectionContext := ConnectionContextList.AddContext(AContext) as TLccWebsocketConnectionContext;
   if not ConnectionContext.Upgraded then
   begin
     if not AContext.Connection.IOHandler.InputBufferIsEmpty then
@@ -388,35 +394,35 @@ begin
     inherited IdTCPServerExecute(AContext);
 end;
 
-{ TLccWebSocketServer }
+{ TLccWebSocketServerThreadManager }
 
-function TLccWebSocketServer.CreateListenerObject(AConnectionInfo: TLccEthernetConnectionInfo): TLccEthernetListener;
+function TLccWebSocketServerThreadManager.CreateListenerObject(AConnectionInfo: TLccEthernetConnectionInfo): TLccEthernetServerThread;
 begin
-  Result := TLccWebSocketListener.Create(True, Self, AConnectionInfo);
-  Result.ConnectionContextList.DefaultContextClass := TLccConnectionWebsocketContext;
+  Result := TLccWebSocketServerThread.Create(True, Self, AConnectionInfo);
+  Result.ConnectionContextList.DefaultContextClass := TLccWebsocketConnectionContext;
 end;
 
-procedure TLccWebSocketServer.InitSSL(AIdServerIOHandlerSSLOpenSSL: TIdServerIOHandlerSSLOpenSSL);
+procedure TLccWebSocketServerThreadManager.InitSSL(AIdServerIOHandlerSSLOpenSSL: TIdServerIOHandlerSSLOpenSSL);
 var
   CurrentActive: boolean;
 begin
-  CurrentActive := (ListenerThread as TLccWebSocketListener).IdTCPServer.Active;
+  CurrentActive := (ServerListener as TLccWebSocketServerThread).IdTCPServer.Active;
   if CurrentActive then
-    (ListenerThread as TLccWebSocketListener).IdTCPServer.Active := false;
+    (ServerListener as TLccWebSocketServerThread).IdTCPServer.Active := false;
 
-  (ListenerThread as TLccWebSocketListener).IdServerIOHandlerSSLOpenSSL := AIdServerIOHandlerSSLOpenSSL;
-  (ListenerThread as TLccWebSocketListener).IdTCPServer.IOHandler := AIdServerIOHandlerSSLOpenSSL;
+  (ServerListener as TLccWebSocketServerThread).IdServerIOHandlerSSLOpenSSL := AIdServerIOHandlerSSLOpenSSL;
+  (ServerListener as TLccWebSocketServerThread).IdTCPServer.IOHandler := AIdServerIOHandlerSSLOpenSSL;
 
   if CurrentActive then
-    (ListenerThread as TLccWebSocketListener).IdTCPServer.Active := true;
+    (ServerListener as TLccWebSocketServerThread).IdTCPServer.Active := true;
 end;
 
-{ TLccWebSocketListener }
+{ TLccWebSocketServerThread }
 
 
-{ TLccContextsList }
+{ TLccConnectionContextList }
 
-function TLccContextsList.GetGridConnectContext(Index: Integer): TLccConnectionContext;
+function TLccConnectionContextList.GetGridConnectContext(Index: Integer): TLccConnectionContext;
 var
   List: TList;
 begin
@@ -428,15 +434,15 @@ begin
   end;
 end;
 
-constructor TLccContextsList.Create(AnOwner: TLccEthernetListener);
+constructor TLccConnectionContextList.Create(AnOwner: TLccEthernetServerThread);
 begin
   inherited Create;
   FDefaultContextClass := TLccConnectionContext;
-  FOwner := AnOwner;
+  FOwnerListenerThread := AnOwner;
   FWorkerMessage := TLccMessage.Create;
 end;
 
-function TLccContextsList.GetCount: Integer;
+function TLccConnectionContextList.GetCount: Integer;
 var
   List: TList;
 begin
@@ -448,14 +454,14 @@ begin
   end;
 end;
 
-destructor TLccContextsList.Destroy;
+destructor TLccConnectionContextList.Destroy;
 begin
   Clear;
   FreeAndNil(FWorkerMessage);
   inherited Destroy;
 end;
 
-function TLccContextsList.AddContext(AContext: TIdContext): TLccConnectionContext;
+function TLccConnectionContextList.AddContext(AContext: TIdContext): TLccConnectionContext;
 var
   List: TList;
   i: Integer;
@@ -484,7 +490,7 @@ begin
   end;
 end;
 
-procedure TLccContextsList.Clear;
+procedure TLccConnectionContextList.Clear;
 var
   List: TList;
   i: Integer;
@@ -499,7 +505,7 @@ begin
   end;
 end;
 
-function TLccContextsList.FindContext(AContext: TIdContext): TLccConnectionContext;
+function TLccConnectionContextList.FindContext(AContext: TIdContext): TLccConnectionContext;
 var
   List: TList;
   i: Integer;
@@ -521,7 +527,7 @@ begin
 
 end;
 
-function TLccContextsList.RemoveContext(AContext: TIdContext): Boolean;
+function TLccConnectionContextList.RemoveContext(AContext: TIdContext): Boolean;
 var
   List: TList;
   i: Integer;
@@ -543,7 +549,7 @@ begin
   end;
 end;
 
-procedure TLccContextsList.AddGridConnectStringByContext(AContext: TIdContext; AString: string; NodeManager: TLccNodeManager);
+procedure TLccConnectionContextList.AddGridConnectStringByContext(AContext: TIdContext; AString: string; NodeManager: TLccNodeManager);
 var
   ContextList:  TList;
   iContext, iString: Integer;
@@ -577,8 +583,8 @@ begin
                 begin
                   NodeManager.ReceiveMessageServerThread.ReceiveMessageServerAddMessage(WorkerMessage);
                   try
-                    if not Owner.Terminated then
-                      Owner.Synchronize(Owner.ReceiveMessage);  // WorkerMessage contains the message
+                    if not OwnerListenerThread.Terminated then
+                      OwnerListenerThread.Synchronize(OwnerListenerThread.ReceiveMessageFromContextViaSyncronize);  // WorkerMessage contains the message
                   except
                   end;
                 end;
@@ -605,7 +611,7 @@ begin
   end;
 end;
 
-procedure TLccContextsList.AddTcpDataByContext(AContext: TIdContext; ADataArray: TIdBytes; NodeManager: TLccNodeManager);
+procedure TLccConnectionContextList.AddTcpDataByContext(AContext: TIdContext; ADataArray: TIdBytes; NodeManager: TLccNodeManager);
 var
   ContextList:  TList;
   iContext, iDataArray: Integer;
@@ -629,8 +635,8 @@ begin
             begin
               NodeManager.ReceiveMessageServerThread.ReceiveMessageServerAddMessage(WorkerMessage);
               try
-                if not Owner.Terminated then
-                  Owner.Synchronize(Owner.ReceiveMessage);
+                if not OwnerListenerThread.Terminated then
+                  OwnerListenerThread.Synchronize(OwnerListenerThread.ReceiveMessageFromContextViaSyncronize);
               except
               end;
             end
@@ -666,9 +672,9 @@ begin
   FreeAndNil(FTcpDecodeStateMachine);
 end;
 
-{ TLccEthernetListener }
+{ TLccEthernetServerThread }
 
-procedure TLccEthernetListener.Execute;
+procedure TLccEthernetServerThread.Execute;
 // Receiving messages are handled in the IdTCPServerExecute handler and dispatched directly to each LccNode
 var
   i: Integer;
@@ -692,7 +698,6 @@ begin
         IdTCPServer.OnConnect := IdTCPServerConnect;
         IdTCPServer.OnDisconnect := IdTCPServerDisconnect;
         IdTCPServer.OnExecute := IdTCPServerExecute;
-        IdTCPServer.OnStatus := IdTCPServerStatus;
         IdTCPServer.TerminateWaitTime := 2;
 
         HandleSendConnectionNotification(lcsConnecting);
@@ -793,15 +798,15 @@ begin
   end;
 end;
 
-constructor TLccEthernetListener.Create(CreateSuspended: Boolean; AnOwner: TLccHardwareConnectionManager; AConnectionInfo: TLccHardwareConnectionInfo);
+constructor TLccEthernetServerThread.Create(CreateSuspended: Boolean; AnOwner: TLccConnectionThreadManager; AConnectionInfo: TLccHardwareConnectionInfo);
 begin
   inherited Create(CreateSuspended, AnOwner, AConnectionInfo);
   IdTCPServer := TIdTCPServer.Create(nil);
-  FConnectionContextList := TLccContextsList.Create(Self);
+  FConnectionContextList := TLccConnectionContextList.Create(Self);
   FreeOnTerminate := False;
 end;
 
-destructor TLccEthernetListener.Destroy;
+destructor TLccEthernetServerThread.Destroy;
 begin
 
   IdTCPServer.Free;
@@ -809,7 +814,7 @@ begin
   inherited Destroy;
 end;
 
-function TLccEthernetListener.ReceiveContextDataAsString(AContext: TIdContext): string;
+function TLccEthernetServerThread.ReceiveContextDataAsString(AContext: TIdContext): string;
 var
   AChar: AnsiChar;
 begin
@@ -821,7 +826,7 @@ begin
   end;
 end;
 
-function TLccEthernetListener.ReceiveContextDataAsBytes(AContext: TIdContext): TIdBytes;
+function TLccEthernetServerThread.ReceiveContextDataAsBytes(AContext: TIdContext): TIdBytes;
 begin
   Result := nil;
   while not AContext.Connection.IOHandler.InputBufferIsEmpty and AContext.Connection.IOHandler.Connected do
@@ -832,7 +837,7 @@ begin
   end;
 end;
 
-procedure TLccEthernetListener.SendContextDataAsString(AContext: TIdContext; AString: string);
+procedure TLccEthernetServerThread.SendContextDataAsString(AContext: TIdContext; AString: string);
 var
   iByte: Integer;
 begin
@@ -840,7 +845,7 @@ begin
     AContext.Connection.IOHandler.Write(Ord( AString[iByte]));
 end;
 
-procedure TLccEthernetListener.SendContextDataAsBytes(AContext: TIdContext; ABytes: TIdBytes);
+procedure TLccEthernetServerThread.SendContextDataAsBytes(AContext: TIdContext; ABytes: TIdBytes);
 var
   iByte: Integer;
 begin
@@ -848,7 +853,7 @@ begin
     AContext.Connection.IOHandler.Write(ABytes[iByte]);
 end;
 
-procedure TLccEthernetListener.IdTCPServerConnect(AContext: TIdContext);
+procedure TLccEthernetServerThread.IdTCPServerConnect(AContext: TIdContext);
 begin
   ConnectionContextList.AddContext(AContext);
 
@@ -864,7 +869,7 @@ begin
   HandleSendConnectionNotification(lcsClientConnected);
 end;
 
-procedure TLccEthernetListener.IdTCPServerDisconnect(AContext: TIdContext);
+procedure TLccEthernetServerThread.IdTCPServerDisconnect(AContext: TIdContext);
 begin
   ConnectionContextList.RemoveContext(AContext);
 
@@ -880,13 +885,12 @@ begin
   HandleSendConnectionNotification(lcsClientDisconnected);
 end;
 
-procedure TLccEthernetListener.IdTCPServerExecute(AContext: TIdContext);
+procedure TLccEthernetServerThread.IdTCPServerExecute(AContext: TIdContext);
 var
   AString: string;
   List: TList;
   iContext: Integer;
   OtherContext: TIdContext;
-//  AByte: Byte;
   TcpMessage: TIdBytes;
 begin
 
@@ -904,16 +908,6 @@ begin
     if AString <> '' then
     begin
       ConnectionContextList.AddGridConnectStringByContext(AContext, AString, Owner.NodeManager);
-
-   //   Owner.NodeManager.HardwarewareConnectionList.Lock;
-   //   try
-   //     for i := 0 to List.Count - 1 do
-    //    begin
-    //      (Owner.NodeManager.HardwarewareConnectionList.Items[i] as IHardwareConnectionManagerLink).SendMessage(nil);
-    //    end;
-    //  finally
-    //     Owner.NodeManager.HardwarewareConnectionList.Unlock;
-   //   end;
 
       if Owner.Hub then
       begin
@@ -962,17 +956,7 @@ begin
   IndySleep(THREAD_SLEEP_TIME);
 end;
 
-procedure TLccEthernetListener.IdTCPServerStatus(ASender: TObject; const AStatus: TIdStatus; const AStatusText: string);
-begin   {
-  case AStatus of
-    hsConnecting    : HandleSendConnectionNotification(lcsConnecting);
-    hsConnected     : HandleSendConnectionNotification(lcsConnected);
-    hsDisconnecting : HandleSendConnectionNotification(lcsDisconnecting);
-    hsDisconnected  : HandleSendConnectionNotification(lcsDisconnected);
-  end;     }
-end;
-
-function TLccEthernetListener.ParseHeader(const msg: string): TDictionary<string, string>;
+function TLccEthernetServerThread.ParseHeader(const msg: string): TDictionary<string, string>;
 {$IFDEF LCC_FPC}
 var
   lines, SplittedLine: TStringArray;
@@ -1005,12 +989,12 @@ end;
 
 {$ENDIF}
 
-procedure TLccEthernetListener.ReceiveMessage;
+procedure TLccEthernetServerThread.ReceiveMessageFromContextViaSyncronize;
 begin
-  (Owner as TLccEthernetServer).DoReceiveMessage(ConnectionContextList.WorkerMessage);
+  (Owner as TLccEthernetServerThreadManager).DoReceiveMessage(ConnectionContextList.WorkerMessage);
 end;
 
-procedure TLccEthernetListener.SetConnecting(AValue: Boolean);
+procedure TLccEthernetServerThread.SetConnecting(AValue: Boolean);
 begin
   Owner.CriticalSectionEnter;
   try
@@ -1020,21 +1004,21 @@ begin
   end;
 end;
 
-{ TLccEthernetServer }
+{ TLccEthernetServerThreadManager }
 
-procedure TLccEthernetServer.CloseConnection;
+procedure TLccEthernetServerThreadManager.CloseConnection;
 var
   TimeCount: Integer;
 begin
   NodeManager.Clear;
   inherited CloseConnection;
-  if Assigned(ListenerThread) then
+  if Assigned(ServerListener) then
   begin
     try
       TimeCount := 0;
-      ListenerThread.HandleSendConnectionNotification(lcsDisconnecting, False);
-      ListenerThread.Terminate;
-      while ListenerThread.Running do
+      ServerListener.HandleSendConnectionNotification(lcsDisconnecting, False);
+      ServerListener.Terminate;
+      while ServerListener.Running do
       begin
         Inc(TimeCount);
         Sleep(50);
@@ -1043,74 +1027,73 @@ begin
           Break // Something went really wrong
         end;
       end;
-      if ListenerThread.ErrorOnExit then
-        ListenerThread.ErrorMessage;
-      ListenerThread.HandleSendConnectionNotification(lcsDisconnected, False);
+      if ServerListener.ErrorOnExit then
+        ServerListener.ErrorMessage;
+      ServerListener.HandleSendConnectionNotification(lcsDisconnected, False);
     finally
-      FreeAndNil(FListenerThread);
+      FreeAndNil(FServerListener);
     end
   end;
 end;
 
-function TLccEthernetServer.IsLccLink: Boolean;
+function TLccEthernetServerThreadManager.IsLccLink: Boolean;
 begin
   Result := True;
 end;
 
-function TLccEthernetServer.GetConnected: Boolean;
+function TLccEthernetServerThreadManager.GetConnected: Boolean;
 begin
   Result := False;
   CriticalSectionEnter;
   try
-    if Assigned(ListenerThread) and Assigned(ListenerThread.IdTCPServer) then
-      Result := ListenerThread.IdTCPServer.Active;
+    if Assigned(ServerListener) and Assigned(ServerListener.IdTCPServer) then
+      Result := ServerListener.IdTCPServer.Active;
   finally
     CriticalSectionLeave;
   end;
 end;
 
-function TLccEthernetServer.GetConnecting: Boolean;
+function TLccEthernetServerThreadManager.GetConnecting: Boolean;
 begin
   Result := False;
   CriticalSectionEnter;
   try
-    if Assigned(ListenerThread) then
-      Result := ListenerThread.Connecting;
+    if Assigned(ServerListener) then
+      Result := ServerListener.Connecting;
   finally
     CriticalSectionLeave;
   end;
 end;
 
-procedure TLccEthernetServer.DoReceiveMessage(LccMessage: TLccMessage);
+procedure TLccEthernetServerThreadManager.DoReceiveMessage(LccMessage: TLccMessage);
 begin
   inherited DoReceiveMessage(LccMessage);
 end;
 
-procedure TLccEthernetServer.SendMessage(ALccMessage: TLccMessage);
+procedure TLccEthernetServerThreadManager.SendMessage(ALccMessage: TLccMessage);
 begin
   CriticalSectionEnter;
   try
-    if Assigned(ListenerThread) then
-      ListenerThread.OutgoingAddToBuffer(ALccMessage);
+    if Assigned(ServerListener) then
+      ServerListener.OutgoingAddToBuffer(ALccMessage);
   finally
   end;
     CriticalSectionLeave;
   inherited SendMessage(ALccMessage);
 end;
 
-function TLccEthernetServer.OpenConnection(AConnectionInfo: TLccHardwareConnectionInfo): TLccConnectionThread;
+function TLccEthernetServerThreadManager.OpenConnection(AConnectionInfo: TLccHardwareConnectionInfo): TLccConnectionThread;
 begin
   CloseConnection;
   inherited OpenConnection(AConnectionInfo);
   Result := CreateListenerObject(AConnectionInfo.Clone as TLccEthernetConnectionInfo);
-  ListenerThread := Result as TLccEthernetListener;
-  ListenerThread.Owner := Self;
-  ListenerThread.Suspended := False;
+  ServerListener := Result as TLccEthernetServerThread;
+  ServerListener.Suspended := False;
 end;
 
-function TLccEthernetServer.CreateListenerObject(AConnectionInfo: TLccEthernetConnectionInfo): TLccEthernetListener;
+function TLccEthernetServerThreadManager.CreateListenerObject(AConnectionInfo: TLccEthernetConnectionInfo): TLccEthernetServerThread;
 begin
-  Result := TLccEthernetListener.Create(True, Self, AConnectionInfo);
+  Result := TLccEthernetServerThread.Create(True, Self, AConnectionInfo);
 end;
 
 end.

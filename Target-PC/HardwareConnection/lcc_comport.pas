@@ -87,7 +87,7 @@ type
 
   { TLccComPort }
 
-  TLccComPort = class(TLccHardwareConnectionManager)
+  TLccComPort = class(TLccConnectionThreadManager)
   private
     FComPortThread: TLccComPortThread;
     FCurrentConnectionState: TLccConnectionState;

@@ -35,7 +35,7 @@ uses
   lcc_node_messages_can_assembler_disassembler;
 
 type
-  TLccHardwareConnectionManager = class;
+  TLccConnectionThreadManager = class;
   TLccHardwareConnectionInfo = class;
   TLccConnectionThread = class;
 
@@ -80,7 +80,7 @@ type
     FGridConnectMessageAssembler: TLccGridConnectMessageAssembler;
     FOutgoingCircularArray: TThreadedCircularArray;
     FOutgoingGridConnectList: TThreadStringList;
-    FOwner: TLccHardwareConnectionManager;
+    FOwner: TLccConnectionThreadManager;
     FTcpDecodeStateMachine: TOPStackcoreTcpDecodeStateMachine;
     FWorkerMessage: TLccMessage;
     function GetIsTerminated: Boolean;
@@ -93,7 +93,7 @@ type
     procedure ConnectionStateChange; virtual;
 
   public
-    constructor Create(CreateSuspended: Boolean; AnOwner: TLccHardwareConnectionManager; AConnectionInfo: TLccHardwareConnectionInfo); reintroduce; virtual;
+    constructor Create(CreateSuspended: Boolean; AnOwner: TLccConnectionThreadManager; AConnectionInfo: TLccHardwareConnectionInfo); reintroduce; virtual;
     destructor Destroy; override;
 
     procedure ErrorMessage; virtual;
@@ -106,7 +106,7 @@ type
     property GridConnectHelper: TGridConnectHelper read FGridConnectHelper;
     property OutgoingGridConnectList: TThreadStringList read FOutgoingGridConnectList write FOutgoingGridConnectList;
     property OutgoingCircularArray: TThreadedCircularArray read FOutgoingCircularArray write FOutgoingCircularArray;
-    property Owner: TLccHardwareConnectionManager read FOwner;
+    property Owner: TLccConnectionThreadManager read FOwner;
     property Running: Boolean read FRunning write FRunning;
     property IsTerminated: Boolean read GetIsTerminated;
     property GridConnectMessageAssembler: TLccGridConnectMessageAssembler read FGridConnectMessageAssembler write FGridConnectMessageAssembler;
@@ -115,9 +115,9 @@ type
     property WorkerMessage: TLccMessage read FWorkerMessage write FWorkerMessage;
   end;
 
-  { TLccHardwareConnectionManager }
+  { TLccConnectionThreadManager }
 
-  TLccHardwareConnectionManager = class(TComponent, IHardwareConnectionManagerLink)
+  TLccConnectionThreadManager = class(TComponent, IHardwareConnectionManagerLink)
   private
     FHub: Boolean;
     FNodeManager: TLccNodeManager;
@@ -181,8 +181,26 @@ type
     property WorkerMessage: TLccMessage read FWorkerMessage write FWorkerMessage;
   end;
 
+  TLccConnectionThreadManagerClass = class of TLccConnectionThreadManager;
+
+  { TLccServerManager }
+
+  TLccServerManager = class(TComponent)
+  public
+    function CreateServer(AServerManagerClass: TLccConnectionThreadManagerClass; ConnectionInfo: TLccHardwareConnectionInfo): TLccConnectionThreadManager;
+  end;
+
 
 implementation
+
+{ TLccServerManager }
+
+function TLccServerManager.CreateServer(
+  AServerManagerClass: TLccConnectionThreadManagerClass;
+  ConnectionInfo: TLccHardwareConnectionInfo): TLccConnectionThreadManager;
+begin
+  Result := AServerManagerClass.Create(Self, nil);
+end;
 
 { TLccHardwareConnectionInfo }
 
@@ -213,9 +231,9 @@ begin
 end;
 
 
-{ TLccHardwareConnectionManager }
+{ TLccConnectionThreadManager }
 
-procedure TLccHardwareConnectionManager.DoReceiveMessage(LccMessage: TLccMessage);
+procedure TLccConnectionThreadManager.DoReceiveMessage(LccMessage: TLccMessage);
 var
   i: Integer;
   ConnectionLink: IHardwareConnectionManagerLink;
@@ -236,61 +254,61 @@ begin
   end;
 end;
 
-procedure TLccHardwareConnectionManager.DoSendMessage(ALccMessage: TLccMessage);
+procedure TLccConnectionThreadManager.DoSendMessage(ALccMessage: TLccMessage);
 begin
   if Assigned(OnLccMessageSend) then
     OnLccMessageSend(Self, ALccMessage);
 end;
 
-procedure TLccHardwareConnectionManager.DoConnectionStateChange(Thread: TLccConnectionThread; ConnectionInfo: TLccHardwareConnectionInfo);
+procedure TLccConnectionThreadManager.DoConnectionStateChange(Thread: TLccConnectionThread; ConnectionInfo: TLccHardwareConnectionInfo);
 begin
   if Assigned(OnConnectionStateChange) then
     OnConnectionStateChange(Thread, ConnectionInfo);
 end;
 
-procedure TLccHardwareConnectionManager.DoErrorMessage(Thread: TLccConnectionThread; ConnectionInfo: TLccHardwareConnectionInfo);
+procedure TLccConnectionThreadManager.DoErrorMessage(Thread: TLccConnectionThread; ConnectionInfo: TLccHardwareConnectionInfo);
 begin
   if Assigned(OnErrorMessage) then
     OnErrorMessage(Thread, ConnectionInfo);
 end;
 
-function TLccHardwareConnectionManager.IsSelf(Test: TObject): Boolean;
+function TLccConnectionThreadManager.IsSelf(Test: TObject): Boolean;
 begin
   Result := Test = self;
 end;
 
-procedure TLccHardwareConnectionManager.SendMessage(ALccMessage: TLccMessage);
+procedure TLccConnectionThreadManager.SendMessage(ALccMessage: TLccMessage);
 begin
   DoSendMessage(ALccMessage);
 end;
 
-procedure TLccHardwareConnectionManager.ConnectionStateChange(Thread: TLccConnectionThread; ConnectionInfo: TLccHardwareConnectionInfo);
+procedure TLccConnectionThreadManager.ConnectionStateChange(Thread: TLccConnectionThread; ConnectionInfo: TLccHardwareConnectionInfo);
 begin
   DoConnectionStateChange(Thread, ConnectionInfo);
 end;
 
-procedure TLccHardwareConnectionManager.ErrorMessage(Thread: TLccConnectionThread; ConnectionInfo: TLccHardwareConnectionInfo);
+procedure TLccConnectionThreadManager.ErrorMessage(Thread: TLccConnectionThread; ConnectionInfo: TLccHardwareConnectionInfo);
 begin
   DoErrorMessage(Thread, ConnectionInfo);
 end;
 
-procedure TLccHardwareConnectionManager.SendMessageRawGridConnect(GridConnectStr: String);
+procedure TLccConnectionThreadManager.SendMessageRawGridConnect(GridConnectStr: String);
 begin
 
 end;
 
-function TLccHardwareConnectionManager.OpenConnection(ConnectionInfo: TLccHardwareConnectionInfo): TLccConnectionThread;
+function TLccConnectionThreadManager.OpenConnection(ConnectionInfo: TLccHardwareConnectionInfo): TLccConnectionThread;
 begin
   Result := nil;
   FHub := ConnectionInfo.Hub;
 end;
 
-procedure TLccHardwareConnectionManager.CloseConnection;
+procedure TLccConnectionThreadManager.CloseConnection;
 begin
 
 end;
 
-constructor TLccHardwareConnectionManager.Create(AOwner: TComponent; ANodeManager: TLccNodeManager);
+constructor TLccConnectionThreadManager.Create(AOwner: TComponent; ANodeManager: TLccNodeManager);
 begin
   Assert(Assigned(ANodeManager), 'TLccHardwareConnectionManager must have an assigned TLccNodeManager');
 
@@ -299,9 +317,10 @@ begin
   FWorkerMessage := TLccMessage.Create;
   NodeManager.HardwarewareConnectionList.Add(Self as IHardwareConnectionManagerLink);
   FCriticalSection := TCriticalSection.Create;
+  FHub := True;
 end;
 
-destructor TLccHardwareConnectionManager.Destroy;
+destructor TLccConnectionThreadManager.Destroy;
 begin
   NodeManager.HardwarewareConnectionList.Remove(Self as IHardwareConnectionManagerLink);
   FreeAndNil(FWorkerMessage);
@@ -309,24 +328,24 @@ begin
   inherited Destroy;
 end;
 
-procedure TLccHardwareConnectionManager.CriticalSectionEnter;
+procedure TLccConnectionThreadManager.CriticalSectionEnter;
 begin
   FCriticalSection.Enter
 end;
 
-procedure TLccHardwareConnectionManager.CriticalSectionLeave;
+procedure TLccConnectionThreadManager.CriticalSectionLeave;
 begin
   FCriticalSection.Leave
 end;
 
-procedure TLccHardwareConnectionManager.CriticalSectionTryEnter;
+procedure TLccConnectionThreadManager.CriticalSectionTryEnter;
 begin
   FCriticalSection.TryEnter
 end;
 
 { TLccConnectionThread }
 
-constructor TLccConnectionThread.Create(CreateSuspended: Boolean; AnOwner: TLccHardwareConnectionManager; AConnectionInfo: TLccHardwareConnectionInfo);
+constructor TLccConnectionThread.Create(CreateSuspended: Boolean; AnOwner: TLccConnectionThreadManager; AConnectionInfo: TLccHardwareConnectionInfo);
 begin
   inherited Create(CreateSuspended);
   FOwner := AnOwner;

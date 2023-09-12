@@ -40,7 +40,7 @@ uses
   lcc_alias_server;
 
 type
-  TLccEthernetClient = class;   // Forward
+  TLccEthernetClientThreadManager = class;   // Forward
 
   { TLccEthernetClientThread }
   TLccEthernetClientThread =  class(TLccConnectionThread)
@@ -48,10 +48,10 @@ type
     FGridConnectHelper: TGridConnectHelper;
     FidTCPClient: TIdTCPClient;
     FidThreadComponent: TIdThreadComponent;
-    FOwner: TLccEthernetClient;
+    FOwner: TLccEthernetClientThreadManager;
     protected
       property GridConnectHelper: TGridConnectHelper read FGridConnectHelper write FGridConnectHelper;
-      property Owner: TLccEthernetClient read FOwner write FOwner;
+      property Owner: TLccEthernetClientThreadManager read FOwner write FOwner;
       procedure Execute; override;
       procedure ReceiveMessage;  // For Syncronize
       procedure OnClientConnected(Sender: TObject);
@@ -61,12 +61,12 @@ type
     public
       property idTCPClient: TIdTCPClient read FidTCPClient write FidTCPClient;
       property idThreadComponent: TIdThreadComponent read FidThreadComponent write FidThreadComponent;
-      constructor Create(CreateSuspended: Boolean; AnOwner: TLccHardwareConnectionManager; AConnectionInfo: TLccHardwareConnectionInfo); override;
+      constructor Create(CreateSuspended: Boolean; AnOwner: TLccConnectionThreadManager; AConnectionInfo: TLccHardwareConnectionInfo); override;
       destructor Destroy; override;
   end;
 
-  { TLccEthernetClient }
-  TLccEthernetClient = class(TLccHardwareConnectionManager)
+  { TLccEthernetClientThreadManager }
+  TLccEthernetClientThreadManager = class(TLccConnectionThreadManager)
   private
     FClientThread: TLccEthernetClientThread;
     FClosingConnection: Boolean;
@@ -91,13 +91,13 @@ type
 
 implementation
 
-{ TLccEthernetClient }
-function TLccEthernetClient.IsLccLink: Boolean;
+{ TLccEthernetClientThreadManager }
+function TLccEthernetClientThreadManager.IsLccLink: Boolean;
 begin
   Result := True;
 end;
 
-function TLccEthernetClient.GetConnected: Boolean;
+function TLccEthernetClientThreadManager.GetConnected: Boolean;
 begin
   Result := False;
   CriticalSectionEnter;
@@ -110,7 +110,7 @@ begin
   end;
 end;
 
-function TLccEthernetClient.GetConnecting: Boolean;
+function TLccEthernetClientThreadManager.GetConnecting: Boolean;
 begin
   Result := False;
   CriticalSectionEnter;
@@ -122,7 +122,7 @@ begin
   end;
 end;
 
-procedure TLccEthernetClient.SendMessage(ALccMessage: TLccMessage);
+procedure TLccEthernetClientThreadManager.SendMessage(ALccMessage: TLccMessage);
 begin
   inherited SendMessage(ALccMessage);
   CriticalSectionEnter;
@@ -134,7 +134,7 @@ begin
   end;
 end;
 
-function TLccEthernetClient.OpenConnection(ConnectionInfo: TLccHardwareConnectionInfo): TLccConnectionThread;
+function TLccEthernetClientThreadManager.OpenConnection(ConnectionInfo: TLccHardwareConnectionInfo): TLccConnectionThread;
 begin
   CloseConnection;
   inherited OpenConnection(ConnectionInfo as TLccEthernetConnectionInfo);
@@ -144,7 +144,7 @@ begin
   ClientThread.Suspended := False;
 end;
 
-procedure TLccEthernetClient.CloseConnection;
+procedure TLccEthernetClientThreadManager.CloseConnection;
 var
   TimeCount: Integer;
 begin
@@ -176,7 +176,7 @@ end;
 
 { TLccEthernetClientThread }
 constructor TLccEthernetClientThread.Create(CreateSuspended: Boolean;
-  AnOwner: TLccHardwareConnectionManager;
+  AnOwner: TLccConnectionThreadManager;
   AConnectionInfo: TLccHardwareConnectionInfo);
 begin
   inherited;
@@ -288,7 +288,7 @@ end;
 
 procedure TLccEthernetClientThread.ReceiveMessage;
 begin
-  (Owner as TLccEthernetClient).DoReceiveMessage(WorkerMessage);
+  (Owner as TLccEthernetClientThreadManager).DoReceiveMessage(WorkerMessage);
 end;
 
 procedure TLccEthernetClientThread.OnClientConnected(Sender: TObject);

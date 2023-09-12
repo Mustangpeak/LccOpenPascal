@@ -95,10 +95,10 @@ type
     FCommandStationNode: TLccCommandStationNode;
     FComPort: TLccComPort;
  //   FLccHTTPServer: TLccHTTPServer;
-    FLccWebsocketServer: TLccWebsocketServer;
+    FLccWebsocketServer: TLccWebSocketServerThreadManager;
     FNodeManager: TLccNodeManager;
     FWorkerMessage: TLccMessage;
-    FLccServer: TLccEthernetServer;
+    FLccServer: TLccEthernetServerThreadManager;
   protected
     property WorkerMessage: TLccMessage read FWorkerMessage write FWorkerMessage;
 
@@ -156,8 +156,8 @@ type
     procedure NodeIsGoingAway(LccSourceNode: TLccNode);
 
   public
-    property LccServer: TLccEthernetServer read FLccServer write FLccServer;
-    property LccWebsocketServer: TLccWebsocketServer read FLccWebsocketServer write FLccWebsocketServer;
+    property LccServer: TLccEthernetServerThreadManager read FLccServer write FLccServer;
+    property LccWebsocketServer: TLccWebSocketServerThreadManager read FLccWebsocketServer write FLccWebsocketServer;
   //  property LccHTTPServer: TLccHTTPServer read FLccHTTPServer write FLccHTTPServer;
     property NodeManager: TLccNodeManager read FNodeManager write FNodeManager;
     property ComPort: TLccComPort read FComPort write FComPort;
@@ -375,14 +375,14 @@ begin
   NodeManager.OnAliasRelease := @OnNodeManagerAliasRelease;
   NodeManager.OnNodeDestroy := @OnNodeManagerNodeDestroy;
 
-  FLccServer := TLccEthernetServer.Create(nil, NodeManager);
+  FLccServer := TLccEthernetServerThreadManager.Create(nil, NodeManager);
   LccServer.OnConnectionStateChange := @OnCommandStationServerConnectionState;
   LccServer.OnErrorMessage := @OnCommandStationServerErrorMessage;
   LccServer.OnLccMessageReceive := @OnCommandStationServerReceiveMessage;
   LccServer.OnLccMessageSend := @OnCommandStationServerSendMessage;
   LccServer.Hub := True;
 
-  FLccWebsocketServer := TLccWebsocketServer.Create(nil, NodeManager);
+  FLccWebsocketServer := TLccWebSocketServerThreadManager.Create(nil, NodeManager);
   LccWebsocketServer.OnConnectionStateChange := @OnCommandStationWebsocketConnectionState;
   LccWebsocketServer.OnErrorMessage := @OnCommandStationWebsocketErrorMessage;
   LccWebsocketServer.OnLccMessageReceive := @OnCommandStationWebsocketServerReceiveMessage;
@@ -693,7 +693,7 @@ procedure TFormTrainCommander.OnCommandStationHTTPConnectionState(Sender: TObjec
 var
   ListItem: TListItem;
 begin
-  if Sender is TLccEthernetListener then
+  if Sender is TLccEthernetServerThread then
   begin
     case Info.ConnectionState of
       lcsConnecting :
