@@ -28,9 +28,9 @@ type
 
 type
 
-  { TGridConnectHelper }
+  { TGridConnectDecodeStateMachine }
 
-  TGridConnectHelper = class
+  TGridConnectDecodeStateMachine = class
   private
     FGridConnectReceiveState: Word;
     FReceiveGridConnectBuffer: TGridConnectString;
@@ -87,16 +87,16 @@ begin
   end;
 end;
 
-{ TGridConnectHelper }
+{ TGridConnectDecodeStateMachine }
 
-constructor TGridConnectHelper.Create;
+constructor TGridConnectDecodeStateMachine.Create;
 begin
  inherited Create;
   FGridConnectReceiveState := 0;
   FReceiveGridConnectBufferIndex := 0;
 end;
 
-function TGridConnectHelper.GridConnect_DecodeMachine(NextChar: Byte; var GridConnectStrPtr: PGridConnectString): Boolean;
+function TGridConnectDecodeStateMachine.GridConnect_DecodeMachine(NextChar: Byte; var GridConnectStrPtr: PGridConnectString): Boolean;
 //
 // Returns a null terminated ansii array of charaters
 //
@@ -192,7 +192,7 @@ begin
     end;  // Cas
 end;
 
-function TGridConnectHelper.IsValidHexChar(AChar: Byte): Boolean;
+function TGridConnectDecodeStateMachine.IsValidHexChar(AChar: Byte): Boolean;
 begin
   Result :=  ( (AChar >= Ord('0')) and (AChar <= Ord('9')) ) or
              ( (AChar >= Ord('A')) and (AChar <= Ord('F')) ) or

@@ -97,6 +97,7 @@ type
  //   FLccHTTPServer: TLccHTTPServer;
     FLccWebsocketServer: TLccWebSocketServerThreadManager;
     FNodeManager: TLccNodeManager;
+    FServerManager: TLccServerManager;
     FWorkerMessage: TLccMessage;
     FLccServer: TLccEthernetServerThreadManager;
   protected
@@ -161,6 +162,8 @@ type
   //  property LccHTTPServer: TLccHTTPServer read FLccHTTPServer write FLccHTTPServer;
     property NodeManager: TLccNodeManager read FNodeManager write FNodeManager;
     property ComPort: TLccComPort read FComPort write FComPort;
+
+    property ServerManager: TLccServerManager read FServerManager write FServerManager;
 
     property CommandStationNode: TLccCommandStationNode read FCommandStationNode write FCommandStationNode;
 
@@ -364,6 +367,7 @@ end;
 
 procedure TFormTrainCommander.FormCreate(Sender: TObject);
 begin
+
   NodeManager := TLccNodeManager.Create(nil, IS_GRIDCONNECT);
   NodeManager.OnNodeAliasIDChanged := @OnNodeManagerAliasIDChanged;
   NodeManager.OnNodeIDChanged := @OnNodeManagerIDChanged;
@@ -375,17 +379,20 @@ begin
   NodeManager.OnAliasRelease := @OnNodeManagerAliasRelease;
   NodeManager.OnNodeDestroy := @OnNodeManagerNodeDestroy;
 
+  ServerManager := TLccServerManager.Create(nil);
+ // ServerManager.OnLccMessageReceive := OnCommandStationMessage;
+
   FLccServer := TLccEthernetServerThreadManager.Create(nil, NodeManager);
   LccServer.OnConnectionStateChange := @OnCommandStationServerConnectionState;
   LccServer.OnErrorMessage := @OnCommandStationServerErrorMessage;
-  LccServer.OnLccMessageReceive := @OnCommandStationServerReceiveMessage;
-  LccServer.OnLccMessageSend := @OnCommandStationServerSendMessage;
+//  LccServer.OnLccMessageReceive := @OnCommandStationServerReceiveMessage;
+ // LccServer.OnLccMessageSend := @OnCommandStationServerSendMessage;
   LccServer.Hub := True;
 
   FLccWebsocketServer := TLccWebSocketServerThreadManager.Create(nil, NodeManager);
   LccWebsocketServer.OnConnectionStateChange := @OnCommandStationWebsocketConnectionState;
   LccWebsocketServer.OnErrorMessage := @OnCommandStationWebsocketErrorMessage;
-  LccWebsocketServer.OnLccMessageReceive := @OnCommandStationWebsocketServerReceiveMessage;
+ // LccWebsocketServer.OnLccMessageReceive := @OnCommandStationWebsocketServerReceiveMessage;
 
 
 //  FLccHTTPServer := TLccHTTPServer.Create(nil, NodeManager); // OpenLCB messages do not move on this interface
@@ -407,6 +414,7 @@ end;
 procedure TFormTrainCommander.FormDestroy(Sender: TObject);
 begin
   NodeManager.ReleaseAliasAll;
+  FreeAndNil(FServerManager);
  // FreeAndNil(FLccHTTPServer);
   FreeAndNil(FLccServer);
   FreeAndNil(FLccWebsocketServer);

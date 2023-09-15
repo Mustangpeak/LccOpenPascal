@@ -37,9 +37,9 @@ interface
 
 type
 
-  { TOPStackcoreTcpDecodeStateMachine }
+  { TTcpDecodeStateMachine }
 
-  TOPStackcoreTcpDecodeStateMachine = class
+  TTcpDecodeStateMachine = class
   private
     FDecodeTcpMessage: TLccDynamicByteArray;
     FiMessage: Word;
@@ -61,15 +61,15 @@ type
 implementation
 
 
-{ TOPStackcoreTcpDecodeStateMachine }
+{ TTcpDecodeStateMachine }
 
-constructor TOPStackcoreTcpDecodeStateMachine.Create;
+constructor TTcpDecodeStateMachine.Create;
 begin
   inherited Create;
   Reset;
 end;
 
-function TOPStackcoreTcpDecodeStateMachine.OPStackcoreTcp_DecodeMachine(NextByte: Byte; var TcpMessage: TLccDynamicByteArray): Boolean;
+function TTcpDecodeStateMachine.OPStackcoreTcp_DecodeMachine(NextByte: Byte; var TcpMessage: TLccDynamicByteArray): Boolean;
 begin
   Result := False;
   case TcpReceiveState of
@@ -202,7 +202,7 @@ begin
 
 end;
 
-procedure TOPStackcoreTcpDecodeStateMachine.Reset;
+procedure TTcpDecodeStateMachine.Reset;
 begin
   FDecodeTcpMessage := nil;
   FiMessage := 0;

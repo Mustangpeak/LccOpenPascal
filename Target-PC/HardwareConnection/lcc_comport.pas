@@ -99,7 +99,7 @@ type
     { Private declarations }
   protected
     { Protected declarations }
-    function IsLccLink: Boolean; override;
+ //   function IsLccLink: Boolean; override;
     function GetConnected: Boolean; override;
     function GetConnecting: Boolean; override;
     procedure DoReceiveMessage(Info: TLccHardwareConnectionInfo); reintroduce; virtual;
@@ -144,10 +144,10 @@ end;
 
 { TLccComPort }
 
-function TLccComPort.IsLccLink: Boolean;
+{function TLccComPort.IsLccLink: Boolean;
 begin
   Result := False;    // This link does not speak LCC Gridconnect/TCP... it is a custom DCC Gridconnect
-end;
+end;  }
 
 function TLccComPort.GetConnected: Boolean;
 begin
@@ -169,8 +169,8 @@ end;
 
 procedure TLccComPort.SendMessageRawGridConnect(GridConnectStr: String);
 begin
-  if Assigned(FComPortThread) then
-    ComPortThread.OutgoingGridConnectList.Add(GridConnectStr + #10);
+ // if Assigned(FComPortThread) then
+ //   ComPortThread.OutgoingGridConnectList.Add(GridConnectStr + #10);
 end;
 
 constructor TLccComPort.Create(AOwner: TComponent; ANodeManager: TLccNodeManager);
@@ -261,13 +261,13 @@ begin
             begin
                // Get all the strings from the outgoing buffer into a single concatinated string
               TxStr := '';
-              TxList := OutgoingGridConnectList.LockList;
+         //     TxList := OutgoingGridConnectList.LockList;
               try
                 for i := 0 to TxList.Count - 1 do
                   TxStr := TxStr + TxList[i] + #10;
                 TxList.Clear;
               finally
-                OutgoingGridConnectList.UnlockList;
+      //          OutgoingGridConnectList.UnlockList;
               end;
 
               // Outside of the threaded string list (so not to block the main thread sending more messages)
@@ -291,7 +291,7 @@ begin
               begin
                 GridConnectStrPtr := nil;
 
-                if GridConnectHelper.GridConnect_DecodeMachine(Ord( RcvStr[i]), GridConnectStrPtr) then
+          //      if GridConnectHelper.GridConnect_DecodeMachine(Ord( RcvStr[i]), GridConnectStrPtr) then
                 begin
                   ConnectionInfo.MessageStr := GridConnectBufferToString(GridConnectStrPtr^);
                   if not RawData then
