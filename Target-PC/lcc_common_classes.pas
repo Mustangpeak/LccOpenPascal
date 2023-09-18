@@ -27,11 +27,7 @@ uses
   lcc_node_messages,
   lcc_node_manager,
   lcc_app_common_settings,
-  lcc_threaded_circulararray,
-  lcc_ethernet_tcp,
-  lcc_threaded_stringlist,
   lcc_defines,
-  lcc_gridconnect,
   lcc_node_messages_can_assembler_disassembler;
 
 type

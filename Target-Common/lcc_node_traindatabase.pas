@@ -71,7 +71,7 @@ type
     FEngineSearchTrain: TLccEngineSearchTrain;
   protected
     property Callback: TOnLccEngineSearchAndAllocateTrainCallback read FCallback write FCallback;
-    procedure SearchTrainCa1lback(AnEngineSearchTrain: TLccEngineSearchTrain; ASearchTrain: TLccSearchTrainObject);
+    procedure SearchTrainCallback(AnEngineSearchTrain: TLccEngineSearchTrain; ASearchTrain: TLccSearchTrainObject);
   public
     property EngineSearchTrain: TLccEngineSearchTrain read FEngineSearchTrain write FEngineSearchTrain;
 
@@ -362,7 +362,7 @@ end;
 
 { TLccEngineSearchAndAllocateTrain }
 
-procedure TLccEngineSearchAndAllocateTrain.SearchTrainCa1lback(AnEngineSearchTrain: TLccEngineSearchTrain; ASearchTrain: TLccSearchTrainObject);
+procedure TLccEngineSearchAndAllocateTrain.SearchTrainCallback(AnEngineSearchTrain: TLccEngineSearchTrain; ASearchTrain: TLccSearchTrainObject);
 begin
   if AnEngineSearchTrain.EngineState = lesComplete then
   begin
@@ -452,19 +452,19 @@ end;
 procedure TLccEngineSearchAndAllocateTrain.Assign(DccAddress: Word; IsLongAddress: Boolean; SpeedSteps: TLccDccSpeedStep; ACallback: TOnLccEngineSearchAndAllocateTrainCallback);
 begin
   Callback := ACallback;
-  EngineSearchTrain.Assign(DccAddress, IsLongAddress, SpeedSteps, {$IFNDEF LCC_DELPHI}@{$ENDIF}SearchTrainCa1lback);
+  EngineSearchTrain.Assign(DccAddress, IsLongAddress, SpeedSteps, {$IFNDEF LCC_DELPHI}@{$ENDIF}SearchTrainCallback);
 end;
 
 procedure TLccEngineSearchAndAllocateTrain.Assign(SearchString: string; IsLongAddress: Boolean; SpeedSteps: TLccDccSpeedStep; ACallback: TOnLccEngineSearchAndAllocateTrainCallback);
 begin
   Callback := ACallback;
-  EngineSearchTrain.Assign(SearchString, IsLongAddress, SpeedSteps, {$IFNDEF LCC_DELPHI}@{$ENDIF}SearchTrainCa1lback);
+  EngineSearchTrain.Assign(SearchString, IsLongAddress, SpeedSteps, {$IFNDEF LCC_DELPHI}@{$ENDIF}SearchTrainCallback);
 end;
 
 procedure TLccEngineSearchAndAllocateTrain.Assign(SearchString: string; TrackProtocolFlags: Word; ACallback: TOnLccEngineSearchAndAllocateTrainCallback);
 begin
   Callback := ACallback;
-  EngineSearchTrain.Assign(SearchString, TrackProtocolFlags, {$IFNDEF LCC_DELPHI}@{$ENDIF}SearchTrainCa1lback);
+  EngineSearchTrain.Assign(SearchString, TrackProtocolFlags, {$IFNDEF LCC_DELPHI}@{$ENDIF}SearchTrainCallback);
 end;
 
 { TLccTractionServerNode }

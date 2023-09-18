@@ -46,7 +46,8 @@ uses
   lcc_gridconnect,
   lcc_ethernet_tcp,
   lcc_node,
-  lcc_alias_server;
+//  lcc_alias_server,
+  lcc_alias_server_thread;
 
 type
 
@@ -230,7 +231,7 @@ procedure TLccWebsocketConnectionContext.IncomingRawData(DataStream: TStream);
 var
   l: byte;
   b: array [0..7] of byte;
-  i, DecodedSize: int64;
+  DecodedSize: int64;
   Mask: array [0..3] of byte;
 begin
   // https://stackoverflow.com/questions/8125507/how-can-i-send-and-receive-websocket-messages-on-the-server-side
@@ -710,12 +711,7 @@ begin
         case GridConnectMessageAssembler.IncomingMessageGridConnect(WorkerMessage) of
           imgcr_True :
             begin
-          //    NodeManager.ReceiveMessageServerThread.ReceiveMessageServerAddMessage(WorkerMessage);
-          //    try
-           //     if not OwnerListenerThread.Terminated then
-           //       OwnerListenerThread.Synchronize(OwnerListenerThread.ReceiveMessageFromContextViaSyncronize);  // WorkerMessage contains the message
-           //   except
-          //    end;
+               AliasServerThread.AddIncomingMessage(WorkerMessage, True);
             end;
           imgcr_ErrorToSend :
             begin
@@ -741,12 +737,7 @@ begin
       begin
         if WorkerMessage.LoadByLccTcp(LocalDataArray) then
         begin
-    //      NodeManager.ReceiveMessageServerThread.ReceiveMessageServerAddMessage(WorkerMessage);
-    //      try
-    //        if not OwnerListenerThread.Terminated then
-    //          OwnerListenerThread.Synchronize(OwnerListenerThread.ReceiveMessageFromContextViaSyncronize);
-    //      except
-    //      end;
+          AliasServerThread.AddIncomingMessage(WorkerMessage, False);
         end
       end;
     end;

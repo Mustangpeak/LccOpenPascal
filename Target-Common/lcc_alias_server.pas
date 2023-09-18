@@ -25,19 +25,37 @@ uses
 
 type
 
+
   { TLccAliasMapping }
 
   TLccAliasMapping = class(TObject)
   private
+    FAbandonCount: Integer;
     FMarkedForDeletion: Boolean;   // These are for the Event notification system.  It is called through a timer
     FMarkedForInsertion: Boolean;  // to call the main threads event handlers to notify the app of insertion or deletion
     FNodeAlias: Word;
     FNodeID: TNodeID;
+  protected
+    property AbandonCount: Integer read FAbandonCount write FAbandonCount;
   public
     property NodeID: TNodeID read FNodeID write FNodeID;
     property NodeAlias: Word read FNodeAlias write FNodeAlias;
     property MarkedForDeletion: Boolean read FMarkedForDeletion write FMarkedForDeletion;
     property MarkedForInsertion: Boolean read FMarkedForInsertion write FMarkedForInsertion;
+
+    procedure AssignID(ANodeID: TNodeID; AnAlias: Word);
+    function Clone: TLccAliasMapping;
+    function Compare(TestMapping: TLccAliasMapping): Boolean;
+    function CompareEitherOr(TestMapping: TLccAliasMapping): Boolean;
+  end;
+
+
+  // List of TLccAliasMapping objects that define all the mappings for any node referenced
+  // within a LccMessage (Source, Destination, any NodeID's carried in payload
+  { TLccMessageAliasMappingList }
+
+  TLccMessageAliasMappingList = class(TList)
+
   end;
 
 
@@ -85,6 +103,31 @@ implementation
 
 uses
   lcc_base_classes;
+
+{ TLccAliasMapping }
+
+procedure TLccAliasMapping.AssignID(ANodeID: TNodeID; AnAlias: Word);
+begin
+  FNodeID := ANodeID;
+  FNodeAlias := AnAlias;
+end;
+
+function TLccAliasMapping.Clone: TLccAliasMapping;
+begin
+  Result := TLccAliasMapping.Create;
+  Result.AssignID(NodeID, NodeAlias);
+  Result.AbandonCount := 0;
+end;
+
+function TLccAliasMapping.Compare(TestMapping: TLccAliasMapping): Boolean;
+begin
+  Result := (TestMapping.NodeAlias = NodeAlias) and (TestMapping.NodeID[0] = NodeID[0]) and (TestMapping.NodeID[0] = NodeID[0])
+end;
+
+function TLccAliasMapping.CompareEitherOr(TestMapping: TLccAliasMapping): Boolean;
+begin
+  Result := (TestMapping.NodeAlias = NodeAlias) or ((TestMapping.NodeID[0] = NodeID[0]) and (TestMapping.NodeID[0] = NodeID[0]))
+end;
 
 { TLccAliasServer }
 

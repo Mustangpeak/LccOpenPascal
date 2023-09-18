@@ -53,7 +53,6 @@ type
       property GridConnectHelper: TGridConnectDecodeStateMachine read FGridConnectHelper write FGridConnectHelper;
       property Owner: TLccEthernetClientThreadManager read FOwner write FOwner;
       procedure Execute; override;
-      procedure ReceiveMessage;  // For Syncronize
       procedure OnClientConnected(Sender: TObject);
       procedure OnClientDisconnected(Sender: TObject);
       procedure OnThreadComponentRun(Sender: TIdThreadComponent);
@@ -234,11 +233,6 @@ begin
       FRunning := False;
     end;
   end;
-end;
-
-procedure TLccEthernetClientThread.ReceiveMessage;
-begin
-//  (Owner as TLccEthernetClientThreadManager).DoReceiveMessage(WorkerMessage);
 end;
 
 procedure TLccEthernetClientThread.OnClientConnected(Sender: TObject);
