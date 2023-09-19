@@ -265,11 +265,11 @@ begin
     AssignedTrain.AcceptSearchCriteriaPending;
     if GridConnect then
     begin
-      AliasMapping := AliasServer.FindMapping(SourceMessage.CAN.SourceAlias);
+      AliasMapping := AliasServer.FindMapping(SourceMessage.SourceAlias);
       Assert(Assigned(AliasMapping), 'TLccTrainController.' +'ProcessMessageLCC: Alias Mapping was nil');
       WorkerMessage.LoadTractionControllerAssign(NodeID, AliasID, AliasMapping.NodeID, AliasMapping.NodeAlias, NodeID);
     end else
-      WorkerMessage.LoadTractionControllerAssign(NodeID, AliasID, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias, NodeID);
+      WorkerMessage.LoadTractionControllerAssign(NodeID, AliasID, SourceMessage.SourceID, SourceMessage.SourceAlias, NodeID);
     SendMessageFunc(Self, WorkerMessage);    // The reply will fill in the assigned train if successful
   end;
 end;
@@ -294,7 +294,7 @@ begin
   case SourceMessage.TractionExtractControllerAssignResult of
     TRACTION_CONTROLLER_CONFIG_REPLY_OK :
       begin
-        AssignedTrain.AssignTrain(SourceMessage.SourceID, SourceMessage.CAN.SourceAlias);
+        AssignedTrain.AssignTrain(SourceMessage.SourceID, SourceMessage.SourceAlias);
       end;
 {    TRACTION_CONTROLLER_CONFIG_ASSIGN_REPLY_REFUSE_ASSIGNED_CONTROLLER :      // Depreciated bad idea
       begin

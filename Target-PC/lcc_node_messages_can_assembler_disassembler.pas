@@ -158,7 +158,7 @@ begin
   for i := 0 to Messages.Count - 1 do
   begin
     LccMessage := TLccMessage(Messages[i]);
-    if (AMessage.CAN.SourceAlias = LccMessage.CAN.SourceAlias) and (AMessage.CAN.DestAlias = LccMessage.CAN.DestAlias) and (AMessage.MTI = LccMessage.MTI) then
+    if (AMessage.SourceAlias = LccMessage.SourceAlias) and (AMessage.DestAlias = LccMessage.DestAlias) and (AMessage.MTI = LccMessage.MTI) then
     begin
       Result := LccMessage;
       Break
@@ -175,7 +175,7 @@ begin
   for i := Messages.Count - 1 downto 0  do
   begin
     AMessage := TLccMessage(Messages[i]);
-    if (AMessage.CAN.SourceAlias = Alias) or (AMessage.CAN.DestAlias = Alias) then
+    if (AMessage.SourceAlias = Alias) or (AMessage.DestAlias = Alias) then
     begin
       if AMessage.MTI = MTI_DATAGRAM then
         Dec(AllocatedDatagrams);
@@ -203,16 +203,16 @@ begin                                                                           
   begin
     if LccMessage.IsCAN then
     begin  // CAN Only frames
-      case LccMessage.CAN.MTI of
+      case LccMessage.CAN_MTI of
         MTI_CAN_AMR :
           begin
             // If the Alias is being reset flush all messages associated with it
-            FlushMessagesByAlias(LccMessage.CAN.SourceAlias);
+            FlushMessagesByAlias(LccMessage.SourceAlias);
             Result := imgcr_True  // Pass it on
           end;
         MTI_CAN_AMD :
           begin
-            FlushMessagesByAlias(LccMessage.CAN.SourceAlias);
+            FlushMessagesByAlias(LccMessage.SourceAlias);
             Result := imgcr_True  // Pass it on
           end;
         MTI_CAN_FRAME_TYPE_DATAGRAM_FRAME_ONLY :
@@ -228,7 +228,7 @@ begin                                                                           
                 Result := imgcr_True
               end else
               begin
-                LccMessage.LoadDatagramRejected(LccMessage.DestID, LccMessage.CAN.DestAlias, LccMessage.SourceID, LccMessage.CAN.SourceAlias, ERROR_TEMPORARY_BUFFER_UNAVAILABLE);
+                LccMessage.LoadDatagramRejected(LccMessage.DestID, LccMessage.DestAlias, LccMessage.SourceID, LccMessage.SourceAlias, ERROR_TEMPORARY_BUFFER_UNAVAILABLE);
                 Result := imgcr_ErrorToSend
               end;
             end;
@@ -238,7 +238,7 @@ begin                                                                           
             InProcessMessage := FindByAliasAndMTI(LccMessage);
             if Assigned(InProcessMessage) then
             begin
-              LccMessage.LoadDatagramRejected(LccMessage.DestID, LccMessage.CAN.DestAlias, LccMessage.SourceID, LccMessage.CAN.SourceAlias, ERROR_TEMPORARY_NOT_EXPECTED or ERROR_NO_END_FRAME);
+              LccMessage.LoadDatagramRejected(LccMessage.DestID, LccMessage.DestAlias, LccMessage.SourceID, LccMessage.SourceAlias, ERROR_TEMPORARY_NOT_EXPECTED or ERROR_NO_END_FRAME);
               Result := imgcr_ErrorToSend;
               Remove(InProcessMessage, True)                                         // Something is wrong, out of order.  Throw it away
             end
@@ -271,12 +271,12 @@ begin                                                                           
               Remove(InProcessMessage, True);
               LccMessage.IsCAN := False;
               LccMessage.MTI := MTI_DATAGRAM;
-              LccMessage.CAN.MTI := 0;
+              LccMessage.CAN_MTI := 0;
               Dec(AllocatedDatagrams);
               Result := imgcr_True
             end else
             begin  // Out of order but let the node handle that if needed, note this could be also if we ran out of buffers....
-              LccMessage.LoadDatagramRejected(LccMessage.DestID, LccMessage.CAN.DestAlias, LccMessage.SourceID, LccMessage.CAN.SourceAlias, ERROR_TEMPORARY_NOT_EXPECTED or ERROR_NO_START_FRAME);
+              LccMessage.LoadDatagramRejected(LccMessage.DestID, LccMessage.DestAlias, LccMessage.SourceID, LccMessage.SourceAlias, ERROR_TEMPORARY_NOT_EXPECTED or ERROR_NO_START_FRAME);
               Result := imgcr_ErrorToSend
             end;
           end;
@@ -289,14 +289,14 @@ begin                                                                           
       end
     end else
     begin
-      if LccMessage.CAN.FramingBits <> $00 then                                // Is it a Multi Frame Message?
+      if LccMessage.CAN_FramingBits <> $00 then                                // Is it a Multi Frame Message?
       begin
-        case LccMessage.CAN.FramingBits of                                     // Train SNIP falls under this now
+        case LccMessage.CAN_FramingBits of                                     // Train SNIP falls under this now
           $10 : begin   // First Frame
                   InProcessMessage := FindByAliasAndMTI(LccMessage);
                   if Assigned(InProcessMessage) then
                   begin
-                    LccMessage.LoadOptionalInteractionRejected(LccMessage.DestID, LccMessage.CAN.DestAlias, LccMessage.SourceID, LccMessage.CAN.SourceAlias, ERROR_TEMPORARY_NOT_EXPECTED or ERROR_NO_END_FRAME, LccMessage.MTI);
+                    LccMessage.LoadOptionalInteractionRejected(LccMessage.DestID, LccMessage.DestAlias, LccMessage.SourceID, LccMessage.SourceAlias, ERROR_TEMPORARY_NOT_EXPECTED or ERROR_NO_END_FRAME, LccMessage.MTI);
                     Result := imgcr_ErrorToSend;
                     Remove(InProcessMessage, True)                              // Something is wrong, out of order.  Throw it away
                   end else
@@ -318,7 +318,7 @@ begin                                                                           
                   begin
                     // Out of order but let the node handle that if needed (Owned Nodes Only)
                     // Don't swap the IDs, need to find the right target node first
-                    LccMessage.LoadOptionalInteractionRejected(LccMessage.DestID, LccMessage.CAN.DestAlias, LccMessage.SourceID, LccMessage.CAN.SourceAlias, ERROR_TEMPORARY_NOT_EXPECTED or ERROR_NO_START_FRAME, LccMessage.MTI);
+                    LccMessage.LoadOptionalInteractionRejected(LccMessage.DestID, LccMessage.DestAlias, LccMessage.SourceID, LccMessage.SourceAlias, ERROR_TEMPORARY_NOT_EXPECTED or ERROR_NO_START_FRAME, LccMessage.MTI);
                     Result := imgcr_ErrorToSend
                   end;
                 end;
@@ -339,7 +339,7 @@ begin                                                                           
           for i := 0 to InProcessMessage.DataCount - 1 do
           begin
             if InProcessMessage.DataArray[i] = Ord(#0) then
-              InProcessMessage.CAN.iTag := InProcessMessage.CAN.iTag + 1
+              InProcessMessage.iTag := InProcessMessage.iTag + 1
           end;
           Add(InProcessMessage);
         end else

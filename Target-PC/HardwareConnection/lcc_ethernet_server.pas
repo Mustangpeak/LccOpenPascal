@@ -123,7 +123,6 @@ type
     procedure IdTCPServerDisconnect(AContext: TIdContext); virtual;
     procedure IdTCPServerExecute(AContext: TIdContext); virtual;
 
-    procedure ReceiveMessageFromContextViaSyncronize;  // For Syncronize
     procedure SetConnecting(AValue: Boolean); override;
 
     procedure Execute; override;
@@ -637,8 +636,7 @@ begin
   end;
 end;
 
-procedure TLccConnectionContextList.IncomingRawDataForContext(
-  AContext: TIdContext; ADataStream: TStream);
+procedure TLccConnectionContextList.IncomingRawDataForContext(AContext: TIdContext; ADataStream: TStream);
 var
   ContextList:  TList;
   iContext: Integer;
@@ -893,7 +891,7 @@ begin
 
   // Messages serialized here from all the Connections (Contexts)
 
-  ReceiveStream.Size := 0;
+  ReceiveStream.Clear;
   AContext.Connection.IOHandler.ReadStream(ReceiveStream);
   ConnectionContextList.IncomingRawDataForContext(AContext, ReceiveStream);
 
@@ -916,11 +914,6 @@ begin
      // https://stackoverflow.com/questions/64593756/delphi-rio-indy-tcpserver-high-cpu-usage
     // There is another way to do this but with this simple program this is fine
   IndySleep(THREAD_SLEEP_TIME);
-end;
-
-procedure TLccEthernetServerThread.ReceiveMessageFromContextViaSyncronize;
-begin
- // (Owner as TLccEthernetServerThreadManager).DoReceiveMessage(ConnectionContextList.WorkerMessage);
 end;
 
 procedure TLccEthernetServerThread.SetConnecting(AValue: Boolean);

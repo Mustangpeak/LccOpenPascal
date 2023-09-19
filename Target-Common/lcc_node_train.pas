@@ -904,11 +904,11 @@ begin
   if DoDefault then
   begin
     // First check to see if the train is assigned to a controller.  If it is then if it is already assigned to the calling controller all is good and just reply Ok
-    if ControllerState.IsControllerAssigned and not ControllerState.IsControllerEqual(SourceMessage.SourceID, SourceMessage.CAN.SourceAlias) then
+    if ControllerState.IsControllerAssigned and not ControllerState.IsControllerEqual(SourceMessage.SourceID, SourceMessage.SourceAlias) then
     begin
       // There is another controller driving this train, need to ask if it will give the train up
       // Store the requesting controller that wants the train
-      ControllerState.AssignRequestingController(SourceMessage.SourceID, SourceMessage.CAN.SourceAlias);
+      ControllerState.AssignRequestingController(SourceMessage.SourceID, SourceMessage.SourceAlias);
 
       // The train will call the currently attached node and tell it that it is loosing control
       WorkerMessage.LoadTractionControllerChangedNotify(NodeID, AliasID, ControllerState.AttachedController.NodeID, ControllerState.AttachedController.Alias, ControllerState.RequestingController.NodeID);
@@ -916,9 +916,9 @@ begin
       // Now need to wait for a Changing Notity Reply
     end else
     begin
-      ControllerState.AssignController(SourceMessage.SourceID, SourceMessage.CAN.SourceAlias);
+      ControllerState.AssignController(SourceMessage.SourceID, SourceMessage.SourceAlias);
 
-      WorkerMessage.LoadTractionControllerAssignReply(NodeID, AliasID, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias, TRACTION_CONTROLLER_CONFIG_REPLY_OK);
+      WorkerMessage.LoadTractionControllerAssignReply(NodeID, AliasID, SourceMessage.SourceID, SourceMessage.SourceAlias, TRACTION_CONTROLLER_CONFIG_REPLY_OK);
       SendMessageFunc(Self, WorkerMessage);
     end;
   end;
@@ -933,7 +933,7 @@ begin
 
   if DoDefault then
   begin
-    if ControllerState.IsControllerAssigned and ControllerState.IsControllerEqual(SourceMessage.SourceID, SourceMessage.CAN.SourceAlias) then
+    if ControllerState.IsControllerAssigned and ControllerState.IsControllerEqual(SourceMessage.SourceID, SourceMessage.SourceAlias) then
       ControllerState.Clear
   end
 end;
@@ -950,9 +950,9 @@ begin
     // I could just return ControllerState.AttachedController.NodeID as if not assigned it will be NULL anyway
     if ControllerState.IsControllerAssigned then
     begin
-      WorkerMessage.LoadTractionControllerQueryReply(NodeID, AliasID, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias, ControllerState.AttachedController.NodeID);
+      WorkerMessage.LoadTractionControllerQueryReply(NodeID, AliasID, SourceMessage.SourceID, SourceMessage.SourceAlias, ControllerState.AttachedController.NodeID);
     end else
-      WorkerMessage.LoadTractionControllerQueryReply(NodeID, AliasID, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias, NULL_NODE_ID);
+      WorkerMessage.LoadTractionControllerQueryReply(NodeID, AliasID, SourceMessage.SourceID, SourceMessage.SourceAlias, NULL_NODE_ID);
     SendMessageFunc(Self, WorkerMessage);
   end;
 end;
@@ -975,11 +975,11 @@ begin
   if DoDefault then
   begin
     // If we are reserved and not reserved by the node calling then fail
-    if ReservedNodeState.IsAssigned and not ReservedNodeState.IsEqual(SourceMessage.SourceID, SourceMessage.CAN.SourceAlias) then
-      WorkerMessage.LoadTractionManageReply(SourceMessage.DestID, SourceMessage.CAN.DestAlias, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias, False)
+    if ReservedNodeState.IsAssigned and not ReservedNodeState.IsEqual(SourceMessage.SourceID, SourceMessage.SourceAlias) then
+      WorkerMessage.LoadTractionManageReply(SourceMessage.DestID, SourceMessage.DestAlias, SourceMessage.SourceID, SourceMessage.SourceAlias, False)
     else begin
-      ReservedNodeState.AssignReservedNode(SourceMessage.DestID, SourceMessage.CAN.DestAlias);
-      WorkerMessage.LoadTractionManageReply(SourceMessage.DestID, SourceMessage.CAN.DestAlias, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias, True)
+      ReservedNodeState.AssignReservedNode(SourceMessage.DestID, SourceMessage.DestAlias);
+      WorkerMessage.LoadTractionManageReply(SourceMessage.DestID, SourceMessage.DestAlias, SourceMessage.SourceID, SourceMessage.SourceAlias, True)
     end;
     SendMessageFunc(Self, WorkerMessage);
   end;
@@ -995,7 +995,7 @@ begin
   if DoDefault then
   begin
     // If we are reserved and reserved by the node then release it
-    if ReservedNodeState.IsAssigned and ReservedNodeState.IsEqual(SourceMessage.SourceID, SourceMessage.CAN.SourceAlias) then
+    if ReservedNodeState.IsAssigned and ReservedNodeState.IsEqual(SourceMessage.SourceID, SourceMessage.SourceAlias) then
       ReservedNodeState.ClearReservedNode;
   end
 end;
@@ -1032,13 +1032,13 @@ begin
     end;
 
     if EqualNodeID(NodeID, ListenerNodeID, False) then  // Trying to create a Listener that is the nodes itself.... will cause infinte loops
-      WorkerMessage.LoadTractionListenerAttachReply(NodeID, AliasID, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias, ListenerNodeID, ERROR_PERMANENT_INVALID_ARGUMENTS)
+      WorkerMessage.LoadTractionListenerAttachReply(NodeID, AliasID, SourceMessage.SourceID, SourceMessage.SourceAlias, ListenerNodeID, ERROR_PERMANENT_INVALID_ARGUMENTS)
     else begin
       NewListenerNode := Listeners.FindListener(ListenerNodeID);
       if Assigned(NewListenerNode) then
       begin  // Simple update of flags
         NewListenerNode.DecodeFlags(ListenerAttachFlags);
-        WorkerMessage.LoadTractionListenerAttachReply(NodeID, AliasID, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias, ListenerNodeID, S_OK)
+        WorkerMessage.LoadTractionListenerAttachReply(NodeID, AliasID, SourceMessage.SourceID, SourceMessage.SourceAlias, ListenerNodeID, S_OK)
       end else
       begin  // Add The listener to the list
         NewListenerNode := TListenerNode.Create;
@@ -1048,9 +1048,9 @@ begin
           NewListenerNode.AliasID := ListenerNodeAlias;
           NewListenerNode.DecodeFlags(ListenerAttachFlags);
           Listeners.Add(NewListenerNode);
-          WorkerMessage.LoadTractionListenerAttachReply(NodeID, AliasID, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias, ListenerNodeID, S_OK)
+          WorkerMessage.LoadTractionListenerAttachReply(NodeID, AliasID, SourceMessage.SourceID, SourceMessage.SourceAlias, ListenerNodeID, S_OK)
         end else
-          WorkerMessage.LoadTractionListenerAttachReply(NodeID, AliasID, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias, ListenerNodeID, ERROR_TEMPORARY_BUFFER_UNAVAILABLE)
+          WorkerMessage.LoadTractionListenerAttachReply(NodeID, AliasID, SourceMessage.SourceID, SourceMessage.SourceAlias, ListenerNodeID, ERROR_TEMPORARY_BUFFER_UNAVAILABLE)
       end;
     end;
     SendMessageFunc(Self, WorkerMessage);
@@ -1072,9 +1072,9 @@ begin
     ListenerNodeID := SourceMessage.TractionExtractListenerID;
 
     if Listeners.DeleteListener(ListenerNodeID) then
-      WorkerMessage.LoadTractionListenerDetachReply(NodeID, AliasID, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias, ListenerNodeID, S_OK)
+      WorkerMessage.LoadTractionListenerDetachReply(NodeID, AliasID, SourceMessage.SourceID, SourceMessage.SourceAlias, ListenerNodeID, S_OK)
     else
-      WorkerMessage.LoadTractionListenerDetachReply(NodeID, AliasID, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias, ListenerNodeID, ERROR_PERMANENT_INVALID_ARGUMENTS);
+      WorkerMessage.LoadTractionListenerDetachReply(NodeID, AliasID, SourceMessage.SourceID, SourceMessage.SourceAlias, ListenerNodeID, ERROR_PERMANENT_INVALID_ARGUMENTS);
     SendMessageFunc(Self, WorkerMessage);
 
     (NodeManager as INodeManagerTractionCallbacks).DoTractionListenerDetached(Self, SourceMessage);
@@ -1093,15 +1093,15 @@ begin
   if DoDefault then
   begin
     if (SourceMessage.DataCount = 2) then // no query data, just wants the total number of listeners retured
-      WorkerMessage.LoadTractionListenerQueryReply(NodeID, AliasID, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias, Listeners.Count, 0, NULL_NODE_ID, 0)
+      WorkerMessage.LoadTractionListenerQueryReply(NodeID, AliasID, SourceMessage.SourceID, SourceMessage.SourceAlias, Listeners.Count, 0, NULL_NODE_ID, 0)
     else begin
       RequestedIndex := SourceMessage.TractionExtractListenerIndex;
       if RequestedIndex < Listeners.Count then
       begin
         Listener := Listeners[RequestedIndex];
-        WorkerMessage.LoadTractionListenerQueryReply(NodeID, AliasID, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias, Listeners.Count, RequestedIndex, Listener.NodeID, Listener.EncodeFlags);
+        WorkerMessage.LoadTractionListenerQueryReply(NodeID, AliasID, SourceMessage.SourceID, SourceMessage.SourceAlias, Listeners.Count, RequestedIndex, Listener.NodeID, Listener.EncodeFlags);
       end else
-        WorkerMessage.LoadTractionListenerQueryReply(NodeID, AliasID, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias, Listeners.Count, 0, NULL_NODE_ID, 0);   // Outside of range, bad index
+        WorkerMessage.LoadTractionListenerQueryReply(NodeID, AliasID, SourceMessage.SourceID, SourceMessage.SourceAlias, Listeners.Count, 0, NULL_NODE_ID, 0);   // Outside of range, bad index
     end;
     SendMessageFunc(Self, WorkerMessage);
   end;
@@ -1160,7 +1160,7 @@ begin
 
   if DoDefault then
   begin
-    WorkerMessage.LoadTractionQuerySpeedReply(NodeId, AliasID, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias, GetSpeed(SourceMessage), 0, HalfNaN, HalfNaN);
+    WorkerMessage.LoadTractionQuerySpeedReply(NodeId, AliasID, SourceMessage.SourceID, SourceMessage.SourceAlias, GetSpeed(SourceMessage), 0, HalfNaN, HalfNaN);
     SendMessageFunc(Self, WorkerMessage);
   end;
 end;
@@ -1176,7 +1176,7 @@ begin
   if DoDefault then
   begin
     FunctionAddress := SourceMessage.TractionExtractFunctionAddress;
-    WorkerMessage.LoadTractionQueryFunctionReply(NodeId, AliasID, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias, FunctionAddress, Functions[FunctionAddress, nil]);
+    WorkerMessage.LoadTractionQueryFunctionReply(NodeId, AliasID, SourceMessage.SourceID, SourceMessage.SourceAlias, FunctionAddress, Functions[FunctionAddress, nil]);
     SendMessageFunc(Self, WorkerMessage);
   end;
 end;
@@ -1266,7 +1266,7 @@ begin
     begin
       ListenerNode := TListenerNode(Listeners[i]);
       // Don't sent back to the same place that sent the message
-      if not EqualNode(ListenerNode.NodeID, ListenerNode.AliasID, AMessage.SourceID, AMessage.CAN.SourceAlias, True) then
+      if not EqualNode(ListenerNode.NodeID, ListenerNode.AliasID, AMessage.SourceID, AMessage.SourceAlias, True) then
       begin
         if ListenerNode.LinkF0 and (Index = 0 ) then
         begin
@@ -1301,7 +1301,7 @@ begin
   begin
     ListenerNode := Listeners[i];
 
-    if not EqualNode(ListenerNode.NodeID, ListenerNode.AliasID, AMessage.SourceID, AMessage.CAN.SourceAlias, True) then
+    if not EqualNode(ListenerNode.NodeID, ListenerNode.AliasID, AMessage.SourceID, AMessage.SourceAlias, True) then
     begin
       if ListenerNode.ReverseDirection then
         WorkerMessage.LoadTractionSetSpeed(NodeID, AliasID, ListenerNode.NodeID, ListenerNode.AliasID, FlipHalfFloatSign(FSpeed))

@@ -74,6 +74,8 @@ begin
 
   while not Terminated do
   begin
+    // Any of this will ONLY run if in during the AddIncomingMessage call it was defined as a GridConnect so
+    // the assumption here is ONLY gridconnect with Alias's are here.
 
   end;
 end;

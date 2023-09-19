@@ -337,7 +337,7 @@ begin
           LocalMessage := TLccMessage( LocalMessageList[i]);
           if Owner.GridConnect then
           begin
-            if EqualNodeID(LocalMessage.SourceID, NULL_NODE_ID, True) and (LocalMessage.CAN.SourceAlias = 0) then    // Malformed Message with no SourceID
+            if EqualNodeID(LocalMessage.SourceID, NULL_NODE_ID, True) and (LocalMessage.SourceAlias = 0) then    // Malformed Message with no SourceID
               LocalMessage.Free
             else begin
               // Pick out the Verify Message and AMR/AMD to update the AliasMapping Database
@@ -459,7 +459,7 @@ var
   LocalSourceNode: TLccNode;
 begin
   if Owner.GridConnect then
-    LocalSourceNode := Owner.FindNode(ReceivedMessage.CAN.SourceAlias)
+    LocalSourceNode := Owner.FindNode(ReceivedMessage.SourceAlias)
   else
     LocalSourceNode := Owner.FindNode(ReceivedMessage.SourceID);
 
@@ -477,15 +477,15 @@ procedure TReceiveMessageServerThread.UpdateGlobalMappings(AMessage: TLccMessage
 var
   LocalNodeID: TNodeID;
 begin
-  case AMessage.CAN.MTI of
+  case AMessage.CAN_MTI of
     MTI_CAN_AMR :
       begin
-        AliasServer.MarkForRemovalByAlias(AMessage.CAN.SourceAlias);
+        AliasServer.MarkForRemovalByAlias(AMessage.SourceAlias);
       end;
     MTI_CAN_AMD :
       begin
         LocalNodeID := NULL_NODE_ID;
-        AliasServer.AddMapping(AMessage.ExtractDataBytesAsNodeID(0, LocalNodeID), AMessage.CAN.SourceAlias);
+        AliasServer.AddMapping(AMessage.ExtractDataBytesAsNodeID(0, LocalNodeID), AMessage.SourceAlias);
       end;
     MTI_CAN_AME :
       begin
@@ -499,7 +499,7 @@ begin
     MTI_INITIALIZATION_COMPLETE :
       begin
         LocalNodeID := NULL_NODE_ID;
-        AliasServer.AddMapping(AMessage.ExtractDataBytesAsNodeID(0, LocalNodeID), AMessage.CAN.SourceAlias);
+        AliasServer.AddMapping(AMessage.ExtractDataBytesAsNodeID(0, LocalNodeID), AMessage.SourceAlias);
       end;
     MTI_VERIFY_NODE_ID_NUMBER :
       begin

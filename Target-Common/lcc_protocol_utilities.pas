@@ -304,8 +304,8 @@ begin
   OutMessage.ZeroFields;
   OutMessage.SourceID := InMessage.DestID;
   OutMessage.DestID := InMessage.SourceID;
-  OutMessage.CAN.SourceAlias := InMessage.CAN.DestAlias;
-  OutMessage.CAN.DestAlias := InMessage.CAN.SourceAlias;
+  OutMessage.SourceAlias := InMessage.DestAlias;
+  OutMessage.DestAlias := InMessage.SourceAlias;
   OutMessage.MTI := MTI_DATAGRAM;
 end;
 

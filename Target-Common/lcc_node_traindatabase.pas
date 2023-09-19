@@ -271,10 +271,10 @@ begin
   begin
     if OwnerNode.GridConnect then
     begin
-      AliasMapping := AliasServer.FindMapping(SourceMessage.CAN.SourceAlias);
+      AliasMapping := AliasServer.FindMapping(SourceMessage.SourceAlias);
       SearchTrain.NodeIdentification.AssignID(AliasMapping.NodeID, AliasMapping.NodeAlias);
     end else
-      SearchTrain.NodeIdentification.AssignID(SourceMessage.SourceID, SourceMessage.CAN.SourceAlias);
+      SearchTrain.NodeIdentification.AssignID(SourceMessage.SourceID, SourceMessage.SourceAlias);
     SearchTrain.SearchCriteria := SearchCriteriaPending;
     Callback(Self, SearchTrain)
   end;

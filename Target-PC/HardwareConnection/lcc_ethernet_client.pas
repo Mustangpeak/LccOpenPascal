@@ -252,7 +252,7 @@ begin
 
   if not IdTCPClient.IOHandler.InputBufferIsEmpty and IdTCPClient.IOHandler.Connected then
   begin
-    ReceiveStream.Size := 0;
+    ReceiveStream.Clear;
     idTCPClient.IOHandler.ReadStream(ReceiveStream);
   end;
 

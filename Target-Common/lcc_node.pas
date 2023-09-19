@@ -1305,11 +1305,11 @@ begin
   i := 0;
   while i < Queue.Count do
   begin
-    QueueAlias := (Queue[i] as TLccMessage).CAN.DestAlias;
+    QueueAlias := (Queue[i] as TLccMessage).DestAlias;
     QueueNodeID := (Queue[i] as TLccMessage).DestID;
-    if (QueueAlias <> 0) and (LccMessage.CAN.SourceAlias <> 0) then
+    if (QueueAlias <> 0) and (LccMessage.SourceAlias <> 0) then
     begin
-      if QueueAlias = LccMessage.CAN.SourceAlias then
+      if QueueAlias = LccMessage.SourceAlias then
       begin
         Result := i;
         Break
@@ -1615,7 +1615,7 @@ end;
 
 procedure TLccNode.HandleProtocolSupportInquiry(var SourceMessage: TLccMessage);
 begin
-  WorkerMessage.LoadProtocolIdentifyReply(NodeID, FAliasID, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias, ProtocolSupportedProtocols.EncodeFlags);
+  WorkerMessage.LoadProtocolIdentifyReply(NodeID, FAliasID, SourceMessage.SourceID, SourceMessage.SourceAlias, ProtocolSupportedProtocols.EncodeFlags);
   SendMessageFunc(Self, WorkerMessage);
 end;
 
@@ -1632,7 +1632,7 @@ end;
 procedure TLccNode.HandleSimpleNodeInfoRequest(var SourceMessage: TLccMessage);
 begin
   WorkerMessage.LoadSimpleNodeIdentInfoReply(NodeID, FAliasID,
-  SourceMessage.SourceID, SourceMessage.CAN.SourceAlias,
+  SourceMessage.SourceID, SourceMessage.SourceAlias,
   ProtocolSimpleNodeInfo.PackedFormat(StreamManufacturerData, StreamConfig));
   SendMessageFunc(Self, WorkerMessage);
 end;
@@ -1653,7 +1653,7 @@ procedure TLccNode.SendMemoryReadFailure(var MemoryReadRequestMessage: TLccMessa
 begin
   // No reason to Queue this to wait for the reply Ack as the receiving node has not reason to reject it
   SendDatagramAckReply(MemoryReadRequestMessage, True, 0);   // Per the Spec set pending true as we are sending the Failure Reply
-  WorkerMessage.LoadConfigMemReadReplyError(NodeID, AliasID, MemoryReadRequestMessage.SourceID, MemoryReadRequestMessage.CAN.SourceAlias, MemoryReadRequestMessage.DecodeMemorySpace, MemoryReadRequestMessage.ExtractDataBytesAsInt(2, 5), ErrorCode, ErrorString);
+  WorkerMessage.LoadConfigMemReadReplyError(NodeID, AliasID, MemoryReadRequestMessage.SourceID, MemoryReadRequestMessage.SourceAlias, MemoryReadRequestMessage.DecodeMemorySpace, MemoryReadRequestMessage.ExtractDataBytesAsInt(2, 5), ErrorCode, ErrorString);
   SendMessageFunc(Self, WorkerMessage);
 end;
 
@@ -1685,7 +1685,7 @@ procedure TLccNode.SendMemoryWriteFailure(var MemoryWriteRequestMessage: TLccMes
 begin
   // No reason to Queue this to wait for the reply Ack as the receiving node has not reason to reject it
   SendDatagramAckReply(MemoryWriteRequestMessage, True, 0);   // Per the Spec set pending true as we are sending the Failure Reply
-  WorkerMessage.LoadConfigMemWriteReplyError(NodeID, AliasID, MemoryWriteRequestMessage.SourceID, MemoryWriteRequestMessage.CAN.SourceAlias, MemoryWriteRequestMessage.DecodeMemorySpace, MemoryWriteRequestMessage.ExtractDataBytesAsInt(2, 5), ErrorCode, ErrorString);
+  WorkerMessage.LoadConfigMemWriteReplyError(NodeID, AliasID, MemoryWriteRequestMessage.SourceID, MemoryWriteRequestMessage.SourceAlias, MemoryWriteRequestMessage.DecodeMemorySpace, MemoryWriteRequestMessage.ExtractDataBytesAsInt(2, 5), ErrorCode, ErrorString);
   SendMessageFunc(Self, WorkerMessage);
 end;
 
@@ -2024,7 +2024,7 @@ begin
 
   if SourceMessage.HasDestination then
   begin
-    if not EqualNode(NodeID,  AliasID, SourceMessage.DestID, SourceMessage.CAN.DestAlias, True) then
+    if not EqualNode(NodeID,  AliasID, SourceMessage.DestID, SourceMessage.DestAlias, True) then
       Exit;
   end;
 
@@ -2211,7 +2211,7 @@ begin
              end
          else begin {case else}
              // Unknown Datagram Type
-             WorkerMessage.LoadDatagramRejected(NodeID, FAliasID, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias, ERROR_PERMANENT_NOT_IMPLEMENTED or ERROR_TYPE);
+             WorkerMessage.LoadDatagramRejected(NodeID, FAliasID, SourceMessage.SourceID, SourceMessage.SourceAlias, ERROR_PERMANENT_NOT_IMPLEMENTED or ERROR_TYPE);
              SendMessageFunc(Self, WorkerMessage);
            end;
          end;  // case
@@ -2219,7 +2219,7 @@ begin
   else begin
       if SourceMessage.HasDestination then
       begin
-        WorkerMessage.LoadOptionalInteractionRejected(NodeID, FAliasID, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias, ERROR_PERMANENT_NOT_IMPLEMENTED or ERROR_MTI, SourceMessage.MTI);
+        WorkerMessage.LoadOptionalInteractionRejected(NodeID, FAliasID, SourceMessage.SourceID, SourceMessage.SourceAlias, ERROR_PERMANENT_NOT_IMPLEMENTED or ERROR_MTI, SourceMessage.MTI);
         SendMessageFunc(Self, WorkerMessage)
       end;
     end;
@@ -2237,10 +2237,10 @@ begin
 
   // Alias Allocation, duplicate checking after allocation**********************
   // Check for a message with the Alias equal to our own.
-  if (AliasID <> 0) and (SourceMessage.CAN.SourceAlias = AliasID) then
+  if (AliasID <> 0) and (SourceMessage.SourceAlias = AliasID) then
   begin
     // Check if it is a Check ID message for a node trying to use our Alias and if so tell them no.
-    if ((SourceMessage.CAN.MTI and $0F000000) >= MTI_CAN_CID6) and ((SourceMessage.CAN.MTI and $0F000000) <= MTI_CAN_CID0) then
+    if ((SourceMessage.CAN_MTI and $0F000000) >= MTI_CAN_CID6) and ((SourceMessage.CAN_MTI and $0F000000) <= MTI_CAN_CID0) then
     begin
       WorkerMessage.LoadRID(NodeID, AliasID);                   // sorry charlie this is mine
       SendMessageFunc(Self, WorkerMessage);
@@ -2260,13 +2260,13 @@ begin
   if not Permitted then
   begin
     // We are still trying to allocate a new Alias, someone else is using this alias
-    if SourceMessage.CAN.SourceAlias = AliasID then
+    if SourceMessage.SourceAlias = AliasID then
       DuplicateAliasDetected := True;
   end else
   begin  // Normal message loop once successfully allocating an Alias
     if SourceMessage.IsCAN then
     begin
-      case SourceMessage.CAN.MTI of
+      case SourceMessage.CAN_MTI of
         MTI_CAN_AME :          // Asking us for an Alias Map Enquiry
           begin
             if SourceMessage.DataCount = 6 then
@@ -2620,7 +2620,7 @@ end;
 procedure TLccNode.SendDatagramAckReply(SourceMessage: TLccMessage; ReplyPending: Boolean; TimeOutValueN: Byte);
 begin
   // Only Ack if we accept the datagram
-  WorkerMessageForAckMessages.LoadDatagramAck(NodeID, FAliasID, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias, True, ReplyPending, TimeOutValueN);
+  WorkerMessageForAckMessages.LoadDatagramAck(NodeID, FAliasID, SourceMessage.SourceID, SourceMessage.SourceAlias, True, ReplyPending, TimeOutValueN);
   SendMessageFunc(Self, FWorkerMessageForAckMessages);
 end;
 
@@ -2653,7 +2653,7 @@ end;
 
 procedure TLccNode.SendDatagramRejectedReply(SourceMessage: TLccMessage; Reason: Word);
 begin
-  WorkerMessageForAckMessages.LoadDatagramRejected(NodeID, FAliasID, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias, Reason);
+  WorkerMessageForAckMessages.LoadDatagramRejected(NodeID, FAliasID, SourceMessage.SourceID, SourceMessage.SourceAlias, Reason);
   SendMessageFunc(Self, WorkerMessageForAckMessages);
 end;
 

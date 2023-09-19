@@ -85,23 +85,6 @@ type
   end;
 
 
-  { TLccCANMessage }
-
-  TLccCANMessage = class
-  private
-    FDestAlias: Word;
-    FFramingBits: Byte;
-    FiTag: Integer;
-    FMTI: DWord;
-    FSourceAlias: Word;
-  public
-    property iTag: Integer read FiTag write FiTag;        // General purpose counter/integer depending on the message
-    property MTI: DWord read FMTI write FMTI;             // WARNING:  This MTI is shifted Left by 2 Bytes where the Source Address Was!!!!!!
-    property DestAlias: Word read FDestAlias write FDestAlias;
-    property FramingBits: Byte read FFramingBits write FFramingBits; // Bottom 2 bits, upper nibble of the Destination alias
-    property SourceAlias: Word read FSourceAlias write FSourceAlias;
-  end;
-
   TNodeIdentificationCallback = procedure(ANodeIdentification: TLccNodeIdentificationObject) of object;
 
 
@@ -109,15 +92,20 @@ type
 
 TLccMessage = class
 private
-  FAbandonCount: Integer;                 // If the message is being held for some reason (CAN multi frame assembly, waiting for AME to aquire the Alias, etc) this is used to see how long it has been alive and when to decide it has been abandon and should be freed
+  FAbandonCount: Integer;                   // If the message is being held for some reason (CAN multi frame assembly, waiting for AME to aquire the Alias, etc) this is used to see how long it has been alive and when to decide it has been abandon and should be freed
+  FCAN_FramingBits: Byte;                   // Bottom 2 bits, upper nibble of the Destination alias
+  FCAN_MTI: DWord;                          // WARNING:  This MTI is shifted Left by 2 Bytes where the Source Address Was!!!!!!  CAN encoded MTI
+  FDestAlias: Word;
+  FFramingBits: Byte;
   FIsCAN: Boolean;                          // The message is a CAN link message which typically needs special handling
-  FCAN: TLccCANMessage;
   FDataArray: TLccByteArray;                // The payload of the message (if there is a payload).  This is the full payload that has been already been assembled if we are on a CAN link
   FDataCount: Integer;                      // How many bytes in the DataArray are valid
   FDestID: TNodeID;                         // NodeID of the Destination of a message (typically a node in our NodeManager)
+  FiTag: Integer;                           // General purpose counter/integer depending on the message
   FNodeIdentifications: TLccNodeIdentificationObjectList;
+  FSourceAlias: Word;
   FSourceID: TNodeID;                       // NodeID of the Source of a message
-  FMTI: Word;                               // The Actual MTI of the message IF it is not a CAN frame message
+  FMTI: Word;                               // The Actual MTI of the message IF it is not a CAN frame message, The full OpenLcb MTI
   FRetryAttemptsDatagram: Integer;          // If a message returned "Temporary" (like no buffers) this holds how many time it has been retried and defines a give up time to stop resending
   FWorkerNodeIdentifcationObject: TLccNodeIdentificationObject;
   function GetHasDestination: Boolean;
@@ -130,7 +118,9 @@ protected
 
 public
   property AbandonCount: Integer read FAbandonCount write FAbandonCount;
-  property CAN: TLccCANMessage read FCAN write FCAN;
+  property CAN_MTI: DWord read FCAN_MTI write FCAN_MTI;
+  property CAN_FramingBits: Byte read FCAN_FramingBits write FCAN_FramingBits;
+  property DestAlias: Word read FDestAlias write FDestAlias;
   property DestID: TNodeID read FDestID write FDestID;
   property DataArray: TLccByteArray read FDataArray write FDataArray;
   property DataArrayIndexer[iIndex: DWord]: Byte read GetDataArrayIndexer write SetDataArrayIndexer;
@@ -139,8 +129,10 @@ public
   property HasDestNodeID: Boolean read GetHasDestNodeID;
   property HasSourceNodeID: Boolean read GetHasSourceNodeID;
   property IsCAN: Boolean read FIsCAN write FIsCAN;
+  property iTag: Integer read FiTag write FiTag;
   property MTI: Word read FMTI write FMTI;
   property RetryAttemptsDatagram: Integer read FRetryAttemptsDatagram write FRetryAttemptsDatagram;
+  property SourceAlias: Word read FSourceAlias write FSourceAlias;
   property SourceID: TNodeID read FSourceID write FSourceID;
 
   property NodeIdentifications: TLccNodeIdentificationObjectList read FNodeIdentifications write FNodeIdentifications;
@@ -469,24 +461,24 @@ begin
 
   if AMessage.IsCAN then
   begin
-    if AMessage.CAN.MTI = MTI_CAN_CID0 then Result := Result + 'CAN Check ID 0' else
-    if AMessage.CAN.MTI = MTI_CAN_CID1 then Result := Result + 'CAN Check ID 1' else
-    if AMessage.CAN.MTI = MTI_CAN_CID2 then Result := Result + 'CAN Check ID 2' else
-    if AMessage.CAN.MTI = MTI_CAN_CID3 then Result := Result + 'CAN Check ID 3' else
-    if AMessage.CAN.MTI = MTI_CAN_CID4 then Result := Result + 'CAN Check ID 4' else
-    if AMessage.CAN.MTI = MTI_CAN_CID5 then Result := Result + 'CAN Check ID 5' else
-    if AMessage.CAN.MTI = MTI_CAN_CID6 then Result := Result + 'CAN Check ID 6' else
-    if AMessage.CAN.MTI = MTI_CAN_RID then Result := Result + 'CAN Reserve ID' else
-    if AMessage.CAN.MTI = MTI_CAN_AMD then Result := Result + 'CAN Alias Map Definition' else
-    if AMessage.CAN.MTI = MTI_CAN_AME then Result := Result + 'CAN Alias Mapping Enquiry' else
-    if AMessage.CAN.MTI = MTI_CAN_AMR then Result := Result + 'CAN Alias Map Reset';
+    if AMessage.CAN_MTI = MTI_CAN_CID0 then Result := Result + 'CAN Check ID 0' else
+    if AMessage.CAN_MTI = MTI_CAN_CID1 then Result := Result + 'CAN Check ID 1' else
+    if AMessage.CAN_MTI = MTI_CAN_CID2 then Result := Result + 'CAN Check ID 2' else
+    if AMessage.CAN_MTI = MTI_CAN_CID3 then Result := Result + 'CAN Check ID 3' else
+    if AMessage.CAN_MTI = MTI_CAN_CID4 then Result := Result + 'CAN Check ID 4' else
+    if AMessage.CAN_MTI = MTI_CAN_CID5 then Result := Result + 'CAN Check ID 5' else
+    if AMessage.CAN_MTI = MTI_CAN_CID6 then Result := Result + 'CAN Check ID 6' else
+    if AMessage.CAN_MTI = MTI_CAN_RID then Result := Result + 'CAN Reserve ID' else
+    if AMessage.CAN_MTI = MTI_CAN_AMD then Result := Result + 'CAN Alias Map Definition' else
+    if AMessage.CAN_MTI = MTI_CAN_AME then Result := Result + 'CAN Alias Mapping Enquiry' else
+    if AMessage.CAN_MTI = MTI_CAN_AMR then Result := Result + 'CAN Alias Map Reset';
     Exit
   end;
 
   if AMessage.HasDestination then
-    Result := Result + '0x' + IntToHex( AMessage.CAN.SourceAlias, 4) + ' -> ' + '0x' + IntToHex( AMessage.CAN.DestAlias, 4)
+    Result := Result + '0x' + IntToHex( AMessage.SourceAlias, 4) + ' -> ' + '0x' + IntToHex( AMessage.DestAlias, 4)
   else
-    Result := Result + '0x' + IntToHex( AMessage.CAN.SourceAlias, 4);
+    Result := Result + '0x' + IntToHex( AMessage.SourceAlias, 4);
 
   if AMessage.MTI = MTI_DATAGRAM then
     Result := Result + RawHelperDataToStr(AMessage, True) + ' MTI: ' + MTI_ToString(AMessage.MTI)
@@ -722,8 +714,8 @@ begin
     FDataArray[DataCount] := LccMessage.DataArray[i];
     if DataArray[DataCount] = Ord(#0) then
     begin
-      Inc(CAN.FiTag);
-      if CAN.iTag = LastNull then
+      Inc(FiTag);
+      if iTag = LastNull then
         Result := True;
     end;
     Inc(FDataCount);
@@ -734,11 +726,11 @@ function TLccMessage.Clone: TLccMessage;
 begin
   Result := TLccMessage.Create;
   Result.FIsCAN := FIsCAN;
-  Result.CAN.FDestAlias := CAN.FDestAlias;
-  Result.CAN.FFramingBits := CAN.FFramingBits;
-  Result.CAN.FiTag := CAN.FiTag;
-  Result.CAN.FMTI := CAN.FMTI;
-  Result.CAN.FSourceAlias := CAN.FSourceAlias;
+  Result.FDestAlias := FDestAlias;
+  Result.FCAN_FramingBits := FCAN_FramingBits;
+  Result.FiTag := FiTag;
+  Result.FMTI := FMTI;
+  Result.FSourceAlias := FSourceAlias;
   Result.FDataArray := FDataArray;
   Result.FDataCount := FDataCount;
   Result.FDestID := FDestID;
@@ -791,7 +783,7 @@ end;
 
 function TLccMessage.GetHasDestination: Boolean;
 begin
-  Result := (CAN.DestAlias <> 0) or ((DestID[0] <> 0) and (DestID[1] <> 0))
+  Result := (DestAlias <> 0) or ((DestID[0] <> 0) and (DestID[1] <> 0))
 end;
 
 function TLccMessage.GetHasDestNodeID: Boolean;
@@ -807,14 +799,12 @@ end;
 constructor TLccMessage.Create;
 begin
   inherited Create;
-  CAN := TLccCANMessage.Create;
   FNodeIdentifications := TLccNodeIdentificationObjectList.Create;
   FWorkerNodeIdentifcationObject := TLccNodeIdentificationObject.Create;
 end;
 
 destructor TLccMessage.Destroy;
 begin
-  FreeAndNil(FCAN);
   FreeAndNil(FNodeIdentifications);
   FreeAndNil(FWorkerNodeIdentifcationObject);
   inherited Destroy;
@@ -967,33 +957,33 @@ begin
       DataStr := DataStr + GridConnectStr[i];
     Len_Data := Length(DataStr);
 
-    CAN.MTI := StrToInt( FormatStrToInt(HeaderStr));              // Convert the string MTI into a number  ;
-    CAN.SourceAlias := Word( CAN.MTI and $00000FFF);                      // Grab the Source Alias before it is stripped off
-    CAN.MTI := CAN.MTI and not $10000000;                                 // Strip off the reserved bits
-    CAN.MTI := CAN.MTI and $FFFFF000;                                     // Strip off the Source Alias
+    CAN_MTI := StrToInt( FormatStrToInt(HeaderStr));              // Convert the string MTI into a number  ;
+    SourceAlias := Word( CAN_MTI and $00000FFF);                      // Grab the Source Alias before it is stripped off
+    CAN_MTI := CAN_MTI and not $10000000;                                 // Strip off the reserved bits
+    CAN_MTI := CAN_MTI and $FFFFF000;                                     // Strip off the Source Alias
     // Was this an OpenLCB or CAN specific message? This covers special multiFrame LccMessage and CAN layer specific messages
-    IsCAN := (CAN.MTI and $07000000 <> $01000000);
+    IsCAN := (CAN_MTI and $07000000 <> $01000000);
 
     // Extract the General OpenLCB message if possible
     if IsCAN then                                                       // IsCAN means CAN Frames OR OpenLCB message that are only on CAN (Datagrams frames and Stream Send)
     begin
-      CANFrameType := CAN.MTI and MTI_CAN_FRAME_TYPE_MASK;
+      CANFrameType := CAN_MTI and MTI_CAN_FRAME_TYPE_MASK;
 
       if CANFrameType = MTI_CAN_CAN then     // the get the AME, AMD, AMR, RID, Error messages $007xx000
-        CAN.MTI := CAN.MTI and $0FFFF000
+        CAN_MTI := CAN_MTI and $0FFFF000
       else
       if CANFrameType <= MTI_CAN_CID0 then
-        CAN.MTI := CANFrameType
+        CAN_MTI := CANFrameType
       else
       if (CANFrameType >= MTI_CAN_FRAME_TYPE_DATAGRAM_FRAME_ONLY) and (CANFrameType <= MTI_CAN_FRAME_TYPE_DATAGRAM_FRAME_END) then
       begin
-        CAN.DestAlias := (CAN.MTI and $00FFF000) shr 12;
-        CAN.MTI := CAN.MTI and $0F000000; // $FF000FFF;
+        DestAlias := (CAN_MTI and $00FFF000) shr 12;
+        CAN_MTI := CAN_MTI and $0F000000; // $FF000FFF;
         MTI := MTI_DATAGRAM
       end;
     end else
     begin
-      if CAN.MTI and MTI_CAN_ADDRESS_PRESENT = MTI_CAN_ADDRESS_PRESENT then
+      if CAN_MTI and MTI_CAN_ADDRESS_PRESENT = MTI_CAN_ADDRESS_PRESENT then
       begin
 
         Assert(Length(DataStr) >= 4, 'Malformed message.  Address Present bit set but not enough bytes in the payload');
@@ -1004,14 +994,14 @@ begin
         DestLo := StrToInt( FormatStrToInt(ByteStr));
         Inc(i_Data, 4);            // First 4 in the Data where the MTI, move to the real payload (if it exisits)
         Dec(Len_Data, 4);
-        CAN.FramingBits := DestHi and $30;
-        CAN.DestAlias := Word(( DestHi shl 8) and $0FFF) or DestLo;
+        CAN_FramingBits := DestHi and $30;
+        DestAlias := Word(( DestHi shl 8) and $0FFF) or DestLo;
       end else
       begin
-        CAN.DestAlias := 0;
-        CAN.FramingBits := 0;
+        DestAlias := 0;
+        CAN_FramingBits := 0;
       end;
-      MTI := Word( (CAN.MTI shr 12) and $0000FFF);
+      MTI := Word( (CAN_MTI shr 12) and $0000FFF);
     end;
 
     FDataCount := 0;
@@ -1025,7 +1015,7 @@ begin
     end;
     if IsCAN then
     begin
-      case CAN.MTI of
+      case CAN_MTI of
         MTI_CAN_AMD :
           begin
             TempNodeID := NULL_NODE_ID;
@@ -1094,8 +1084,8 @@ begin
     // 2) A parsed CAN frame that effectively is a piece of a MTI_DATAGRAM but does not need to be reparsed
     if IsCAN then
     begin
-      LocalMTI := CAN.MTI or CAN.SourceAlias  or $10000000;
-      LocalMTI := LocalMTI or (DWord( CAN.DestAlias) shl 12);
+      LocalMTI := CAN_MTI or SourceAlias  or $10000000;
+      LocalMTI := LocalMTI or (DWord( DestAlias) shl 12);
       Result := ':X' + IntToHex(LocalMTI, 8) + 'N';
       for i := 0 to DataCount - 1 do
         Result := Result + IntToHex(DataArray[i], 2);
@@ -1104,7 +1094,7 @@ begin
     begin
       if DataCount < 9 then
       begin
-        Result := Result + ':X' + IntToHex(DWord( $1A000000 or (CAN.DestAlias shl 12) or CAN.SourceAlias), 8) + 'N';
+        Result := Result + ':X' + IntToHex(DWord( $1A000000 or (DestAlias shl 12) or SourceAlias), 8) + 'N';
         for i := 0 to DataCount - 1 do
           Result := Result + IntToHex(DataArray[i], 2);
         Result := Result + ';'
@@ -1114,12 +1104,12 @@ begin
         while Offset < DataCount do
         begin
           if Offset = 0 then
-            Result := Result + ':X' + IntToHex(DWord( $1B000000 or (CAN.DestAlias shl 12) or CAN.SourceAlias), 8) + 'N'
+            Result := Result + ':X' + IntToHex(DWord( $1B000000 or (DestAlias shl 12) or SourceAlias), 8) + 'N'
           else
           if Offset + 8 >= DataCount then
-            Result := Result + ':X' + IntToHex(DWord( $1D000000 or (CAN.DestAlias shl 12) or CAN.SourceAlias), 8) + 'N'
+            Result := Result + ':X' + IntToHex(DWord( $1D000000 or (DestAlias shl 12) or SourceAlias), 8) + 'N'
           else
-            Result := Result + ':X' + IntToHex(DWord( $1C000000 or (CAN.DestAlias shl 12) or CAN.SourceAlias), 8) + 'N';
+            Result := Result + ':X' + IntToHex(DWord( $1C000000 or (DestAlias shl 12) or SourceAlias), 8) + 'N';
 
           for i := 0 to 7 do
           begin
@@ -1146,20 +1136,20 @@ begin
   begin
     if IsCAN then
     begin
-      LocalMTI := CAN.MTI or CAN.SourceAlias or $10000000;
-      case CAN.MTI of
+      LocalMTI := CAN_MTI or SourceAlias or $10000000;
+      case CAN_MTI of
         MTI_CAN_CID0 : LocalMTI := LocalMTI {or (SourceID[1] and $00FFF000)};
         MTI_CAN_CID1 : LocalMTI := LocalMTI {or ((SourceID[1] shl 12) and $00FFF000)};
         MTI_CAN_CID2 : LocalMTI := LocalMTI {or (SourceID[0] and $00FFF000)};
         MTI_CAN_CID3 : LocalMTI := LocalMTI {or ((SourceID[0] shl 12) and $00FFF000)};
       end;
     end else
-      LocalMTI := DWord(( MTI shl 12) or CAN.SourceAlias or MTI_CAN_FRAME_TYPE_GENERAL or $10000000);
+      LocalMTI := DWord(( MTI shl 12) or SourceAlias or MTI_CAN_FRAME_TYPE_GENERAL or $10000000);
 
     if LocalMTI and MTI_CAN_FRAME_TYPE_MASK > MTI_CAN_FRAME_TYPE_GENERAL then
     begin
       // Datagram or Stream
-      LocalMTI := LocalMTI or (DWord( CAN.DestAlias) shl 12);
+      LocalMTI := LocalMTI or (DWord( DestAlias) shl 12);
       Result := ':X' + IntToHex(LocalMTI, 8) + 'N';
       for i := 0 to DataCount - 1 do
         Result := Result + IntToHex(DataArray[i], 2);
@@ -1181,19 +1171,19 @@ begin
 
             if MTI = MTI_SIMPLE_NODE_INFO_REPLY then
             begin
-              Result := Result + IntToHex(((CAN.DestAlias shr 8)) and $00FF, 2);
+              Result := Result + IntToHex(((DestAlias shr 8)) and $00FF, 2);
             end else
             begin
               if iFrameCount = 0 then
-                Result := Result + IntToHex(((CAN.DestAlias shr 8) or $10) and $00FF, 2)
+                Result := Result + IntToHex(((DestAlias shr 8) or $10) and $00FF, 2)
               else
               if iFrameCount = FrameCount - 1 then
-                Result := Result + IntToHex(((CAN.DestAlias shr 8) or $20) and $00FF, 2)
+                Result := Result + IntToHex(((DestAlias shr 8) or $20) and $00FF, 2)
               else
-                Result := Result + IntToHex(((CAN.DestAlias shr 8) or $30) and $00FF, 2);
+                Result := Result + IntToHex(((DestAlias shr 8) or $30) and $00FF, 2);
             end;
 
-            Result := Result + IntToHex(CAN.DestAlias and $00FF, 2);
+            Result := Result + IntToHex(DestAlias and $00FF, 2);
 
             i := Offset;
             while i < DataCount do
@@ -1212,8 +1202,8 @@ begin
         end else
         begin
           Result := ':X' + IntToHex(LocalMTI, 8) + 'N';
-          Result := Result + IntToHex((CAN.DestAlias shr 8) or CAN.FramingBits and $00FF, 2);
-          Result := Result + IntToHex(CAN.DestAlias and $00FF, 2);
+          Result := Result + IntToHex((DestAlias shr 8) or CAN_FramingBits and $00FF, 2);
+          Result := Result + IntToHex(DestAlias and $00FF, 2);
           for i := 0 to DataCount - 1 do
             Result := Result + IntToHex(DataArray[i], 2);
           Result := Result  + ';'                    // Single Frame message
@@ -1330,17 +1320,17 @@ begin
   TargetMessage.FDataCount := FDataCount;
   TargetMessage.FDestID := FDestID;
   TargetMessage.FSourceID := FSourceID;
-  TargetMessage.CAN.FDestAlias := CAN.FDestAlias;
-  TargetMessage.CAN.FSourceAlias := CAN.FSourceAlias;
-  TargetMessage.CAN.FFramingBits := CAN.FFramingBits;
-  TargetMessage.CAN.FiTag := 0;
-  TargetMessage.CAN.FMTI := CAN.FMTI;
+  TargetMessage.FDestAlias := FDestAlias;
+  TargetMessage.FSourceAlias := FSourceAlias;
+  TargetMessage.FCAN_FramingBits := FCAN_FramingBits;
+  TargetMessage.FiTag := 0;
+  TargetMessage.FMTI := FMTI;
 end;
 
 function TLccMessage.DestinationMatchs(TestAliasID: Word; TestNodeID: TNodeID): Boolean;
 begin
-  if CAN.DestAlias > 0 then
-    Result := TestAliasID = CAN.DestAlias
+  if DestAlias > 0 then
+    Result := TestAliasID = DestAlias
   else
     Result := (TestNodeID[0] = DestID[0]) and (TestNodeID[1] = DestID[1]);
 end;
@@ -1372,9 +1362,9 @@ begin
   if ForceEvaluation or (NodeIdentifications.Count = 0) then
   begin
     NodeIdentifications.ClearIdentifications;
-    NodeIdentifications.Source.AssignID(SourceID, CAN.SourceAlias);
+    NodeIdentifications.Source.AssignID(SourceID, SourceAlias);
     if HasDestination then
-      NodeIdentifications.Destination.AssignID(DestID, CAN.DestAlias);
+      NodeIdentifications.Destination.AssignID(DestID, DestAlias);
 
     case MTI of
       MTI_TRACTION_REQUEST :
@@ -1453,20 +1443,20 @@ begin
 
   ANodeID := NULL_NODE_ID;
 
-  AnAliasMapping := IdentifyIdentificationItem(SourceID, CAN.SourceAlias, Result);
+  AnAliasMapping := IdentifyIdentificationItem(SourceID, SourceAlias, Result);
   if Assigned(AnAliasMapping) then
   begin
     SourceID := AnAliasMapping.NodeID;
-    CAN.SourceAlias := AnAliasMapping.NodeAlias;
+    SourceAlias := AnAliasMapping.NodeAlias;
   end;
 
   if HasDestination then
   begin
-    AnAliasMapping := IdentifyIdentificationItem(DestID, CAN.DestAlias, Result);
+    AnAliasMapping := IdentifyIdentificationItem(DestID, DestAlias, Result);
     if Assigned(AnAliasMapping) then
     begin
       DestID := AnAliasMapping.NodeID;
-      CAN.DestAlias := AnAliasMapping.NodeAlias;
+      DestAlias := AnAliasMapping.NodeAlias;
     end;
   end;
 
@@ -1517,26 +1507,26 @@ begin
   FDataCount := 0;
   FDestID := NULL_NODE_ID;
   FSourceID := NULL_NODE_ID;
-  CAN.FSourceAlias := 0;
-  CAN.FDestAlias := 0;
-  CAN.FFramingBits := 0;
-  CAN.FiTag := 0;
+  FSourceAlias := 0;
+  FDestAlias := 0;
+  FCAN_FramingBits := 0;
+  FiTag := 0;
+  FCAN_MTI := 0;
   FMTI := 0;
-  CAN.FMTI := 0;
 end;
 
 procedure TLccMessage.LoadCID(ASourceID: TNodeID; ASourceAlias: Word; ACID: Byte);
 begin
   ZeroFields;
-  CAN.SourceAlias := ASourceAlias;
+  SourceAlias := ASourceAlias;
   IsCAN := True;
   SourceID := ASourceID;
   // The NodeID bits will be added when converting to a gridconnect string
   case ACID of
-    0 : CAN.MTI := MTI_CAN_CID0;
-    1 : CAN.MTI := MTI_CAN_CID1;
-    2 : CAN.MTI := MTI_CAN_CID2;
-    3 : CAN.MTI := MTI_CAN_CID3;
+    0 : CAN_MTI := MTI_CAN_CID0;
+    1 : CAN_MTI := MTI_CAN_CID1;
+    2 : CAN_MTI := MTI_CAN_CID2;
+    3 : CAN_MTI := MTI_CAN_CID3;
   end;
 end;
 
@@ -1544,17 +1534,17 @@ procedure TLccMessage.LoadRID(ASourceID: TNodeID; ASourceAlias: Word);
 begin
   ZeroFields;
   SourceID := ASourceID;
-  CAN.SourceAlias := ASourceAlias;
+  SourceAlias := ASourceAlias;
   IsCAN := True;
-  CAN.MTI := MTI_CAN_RID; // or ASourceAlias;
+  CAN_MTI := MTI_CAN_RID; // or ASourceAlias;
 end;
 
 procedure TLccMessage.LoadAMD(ASourceID: TNodeID; ASourceAlias: Word);
 begin
   ZeroFields;
-  CAN.SourceAlias := ASourceAlias;
+  SourceAlias := ASourceAlias;
   IsCAN := True;
-  CAN.MTI := MTI_CAN_AMD;// or ASourceAlias;
+  CAN_MTI := MTI_CAN_AMD;// or ASourceAlias;
   SourceID := ASourceID;
   InsertNodeID(0, ASourceID);
   DataCount := 6;
@@ -1564,9 +1554,9 @@ procedure TLccMessage.LoadAME(ASourceID: TNodeID; ASourceAlias: Word;
   TargetNodeID: TNodeID);
 begin
   ZeroFields;
-  CAN.SourceAlias := ASourceAlias;
+  SourceAlias := ASourceAlias;
   IsCAN := True;
-  CAN.MTI := MTI_CAN_AME;// or ASourceAlias;
+  CAN_MTI := MTI_CAN_AME;// or ASourceAlias;
   SourceID := ASourceID;
   if NullNodeID(TargetNodeID) then
   begin
@@ -1581,9 +1571,9 @@ end;
 procedure TLccMessage.LoadAMR(ASourceID: TNodeID; ASourceAlias: Word);
 begin
   ZeroFields;
-  CAN.SourceAlias := ASourceAlias;
+  SourceAlias := ASourceAlias;
   IsCAN := True;
-  CAN.MTI := MTI_CAN_AMR;// or ASourceAlias;
+  CAN_MTI := MTI_CAN_AMR;// or ASourceAlias;
   SourceID := ASourceID;
   InsertNodeID(0, ASourceID);
   DataCount := 6;
@@ -1593,7 +1583,7 @@ procedure TLccMessage.LoadInitializationComplete(ASourceID: TNodeID; ASourceAlia
 begin
   ZeroFields;
   SourceID := ASourceID;
-  CAN.SourceAlias := ASourceAlias;
+  SourceAlias := ASourceAlias;
   InsertNodeID(0, ASourceID);
   DataCount := 6;
   MTI := MTI_INITIALIZATION_COMPLETE;
@@ -1606,8 +1596,8 @@ begin
   ZeroFields;
   SourceID := ASourceID;
   DestID := ADestID;
-  CAN.SourceAlias := ASourceAlias;
-  CAN.DestAlias := ADestAlias;
+  SourceAlias := ASourceAlias;
+  DestAlias := ADestAlias;
   DataCount := 4;
   MTI := MTI_OPTIONAL_INTERACTION_REJECTED;
   FDataArray[0] := _Hi(Reason);
@@ -1621,7 +1611,7 @@ procedure TLccMessage.LoadPCER(ASourceID: TNodeID; ASourceAlias: Word; AnEvent: 
 begin
   ZeroFields;
   SourceID := ASourceID;
-  CAN.SourceAlias := ASourceAlias;
+  SourceAlias := ASourceAlias;
   InsertEventID(0, AnEvent);
   DataCount := 8;
   MTI := MTI_PC_EVENT_REPORT;
@@ -1631,7 +1621,7 @@ procedure TLccMessage.LoadProducerIdentified(ASourceID: TNodeID; ASourceAlias: W
 begin
   ZeroFields;
   SourceID := ASourceID;
-  CAN.SourceAlias := ASourceAlias;
+  SourceAlias := ASourceAlias;
   InsertEventID(0, Event);
   DataCount := 8;
   case EventState of
@@ -1648,8 +1638,8 @@ begin
   ZeroFields;
   SourceID := ASourceID;
   DestID := ADestID;
-  CAN.SourceAlias := ASourceAlias;
-  CAN.DestAlias := ADestAlias;
+  SourceAlias := ASourceAlias;
+  DestAlias := ADestAlias;
   if not NullNodeID(OptionalTargetNodeID) then
   begin
     DataCount := 6;
@@ -1669,11 +1659,11 @@ var
   TempAlias: Word;
 begin
   TempNodeID := SourceID;
-  TempAlias := CAN.SourceAlias;
+  TempAlias := SourceAlias;
   SourceID := DestID;
   DestID := TempNodeID;
-  CAN.SourceAlias := CAN.DestAlias;
-  CAN.DestAlias := TempAlias;
+  SourceAlias := DestAlias;
+  DestAlias := TempAlias;
 end;
 
 function TLccMessage.TractionExtractActualSpeed: THalfFloat;
@@ -2035,7 +2025,7 @@ procedure TLccMessage.LoadVerifyNodeID(ASourceID: TNodeID; ASourceAlias: Word;
 begin
   ZeroFields;
   SourceID := ASourceID;
-  CAN.SourceAlias := ASourceAlias;
+  SourceAlias := ASourceAlias;
   if not NullNodeID(OptionalTargetNodeID) then
   begin
     DataCount := 6;
@@ -2049,8 +2039,8 @@ begin
   ZeroFields;
   SourceID := ASourceID;
   DestID := ADestID;
-  CAN.SourceAlias := ASourceAlias;
-  CAN.DestAlias := ADestAlias;
+  SourceAlias := ASourceAlias;
+  DestAlias := ADestAlias;
   MTI := MTI_PROTOCOL_SUPPORT_INQUIRY;
 end;
 
@@ -2059,8 +2049,8 @@ begin
   ZeroFields;
   SourceID := ASourceID;
   DestID := ADestID;
-  CAN.SourceAlias := ASourceAlias;
-  CAN.DestAlias := ADestAlias;
+  SourceAlias := ASourceAlias;
+  DestAlias := ADestAlias;
   FDataArray[5] := Flags[0];
   FDataArray[4] := Flags[1];
   FDataArray[3] := Flags[2];
@@ -2080,7 +2070,7 @@ procedure TLccMessage.LoadConsumerIdentified(ASourceID: TNodeID; ASourceAlias: W
 begin
   ZeroFields;
   SourceID := ASourceID;
-  CAN.SourceAlias := ASourceAlias;
+  SourceAlias := ASourceAlias;
   InsertEventID(0, Event);
   DataCount := 8;
   case EventState of
@@ -2094,7 +2084,7 @@ procedure TLccMessage.LoadConsumerIdentify(ASourceID: TNodeID; ASourceAlias: Wor
 begin
   ZeroFields;
   SourceID := ASourceID;
-  CAN.SourceAlias := ASourceAlias;
+  SourceAlias := ASourceAlias;
   InsertEventID(0, Event);
   DataCount := 8;
   MTI := MTI_CONSUMER_IDENTIFY;
@@ -2104,7 +2094,7 @@ procedure TLccMessage.LoadProducerIdentify(ASourceID: TNodeID; ASourceAlias: Wor
 begin
   ZeroFields;
   SourceID := ASourceID;
-  CAN.SourceAlias := ASourceAlias;
+  SourceAlias := ASourceAlias;
   InsertEventID(0, Event);
   DataCount := 8;
   MTI := MTI_PRODUCER_IDENDIFY;
@@ -2115,8 +2105,8 @@ begin
   ZeroFields;
   SourceID := ASourceID;
   DestID := ADestID;
-  CAN.SourceAlias := ASourceAlias;
-  CAN.DestAlias := ADestAlias;
+  SourceAlias := ASourceAlias;
+  DestAlias := ADestAlias;
   MTI := MTI_EVENTS_IDENTIFY_DEST;
 end;
 
@@ -2124,7 +2114,7 @@ procedure TLccMessage.LoadIdentifyEvents(ASourceID: TNodeID; ASourceAlias: Word)
 begin
   ZeroFields;
   SourceID := ASourceID;
-  CAN.SourceAlias := ASourceAlias;
+  SourceAlias := ASourceAlias;
   DestID := NULL_NODE_ID;
   MTI := MTI_EVENTS_IDENTIFY;
 end;
@@ -2138,8 +2128,8 @@ begin
   ZeroFields;
   SourceID := ASourceID;
   DestID := ADestID;
-  CAN.SourceAlias := ASourceAlias;
-  CAN.DestAlias := ADestAlias;
+  SourceAlias := ASourceAlias;
+  DestAlias := ADestAlias;
   DataCount := 3;
   FDataArray[0] := TRACTION_SET_SPEED_DIR;
   FDataArray[1] := Hi( HalfFloatSpeed);
@@ -2153,8 +2143,8 @@ begin
   ZeroFields;
   SourceID := ASourceID;
   DestID := ADestID;
-  CAN.SourceAlias := ASourceAlias;
-  CAN.DestAlias := ADestAlias;
+  SourceAlias := ASourceAlias;
+  DestAlias := ADestAlias;
   DataCount := 3;
   FDataArray[0] := TRACTION_SET_SPEED_DIR;
   FDataArray[1] := Hi( ASpeed);
@@ -2166,7 +2156,7 @@ procedure TLccMessage.LoadVerifiedNodeID(ASourceID: TNodeID; ASourceAlias: Word)
 begin
   ZeroFields;
   SourceID := ASourceID;
-  CAN.SourceAlias := ASourceAlias;
+  SourceAlias := ASourceAlias;
   InsertNodeID(0, ASourceID);
   DataCount := 6;
   MTI := MTI_VERIFIED_NODE_ID_NUMBER;
@@ -2179,8 +2169,8 @@ begin
   ZeroFields;
   SourceID := ASourceID;
   DestID := ADestID;
-  CAN.SourceAlias := ASourceAlias;
-  CAN.DestAlias := ADestAlias;
+  SourceAlias := ASourceAlias;
+  DestAlias := ADestAlias;
   DataCount := 6;
   FDataArray[0] := TRACTION_SET_FUNCTION;
   FDataArray[1] := Byte((AnAddress shr 16) and $0000FF);
@@ -2197,8 +2187,8 @@ begin
   ZeroFields;
   SourceID := ASourceID;
   DestID := ADestID;
-  CAN.SourceAlias := ASourceAlias;
-  CAN.DestAlias := ADestAlias;
+  SourceAlias := ASourceAlias;
+  DestAlias := ADestAlias;
   DataCount := 1;
   FDataArray[0] := TRACTION_SET_E_STOP;
   MTI := MTI_TRACTION_REQUEST;
@@ -2210,8 +2200,8 @@ begin
   ZeroFields;
   SourceID := ASourceID;
   DestID := ADestID;
-  CAN.SourceAlias := ASourceAlias;
-  CAN.DestAlias := ADestAlias;
+  SourceAlias := ASourceAlias;
+  DestAlias := ADestAlias;
   DataCount := 8;
   FDataArray[0] := EVENT_IS_TRAIN[0];
   FDataArray[1] := EVENT_IS_TRAIN[1];
@@ -2230,8 +2220,8 @@ begin
   ZeroFields;
   SourceID := ASourceID;
   DestID := ADestID;
-  CAN.SourceAlias := ASourceAlias;
-  CAN.DestAlias := ADestAlias;
+  SourceAlias := ASourceAlias;
+  DestAlias := ADestAlias;
   DataCount := 1;
   FDataArray[0] := TRACTION_QUERY_SPEED;
   MTI := MTI_TRACTION_REQUEST;
@@ -2244,8 +2234,8 @@ begin
   ZeroFields;
   SourceID := ASourceID;
   DestID := ADestID;
-  CAN.SourceAlias := ASourceAlias;
-  CAN.DestAlias := ADestAlias;
+  SourceAlias := ASourceAlias;
+  DestAlias := ADestAlias;
   DataCount := 8;
   FDataArray[0] := TRACTION_QUERY_SPEED;
   FDataArray[1] := Hi(SetSpeed);
@@ -2267,7 +2257,7 @@ begin
     FDataArray[i] := 0;
   ZeroFields;
   SourceID := ASourceID;
-  CAN.SourceAlias := ASourceAlias;
+  SourceAlias := ASourceAlias;
   FDataArray[0] := $09;
   FDataArray[1] := $00;
   FDataArray[2] := $99;
@@ -2283,8 +2273,8 @@ begin
   ZeroFields;
   SourceID := ASourceID;
   DestID := ADestID;
-  CAN.SourceAlias := ASourceAlias;
-  CAN.DestAlias := ADestAlias;
+  SourceAlias := ASourceAlias;
+  DestAlias := ADestAlias;
   DataCount := 4;
   FDataArray[0] := TRACTION_QUERY_FUNCTION;
   FDataArray[1] := Byte((Address shr 16) and $0000FF);
@@ -2300,8 +2290,8 @@ begin
   ZeroFields;
   SourceID := ASourceID;
   DestID := ADestID;
-  CAN.SourceAlias := ASourceAlias;
-  CAN.DestAlias := ADestAlias;
+  SourceAlias := ASourceAlias;
+  DestAlias := ADestAlias;
   DataCount := 6;
   FDataArray[0] := TRACTION_QUERY_FUNCTION;
   FDataArray[1] := Byte((Address shr 16) and $0000FF);
@@ -2318,8 +2308,8 @@ begin
   ZeroFields;
   SourceID := ASourceID;
   DestID := ADestID;
-  CAN.SourceAlias := ASourceAlias;
-  CAN.DestAlias := ADestAlias;
+  SourceAlias := ASourceAlias;
+  DestAlias := ADestAlias;
   DataCount := 9;
   FDataArray[0] := TRACTION_CONTROLLER_CONFIG;
   FDataArray[1] := TRACTION_CONTROLLER_CONFIG_ASSIGN;
@@ -2334,8 +2324,8 @@ begin
   ZeroFields;
   SourceID := ASourceID;
   DestID := ADestID;
-  CAN.SourceAlias := ASourceAlias;
-  CAN.DestAlias := ADestAlias;
+  SourceAlias := ASourceAlias;
+  DestAlias := ADestAlias;
 
   DataCount := 3;
   FDataArray[0] := TRACTION_CONTROLLER_CONFIG_REPLY;
@@ -2352,8 +2342,8 @@ begin
   ZeroFields;
   SourceID := ASourceID;
   DestID := ADestID;
-  CAN.SourceAlias := ASourceAlias;
-  CAN.DestAlias := ADestAlias;
+  SourceAlias := ASourceAlias;
+  DestAlias := ADestAlias;
   if AnAlias <> 0 then
   begin
     DataCount := 11;
@@ -2380,8 +2370,8 @@ begin
   ZeroFields;
   SourceID := ASourceID;
   DestID := ADestID;
-  CAN.SourceAlias := ASourceAlias;
-  CAN.DestAlias := ADestAlias;
+  SourceAlias := ASourceAlias;
+  DestAlias := ADestAlias;
   DataCount := 2;
   FDataArray[0] := TRACTION_CONTROLLER_CONFIG;
   FDataArray[1] := TRACTION_CONTROLLER_CONFIG_QUERY;
@@ -2395,8 +2385,8 @@ begin
   ZeroFields;
   SourceID := ASourceID;
   DestID := ADestID;
-  CAN.SourceAlias := ASourceAlias;
-  CAN.DestAlias := ADestAlias;
+  SourceAlias := ASourceAlias;
+  DestAlias := ADestAlias;
   DataCount := 9;
   FDataArray[0] := TRACTION_CONTROLLER_CONFIG;
   FDataArray[1] := TRACTION_CONTROLLER_CONFIG_QUERY;
@@ -2412,8 +2402,8 @@ begin
   ZeroFields;
   SourceID := ASourceID;
   DestID := ADestID;
-  CAN.SourceAlias := ASourceAlias;
-  CAN.DestAlias := ADestAlias;
+  SourceAlias := ASourceAlias;
+  DestAlias := ADestAlias;
   DataCount := 9;
   FDataArray[0] := TRACTION_CONTROLLER_CONFIG;
   FDataArray[1] := TRACTION_CONTROLLER_CONFIG_CHANGED_NOTIFY;
@@ -2429,8 +2419,8 @@ begin
   ZeroFields;
   SourceID := ASourceID;
   DestID := ADestID;
-  CAN.SourceAlias := ASourceAlias;
-  CAN.DestAlias := ADestAlias;
+  SourceAlias := ASourceAlias;
+  DestAlias := ADestAlias;
   DataCount := 9;
   FDataArray[0] := TRACTION_LISTENER_CONFIG;
   FDataArray[1] := TRACTION_LISTENER_CONFIG_ATTACH;
@@ -2446,8 +2436,8 @@ begin
   ZeroFields;
   SourceID := ASourceID;
   DestID := ADestID;
-  CAN.SourceAlias := ASourceAlias;
-  CAN.DestAlias := ADestAlias;
+  SourceAlias := ASourceAlias;
+  DestAlias := ADestAlias;
   DataCount := 10;
   FDataArray[0] := TRACTION_LISTENER_CONFIG;
   FDataArray[1] := TRACTION_LISTENER_CONFIG_ATTACH;
@@ -2464,8 +2454,8 @@ begin
   ZeroFields;
   SourceID := ASourceID;
   DestID := ADestID;
-  CAN.SourceAlias := ASourceAlias;
-  CAN.DestAlias := ADestAlias;
+  SourceAlias := ASourceAlias;
+  DestAlias := ADestAlias;
   DataCount := 9;
   FDataArray[0] := TRACTION_LISTENER_CONFIG;
   FDataArray[1] := TRACTION_LISTENER_CONFIG_DETACH;
@@ -2481,8 +2471,8 @@ begin
   ZeroFields;
   SourceID := ASourceID;
   DestID := ADestID;
-  CAN.SourceAlias := ASourceAlias;
-  CAN.DestAlias := ADestAlias;
+  SourceAlias := ASourceAlias;
+  DestAlias := ADestAlias;
   DataCount := 10;
   FDataArray[0] := TRACTION_LISTENER_CONFIG;
   FDataArray[1] := TRACTION_LISTENER_CONFIG_DETACH;
@@ -2498,8 +2488,8 @@ begin
   ZeroFields;
   SourceID := ASourceID;
   DestID := ADestID;
-  CAN.SourceAlias := ASourceAlias;
-  CAN.DestAlias := ADestAlias;
+  SourceAlias := ASourceAlias;
+  DestAlias := ADestAlias;
   DataCount := 3;
   FDataArray[0] := TRACTION_LISTENER_CONFIG;
   FDataArray[1] := TRACTION_LISTENER_CONFIG_QUERY;
@@ -2512,8 +2502,8 @@ begin
   ZeroFields;
   SourceID := ASourceID;
   DestID := ADestID;
-  CAN.SourceAlias := ASourceAlias;
-  CAN.DestAlias := ADestAlias;
+  SourceAlias := ASourceAlias;
+  DestAlias := ADestAlias;
   DataCount := 2;
   FDataArray[0] := TRACTION_LISTENER_CONFIG;
   FDataArray[1] := TRACTION_LISTENER_CONFIG_QUERY;
@@ -2527,8 +2517,8 @@ begin
   ZeroFields;
   SourceID := ASourceID;
   DestID := ADestID;
-  CAN.SourceAlias := ASourceAlias;
-  CAN.DestAlias := ADestAlias;
+  SourceAlias := ASourceAlias;
+  DestAlias := ADestAlias;
   if NullNodeID(AListenerNodeID) then
   begin           // Invalid Index the reply is no data other than the message codes
     DataCount := 3;
@@ -2555,8 +2545,8 @@ begin
   ZeroFields;
   SourceID := ASourceID;
   DestID := ADestID;
-  CAN.SourceAlias := ASourceAlias;
-  CAN.DestAlias := ADestAlias;
+  SourceAlias := ASourceAlias;
+  DestAlias := ADestAlias;
   DataCount := 2;
   FDataArray[0] := TRACTION_MANAGE;
   if Reserve then
@@ -2572,8 +2562,8 @@ begin
   ZeroFields;
   SourceID := ASourceID;
   DestID := ADestID;
-  CAN.SourceAlias := ASourceAlias;
-  CAN.DestAlias := ADestAlias;
+  SourceAlias := ASourceAlias;
+  DestAlias := ADestAlias;
   DataCount := 3;
   FDataArray[0] := TRACTION_MANAGE;
   FDataArray[1] := TRACTION_MANAGE_RESERVE;
@@ -2589,8 +2579,8 @@ begin
   ZeroFields;
   SourceID := ASourceID;
   DestID := ADestID;
-  CAN.SourceAlias := ASourceAlias;
-  CAN.DestAlias := ADestAlias;
+  SourceAlias := ASourceAlias;
+  DestAlias := ADestAlias;
   MTI := MTI_TRACTION_SIMPLE_TRAIN_INFO_REQUEST;
 end;
 
@@ -2601,8 +2591,8 @@ begin
   ZeroFields;
   SourceID := ASourceID;
   DestID := ADestID;
-  CAN.SourceAlias := ASourceAlias;
-  CAN.DestAlias := ADestAlias;
+  SourceAlias := ASourceAlias;
+  DestAlias := ADestAlias;
   for i := 0 to Length(SimplePackedArray) - 1 do
     FDataArray[i] := SimplePackedArray[i];
   DataCount := Length(SimplePackedArray);
@@ -2614,8 +2604,8 @@ begin
   ZeroFields;
   SourceID := ASourceID;
   DestID := ADestID;
-  CAN.SourceAlias := ASourceAlias;
-  CAN.DestAlias := ADestAlias;
+  SourceAlias := ASourceAlias;
+  DestAlias := ADestAlias;
   DataCount := 0;
   MTI := MTI_SIMPLE_NODE_INFO_REQUEST;
 end;
@@ -2682,8 +2672,8 @@ begin
   ZeroFields;
   SourceID := ASourceID;
   DestID := ADestID;
-  CAN.SourceAlias := ASourceAlias;
-  CAN.DestAlias := ADestAlias;
+  SourceAlias := ASourceAlias;
+  DestAlias := ADestAlias;
   DataCount := 8;
   FDataArray[0] := DATAGRAM_PROTOCOL_CONFIGURATION;
   FDataArray[1] := MCP_READ;
@@ -2702,8 +2692,8 @@ begin
   ZeroFields;
   SourceID := ASourceID;
   DestID := ADestID;
-  CAN.SourceAlias := ASourceAlias;
-  CAN.DestAlias := ADestAlias;
+  SourceAlias := ASourceAlias;
+  DestAlias := ADestAlias;
   DataCount := 8;
   FDataArray[0] := DATAGRAM_PROTOCOL_CONFIGURATION;
   FDataArray[1] := MCP_READ;
@@ -2726,8 +2716,8 @@ begin
   ZeroFields;
   SourceID := ASourceID;
   DestID := ADestID;
-  CAN.SourceAlias := ASourceAlias;
-  CAN.DestAlias := ADestAlias;
+  SourceAlias := ASourceAlias;
+  DestAlias := ADestAlias;
   FDataArray[0] := DATAGRAM_PROTOCOL_CONFIGURATION;
   FDataArray[1] := MCP_WRITE;
   FDataArray[2] := _Highest(FunctionAddress);
@@ -2754,8 +2744,8 @@ begin
   ZeroFields;
   SourceID := ASourceID;
   DestID := ADestID;
-  CAN.SourceAlias := ASourceAlias;
-  CAN.DestAlias := ADestAlias;
+  SourceAlias := ASourceAlias;
+  DestAlias := ADestAlias;
   DataCount := 8;
   FDataArray[0] := DATAGRAM_PROTOCOL_CONFIGURATION;
   FDataArray[1] := MCP_READ;
@@ -2777,8 +2767,8 @@ begin
   ZeroFields;
   SourceID := ASourceID;
   DestID := ADestID;
-  CAN.SourceAlias := ASourceAlias;
-  CAN.DestAlias := ADestAlias;
+  SourceAlias := ASourceAlias;
+  DestAlias := ADestAlias;
   DataCount := 1;
   if ReplyPending then
     DataArrayIndexer[0] := $80 or (TimeoutValueN and $0F)
@@ -2796,8 +2786,8 @@ begin
   ZeroFields;
   SourceID := ASourceID;
   DestID := ADestID;
-  CAN.SourceAlias := ASourceAlias;
-  CAN.DestAlias := ADestAlias;
+  SourceAlias := ASourceAlias;
+  DestAlias := ADestAlias;
   DataCount := 2;
   MTI := MTI_DATAGRAM_REJECTED_REPLY;
   FDataArray[0] := _Hi(Reason);
@@ -2810,8 +2800,8 @@ begin
   ZeroFields;
   SourceID := ASourceID;
   DestID := ADestID;
-  CAN.SourceAlias := ASourceAlias;
-  CAN.DestAlias := ADestAlias;
+  SourceAlias := ASourceAlias;
+  DestAlias := ADestAlias;
   FDataArray[0] := DATAGRAM_PROTOCOL_CONFIGURATION;
   FDataArray[1] := MCP_OP_GET_ADD_SPACE_INFO;
   FDataArray[2] := AddressSpace;
@@ -2825,8 +2815,8 @@ begin
   ZeroFields;
   SourceID := ASourceID;
   DestID := ADestID;
-  CAN.SourceAlias := ASourceAlias;
-  CAN.DestAlias := ADestAlias;
+  SourceAlias := ASourceAlias;
+  DestAlias := ADestAlias;
   FDataArray[0] := DATAGRAM_PROTOCOL_CONFIGURATION;
   FDataArray[1] := MCP_OP_GET_CONFIG_OPTIONS;
   FDataCount := 2;
@@ -2842,8 +2832,8 @@ begin
   ZeroFields;
   SourceID := ASourceID;
   DestID := ADestID;
-  CAN.SourceAlias := ASourceAlias;
-  CAN.DestAlias := ADestAlias;
+  SourceAlias := ASourceAlias;
+  DestAlias := ADestAlias;
   FDataArray[0] := DATAGRAM_PROTOCOL_CONFIGURATION;
 
   // Use the long version with the optional Byte 6 if the memory space is not one of the original 3 (CDI, All, Config)
@@ -2886,8 +2876,8 @@ begin
   ZeroFields;
   SourceID := ASourceID;
   DestID := ADestID;
-  CAN.SourceAlias := ASourceAlias;
-  CAN.DestAlias := ADestAlias;
+  SourceAlias := ASourceAlias;
+  DestAlias := ADestAlias;
   FDataArray[0] := DATAGRAM_PROTOCOL_CONFIGURATION;
 
   // Use the long version with the optional Byte 6 if the memory space is not one of the original 3 (CDI, All, Config)
@@ -2929,8 +2919,8 @@ begin
   ZeroFields;
   SourceID := ASourceID;
   DestID := ADestID;
-  CAN.SourceAlias := ASourceAlias;
-  CAN.DestAlias := ADestAlias;
+  SourceAlias := ASourceAlias;
+  DestAlias := ADestAlias;
   FDataArray[0] := DATAGRAM_PROTOCOL_CONFIGURATION;
 
   // Use the long version with the optional Byte 6 if the memory space is not one of the original 3 (CDI, All, Config)
@@ -2997,8 +2987,8 @@ begin
   ZeroFields;
   SourceID := ASourceID;
   DestID := ADestID;
-  CAN.SourceAlias := ASourceAlias;
-  CAN.DestAlias := ADestAlias;
+  SourceAlias := ASourceAlias;
+  DestAlias := ADestAlias;
   FDataArray[0] := DATAGRAM_PROTOCOL_CONFIGURATION;
 
   if AddressSpace < MSI_CONFIG then
@@ -3039,8 +3029,8 @@ begin
   ZeroFields;
   SourceID := ASourceID;
   DestID := ADestID;
-  CAN.SourceAlias := ASourceAlias;
-  CAN.DestAlias := ADestAlias;
+  SourceAlias := ASourceAlias;
+  DestAlias := ADestAlias;
   FDataArray[0] := DATAGRAM_PROTOCOL_CONFIGURATION;
 
   // Use the long version with the optional Byte 6 if the memory space is not one of the original 3 (CDI, All, Config)
@@ -3078,8 +3068,8 @@ begin
   ZeroFields;
   SourceID := ASourceID;
   DestID := ADestID;
-  CAN.SourceAlias := ASourceAlias;
-  CAN.DestAlias := ADestAlias;
+  SourceAlias := ASourceAlias;
+  DestAlias := ADestAlias;
   FDataArray[0] := DATAGRAM_PROTOCOL_CONFIGURATION;
 
   // Use the long version with the optional Byte 6 if the memory space is not one of the original 3 (CDI, All, Config)

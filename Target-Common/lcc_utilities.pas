@@ -566,9 +566,9 @@ begin
         Result := Result + ' ' ;
 
       if Message.HasDestination then
-        Result := Result + '0x' + IntToHex( Message.CAN.SourceAlias, 4) + ' -> ' + '0x' + IntToHex( Message.CAN.DestAlias, 4)
+        Result := Result + '0x' + IntToHex( Message.SourceAlias, 4) + ' -> ' + '0x' + IntToHex( Message.DestAlias, 4)
       else
-        Result := Result + '0x' + IntToHex( Message.CAN.SourceAlias, 4);
+        Result := Result + '0x' + IntToHex( Message.SourceAlias, 4);
 
       if Message.MTI = MTI_DATAGRAM then
         Result := Result + RawHelperDataToStr(Message, True) + ' MTI: ' + MTI_ToString(Message.MTI)

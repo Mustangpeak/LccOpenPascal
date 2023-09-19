@@ -349,24 +349,24 @@ begin
   begin
     if GridConnect then
     begin
-      LocalAliasMapping := AliasServer.FindMapping(SourceMessage.CAN.SourceAlias);
+      LocalAliasMapping := AliasServer.FindMapping(SourceMessage.SourceAlias);
       LocalTractionNodeID := LocalAliasMapping.NodeID;
     end else
       LocalTractionNodeID := SourceMessage.SourceID;
     LocalTractionObject := Find(LocalTractionNodeID);
     if not Assigned(LocalTractionObject) then
     begin
-      LocalTractionObject := Add(SourceMessage.SourceID, SourceMessage.CAN.SourceAlias);
+      LocalTractionObject := Add(SourceMessage.SourceID, SourceMessage.SourceAlias);
       DoRegisterChange(LocalTractionObject, True);
     end;
     if AutoGatherInformation then
     begin
     // Get some information about this train
-      WorkerMessage.LoadSimpleNodeIdentInfoRequest(TLccNode( ALccNode).NodeID, TLccNode( ALccNode).AliasID, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias);
+      WorkerMessage.LoadSimpleNodeIdentInfoRequest(TLccNode( ALccNode).NodeID, TLccNode( ALccNode).AliasID, SourceMessage.SourceID, SourceMessage.SourceAlias);
       TLccNode( ALccNode).SendMessageFunc(Self, WorkerMessage);
-      WorkerMessage.LoadSimpleTrainNodeIdentInfoRequest(TLccNode( ALccNode).NodeID, TLccNode( ALccNode).AliasID, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias);
+      WorkerMessage.LoadSimpleTrainNodeIdentInfoRequest(TLccNode( ALccNode).NodeID, TLccNode( ALccNode).AliasID, SourceMessage.SourceID, SourceMessage.SourceAlias);
       TLccNode( ALccNode).SendMessageFunc(Self, WorkerMessage);
-      WorkerMessage.LoadTractionListenerQueryCount(TLccNode( ALccNode).NodeID, TLccNode( ALccNode).AliasID, SourceMessage.SourceID, SourceMessage.CAN.SourceAlias);
+      WorkerMessage.LoadTractionListenerQueryCount(TLccNode( ALccNode).NodeID, TLccNode( ALccNode).AliasID, SourceMessage.SourceID, SourceMessage.SourceAlias);
       TLccNode( ALccNode).SendMessageFunc(Self, WorkerMessage);
     end;
   end
