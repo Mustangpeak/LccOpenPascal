@@ -25,6 +25,13 @@ uses
 
 type
 
+  // When a LccMessage is validating if the nodes it references is missing a mapping
+  // in the Alias Server it calls back to the TReceiveMessageAliasServerThread with
+  // a request to send out a request for mapping of this ID pair.  Either could be
+  // null depending on what info exists in the message
+
+  TLccMessageRequestMappingCallback = procedure(NodeID: TNodeID; AliasID: Word) of object;
+
 
   { TLccAliasMapping }
 

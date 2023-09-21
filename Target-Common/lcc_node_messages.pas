@@ -159,6 +159,9 @@ public
   function ExtractNodeIdentifications(ForceEvaluation, IgnoreCANMessages: Boolean): TLccNodeIdentificationObjectList;
   function ExtractNodeIdentificationToCallback(NodeIdentificationCallback: TNodeIdentificationCallback; UnMappedOnly, IgnoreCANMessages: Boolean): Boolean;
 
+  function ValidateAliasMappings(RequestMappingCallback: TLccMessageRequestMappingCallback): Boolean;
+  function ValidatePayloadNodeID(RequestMappingCallback: TLccMessageRequestMappingCallback; ANodeID: TNodeID): Boolean;
+
   function LoadByGridConnectStr(GridConnectStr: String): Boolean;
   function LoadByLccTcp(var ByteArray: TLccDynamicByteArray): Boolean;
   function ConvertToGridConnectStr(Delimiter: String; Details: Boolean): String;
@@ -1499,6 +1502,92 @@ begin
         end;
       end;
   end;
+end;
+
+function TLccMessage.ValidateAliasMappings(RequestMappingCallback: TLccMessageRequestMappingCallback): Boolean;
+var
+  AliasMapping: TLccAliasMapping;
+  LocalNodeID: TNodeID;
+begin
+  Result := True;
+
+  AliasMapping := AliasServer.FindMapping(SourceAlias);
+  if not Assigned(AliasMapping) then
+  begin
+    RequestMappingCallback(SourceID, SourceAlias);
+    Result := False;
+  end else
+    SourceID := AliasMapping.NodeID;
+
+  if HasDestination then
+  begin
+    AliasMapping := AliasServer.FindMapping(DestAlias);
+    if not Assigned(AliasMapping) then
+    begin
+      RequestMappingCallback(DestID, DestAlias);
+      Result := False;
+    end else
+      DestID := AliasMapping.NodeID;
+  end;
+
+  // Now for special cases where NodeID's are carried in payloads and such
+  LocalNodeID := NULL_NODE_ID;
+  case MTI of
+    MTI_TRACTION_REQUEST :
+      begin
+        case DataArray[0] of
+          TRACTION_CONTROLLER_CONFIG :
+            begin
+              case DataArray[1] of
+                TRACTION_CONTROLLER_CONFIG_ASSIGN,
+                TRACTION_CONTROLLER_CONFIG_RELEASE,
+                TRACTION_CONTROLLER_CONFIG_CHANGED_NOTIFY : if not ValidatePayloadNodeID(RequestMappingCallback, ExtractDataBytesAsNodeID(3, LocalNodeID)) then
+                                                    Result := False;
+              end
+            end;
+          TRACTION_LISTENER_CONFIG :
+            begin
+              case DataArray[1] of
+                TRACTION_LISTENER_CONFIG_ATTACH,
+                TRACTION_LISTENER_CONFIG_DETACH : if not ValidatePayloadNodeID(RequestMappingCallback, ExtractDataBytesAsNodeID(3, LocalNodeID)) then
+                                                    Result := False;
+              end;
+            end
+        end
+      end;
+        MTI_TRACTION_REPLY :
+      begin
+        case DataArray[0] of
+          TRACTION_CONTROLLER_CONFIG :
+            begin
+              case DataArray[1] of
+                TRACTION_CONTROLLER_CONFIG_QUERY : if not ValidatePayloadNodeID(RequestMappingCallback, ExtractDataBytesAsNodeID(3, LocalNodeID)) then
+                                                    Result := False;
+                end
+            end;
+
+           TRACTION_LISTENER_CONFIG :
+             case DataArray[1] of
+                TRACTION_LISTENER_CONFIG_ATTACH,
+                TRACTION_LISTENER_CONFIG_DETACH : if not ValidatePayloadNodeID(RequestMappingCallback, ExtractDataBytesAsNodeID(2, LocalNodeID)) then
+                                                    Result := False;
+              end;
+        end;
+      end;
+  end;
+end;
+
+function TLccMessage.ValidatePayloadNodeID(RequestMappingCallback: TLccMessageRequestMappingCallback; ANodeID: TNodeID): Boolean;
+var
+  AliasMapping: TLccAliasMapping;
+begin
+  Result := True;
+  AliasMapping := AliasServer.FindMapping(ANodeID);
+  if not Assigned(AliasMapping) then
+  begin
+    RequestMappingCallback(ANodeID, 0);
+    Result := False;
+  end
 end;
 
 procedure TLccMessage.ZeroFields;
