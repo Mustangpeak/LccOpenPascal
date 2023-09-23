@@ -263,13 +263,14 @@ type
 
   { TLccNode }
 
-  TLccNode = class(TComponent)
+  TLccNode = class(TInterfacedObject)
   private
     FAliasID: Word;
     FDatagramResendQueue: TDatagramQueue;
     FDuplicateAliasDetected: Boolean;
     FEnabled: Boolean;
     FEnginesRegisteredList: TList;
+    FGridConnect: Boolean;
     FLoginTimoutCounter: Integer;
     FPermitted: Boolean;
     FProtocolEventConsumed: TProtocolEvents;
@@ -282,6 +283,8 @@ type
     FSeedNodeID: TNodeID;
     FWorkerMessageForAckMessages: TLccMessage;
     FInitialized: Boolean;
+    FNodeManager: {$IFDEF LCC_DELPHI}TComponent{$ELSE}TObject{$ENDIF};
+    FSendMessageFunc: TOnMessageEvent;
     FStreamManufacturerData: TMemoryStream;        // Stream containing the Manufacturer Data stored like the User data with Fixed Offsets for read only data
                                                    // SNIP uses this structure to create a packed version of this information (null separated strings) +
                                                    // the user name and user description which it pulls out of the Configuration Stream
@@ -303,6 +306,7 @@ type
     FEngineMemorySpaceAccess: TLccEngineMemorySpaceAccess;
 
     function GetAliasIDStr: String;
+    procedure SetSendMessageFunc(AValue: TOnMessageEvent);
     function GetNodeIDStr(WithDots: Boolean): String;
   protected
     FNodeID: TNodeID;
@@ -417,6 +421,7 @@ type
 
 
     property Enabled: Boolean read FEnabled write FEnabled;  // Internally used.. Set true by "LogIn" and false in "ReleaseAlias" so a new LogIn must be called
+    property NodeManager:{$IFDEF LCC_DELPHI}TComponent{$ELSE}TObject{$ENDIF} read FNodeManager write FNodeManager;
     property StreamCdi: TMemoryStream read FStreamCdi write FStreamCdi;
     property StreamConfig: TMemoryStream read FStreamConfig write FStreamConfig;
     property StreamManufacturerData: TMemoryStream read FStreamManufacturerData write FStreamManufacturerData;
@@ -452,9 +457,11 @@ type
 
   public
     property DatagramResendQueue: TDatagramQueue read FDatagramResendQueue;
+    property GridConnect: Boolean read FGridConnect;
     property NodeID: TNodeID read FNodeID;
     property NodeIDStr[WithDots: Boolean]: String read GetNodeIDStr;
     property Initialized: Boolean read FInitialized;
+    property SendMessageFunc: TOnMessageEvent read FSendMessageFunc write SetSendMessageFunc;
 
     property EngineMemorySpaceAccess: TLccEngineMemorySpaceAccess read FEngineMemorySpaceAccess write FEngineMemorySpaceAccess;
     property ProtocolSupportedProtocols: TProtocolSupportedProtocols read FProtocolSupportedProtocols write FProtocolSupportedProtocols;
@@ -470,7 +477,7 @@ type
     property AliasIDStr: String read GetAliasIDStr;
     property Permitted: Boolean read FPermitted;
 
-    constructor Create(AOwner: TComponent; CdiXML: string); reintroduce; virtual;
+    constructor Create(ANodeManager: {$IFDEF LCC_DELPHI}TComponent{$ELSE}TObject{$ENDIF}; CdiXML: string; GridConnectLink: Boolean); virtual;
     destructor Destroy; override;
 
     procedure Login(ANodeID: TNodeID); virtual;
@@ -491,8 +498,6 @@ type
     procedure SendProducerIdentify(Event: TEventID);
     procedure SendSNIPRequest(TargetNodeID: TNodeID; TargetAlias: Word);
     procedure SendTrainSNIPRequest(TargetNodeID: TNodeID; TargetAlias: Word);
-
-    procedure SendMessage(ALccMessage: TLccMessage);
   end;
 
   TLccNodeClass = class of TLccNode;
@@ -654,7 +659,7 @@ begin
 
     // Request the read
     WorkerMessage.LoadConfigMemRead(OwnerNode.NodeID, OwnerNode.AliasID, TargetNodeID, TargetAlias, MemorySpace, CurrentAddress, NextCount);
-    OwnerNode.SendMessage(WorkerMessage);
+    OwnerNode.SendMessageFunc(OwnerNode, WorkerMessage);
 
     if Assigned(CallBackProgress) then
       CallbackProgress(Self);
@@ -699,7 +704,7 @@ begin
 
       // Write the space
       WorkerMessage.LoadConfigMemWrite(OwnerNode.NodeID, OwnerNode.AliasID, TargetNodeID, TargetAlias, MemorySpace, CurrentAddress, ByteArray);
-      OwnerNode.SendMessage(WorkerMessage);
+      OwnerNode.SendMessageFunc(OwnerNode, WorkerMessage);
 
       if Assigned(CallBackProgress) then
         CallbackProgress(Self);
@@ -735,7 +740,7 @@ begin
     begin
       // Now see if the Memory Space supports what we want to do with it
       WorkerMessage.LoadConfigMemAddressSpaceInfo(OwnerNode.NodeID, OwnerNode.AliasID, TargetNodeID, TargetAlias, MemorySpace);
-      OwnerNode.SendMessage(WorkerMessage);
+      OwnerNode.SendMessageFunc(OwnerNode, WorkerMessage);
     end else
     begin
       ErrorCode := ENGINE_ERROR_MEMORY_SPACE_UNSUPPORTED_PROTOCOL;
@@ -863,7 +868,7 @@ begin
   begin
     // Get what protocols are supported
     WorkerMessage.LoadProtocolIdentifyInquiry(OwnerNode.NodeID, OwnerNode.AliasID, TargetNodeID, TargetAlias);
-    OwnerNode.SendMessage(WorkerMessage);
+    OwnerNode.SendMessageFunc(OwnerNode, WorkerMessage);
   end else
     StartOperation;
 end;
@@ -1367,11 +1372,9 @@ end;
 
 {TLccNode }
 
-procedure TLccNode.SendMessage(ALccMessage: TLccMessage);
+procedure TLccNode.SetSendMessageFunc(AValue: TOnMessageEvent);
 begin
-
-
- // HOW TO LINK THE OPENLCB CODE TO THE CONNECTIONS/HARDWARE.......
+  FSendMessageFunc := AValue;
 end;
 
 procedure TLccNode.DoMemorySpaceReadEngineDone(MemoryReadEngine: TLccEngineMemorySpaceAccess);
@@ -1387,22 +1390,22 @@ end;
 
 procedure TLccNode.HandleOptionalInteractionRejected(var SourceMessage: TLccMessage);
 begin
-  ((Owner as TLccNodeManager) as INodeManagerCallbacks).DoOptionalInteractionRejected(Self,SourceMessage);
+  (NodeManager as INodeManagerCallbacks).DoOptionalInteractionRejected(Self,SourceMessage);
 end;
 
 procedure TLccNode.HandleProducerIdentifiedClear(var SourceMessage: TLccMessage);
 begin
-  ((Owner as TLccNodeManager) as INodeManagerCallbacks).DoProducerIdentified(Self, SourceMessage);
+  (NodeManager as INodeManagerCallbacks).DoProducerIdentified(Self, SourceMessage);
 end;
 
 procedure TLccNode.HandleProducerIdentifiedSet(var SourceMessage: TLccMessage);
 begin
-  ((Owner as TLccNodeManager) as INodeManagerCallbacks).DoProducerIdentified(Self, SourceMessage);
+  (NodeManager as INodeManagerCallbacks).DoProducerIdentified(Self, SourceMessage);
 end;
 
 procedure TLccNode.HandleProducerIdentifiedUnknown(var SourceMessage: TLccMessage);
 begin
-  ((Owner as TLccNodeManager) as INodeManagerCallbacks).DoProducerIdentified(Self, SourceMessage);
+  (NodeManager as INodeManagerCallbacks).DoProducerIdentified(Self, SourceMessage);
 end;
 
 procedure TLccNode.HandleProducerIdentify(var SourceMessage: TLccMessage);
@@ -1475,7 +1478,7 @@ end;
 
 procedure TLccNode.HandleConsumerIdentifiedClear(var SourceMessage: TLccMessage);
 begin
-  ((Owner as TLccNodeManager) as INodeManagerCallbacks).DoConsumerIdentified(Self, SourceMessage);
+  (NodeManager as INodeManagerCallbacks).DoConsumerIdentified(Self, SourceMessage);
 end;
 
 procedure TLccNode.HandleConfiguration_MemorySpaceWrite(var SourceMessage: TLccMessage);
@@ -1596,12 +1599,12 @@ end;
 
 procedure TLccNode.HandleConsumerIdentifiedSet(var SourceMessage: TLccMessage);
 begin
-  ((Owner as TLccNodeManager) as INodeManagerCallbacks).DoConsumerIdentified(Self, SourceMessage);
+  (NodeManager as INodeManagerCallbacks).DoConsumerIdentified(Self, SourceMessage);
 end;
 
 procedure TLccNode.HandleConsumerIdentifiedUnknown(var SourceMessage: TLccMessage);
 begin
-  ((Owner as TLccNodeManager) as INodeManagerCallbacks).DoConsumerIdentified(Self, SourceMessage);
+  (NodeManager as INodeManagerCallbacks).DoConsumerIdentified(Self, SourceMessage);
 end;
 
 procedure TLccNode.HandleEventsIdentifyDest;
@@ -1613,17 +1616,17 @@ end;
 procedure TLccNode.HandleProtocolSupportInquiry(var SourceMessage: TLccMessage);
 begin
   WorkerMessage.LoadProtocolIdentifyReply(NodeID, FAliasID, SourceMessage.SourceID, SourceMessage.SourceAlias, ProtocolSupportedProtocols.EncodeFlags);
-  SendMessage(WorkerMessage);
+  SendMessageFunc(Self, WorkerMessage);
 end;
 
 procedure TLccNode.HandleProtocolSupportReply(var SourceMessage: TLccMessage);
 begin
-  ((Owner as TLccNodeManager) as INodeManagerCallbacks).DoProtocolIdentifyReply(Self, SourceMessage);
+  (NodeManager as INodeManagerCallbacks).DoProtocolIdentifyReply(Self, SourceMessage);
 end;
 
 procedure TLccNode.HandleSimpleNodeInfoReply(var SourceMessage: TLccMessage);
 begin
-  ((Owner as TLccNodeManager) as INodeManagerCallbacks).DoSimpleNodeIdentReply(Self, SourceMessage);
+  (NodeManager as INodeManagerCallbacks).DoSimpleNodeIdentReply(Self, SourceMessage);
 end;
 
 procedure TLccNode.HandleSimpleNodeInfoRequest(var SourceMessage: TLccMessage);
@@ -1631,7 +1634,7 @@ begin
   WorkerMessage.LoadSimpleNodeIdentInfoReply(NodeID, FAliasID,
   SourceMessage.SourceID, SourceMessage.SourceAlias,
   ProtocolSimpleNodeInfo.PackedFormat(StreamManufacturerData, StreamConfig));
-  SendMessage(WorkerMessage);
+  SendMessageFunc(Self, WorkerMessage);
 end;
 
 procedure TLccNode.HandleTractionFDI_ConfigurationMemorySpaceRead(var SourceMessage: TLccMessage);
@@ -1651,7 +1654,7 @@ begin
   // No reason to Queue this to wait for the reply Ack as the receiving node has not reason to reject it
   SendDatagramAckReply(MemoryReadRequestMessage, True, 0);   // Per the Spec set pending true as we are sending the Failure Reply
   WorkerMessage.LoadConfigMemReadReplyError(NodeID, AliasID, MemoryReadRequestMessage.SourceID, MemoryReadRequestMessage.SourceAlias, MemoryReadRequestMessage.DecodeMemorySpace, MemoryReadRequestMessage.ExtractDataBytesAsInt(2, 5), ErrorCode, ErrorString);
-  SendMessage(WorkerMessage);
+  SendMessageFunc(Self, WorkerMessage);
 end;
 
 procedure TLccNode.HandleTractionFDI_MemorySpaceRead(var SourceMessage: TLccMessage);
@@ -1683,12 +1686,12 @@ begin
   // No reason to Queue this to wait for the reply Ack as the receiving node has not reason to reject it
   SendDatagramAckReply(MemoryWriteRequestMessage, True, 0);   // Per the Spec set pending true as we are sending the Failure Reply
   WorkerMessage.LoadConfigMemWriteReplyError(NodeID, AliasID, MemoryWriteRequestMessage.SourceID, MemoryWriteRequestMessage.SourceAlias, MemoryWriteRequestMessage.DecodeMemorySpace, MemoryWriteRequestMessage.ExtractDataBytesAsInt(2, 5), ErrorCode, ErrorString);
-  SendMessage(WorkerMessage);
+  SendMessageFunc(Self, WorkerMessage);
 end;
 
 procedure TLccNode.HandleVerifiedNodeIDNumber(var SourceMessage: TLccMessage);
 begin
-  ((Owner as TLccNodeManager) as INodeManagerCallbacks).DoVerifiedNodeID(Self, SourceMessage);
+  (NodeManager as INodeManagerCallbacks).DoVerifiedNodeID(Self, SourceMessage);
 end;
 
 procedure TLccNode.HandleVerifyNodeIDNumber(var SourceMessage: TLccMessage);
@@ -1702,19 +1705,19 @@ begin
     if EqualNodeID(TestNodeID, NodeID, False) then
     begin
       WorkerMessage.LoadVerifiedNodeID(NodeID, FAliasID);
-      SendMessage(WorkerMessage);
+      SendMessageFunc(Self, WorkerMessage);
     end
   end else
   begin
     WorkerMessage.LoadVerifiedNodeID(NodeID, FAliasID);
-    SendMessage(WorkerMessage);
+    SendMessageFunc(Self, WorkerMessage);
   end;
 end;
 
 procedure TLccNode.HandleVerifyNodeIDNumberDest;
 begin
   WorkerMessage.LoadVerifiedNodeID(NodeID, FAliasID);
-  SendMessage(WorkerMessage);
+  SendMessageFunc(Self, WorkerMessage);
 end;
 
 procedure TLccNode.HandleTractionControllerAssign(var SourceMessage: TLccMessage); begin end;
@@ -1827,11 +1830,11 @@ begin
   Result := True;
 end;
 
-constructor TLccNode.Create(AOwner: TComponent; CdiXML: string);
+constructor TLccNode.Create(ANodeManager: {$IFDEF LCC_DELPHI}TComponent{$ELSE}TObject{$ENDIF}; CdiXML: string; GridConnectLink: Boolean);
 var
   i, Counter: Integer;
 begin
-  inherited Create(AOwner);
+  inherited Create;
   FProtocolSupportedProtocols := TProtocolSupportedProtocols.Create;
   FProtocolSimpleNodeInfo := TProtocolSimpleNodeInfo.Create;
   FProtocolMemoryOptions := TProtocolMemoryOptions.Create;
@@ -1849,6 +1852,8 @@ begin
   FDatagramResendQueue := TDatagramQueue.Create;
   FWorkerMessageForAckMessages := TLccMessage.Create;
   FWorkerMessage := TLccMessage.Create;
+  FNodeManager := ANodeManager;
+  FGridConnect := GridConnectLink;
   FEngineMemorySpaceAccess := TLccEngineMemorySpaceAccess.Create(Self);
   FEnginesRegisteredList := TList.Create;
   RegisterEngine(EngineMemorySpaceAccess);
@@ -1963,18 +1968,18 @@ begin
     if NullNodeID(ANodeID) then
       CreateNodeID(ANodeID);  // This should only be true if not GridConnect and the NodeID was not set
     FNodeID := ANodeID;
-    ((Owner as TLccNodeManager) as INodeManagerCallbacks).DoNodeIDChanged(Self);
+    (NodeManager as INodeManagerCallbacks).DoNodeIDChanged(Self);
     FInitialized := True;
 
     // Send Initialization Complete
     WorkerMessage.LoadInitializationComplete(NodeID, FAliasID);
-    SendMessage(WorkerMessage);
-    ((Owner as TLccNodeManager) as INodeManagerCallbacks).DoInitializationComplete(Self);
+    SendMessageFunc(Self, WorkerMessage);
+    (NodeManager as INodeManagerCallbacks).DoInitializationComplete(Self);
 
 
     AutoGenerateEvents;
     SendEvents;
-    ((Owner as TLccNodeManager) as INodeManagerCallbacks).DoLogInNode(Self);
+    (NodeManager as INodeManagerCallbacks).DoLogInNode(Self);
     AfterLogin;
   end;
 end;
@@ -2207,7 +2212,7 @@ begin
          else begin {case else}
              // Unknown Datagram Type
              WorkerMessage.LoadDatagramRejected(NodeID, FAliasID, SourceMessage.SourceID, SourceMessage.SourceAlias, ERROR_PERMANENT_NOT_IMPLEMENTED or ERROR_TYPE);
-             SendMessage(WorkerMessage);
+             SendMessageFunc(Self, WorkerMessage);
            end;
          end;  // case
        end;
@@ -2215,7 +2220,7 @@ begin
       if SourceMessage.HasDestination then
       begin
         WorkerMessage.LoadOptionalInteractionRejected(NodeID, FAliasID, SourceMessage.SourceID, SourceMessage.SourceAlias, ERROR_PERMANENT_NOT_IMPLEMENTED or ERROR_MTI, SourceMessage.MTI);
-        SendMessage(WorkerMessage);
+        SendMessageFunc(Self, WorkerMessage)
       end;
     end;
   end; // case
@@ -2238,7 +2243,7 @@ begin
     if ((SourceMessage.CAN_MTI and $0F000000) >= MTI_CAN_CID6) and ((SourceMessage.CAN_MTI and $0F000000) <= MTI_CAN_CID0) then
     begin
       WorkerMessage.LoadRID(NodeID, AliasID);                   // sorry charlie this is mine
-      SendMessage(WorkerMessage);
+      SendMessageFunc(Self, WorkerMessage);
       Result := True;
     end else
     if Permitted then
@@ -2270,13 +2275,13 @@ begin
               if EqualNodeID(TestNodeID, NodeID, False) then
               begin
                 WorkerMessage.LoadAMD(NodeID, AliasID);
-                SendMessage(WorkerMessage);
+                SendMessageFunc(Self, WorkerMessage);
               end
             end else
             begin
 
               WorkerMessage.LoadAMD(NodeID, AliasID);
-              SendMessage(WorkerMessage);
+              SendMessageFunc(Self, WorkerMessage);
             end;
           end;
       end;
@@ -2329,13 +2334,13 @@ begin
   FSeedNodeID := Temp;
   FAliasID := GenerateID_Alias_From_Seed(Temp);
   WorkerMessage.LoadCID(NodeID, AliasID, 0);
-  SendMessage(WorkerMessage);
+  SendMessageFunc(Self, WorkerMessage);
   WorkerMessage.LoadCID(NodeID, AliasID, 1);
-  SendMessage(WorkerMessage);
+  SendMessageFunc(Self, WorkerMessage);
   WorkerMessage.LoadCID(NodeID, AliasID, 2);
-  SendMessage(WorkerMessage);
+  SendMessageFunc(Self, WorkerMessage);
   WorkerMessage.LoadCID(NodeID, AliasID, 3);
-  SendMessage(WorkerMessage);
+  SendMessageFunc(Self, WorkerMessage);
 
   LoginTimoutCounter := 0;
 end;
@@ -2355,12 +2360,12 @@ begin
       LocalMapping := TLccAliasMapping(MappingList[i]);
       if LocalMapping.MarkedForInsertion then
       begin
-        ((Owner as TLccNodeManager) as INodeManagerCallbacks).DoAliasMappingChange(Self, LocalMapping, True);
+        (NodeManager as INodeManagerCallbacks).DoAliasMappingChange(Self, LocalMapping, True);
         LocalMapping.MarkedForInsertion := False;  // Handled
       end;
       if LocalMapping.MarkedForDeletion then
       begin
-        ((Owner as TLccNodeManager) as INodeManagerCallbacks).DoAliasMappingChange(Self, LocalMapping, False);
+        (NodeManager as INodeManagerCallbacks).DoAliasMappingChange(Self, LocalMapping, False);
         {$IFDEF LOG_MAPPING}DebugLn('Mapping Deleted: 0x' + IntToHex(LocalMapping.NodeAlias, 4) + '; ' + NodeIDToString(LocalMapping.NodeID, True));{$ENDIF}
         LocalMapping.Free;
         MappingList.Delete(i);
@@ -2400,13 +2405,13 @@ begin
       begin
         // We have the Alias but not the NodeID so use addressed to that Alias (don't need the NodeID for CAN)
         WorkerMessage.LoadVerifyNodeIDAddressed(NodeID, AliasID, LocalNodeIdentificationObject.NodeID, LocalNodeIdentificationObject.Alias, NULL_NODE_ID);
-        SendMessage(WorkerMessage);
+        SendMessageFunc(Self, WorkerMessage);
         {$IFDEF LOG_MAPPING}DebugLn('Mapping Request Sent: 0x' + IntToHex(LocalNodeIdentificationObject.Alias, 4) + '; ' + NodeIDToString(LocalNodeIdentificationObject.NodeID, True));{$ENDIF}
       end else
       if not NullNodeID(LocalNodeIdentificationObject.NodeID) then
       begin
         WorkerMessage.LoadVerifyNodeID(NodeID, AliasID, LocalNodeIdentificationObject.NodeID);
-        SendMessage(WorkerMessage);
+        SendMessageFunc(Self, WorkerMessage);
         {$IFDEF LOG_MAPPING}DebugLn('Mapping Request Sent: 0x' + IntToHex(LocalNodeIdentificationObject.Alias, 4) + '; ' + NodeIDToString(LocalNodeIdentificationObject.NodeID, True));{$ENDIF}
       end;
     end;
@@ -2428,15 +2433,18 @@ begin
 
   UnRegisterEngine(EngineMemorySpaceAccess);
 
-  if AliasID <> 0 then
-    ReleaseAlias(100);
-   ((Owner as TLccNodeManager) as INodeManagerCallbacks).DoAliasIDChanged(Self);
+  if GridConnect then
+  begin
+    if AliasID <> 0 then
+      ReleaseAlias(100);
+     (NodeManager as INodeManagerCallbacks).DoAliasIDChanged(Self);
+  end;
 
   FNodeID[0] := 0;
   FNodeID[1] := 0;
-  ((Owner as TLccNodeManager) as INodeManagerCallbacks).DoNodeIDChanged(Self);
+  (NodeManager as INodeManagerCallbacks).DoNodeIDChanged(Self);
 
-  ((Owner as TLccNodeManager) as INodeManagerCallbacks).DoDestroyLccNode(Self);
+  (NodeManager as INodeManagerCallbacks).DoDestroyLccNode(Self);
 
   FreeAndNil(FProtocolSupportedProtocols);
   FreeAndNil(FProtocolSimpleNodeInfo);
@@ -2498,8 +2506,7 @@ var
   Temp: TNodeID;
 begin
   Enabled := True;
-
-  if (Owner as TLccNodeManager).EmulateCanNetworkLogin then
+  if GridConnect then
   begin
     BeforeLogin;
     if NullNodeID(ANodeID) then
@@ -2507,17 +2514,17 @@ begin
     SeedNodeID := ANodeID;
     Temp := FSeedNodeID;
     FAliasID := GenerateID_Alias_From_Seed(Temp);
-    ((Owner as TLccNodeManager) as INodeManagerCallbacks).DoNodeIDChanged(Self);
+    (NodeManager as INodeManagerCallbacks).DoNodeIDChanged(Self);
     FNodeID := ANodeID;
 
     WorkerMessage.LoadCID(NodeID, AliasID, 0);
-    SendMessage(WorkerMessage);
+    SendMessageFunc(Self, WorkerMessage);
     WorkerMessage.LoadCID(NodeID, AliasID, 1);
-    SendMessage(WorkerMessage);
+    SendMessageFunc(Self, WorkerMessage);
     WorkerMessage.LoadCID(NodeID, AliasID, 2);
-    SendMessage(WorkerMessage);
+    SendMessageFunc(Self, WorkerMessage);
     WorkerMessage.LoadCID(NodeID, AliasID, 3);
-    SendMessage(WorkerMessage);
+    SendMessageFunc(Self, WorkerMessage);
 
     LoginTimoutCounter := 0;
   end else
@@ -2531,15 +2538,15 @@ procedure TLccNode.ReleaseAlias(DelayTime_ms: Word);
 begin
   if AliasID <> 0 then
   begin
-    if (Owner as TLccNodeManager).EmulateCanNetworkLogin then
+    if GridConnect then
     begin
       WorkerMessage.LoadAMR(NodeID, AliasID);
-      SendMessage(WorkerMessage);
+      SendMessageFunc(Self, WorkerMessage);
       // Wait for the message to get sent on the hardware layers.  Testing this happens is complicated
       // This assumes they are all running in separate thread and they keep running
       Sleep(DelayTime_ms);
       FPermitted := False;
-      ((Owner as TLccNodeManager) as INodeManagerCallbacks).DoAliasRelease(Self);
+      (NodeManager as INodeManagerCallbacks).DoAliasRelease(Self);
       AliasServer.MarkForRemovalByAlias(AliasID);
       FAliasID := 0;
       Enabled := False; // must call LogIn again to reenable
@@ -2553,7 +2560,7 @@ procedure TLccNode.On_100msTimer(Sender: TObject);
 var
   Temp: TNodeID;
 begin
-  if (Owner as TLccNodeManager).EmulateCanNetworkLogin then
+  if GridConnect then
   begin
     if Enabled then
     begin
@@ -2569,13 +2576,13 @@ begin
           FSeedNodeID := Temp;
           FAliasID := GenerateID_Alias_From_Seed(Temp);
           WorkerMessage.LoadCID(NodeID, AliasID, 0);
-          SendMessage(WorkerMessage);
+          SendMessageFunc(Self, WorkerMessage);
           WorkerMessage.LoadCID(NodeID, AliasID, 1);
-          SendMessage(WorkerMessage);
+          SendMessageFunc(Self, WorkerMessage);
           WorkerMessage.LoadCID(NodeID, AliasID, 2);
-          SendMessage(WorkerMessage);
+          SendMessageFunc(Self, WorkerMessage);
           WorkerMessage.LoadCID(NodeID, AliasID, 3);
-          SendMessage(WorkerMessage);
+          SendMessageFunc(Self, WorkerMessage);
           LoginTimoutCounter := 0;
         end else
         begin
@@ -2583,10 +2590,10 @@ begin
           begin
             FPermitted := True;
             WorkerMessage.LoadRID(NodeID, AliasID);
-            SendMessage(WorkerMessage);
+            SendMessageFunc(Self, WorkerMessage);
             WorkerMessage.LoadAMD(NodeID, AliasID);
-            SendMessage(WorkerMessage);
-            ((Owner as TLccNodeManager) as INodeManagerCallbacks).DoAliasIDChanged(Self);
+            SendMessageFunc(Self, WorkerMessage);
+            (NodeManager as INodeManagerCallbacks).DoAliasIDChanged(Self);
             LccLogIn(NodeID);
           end;
         end
@@ -2604,7 +2611,7 @@ end;
 
 function TLccNode.ProcessMessage(SourceMessage: TLccMessage): Boolean;
 begin
-  if (Owner as TLccNodeManager).EmulateCanNetworkLogin then
+  if GridConnect then
     Result := ProcessMessageGridConnect(SourceMessage)   // When necessary ProcessMessageGridConnect drops the message into ProcessMessageLCC
   else
     Result := ProcessMessageLCC(SourceMessage);
@@ -2614,7 +2621,7 @@ procedure TLccNode.SendDatagramAckReply(SourceMessage: TLccMessage; ReplyPending
 begin
   // Only Ack if we accept the datagram
   WorkerMessageForAckMessages.LoadDatagramAck(NodeID, FAliasID, SourceMessage.SourceID, SourceMessage.SourceAlias, True, ReplyPending, TimeOutValueN);
-  SendMessage(FWorkerMessageForAckMessages);
+  SendMessageFunc(Self, FWorkerMessageForAckMessages);
 end;
 
 procedure TLccNode.SendConsumedEvents;
@@ -2626,7 +2633,7 @@ begin
   begin
     Temp := ProtocolEventConsumed.Event[i].ID;
     WorkerMessage.LoadConsumerIdentified(NodeID, FAliasID, Temp, ProtocolEventConsumed.Event[i].State);
-    SendMessage(WorkerMessage);
+    SendMessageFunc(Self, WorkerMessage);
   end;
 end;
 
@@ -2640,14 +2647,14 @@ begin
   begin
     Temp := EventObj.ID;
     WorkerMessage.LoadConsumerIdentified(NodeID, FAliasID, Temp, EventObj.State);
-    SendMessage(WorkerMessage);
+    SendMessageFunc(Self, WorkerMessage);
   end;
 end;
 
 procedure TLccNode.SendDatagramRejectedReply(SourceMessage: TLccMessage; Reason: Word);
 begin
   WorkerMessageForAckMessages.LoadDatagramRejected(NodeID, FAliasID, SourceMessage.SourceID, SourceMessage.SourceAlias, Reason);
-  SendMessage(WorkerMessageForAckMessages);
+  SendMessageFunc(Self, WorkerMessageForAckMessages);
 end;
 
 procedure TLccNode.QueueAndSendDatagramReplyToWaitForAck(DatagramRequest, DatagramReply: TLccMessage);
@@ -2655,7 +2662,7 @@ begin
   if DatagramResendQueue.Add(DatagramReply.Clone) then     // Message that is waiting for an ACK for possible resend
   begin
     SendDatagramAckReply(DatagramRequest, False, 0);       // Ack the Request
-    SendMessage(DatagramReply);                  // Now send our reply
+    SendMessageFunc(Self, DatagramReply);                  // Now send our reply
   end else
     SendDatagramRejectedReply(DatagramRequest, ERROR_TEMPORARY_BUFFER_UNAVAILABLE)   // We have problems so ask the node to resend if it wants
 end;
@@ -2675,7 +2682,7 @@ begin
   begin
     Temp := ProtocolEventsProduced.Event[i].ID;
     WorkerMessage.LoadProducerIdentified(NodeID, FAliasID, Temp, ProtocolEventsProduced.Event[i].State);
-    SendMessage(WorkerMessage);
+    SendMessageFunc(Self, WorkerMessage);
   end;
 end;
 
@@ -2689,20 +2696,20 @@ begin
   begin
     Temp := EventObj.ID;
     WorkerMessage.LoadProducerIdentified(NodeID, FAliasID, Temp, EventObj.State);
-    SendMessage(WorkerMessage);
+    SendMessageFunc(Self, WorkerMessage);
   end;
 end;
 
 procedure TLccNode.SendSNIPRequest(TargetNodeID: TNodeID; TargetAlias: Word);
 begin
   WorkerMessage.LoadSimpleNodeIdentInfoRequest(NodeID, AliasID, TargetNodeID, TargetAlias);
-  SendMessage(WorkerMessage);
+  SendMessageFunc(Self, WorkerMessage);
 end;
 
 procedure TLccNode.SendTrainSNIPRequest(TargetNodeID: TNodeID; TargetAlias: Word);
 begin
   WorkerMessage.LoadSimpleTrainNodeIdentInfoRequest(NodeID, AliasID, TargetNodeID, TargetAlias);
-  SendMessage(WorkerMessage);
+  SendMessageFunc(Self, WorkerMessage);
 end;
 
 initialization

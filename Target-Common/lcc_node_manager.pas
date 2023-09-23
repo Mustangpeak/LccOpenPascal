@@ -92,11 +92,37 @@ type
 
   ENodeIdentificationObjectIsNull = class(Exception);
 
+
+  { TReceiveMessageServerThread }
+
+  TReceiveMessageServerThread = class(TThread)
+  private
+    FReceivedMessages: TThreadList;
+    FOwner: TLccNodeManager;
+    FReceivedMessage: TLccMessage;
+    FWorkerMessage: TLccMessage;
+  protected
+    property ReceivedMessage: TLccMessage read FReceivedMessage write FReceivedMessage;
+    property WorkerMessage: TLccMessage read FWorkerMessage write FWorkerMessage;
+
+    procedure Execute; override;
+    procedure ReceiveMessageSyncronize;   // Syncronize Method called in context of main thread, this thread is stalled during that time
+    procedure UpdateGlobalMappings(AMessage: TLccMessage); // Called in context of thread
+    procedure NodeIdentificationToCallbackProc(ANodeIdentification: TLccNodeIdentificationObject); // Called in context of thread
+
+  public
+    property ReceivedMessages: TThreadList read FReceivedMessages write FReceivedMessages;
+    property Owner: TLccNodeManager read FOwner write FOwner;
+
+    procedure ReceiveMessageServerAddMessage(AMessage: TLccMessage);
+  end;
+
   { TLccNodeManager }
 
   TLccNodeManager = class(TComponent, INodeManagerCallbacks, INodeManagerTractionCallbacks)
   private
-    FEmulateCanNetworkLogin: Boolean;
+    FGridConnect: Boolean;
+    FHardwarewareConnectionList: TInterfaceList;
     FNodes: TList;
     FOnAliasMappingChange: TOnAliasMappingChange;
     FOnAliasRelease: TOnLccNodeMessage;
@@ -136,6 +162,7 @@ type
     FOnNodeTractionSetSpeed: TOnLccNodeMessageCallBack;
     FOnNodeTractionTrainSNIP: TOnLccNodeMessageCallBack;
     FOnNodeVerifiedNodeID: TOnLccNodeMessageReply;
+    FReceiveMessageServerThread: TReceiveMessageServerThread;
     FWorkerMessage: TLccMessage;
     F_100msTimer: TLccTimer;
 
@@ -188,16 +215,21 @@ type
 
 
    public
+    // Connection Manager
+
+    property GridConnect: Boolean read FGridConnect;
+
     property Nodes: TList read FNodes write FNodes;
 
     property Node[Index: Integer]: TLccNode read GetNode; default;
     property WorkerMessage: TLccMessage read FWorkerMessage write FWorkerMessage;
     // May have many places a message needs to go such at TCP, WebSocket, UART, etc
     // Automatically updated through the TLccHardwareConnectionManager when it is created/destroyed
+    property HardwarewareConnectionList: TInterfaceList read FHardwarewareConnectionList write FHardwarewareConnectionList;
+    property ReceiveMessageServerThread: TReceiveMessageServerThread read FReceiveMessageServerThread write FReceiveMessageServerThread;
     property _100msTimer: TLccTimer read F_100msTimer write F_100msTimer;
-    property EmulateCanNetworkLogin: Boolean read FEmulateCanNetworkLogin write FEmulateCanNetworkLogin;
 
-    constructor Create(AnOwner: TComponent); override;
+    constructor Create(AnOwner: TComponent; GridConnectLink: Boolean); reintroduce; virtual;
     destructor Destroy; override;
 
     // Interal Node manipulation
@@ -210,6 +242,7 @@ type
 
     procedure ReleaseAliasAll;
 
+    procedure SendMessage(Sender: TObject; LccMessage: TLccMessage); // Outgoing messages are passed through this method, its address is given to Nodes and other objects that need to send messages
     procedure On_100msTimer(Sender: TObject);  virtual;
 
   published
@@ -277,6 +310,221 @@ type
 
 
 implementation
+
+{ TReceiveMessageServerThread }
+
+procedure TReceiveMessageServerThread.Execute;
+var
+  LocalMessageList, LocalValidatedMessageList, LocalUnValidatedMessageList: TList;
+  i: Integer;
+  LocalMessage: TLccMessage;
+begin
+  ReceivedMessages := TThreadList.Create;
+  LocalValidatedMessageList := TList.Create;
+  LocalUnValidatedMessageList := TList.Create;
+  WorkerMessage := TLccMessage.Create;
+  try
+    while not Terminated do
+    begin
+      // First run through the waiting messages.  If there is a Mapping move them in to the
+      // LocalValidatedMessageList and set that slot to nil.  If there is no Mapping then the message is moved to the
+      // UnValidated list to be handled outside the locked list
+      // Need to run from 0 up to maintain order
+      LocalMessageList := ReceivedMessages.LockList;
+      try
+        for i := 0 to LocalMessageList.Count - 1 do
+        begin
+          LocalMessage := TLccMessage( LocalMessageList[i]);
+          if Owner.GridConnect then
+          begin
+            if EqualNodeID(LocalMessage.SourceID, NULL_NODE_ID, True) and (LocalMessage.SourceAlias = 0) then    // Malformed Message with no SourceID
+              LocalMessage.Free
+            else begin
+              // Pick out the Verify Message and AMR/AMD to update the AliasMapping Database
+              UpdateGlobalMappings(LocalMessage);
+
+              // Pull the message apart and find all the Nodes it requires then test them againt the AliasMapping Database.
+              // If they are not there then push the Alias or NodeID (from a message payload) into the Alias Mapping Request list to Send that node a message
+              // to Verify it
+              if LocalMessage.ExtractNodeIdentificationToCallback({$IFNDEF LCC_DELPHI}@{$ENDIF}NodeIdentificationToCallbackProc, True, True) then
+                LocalValidatedMessageList.Add(LocalMessageList[i])
+              else begin
+                LocalMessage.AbandonCount := 0;
+                LocalUnValidatedMessageList.Add(LocalMessage);
+              end;
+            end;
+          end else
+          begin  // Raw TCP we move them all
+            LocalValidatedMessageList.Add(LocalMessage);
+          end;
+        end;
+      finally
+        LocalMessageList.Clear; // All received messages have been moved to other places
+        ReceivedMessages.UnlockList;
+      end;
+
+      // Deliever the messages we moved from the MainList to the LocalValidatedMessageList
+      // ***********************************************************************
+      try
+        for i := 0 to LocalValidatedMessageList.Count - 1 do
+        begin
+          if not Terminated then
+          try
+            try
+              ReceivedMessage := TLccMessage(LocalValidatedMessageList[i]);
+              Synchronize({$IFDEF LCC_FPC}@{$ENDIF}ReceiveMessageSyncronize);
+            finally
+              FreeAndNil(FReceivedMessage);
+            end;
+          except
+            FreeAndNil(FReceivedMessage);
+          end;
+        end;
+      finally
+        LocalValidatedMessageList.Clear
+      end;
+      // ***********************************************************************
+
+      // ***********************************************************************
+
+      // See if any UnValidated Messages have been validated and the Mappings now exist
+      // ***********************************************************************
+      if not Terminated then
+      begin
+        if Owner.GridConnect then
+        begin // Must keep order intact so have to run them this way
+          for i := 0 to LocalUnValidatedMessageList.Count - 1 do
+          begin
+            LocalMessage := TLccMessage( LocalUnValidatedMessageList[i]);
+            if LocalMessage.ExtractNodeIdentificationToCallback({$IFNDEF LCC_DELPHI}@{$ENDIF}NodeIdentificationToCallbackProc, True, True) then
+            begin
+              LocalValidatedMessageList.Add(LocalMessage);
+              LocalUnValidatedMessageList[i] := nil;
+            end else
+            begin    // Give it 5 seconds or throw it out
+              if (LocalMessage.AbandonCount * TIMEOUT_RECIEVE_THREAD) > 5000 then
+              begin
+                LocalMessage.Free;
+                LocalUnValidatedMessageList[i] := nil;
+              end;
+            end;
+            LocalMessage.AbandonCount := LocalMessage.AbandonCount + 1;
+         end;
+
+          // Now go through and delete the slots that are empty
+          for i := LocalUnValidatedMessageList.Count - 1 downto 0 do
+          begin
+            if LocalUnValidatedMessageList[i] = nil then
+              LocalUnValidatedMessageList.Delete(i);
+          end;
+        end;
+      end;
+      // ***********************************************************************
+
+
+      Sleep(TIMEOUT_RECIEVE_THREAD);
+    end;
+
+  finally
+    LocalMessageList := ReceivedMessages.LockList;
+    try
+      for i := 0 to LocalMessageList.Count - 1 do
+        TObject(LocalMessageList[i]).Free
+    finally
+      LocalMessageList.Clear;
+      ReceivedMessages.UnlockList;
+      FreeAndNil(FReceivedMessages);
+    end;
+
+    try
+      for i := 0 to LocalValidatedMessageList.Count - 1 do
+        TObject(LocalValidatedMessageList[i]).Free
+    finally
+      LocalValidatedMessageList.Clear;
+      FreeAndNil(LocalValidatedMessageList);
+      LocalValidatedMessageList.Free;
+    end;
+
+    WorkerMessage.Free;
+  end;
+end;
+
+procedure TReceiveMessageServerThread.ReceiveMessageSyncronize;
+// This is called through Syncronize... The main Message Queue is not locked so more messages can be added
+// but this will dead lock here and messages to the nodes in the application will starve plus you can't
+// Send a message then wait here for it.. it will get placed in the main Message Queue but this won't be called
+// until it returns.
+var
+  i: Integer;
+  LocalSourceNode: TLccNode;
+begin
+  if Owner.GridConnect then
+    LocalSourceNode := Owner.FindNode(ReceivedMessage.SourceAlias)
+  else
+    LocalSourceNode := Owner.FindNode(ReceivedMessage.SourceID);
+
+  // SourceNode may be nil if the message is not from one of our nodes but that is Ok
+  // and this test still is correct... the message needs to be sent to all our nodes
+  for i := 0 to Owner.Nodes.Count - 1 do
+  begin
+    // Don't send the message back to the node that created it
+    if LocalSourceNode <> TLccNode(Owner.Nodes[i]) then
+      TLccNode(Owner.Nodes[i]).ProcessMessage(ReceivedMessage)
+  end;
+end;
+
+procedure TReceiveMessageServerThread.UpdateGlobalMappings(AMessage: TLccMessage);
+var
+  LocalNodeID: TNodeID;
+begin
+  case AMessage.CAN_MTI of
+    MTI_CAN_AMR :
+      begin
+        AliasServer.MarkForRemovalByAlias(AMessage.SourceAlias);
+      end;
+    MTI_CAN_AMD :
+      begin
+        LocalNodeID := NULL_NODE_ID;
+        AliasServer.AddMapping(AMessage.ExtractDataBytesAsNodeID(0, LocalNodeID), AMessage.SourceAlias);
+      end;
+    MTI_CAN_AME :
+      begin
+        if AMessage.DataCount = 0 then      // A global AME will repoplulate the entire database so this will flush invalid mappings as well since they won't respond anymore
+          AliasServer.Clear;
+      end;
+  end;
+
+  case AMessage.MTI of
+    MTI_VERIFIED_NODE_ID_NUMBER,
+    MTI_INITIALIZATION_COMPLETE :
+      begin
+        LocalNodeID := NULL_NODE_ID;
+        AliasServer.AddMapping(AMessage.ExtractDataBytesAsNodeID(0, LocalNodeID), AMessage.SourceAlias);
+      end;
+    MTI_VERIFY_NODE_ID_NUMBER :
+      begin
+        if AMessage.DataCount = 0 then     // A global Verify Node ID will repoplulate the entire database so this will flush invalid mappings as well since they won't respond anymore
+          AliasServer.Clear;
+      end;
+  end;
+end;
+
+procedure TReceiveMessageServerThread.NodeIdentificationToCallbackProc(ANodeIdentification: TLccNodeIdentificationObject);
+begin
+  AliasServer.AddMappingRequest(ANodeIdentification.NodeID, ANodeIdentification.Alias);
+end;
+
+procedure TReceiveMessageServerThread.ReceiveMessageServerAddMessage(AMessage: TLccMessage);
+var
+  LocalList: TList;
+begin
+  LocalList := ReceivedMessages.LockList;
+  try
+    LocalList.Add(AMessage.Clone);
+  finally
+    ReceivedMessages.UnlockList;
+  end;
+end;
 
 { TLccNodeManager }
 
@@ -509,11 +757,18 @@ begin
     OnAliasMappingChange(Self, LccNode, AnAliasMapping, IsMapped);
 end;
 
-constructor TLccNodeManager.Create(AnOwner: TComponent);
+constructor TLccNodeManager.Create(AnOwner: TComponent; GridConnectLink: Boolean);
 begin
   inherited Create(AnOwner);
   FNodes := TList.Create;
+
+  FGridConnect := GridConnectLink;
+  FHardwarewareConnectionList := TInterfaceList.Create;
   FWorkerMessage := TLccMessage.Create;
+  FReceiveMessageServerThread := TReceiveMessageServerThread.Create(True);
+  FReceiveMessageServerThread.Owner := Self;
+  FReceiveMessageServerThread.FreeOnTerminate := True;
+  FReceiveMessageServerThread.Suspended := False;
 
   _100msTimer := TLccTimer.Create(nil);
   _100msTimer.OnTimer := {$IFNDEF LCC_DELPHI}@{$ENDIF}On_100msTimer;
@@ -523,7 +778,8 @@ end;
 
 function TLccNodeManager.AddNode(CdiXML: string; AutoLogin: Boolean): TLccNode;
 begin
-  Result := TLccNode.Create(Self, CdiXML);
+  Result := TLccNode.Create(Self, CdiXML, GridConnect);
+  Result.SendMessageFunc := {$IFDEF LCC_FPC}@{$ENDIF}SendMessage;
   Nodes.Add(Result);
   DoCreateLccNode(Result);
   if AutoLogin then
@@ -535,7 +791,8 @@ begin
   Result := nil;
   if Assigned(NodeClass) then
   begin
-    Result := NodeClass.Create(Self, CdiXML);
+    Result := NodeClass.Create(Self, CdiXML, GridConnect);
+    Result.SendMessageFunc := {$IFDEF LCC_FPC}@{$ENDIF}SendMessage;
     Nodes.Add(Result);
     DoCreateLccNode(Result);
     if AutoLogin then
@@ -594,7 +851,9 @@ begin
   _100msTimer.Enabled := False;
   FNodes.Free;
   FreeAndNil(FWorkerMessage);
+  FreeAndNil(FHardwarewareConnectionList);
   FreeAndNil(F_100msTimer);
+  ReceiveMessageServerThread.Terminate;
   inherited Destroy;
 end;
 
@@ -628,6 +887,20 @@ begin
   for i := 0 to Nodes.Count - 1 do
     TLccNode(Nodes.Items[i]).ReleaseAlias(0);
   Sleep(500);  // Wait for the AMR messages to be sent
+end;
+
+procedure TLccNodeManager.SendMessage(Sender: TObject; LccMessage: TLccMessage);
+var
+  iHardwareConnection: Integer;
+begin
+  // Send the message to the interfaces (Ethernet, WebSocket, UART, ect)
+//  for iHardwareConnection := 0 to HardwarewareConnectionList.Count - 1 do
+//    if (HardwarewareConnectionList[iHardwareConnection] as IHardwareConnectionManagerLink).IsLccLink then
+ //     (HardwarewareConnectionList[iHardwareConnection] as IHardwareConnectionManagerLink).SendMessage(LccMessage);
+
+  // Send the messages to all the other virtual nodes where this would be the receiving end of the sendmessage
+  // Never filter these messages.
+  ReceiveMessageServerThread.ReceiveMessageServerAddMessage(LccMessage);  // I think this works....
 end;
 
 procedure TLccNodeManager.On_100msTimer(Sender: TObject);

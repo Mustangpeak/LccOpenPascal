@@ -1,5 +1,5 @@
 object FormTrainCommander: TFormTrainCommander
-  Left = 202
+  Left = 216
   Height = 563
   Top = 172
   Width = 1238
@@ -25,7 +25,7 @@ object FormTrainCommander: TFormTrainCommander
       Left = 192
       Height = 18
       Top = 8
-      Width = 156
+      Width = 160
       Caption = 'AutoConnect at Startup'
       TabOrder = 0
     end
@@ -51,7 +51,7 @@ object FormTrainCommander: TFormTrainCommander
       Left = 376
       Height = 18
       Top = 8
-      Width = 67
+      Width = 71
       Caption = 'Local IP'
       TabOrder = 3
     end
@@ -93,7 +93,7 @@ object FormTrainCommander: TFormTrainCommander
       Left = 520
       Height = 18
       Top = 41
-      Width = 104
+      Width = 108
       Caption = 'Log Messages'
       Checked = True
       State = cbChecked
@@ -122,7 +122,7 @@ object FormTrainCommander: TFormTrainCommander
       Left = 520
       Height = 18
       Top = 70
-      Width = 94
+      Width = 98
       Caption = 'Detailed Log'
       ParentShowHint = False
       ShowHint = True
@@ -150,7 +150,7 @@ object FormTrainCommander: TFormTrainCommander
       Left = 896
       Height = 18
       Top = 11
-      Width = 175
+      Width = 179
       Caption = 'Allow Python Script To Run'
       Checked = True
       OnChange = CheckBox1Change
