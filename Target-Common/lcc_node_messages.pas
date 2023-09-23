@@ -108,6 +108,7 @@ private
   FMTI: Word;                               // The Actual MTI of the message IF it is not a CAN frame message, The full OpenLcb MTI
   FRetryAttemptsDatagram: Integer;          // If a message returned "Temporary" (like no buffers) this holds how many time it has been retried and defines a give up time to stop resending
   FWorkerNodeIdentifcationObject: TLccNodeIdentificationObject;
+
   function GetHasDestination: Boolean;
   function GetHasDestNodeID: Boolean;
   function GetHasSourceNodeID: Boolean;
@@ -135,6 +136,7 @@ public
   property SourceAlias: Word read FSourceAlias write FSourceAlias;
   property SourceID: TNodeID read FSourceID write FSourceID;
 
+
   property NodeIdentifications: TLccNodeIdentificationObjectList read FNodeIdentifications write FNodeIdentifications;
   property WorkerNodeIdentifcationObject: TLccNodeIdentificationObject read FWorkerNodeIdentifcationObject write FWorkerNodeIdentifcationObject;
 
@@ -159,7 +161,7 @@ public
   function ExtractNodeIdentifications(ForceEvaluation, IgnoreCANMessages: Boolean): TLccNodeIdentificationObjectList;
   function ExtractNodeIdentificationToCallback(NodeIdentificationCallback: TNodeIdentificationCallback; UnMappedOnly, IgnoreCANMessages: Boolean): Boolean;
 
-  function ValidateAliasMappings(RequestMappingCallback: TLccMessageRequestMappingCallback): Boolean;
+  function ValidateAndRequestIfNecessaryAliasMappings(RequestMappingCallback: TLccMessageRequestMappingCallback): Boolean;
   function ValidatePayloadNodeID(RequestMappingCallback: TLccMessageRequestMappingCallback; ANodeID: TNodeID): Boolean;
 
   function LoadByGridConnectStr(GridConnectStr: String): Boolean;
@@ -1504,7 +1506,8 @@ begin
   end;
 end;
 
-function TLccMessage.ValidateAliasMappings(RequestMappingCallback: TLccMessageRequestMappingCallback): Boolean;
+function TLccMessage.ValidateAndRequestIfNecessaryAliasMappings(
+  RequestMappingCallback: TLccMessageRequestMappingCallback): Boolean;
 var
   AliasMapping: TLccAliasMapping;
   LocalNodeID: TNodeID;

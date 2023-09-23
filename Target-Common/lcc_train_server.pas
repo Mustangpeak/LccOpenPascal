@@ -89,7 +89,6 @@ type
   private
     FAutoGatherInformation: Boolean;
     FEnabled: Boolean;
-    FGridConnect: Boolean;
     FOnEmergencyStopChange: TOnLccServerChange;
     FOnFunctionChange: TOnLccServerChange;
     FOnListenerAttach: TOnLccServerChangeWithMessage;
@@ -140,8 +139,7 @@ type
     procedure HandleTractionQuerySpeed(SourceMessage: TLccMessage);
     procedure HandleTractionQueryFunction(SourceMessage: TLccMessage);
   public
-    property GridConnect: Boolean read FGridConnect;
-    constructor Create(IsGridConnect: Boolean);
+    constructor Create;
     destructor Destroy; override;
     function Add(NewNodeID: TNodeID; NewAlias: Word): TLccTractionObject;
     function Remove(TestNodeID: TNodeID): TLccTractionObject;
@@ -342,7 +340,7 @@ var
   LocalTractionNodeID: TNodeID;
   LocalTractionObject: TLccTractionObject;
 begin
-  if SourceMessage.TractionIsSearchEvent then
+ { if SourceMessage.TractionIsSearchEvent then
   begin
   end else
   if SourceMessage.TractionIsTrainEvent then
@@ -363,13 +361,13 @@ begin
     begin
     // Get some information about this train
       WorkerMessage.LoadSimpleNodeIdentInfoRequest(TLccNode( ALccNode).NodeID, TLccNode( ALccNode).AliasID, SourceMessage.SourceID, SourceMessage.SourceAlias);
-      TLccNode( ALccNode).SendMessageFunc(Self, WorkerMessage);
+      TLccNode( ALccNode).SendMessage(WorkerMessage);
       WorkerMessage.LoadSimpleTrainNodeIdentInfoRequest(TLccNode( ALccNode).NodeID, TLccNode( ALccNode).AliasID, SourceMessage.SourceID, SourceMessage.SourceAlias);
-      TLccNode( ALccNode).SendMessageFunc(Self, WorkerMessage);
+      TLccNode( ALccNode).SendMessage(WorkerMessage);
       WorkerMessage.LoadTractionListenerQueryCount(TLccNode( ALccNode).NodeID, TLccNode( ALccNode).AliasID, SourceMessage.SourceID, SourceMessage.SourceAlias);
-      TLccNode( ALccNode).SendMessageFunc(Self, WorkerMessage);
+      TLccNode( ALccNode).SendMessage(WorkerMessage);
     end;
-  end
+  end   }
 end;
 
 procedure TLccTractionServer.HandleSimpleNodeInfoReply(SourceMessage: TLccMessage);
@@ -538,7 +536,7 @@ begin
   // Do Nothing: Just a query won't change the database
 end;
 
-constructor TLccTractionServer.Create(IsGridConnect: Boolean);
+constructor TLccTractionServer.Create;
 begin
   {$IFDEF LCC_DELPHI}
   FList := TObjectList<TLccTractionObject>.Create(False);
@@ -546,7 +544,7 @@ begin
   FList := TObjectList.Create(False);
   {$ENDIF}
   FWorkerMessage := TLccMessage.Create;
-  FGridConnect := IsGridConnect;
+ // FGridConnect := IsGridConnect;
 end;
 
 destructor TLccTractionServer.Destroy;

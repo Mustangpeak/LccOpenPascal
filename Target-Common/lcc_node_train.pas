@@ -354,7 +354,7 @@ type
     property OnSendMessageComPort: TMessageComPort read FOnSendMessageComPort write FOnSendMessageComPort;
     property SearchEvent: TEventID read FSearchEvent write FSearchevent;  // The TractionSearch Event associated with this train
 
-    constructor Create(ANodeManager: {$IFDEF LCC_DELPHI}TComponent{$ELSE}TObject{$ENDIF}; CdiXML: String; GridConnectLink: Boolean); override;
+    constructor Create(AOwner: TComponent; CdiXML: String); override;
     destructor Destroy; override;
 
     procedure On_100msTimer(Sender: TObject); override;
@@ -627,9 +627,9 @@ end;
 
 { TLccTrainDccNode }
 
-constructor TLccTrainDccNode.Create(ANodeManager: {$IFDEF LCC_DELPHI}TComponent{$ELSE}TObject{$ENDIF}; CdiXML: String; GridConnectLink: Boolean);
+constructor TLccTrainDccNode.Create(AOwner: TComponent; CdiXML: String);
 begin
-  inherited Create(ANodeManager, CdiXML, GridConnectLink);
+  inherited Create(AOwner, CdiXML);
   FListeners := TListenerList.Create;
   FControllerState := TControllerState.Create;
   FReservedNodeState := TReservationState.Create;
@@ -899,7 +899,7 @@ var
   DoDefault: Boolean;
 begin
   DoDefault := True;
-  (NodeManager as INodeManagerTractionCallbacks).DoTractionControllerAssign(Self, SourceMessage, DoDefault);
+  ((Owner as TLccNodeManager) as INodeManagerTractionCallbacks).DoTractionControllerAssign(Self, SourceMessage, DoDefault);
 
   if DoDefault then
   begin
@@ -912,14 +912,14 @@ begin
 
       // The train will call the currently attached node and tell it that it is loosing control
       WorkerMessage.LoadTractionControllerChangedNotify(NodeID, AliasID, ControllerState.AttachedController.NodeID, ControllerState.AttachedController.Alias, ControllerState.RequestingController.NodeID);
-      SendMessageFunc(Self, WorkerMessage);
+      SendMessage(WorkerMessage);
       // Now need to wait for a Changing Notity Reply
     end else
     begin
       ControllerState.AssignController(SourceMessage.SourceID, SourceMessage.SourceAlias);
 
       WorkerMessage.LoadTractionControllerAssignReply(NodeID, AliasID, SourceMessage.SourceID, SourceMessage.SourceAlias, TRACTION_CONTROLLER_CONFIG_REPLY_OK);
-      SendMessageFunc(Self, WorkerMessage);
+      SendMessage(WorkerMessage);
     end;
   end;
 end;
@@ -929,7 +929,7 @@ var
   DoDefault: Boolean;
 begin
   DoDefault := True;
-  (NodeManager as INodeManagerTractionCallbacks).DoTractionControllerRelease(Self, SourceMessage, DoDefault);
+  ((Owner as TLccNodeManager) as INodeManagerTractionCallbacks).DoTractionControllerRelease(Self, SourceMessage, DoDefault);
 
   if DoDefault then
   begin
@@ -943,7 +943,7 @@ var
   DoDefault: Boolean;
 begin
   DoDefault := True;
-  (NodeManager as INodeManagerTractionCallbacks).DoTractionControllerQuery(Self, SourceMessage, DoDefault);
+  ((Owner as TLccNodeManager) as INodeManagerTractionCallbacks).DoTractionControllerQuery(Self, SourceMessage, DoDefault);
 
   if DoDefault then
   begin
@@ -953,7 +953,7 @@ begin
       WorkerMessage.LoadTractionControllerQueryReply(NodeID, AliasID, SourceMessage.SourceID, SourceMessage.SourceAlias, ControllerState.AttachedController.NodeID);
     end else
       WorkerMessage.LoadTractionControllerQueryReply(NodeID, AliasID, SourceMessage.SourceID, SourceMessage.SourceAlias, NULL_NODE_ID);
-    SendMessageFunc(Self, WorkerMessage);
+    SendMessage(WorkerMessage);
   end;
 end;
 
@@ -962,7 +962,7 @@ var
   DoDefault: Boolean;
 begin
   DoDefault := True;
-  (NodeManager as INodeManagerTractionCallbacks).DoTractionControllerChangedNotify(Self, SourceMessage, DoDefault);
+  ((Owner as TLccNodeManager) as INodeManagerTractionCallbacks).DoTractionControllerChangedNotify(Self, SourceMessage, DoDefault);
 end;
 
 procedure TLccTrainDccNode.HandleTractionManageReserve(var SourceMessage: TLccMessage);
@@ -970,7 +970,7 @@ var
   DoDefault: Boolean;
 begin
   DoDefault := True;
-  (NodeManager as INodeManagerTractionCallbacks).DoTractionManageReserve(Self, SourceMessage, DoDefault);
+  ((Owner as TLccNodeManager) as INodeManagerTractionCallbacks).DoTractionManageReserve(Self, SourceMessage, DoDefault);
 
   if DoDefault then
   begin
@@ -981,7 +981,7 @@ begin
       ReservedNodeState.AssignReservedNode(SourceMessage.DestID, SourceMessage.DestAlias);
       WorkerMessage.LoadTractionManageReply(SourceMessage.DestID, SourceMessage.DestAlias, SourceMessage.SourceID, SourceMessage.SourceAlias, True)
     end;
-    SendMessageFunc(Self, WorkerMessage);
+    SendMessage(WorkerMessage);
   end;
 end;
 
@@ -990,7 +990,7 @@ var
   DoDefault: Boolean;
 begin
   DoDefault := True;
-  (NodeManager as INodeManagerTractionCallbacks).DoTractionManageRelease(Self, SourceMessage, DoDefault);
+  ((Owner as TLccNodeManager) as INodeManagerTractionCallbacks).DoTractionManageRelease(Self, SourceMessage, DoDefault);
 
   if DoDefault then
   begin
@@ -1017,14 +1017,14 @@ begin
   //   5) Not enough memory to allocate another Listener
 
   DoDefault := True;
-  (NodeManager as INodeManagerTractionCallbacks).DoTractionListenerAttach(Self, SourceMessage, DoDefault);
+  ((Owner as TLccNodeManager) as INodeManagerTractionCallbacks).DoTractionListenerAttach(Self, SourceMessage, DoDefault);
 
   if DoDefault then
   begin
     ListenerNodeID := SourceMessage.TractionExtractListenerID;
     ListenerAttachFlags := SourceMessage.TractionExtractListenerFlags;
     ListenerNodeAlias := 0;
-    if GridConnect then
+    if (Owner as TLccNodeManager).EmulateCanNetworkLogin then
     begin
       AliasMapping := AliasServer.FindMapping(ListenerNodeID);
       Assert(Assigned(AliasMapping), 'TLccTrainDccNode.HandleTractionListenerAttach: Alias Mapping Failed');
@@ -1053,9 +1053,9 @@ begin
           WorkerMessage.LoadTractionListenerAttachReply(NodeID, AliasID, SourceMessage.SourceID, SourceMessage.SourceAlias, ListenerNodeID, ERROR_TEMPORARY_BUFFER_UNAVAILABLE)
       end;
     end;
-    SendMessageFunc(Self, WorkerMessage);
+    SendMessage(WorkerMessage);
 
-    (NodeManager as INodeManagerTractionCallbacks).DoTractionListenerAttached(Self, SourceMessage);
+    ((Owner as TLccNodeManager) as INodeManagerTractionCallbacks).DoTractionListenerAttached(Self, SourceMessage);
   end
 end;
 
@@ -1065,7 +1065,7 @@ var
   DoDefault: Boolean;
 begin
   DoDefault := True;
-  (NodeManager as INodeManagerTractionCallbacks).DoTractionListenerDetach(Self, SourceMessage, DoDefault);
+  ((Owner as TLccNodeManager) as INodeManagerTractionCallbacks).DoTractionListenerDetach(Self, SourceMessage, DoDefault);
 
   if DoDefault then
   begin
@@ -1075,9 +1075,9 @@ begin
       WorkerMessage.LoadTractionListenerDetachReply(NodeID, AliasID, SourceMessage.SourceID, SourceMessage.SourceAlias, ListenerNodeID, S_OK)
     else
       WorkerMessage.LoadTractionListenerDetachReply(NodeID, AliasID, SourceMessage.SourceID, SourceMessage.SourceAlias, ListenerNodeID, ERROR_PERMANENT_INVALID_ARGUMENTS);
-    SendMessageFunc(Self, WorkerMessage);
+    SendMessage(WorkerMessage);
 
-    (NodeManager as INodeManagerTractionCallbacks).DoTractionListenerDetached(Self, SourceMessage);
+    ((Owner as TLccNodeManager) as INodeManagerTractionCallbacks).DoTractionListenerDetached(Self, SourceMessage);
   end;
 end;
 
@@ -1088,7 +1088,7 @@ var
   DoDefault: Boolean;
 begin
   DoDefault := True;
-  (NodeManager as INodeManagerTractionCallbacks).DoTractionListenerQuery(Self, SourceMessage, DoDefault);
+  ((Owner as TLccNodeManager) as INodeManagerTractionCallbacks).DoTractionListenerQuery(Self, SourceMessage, DoDefault);
 
   if DoDefault then
   begin
@@ -1103,7 +1103,7 @@ begin
       end else
         WorkerMessage.LoadTractionListenerQueryReply(NodeID, AliasID, SourceMessage.SourceID, SourceMessage.SourceAlias, Listeners.Count, 0, NULL_NODE_ID, 0);   // Outside of range, bad index
     end;
-    SendMessageFunc(Self, WorkerMessage);
+    SendMessage(WorkerMessage);
   end;
 end;
 
@@ -1112,7 +1112,7 @@ var
   DoDefault: Boolean;
 begin
   DoDefault := True;
-  (NodeManager as INodeManagerTractionCallbacks).DoTractionSetSpeed(Self, SourceMessage, DoDefault);
+  ((Owner as TLccNodeManager) as INodeManagerTractionCallbacks).DoTractionSetSpeed(Self, SourceMessage, DoDefault);
 
   if DoDefault then
   begin
@@ -1127,7 +1127,7 @@ var
   DoDefault: Boolean;
 begin
   DoDefault := True;
-  (NodeManager as INodeManagerTractionCallbacks).DoTractionSetFunction(Self, SourceMessage, DoDefault);
+  ((Owner as TLccNodeManager) as INodeManagerTractionCallbacks).DoTractionSetFunction(Self, SourceMessage, DoDefault);
 
   if DoDefault then
   begin
@@ -1142,7 +1142,7 @@ var
   DoDefault: Boolean;
 begin
   DoDefault := True;
-  (NodeManager as INodeManagerTractionCallbacks).DoTractionEmergencyStop(Self, SourceMessage, DoDefault);
+  ((Owner as TLccNodeManager) as INodeManagerTractionCallbacks).DoTractionEmergencyStop(Self, SourceMessage, DoDefault);
 
   if DoDefault then
   begin
@@ -1156,12 +1156,12 @@ var
   DoDefault: Boolean;
 begin
   DoDefault := True;
-  (NodeManager as INodeManagerTractionCallbacks).DoTractionQuerySpeed(Self, SourceMessage, DoDefault);
+  ((Owner as TLccNodeManager) as INodeManagerTractionCallbacks).DoTractionQuerySpeed(Self, SourceMessage, DoDefault);
 
   if DoDefault then
   begin
     WorkerMessage.LoadTractionQuerySpeedReply(NodeId, AliasID, SourceMessage.SourceID, SourceMessage.SourceAlias, GetSpeed(SourceMessage), 0, HalfNaN, HalfNaN);
-    SendMessageFunc(Self, WorkerMessage);
+    SendMessage(WorkerMessage);
   end;
 end;
 
@@ -1171,13 +1171,13 @@ var
   DoDefault: Boolean;
 begin
   DoDefault := True;
-  (NodeManager as INodeManagerTractionCallbacks).DoTractionQueryFunction(Self, SourceMessage, DoDefault);
+  ((Owner as TLccNodeManager) as INodeManagerTractionCallbacks).DoTractionQueryFunction(Self, SourceMessage, DoDefault);
 
   if DoDefault then
   begin
     FunctionAddress := SourceMessage.TractionExtractFunctionAddress;
     WorkerMessage.LoadTractionQueryFunctionReply(NodeId, AliasID, SourceMessage.SourceID, SourceMessage.SourceAlias, FunctionAddress, Functions[FunctionAddress, nil]);
-    SendMessageFunc(Self, WorkerMessage);
+    SendMessage(WorkerMessage);
   end;
 end;
 
@@ -1186,7 +1186,7 @@ var
   DoDefault: Boolean;
 begin
   DoDefault := True;
-  (NodeManager as INodeManagerTractionCallbacks).DoTractionTrainSNIP(Self, SourceMessage, DoDefault);
+  ((Owner as TLccNodeManager) as INodeManagerTractionCallbacks).DoTractionTrainSNIP(Self, SourceMessage, DoDefault);
 
   if DoDefault then
   begin
@@ -1211,7 +1211,7 @@ begin
     begin
       ControllerState.AcceptRequestingController;
        WorkerMessage.LoadTractionControllerAssignReply(NodeID, AliasID, ControllerState.AttachedController.NodeID, ControllerState.AttachedController.Alias, TRACTION_CONTROLLER_CONFIG_REPLY_OK);
-      SendMessageFunc(Self, WorkerMessage);
+      SendMessage(WorkerMessage);
     end;
 end;
 
@@ -1271,12 +1271,12 @@ begin
         if ListenerNode.LinkF0 and (Index = 0 ) then
         begin
           WorkerMessage.LoadTractionSetFunction(NodeID, AliasID, ListenerNode.NodeID, ListenerNode.AliasID, Index, AValue);
-          SendMessageFunc(Self, WorkerMessage);
+          SendMessage(WorkerMessage);
         end else
         if ListenerNode.LinkFn and (Index > 0) then
         begin
           WorkerMessage.LoadTractionSetFunction(NodeID, AliasID, ListenerNode.NodeID, ListenerNode.AliasID, Index, AValue);
-          SendMessageFunc(Self, WorkerMessage);
+          SendMessage(WorkerMessage);
         end;
       end;
     end;
@@ -1307,7 +1307,7 @@ begin
         WorkerMessage.LoadTractionSetSpeed(NodeID, AliasID, ListenerNode.NodeID, ListenerNode.AliasID, FlipHalfFloatSign(FSpeed))
       else
         WorkerMessage.LoadTractionSetSpeed(NodeID, AliasID, ListenerNode.NodeID, ListenerNode.AliasID, FSpeed);
-      SendMessageFunc(Self, WorkerMessage);
+      SendMessage(WorkerMessage);
     end;
   end;
 end;

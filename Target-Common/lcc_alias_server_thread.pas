@@ -7,6 +7,8 @@ unit lcc_alias_server_thread;
 {$mode objfpc}{$H+}
 {$ENDIF}
 
+{.$DEFINE LOG_MAPPING}
+
 interface
 
 uses
@@ -17,7 +19,10 @@ uses
     System.Types,
     FMX.Types,
     System.Generics.Collections,
+  {$ELSE}
+  {$IFDEF LOG_MAPPING}lazlogger,{$ENDIF}
   {$ENDIF}
+
   {$IFDEF WEB_APP}
     generics.collections,
   {$ENDIF}
@@ -33,6 +38,7 @@ type
 
 TReceiveMessageAliasServerThread = class(TThread)
   private
+    FMappingRequestMessageList: TThreadList;
     FOutgoingProcessedMessageList: TThreadList;
     FIncomingMessageList: TThreadList;
     FReceivedMessage: TLccMessage;
@@ -40,28 +46,30 @@ TReceiveMessageAliasServerThread = class(TThread)
     FWorkerMessage: TLccMessage;
   protected
     property ReceivedMessage: TLccMessage read FReceivedMessage write FReceivedMessage;
+    // Messages coming in from the connections
     property IncomingMessageList: TThreadList read FIncomingMessageList write FIncomingMessageList;
+    // Message waiting for the Mapping of any NodeID/AliasID that the message requires to be found in the AliasServer
     property WaitingForMappingMessageList: TThreadList read FWaitingForMappingMessageList write FWaitingForMappingMessageList;
+    // internal worker message
     property WorkerMessage: TLccMessage read FWorkerMessage write FWorkerMessage;
 
     procedure Execute; override;
-    procedure ClearOutgoingProcessedList;
-    procedure ClearIncomingList;
-    procedure ClearWaitingForMappingList;
+    procedure ClearThreadedObjectList(AThreadedList: TThreadList);
     procedure ProcessAliasAndNodeIDMessages(AMessage: TLccMessage);
-    procedure RequestMappingCallback(ANodeID: TNodeID; AnAliasID: Word);
-
-
-//    procedure ReceiveMessageSyncronize;   // Syncronize Method called in context of main thread, this thread is stalled during that time
-//    procedure UpdateGlobalMappings(AMessage: TLccMessage); // Called in context of thread
- //   procedure NodeIdentificationToCallbackProc(ANodeIdentification: TLccNodeIdentificationObject); // Called in context of thread
+    procedure RequestMappingMessageSentCallback(ANodeID: TNodeID; AnAliasID: Word);
+    function MappingRequestExists(ANodeID: TNodeID; AnAliasID: Word): Boolean;
 
   public
     constructor Create(CreateSuspended: Boolean; const StackSize: SizeUInt = DefaultStackSize); reintroduce;
     destructor Destroy; override;
 
+    // Messages that have valid mappings and can be picked up by the Node Manager
     property OutgoingProcessedMessageList: TThreadList read FOutgoingProcessedMessageList;
+    // Mapping Requests, TLccMessages filled in to request the mappings the Alias Server needs.. These need to picked up and sent by the Node Manager
+    property MappingRequestMessageList: TThreadList read FMappingRequestMessageList write FMappingRequestMessageList;
 
+    // Adds a message that is incoming from a connection.  This thread will validate that the Alias Server contains
+    // any mappings necessary for the message and place them in the OutgoingProcessedMessageList when Node Manager can handle them
     procedure AddIncomingMessage(AMessage: TLccMessage; GridConnect: Boolean);
 
   end;
@@ -92,7 +100,7 @@ begin
       begin
         LocalMessage := TLccMessage( List[i]);
         ProcessAliasAndNodeIDMessages(LocalMessage);
-        if LocalMessage.ValidateAliasMappings({$IFNDEF LCC_DELPHI}@{$ENDIF}RequestMappingCallback) then
+        if LocalMessage.ValidateAndRequestIfNecessaryAliasMappings({$IFNDEF LCC_DELPHI}@{$ENDIF}RequestMappingMessageSentCallback) then
           OutgoingProcessedMessageList.Add(LocalMessage)
         else
           WaitingForMappingMessageList.Add(LocalMessage)
@@ -103,52 +111,39 @@ begin
       IncomingMessageList.UnlockList;
     end;
 
+    // See if any mapping messages have come in that clears an incoming message that was
+    // placed in the waiting list because it was missing a mapping
+    List := WaitingForMappingMessageList.LockList;
+    try
+      for i := 0 to List.Count -1 do
+      begin
+        LocalMessage := TLccMessage( List[i]);
+        if LocalMessage.ValidateAndRequestIfNecessaryAliasMappings({$IFNDEF LCC_DELPHI}@{$ENDIF}RequestMappingMessageSentCallback) then
+          OutgoingProcessedMessageList.Add(LocalMessage)
+        else
+          WaitingForMappingMessageList.Add(LocalMessage);
+      end;
+    finally
+      WaitingForMappingMessageList.UnlockList;
+    end;
+
     Sleep(50);
   end;
 end;
 
-procedure TReceiveMessageAliasServerThread.ClearOutgoingProcessedList;
+procedure TReceiveMessageAliasServerThread.ClearThreadedObjectList(
+  AThreadedList: TThreadList);
 var
   List: TList;
   i: Integer;
 begin
-  List := OutgoingProcessedMessageList.LockList;
+  List := AThreadedList.LockList;
   try
     for i := 0 to List.Count - 1 do
       TObject( List[i]).Free;
   finally
     List.Clear;
-    OutgoingProcessedMessageList.UnlockList;
-  end;
-end;
-
-procedure TReceiveMessageAliasServerThread.ClearIncomingList;
-var
-  List: TList;
-  i: Integer;
-begin
-  List := IncomingMessageList.LockList;
-  try
-    for i := 0 to List.Count - 1 do
-      TObject( List[i]).Free;
-  finally
-    List.Clear;
-    IncomingMessageList.UnlockList;
-  end;
-end;
-
-procedure TReceiveMessageAliasServerThread.ClearWaitingForMappingList;
-var
-  List: TList;
-  i: Integer;
-begin
-  List := WaitingForMappingMessageList.LockList;
-  try
-    for i := 0 to List.Count - 1 do
-      TObject( List[i]).Free;
-  finally
-    List.Clear;
-    WaitingForMappingMessageList.UnlockList;
+    AThreadedList.UnlockList;
   end;
 end;
 
@@ -188,9 +183,54 @@ begin
   end;
 end;
 
-procedure TReceiveMessageAliasServerThread.RequestMappingCallback(ANodeID: TNodeID; AnAliasID: Word);
+procedure TReceiveMessageAliasServerThread.RequestMappingMessageSentCallback(
+  ANodeID: TNodeID; AnAliasID: Word);
+var
+  LccMessage: TLccMessage;
 begin
-//  NEED TO SEND MESSAGES FOR MAPPINGS HERE.......
+  if not MappingRequestExists(ANodeID, AnAliasID) then
+  begin
+    if AnAliasID <> 0 then
+    begin
+      LccMessage := TLccMessage.Create;
+      LccMessage.LoadVerifyNodeIDAddressed(NULL_NODE_ID, 0, ANodeID, AnAliasID, NULL_NODE_ID);
+      MappingRequestMessageList.Add(LccMessage);
+      {$IFDEF LOG_MAPPING}DebugLn('Mapping Request Sent via LoadVerifyNodeIDAddressed: 0x' + IntToHex(AnAliasID, 4) + '; ' + NodeIDToString(ANodeID, True));{$ENDIF}
+    end else
+    if not NullNodeID(ANodeID) then
+    begin
+      LccMessage := TLccMessage.Create;
+      LccMessage.LoadVerifyNodeID(NULL_NODE_ID, 0, ANodeID);
+      MappingRequestMessageList.Add(LccMessage);
+      {$IFDEF LOG_MAPPING}DebugLn('Mapping Request Sent via LoadVerifyNodeID: 0x' + IntToHex(AnAliasID, 4) + '; ' + NodeIDToString(ANodeID, True));{$ENDIF}
+    end else
+    begin
+      {$IFDEF LOG_MAPPING}DebugLn('Mapping Request requsted but failed: 0x' + IntToHex(AnAliasID, 4) + '; ' + NodeIDToString(ANodeID, True));{$ENDIF}
+    end;
+  end;
+end;
+
+function TReceiveMessageAliasServerThread.MappingRequestExists(ANodeID: TNodeID; AnAliasID: Word): Boolean;
+var
+  List: TList;
+  i: Integer;
+  LccMessage: TLccMessage;
+begin
+  Result := False;
+  List := MappingRequestMessageList.LockList;
+  try
+    for i := 0 to List.Count - 1 do
+    begin
+      LccMessage := TLccMessage( List[i]);
+      if (LccMessage.DestAlias = AnAliasID) or EqualNodeID(ANodeID, LccMessage.DestID, False) then
+      begin
+        Result := True;
+        Break;
+      end;
+    end;
+  finally
+    MappingRequestMessageList.UnlockList;
+  end;
 end;
 
 constructor TReceiveMessageAliasServerThread.Create(CreateSuspended: Boolean; const StackSize: SizeUInt);
@@ -199,16 +239,19 @@ begin
   FOutgoingProcessedMessageList := TThreadList.Create;
   FIncomingMessageList := TThreadList.Create;
   FWaitingForMappingMessageList := TThreadList.Create;
+  FMappingRequestMessageList := TThreadList.Create;
 end;
 
 destructor TReceiveMessageAliasServerThread.Destroy;
 begin
-  ClearWaitingForMappingList;
-  ClearOutgoingProcessedList;
-  ClearIncomingList;
+  ClearThreadedObjectList(WaitingForMappingMessageList);
+  ClearThreadedObjectList(OutgoingProcessedMessageList);
+  ClearThreadedObjectList(IncomingMessageList);
+  ClearThreadedObjectList(MappingRequestMessageList);
   FreeAndNil(FOutgoingProcessedMessageList);
   FreeAndNil(FIncomingMessageList);
   FreeAndNil(FWaitingForMappingMessageList);
+  FreeAndNil(FMappingRequestMessageList);
   inherited Destroy;
 end;
 
