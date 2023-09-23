@@ -97,42 +97,19 @@ type
  //   FLccHTTPServer: TLccHTTPServer;
     FLccWebsocketServer: TLccWebSocketServerThreadManager;
     FNodeManager: TLccNodeManager;
-    FServerManager: TLccServerManager;
     FWorkerMessage: TLccMessage;
     FLccServer: TLccEthernetServerThreadManager;
   protected
     property WorkerMessage: TLccMessage read FWorkerMessage write FWorkerMessage;
 
-    function ConnectServer: Boolean;
-    procedure DisconnectServer;
-
-    function ConnectWebsocketServer: Boolean;
-    procedure DisconnectWebsocketServer;
-
-    function ConnectHTTPServer: Boolean;
-    procedure DisconnectHTTPServer;
-
-    function ConnectComPortServer: Boolean;
-    procedure DisconnectComPortServer;
-
-    // Callbacks from the Ethernet Server
-    procedure OnCommandStationServerConnectionState(Sender: TObject; Info: TLccHardwareConnectionInfo);
-    procedure OnCommandStationServerErrorMessage(Sender: TObject; Info: TLccHardwareConnectionInfo);
-    procedure OnCommandStationServerSendMessage(Sender: TObject; LccMessage: TLccMessage);
-    procedure OnCommandStationServerReceiveMessage(Sender: TObject; LccMessage: TLccMessage);
-    // Callbacks from the Websocket Server
-    procedure OnCommandStationWebsocketConnectionState(Sender: TObject; Info: TLccHardwareConnectionInfo);
-    procedure OnCommandStationWebsocketErrorMessage(Sender: TObject; Info: TLccHardwareConnectionInfo);
-    procedure OnCommandStationWebsocketServerReceiveMessage(Sender: TObject; LccMessage: TLccMessage);
-    // Callbacks from the HTTP Server
-    procedure OnCommandStationHTTPConnectionState(Sender: TObject; Info: TLccHardwareConnectionInfo);
-    procedure OnCommandStationHTTPErrorMessage(Sender: TObject; Info: TLccHardwareConnectionInfo);
+    // Events occuring on the connections
+    procedure OnServerManagerReceiveMessage(Sender: TObject; Manager: TLccConnectionThreadManager; Thread: TLccConnectionThread; ALccMessage: TLccMessage);
+    procedure OnServerManagerSendMessage(Sender: TObject; ALccMessage: TLccMessage);
+    procedure OnServerManagerConnectionState(Sender: TObject; Manager: TLccConnectionThreadManager; Thread: TLccConnectionThread; Info: TLccConnectionInfo);
+    procedure OnServerErrorMessage(Sender: TObject; Manager: TLccConnectionThreadManager; Thread: TLccConnectionThread; Info: TLccConnectionInfo);
 
     // Callbacks from the ComPort
-    procedure OnComPortConnectionStateChange(Sender: TObject; Info: TLccHardwareConnectionInfo);
-    procedure OnComPortErrorMessage(Sender: TObject; Info: TLccHardwareConnectionInfo);
-    procedure OnComPortReceiveMessage(Sender: TObject; Info: TLccHardwareConnectionInfo);
-    procedure OnComPortSendMessage(Sender: TObject; var GridConnectStyleMessage: string);
+    procedure OnComPortReceiveMessage(Sender: TObject; Info: TLccConnectionInfo);
 
     // Callbacks from the Node Manager
     procedure OnNodeManagerAliasIDChanged(Sender: TObject; LccSourceNode: TLccNode);
@@ -161,9 +138,7 @@ type
     property LccWebsocketServer: TLccWebSocketServerThreadManager read FLccWebsocketServer write FLccWebsocketServer;
   //  property LccHTTPServer: TLccHTTPServer read FLccHTTPServer write FLccHTTPServer;
     property NodeManager: TLccNodeManager read FNodeManager write FNodeManager;
-    property ComPort: TLccComPort read FComPort write FComPort;
-
-    property ServerManager: TLccServerManager read FServerManager write FServerManager;
+    property LccComPort: TLccComPort read FComPort write FComPort;
 
     property CommandStationNode: TLccCommandStationNode read FCommandStationNode write FCommandStationNode;
 
@@ -182,9 +157,9 @@ implementation
 procedure TFormTrainCommander.ButtonHTTPServerClick(Sender: TObject);
 begin
  // if LccHTTPServer.ListenerConnected then
- //   DisconnectHTTPServer
+ //   LccHTTPServer.CloseConnection
  // else
- //   ConnectHTTPServer;
+ //   LccHTTPServer.OpenConnection;
 end;
 
 procedure TFormTrainCommander.Button1Click(Sender: TObject);
@@ -213,17 +188,17 @@ end;
 procedure TFormTrainCommander.ButtonWebserverConnectClick(Sender: TObject);
 begin
   if LccWebsocketServer.Connected then
-    DisconnectWebsocketServer
+    LccWebsocketServer.CloseConnection
   else
-    ConnectWebsocketServer;
+    LccWebsocketServer.OpenConnection;
 end;
 
 procedure TFormTrainCommander.ButtonManualConnectComPortClick(Sender: TObject);
 begin
-  if ComPort.Connected then
-    DisconnectComPortServer
+  if LccComPort.Connected then
+    LccComPort.CloseConnection
   else
-    ConnectComPortServer;
+    LccComPort.OpenConnection;
 end;
 
 procedure TFormTrainCommander.ButtonClearClick(Sender: TObject);
@@ -246,9 +221,9 @@ end;
 procedure TFormTrainCommander.ButtonEthernetConnectClick(Sender: TObject);
 begin
   if LccServer.Connected then
-    DisconnectServer
+    LccServer.CloseConnection
   else
-    ConnectServer;
+    LccServer.OpenConnection;
 end;
 
 procedure TFormTrainCommander.ButtonTrainsReleaseAliasClick(Sender: TObject);
@@ -267,108 +242,306 @@ begin
   end;
 end;
 
-function TFormTrainCommander.ConnectServer: Boolean;
+procedure TFormTrainCommander.OnServerManagerReceiveMessage(Sender: TObject;
+  Manager: TLccConnectionThreadManager; Thread: TLccConnectionThread;
+  ALccMessage: TLccMessage);
 var
-  LocalInfo: TLccEthernetConnectionInfo;
+  ByteArray: TLccDynamicByteArray;
+  Preamble: String;
 begin
-  Result := False;
-  LocalInfo := TLccEthernetConnectionInfo.Create;
-  try
-    LocalInfo.AutoResolveIP := not CheckBoxLoopBackIP.Checked;
-    LocalInfo.ListenerIP := '127.0.0.1';
-    LocalInfo.ListenerPort := 12021;
-    LocalInfo.GridConnect := IS_GRIDCONNECT;
-    LocalInfo.Hub := True;
-    Result := LccServer.OpenConnection(LocalInfo) <> nil;
-  finally
+  if CheckBoxLogMessages.Checked then
+  begin
+    if Manager = LccServer then
+      Preamble := 'TCP:R: '
+    else
+    if Manager = LccWebsocketServer then
+      Preamble := 'WebSocket:R: '
+  {  else
+    if Manager = LccHTTPServer then
+      Preamble := 'HTTP:R: '   }
+    else
+    if Manager = LccComPort then      // Should never hit as the Comport is SendMessage Only
+      Preamble := 'ComPort:R: ';
+
+    MemoLog.Lines.BeginUpdate;
+    try
+      if IS_GRIDCONNECT then
+      begin
+        if CheckBoxDetailedLog.Checked then
+          MemoLog.Lines.Add(Preamble + MessageToDetailedMessage(ALccMessage))
+        else
+          MemoLog.Lines.Add(Preamble + ALccMessage.ConvertToGridConnectStr('', False));
+      end else
+      begin
+        ByteArray := nil;
+        ALccMessage.ConvertToLccTcp(ByteArray);
+        MemoLog.Lines.Add(Preamble + ALccMessage.ConvertToLccTcpString(ByteArray));
+      end;
+
+      MemoLog.SelStart := Length(MemoLog.Lines.Text);
+    finally
+      MemoLog.Lines.EndUpdate;
+    end;
   end;
 end;
 
-procedure TFormTrainCommander.DisconnectServer;
-begin
-  LccServer.CloseConnection;
-end;
-
-function TFormTrainCommander.ConnectWebsocketServer: Boolean;
+procedure TFormTrainCommander.OnServerManagerSendMessage(Sender: TObject; ALccMessage: TLccMessage);
 var
-  LocalInfo: TLccEthernetConnectionInfo;
+  ByteArray: TLccDynamicByteArray;
+  Preamble: String;
 begin
-  Result := False;
-  LocalInfo := TLccEthernetConnectionInfo.Create;
-  try
-    LocalInfo.AutoResolveIP := not CheckBoxLoopBackIP.Checked;
-    LocalInfo.ListenerIP := '127.0.0.1';
-    LocalInfo.ListenerPort := 12022;
-    LocalInfo.GridConnect := IS_GRIDCONNECT;
-    LocalInfo.Hub := True;
-    LccWebsocketServer.OpenConnection(LocalInfo);
-  finally
-    LocalInfo.Free;
+  if CheckBoxLogMessages.Checked then
+  begin
+    if Manager = LccServer then
+      Preamble := 'TCP:S: '
+    else
+    if Manager = LccWebsocketServer then
+      Preamble := 'WebSocket:S: '
+  {  else
+    if Manager = LccHTTPServer then
+      Preamble := 'HTTP:S: '   }
+    else
+    if Manager = LccComPort then      // Should never hit as the Comport is SendMessage Only
+    begin
+      Preamble := 'ComPort:S: ';
+
+      LccComPort.SendMessageRawGridConnect(GridConnectStyleMessage);
+
+      MemoComPort.Lines.BeginUpdate;
+      try
+        MemoComPort.Lines.Add(Preamble + GridConnectStyleMessage);
+        MemoComPort.SelStart := Length(MemoComPort.Lines.Text);
+      finally
+        MemoComPort.Lines.EndUpdate;
+      end;
+      Exit;
+    end;
+
+    MemoLog.Lines.BeginUpdate;
+    try
+      if IS_GRIDCONNECT then
+      begin
+        if CheckBoxDetailedLog.Checked then
+          MemoLog.Lines.Add('S: ' + MessageToDetailedMessage(LccMessage))
+        else
+          MemoLog.Lines.Add('S: ' + LccMessage.ConvertToGridConnectStr('', False));
+      end else
+      begin
+        ByteArray := nil;
+        LccMessage.ConvertToLccTcp(ByteArray);
+        MemoLog.Lines.Add('S: ' + LccMessage.ConvertToLccTcpString(ByteArray));
+      end;
+      MemoLog.SelStart := Length(MemoLog.Lines.Text);
+    finally
+      MemoLog.Lines.EndUpdate;
+    end;
   end;
 end;
 
-procedure TFormTrainCommander.DisconnectWebsocketServer;
-begin
-  LccWebsocketServer.CloseConnection;
-end;
-
-function TFormTrainCommander.ConnectHTTPServer: Boolean;
+procedure TFormTrainCommander.OnServerManagerConnectionState(Sender: TObject;
+  Manager: TLccConnectionThreadManager; Thread: TLccConnectionThread;
+  Info: TLccConnectionInfo);
 var
-    LocalInfo: TLccEthernetConnectionInfo;
+  ListItem: TListItem;
 begin
-  Result := False;
-  LocalInfo := TLccEthernetConnectionInfo.Create;
-  try
-    LocalInfo.AutoResolveIP := not CheckBoxLoopBackIP.Checked;
-    LocalInfo.ListenerIP := '127.0.0.1';
-    LocalInfo.ListenerPort := 12020;
-  //  Result := LccHTTPServer.OpenConnection(LocalInfo) <> nil;
-  finally
-    LocalInfo.Free;
+  if Manager = LccServer then
+  begin
+    case Info.ConnectionState of
+      lcsConnecting :
+        begin
+          ButtonEthernetConnect.Enabled := False;
+          StatusBarMain.Panels[0].Text := 'Connecting to Ethernet';
+        end;
+      lcsConnected :
+        begin
+          ButtonEthernetConnect.Enabled := True;
+          ButtonEthernetConnect.Caption := 'Disconnect Ethernet';
+          StatusBarMain.Panels[0].Text := 'Ethernet: Command Station Connected at: ' + (Info as TLccEthernetConnectionInfo).ListenerIP + ':' + IntToStr((Info as TLccEthernetConnectionInfo).ListenerPort);
+          if NodeManager.Nodes.Count = 0 then
+            CommandStationNode := NodeManager.AddNodeByClass('', TLccCommandStationNode, True, NULL_NODE_ID) as TLccCommandStationNode;
+          if Assigned(CommandStationNode) then
+          begin
+            CommandStationNode.TractionServer.OnSpeedChange := @OnTractionNotify;
+            CommandStationNode.TractionServer.OnEmergencyStopChange := @OnTractionNotify;
+            CommandStationNode.TractionServer.OnFunctionChange := @OnTractionNotify;
+            CommandStationNode.TractionServer.OnSNIPChange := @OnTractionNotify;
+            CommandStationNode.TractionServer.OnTrainSNIPChange := @OnTractionNotify;
+            CommandStationNode.TractionServer.OnRegisterChange := @OnTractionRegisterNotify;
+          end;
+        end;
+      lcsDisconnecting :
+        begin
+          ButtonEthernetConnect.Enabled := False;
+          ButtonEthernetConnect.Caption := 'Command Station Disconnecting from Ethernet';
+          // We are not clearing the nodes, only disconnecting the connection.  There is no such thing
+          // as taking a node offline in OpenLCB, only reallocating an Alias if a duplicate is found (handled
+          // automatically in the library) or totally off line if the NodeID is found to be a duplicate
+        end;
+      lcsDisconnected :
+        begin
+          ButtonEthernetConnect.Enabled := True;
+          ButtonEthernetConnect.Caption := 'Connect Ethernet';
+          StatusBarMain.Panels[0].Text := 'Command Station Disconnected from Ethernet';
+        end;
+      lcsClientConnected :
+        begin
+          ListItem := ListviewConnections.Items.Add;
+          Listitem.Caption := 'Throttle connected via Ethernet: ' + (Info as TLccEthernetConnectionInfo).ClientIP + ':' + IntToStr((Info as TLccEthernetConnectionInfo).ClientPort);
+          ListItem.ImageIndex := 3;
+        end;
+      lcsClientDisconnected :
+        begin
+          ListItem := ListviewConnections.FindCaption(0, 'Throttle connected via Ethernet: ' + (Info as TLccEthernetConnectionInfo).ClientIP + ':' + IntToStr((Info as TLccEthernetConnectionInfo).ClientPort), True, True, True, True);
+          if Assigned(ListItem) then
+            ListviewConnections.Items.Delete(ListItem.Index);
+        end;
+    end;
+  end else
+  if Manager = LccWebsocketServer then
+  begin
+    case Info.ConnectionState of
+      lcsConnecting :
+        begin
+        end;
+      lcsConnected :
+        begin
+          ButtonWebserverConnect.Enabled := True;
+          ButtonWebserverConnect.Caption := 'Disconnect Webserver';
+          StatusBarMain.Panels[1].Text := 'Ethernet: WebSocket Connected at: ' + (Info as TLccEthernetConnectionInfo).ListenerIP + ':' + IntToStr((Info as TLccEthernetConnectionInfo).ListenerPort);
+        end;
+      lcsDisconnecting :
+        begin
+        end;
+      lcsDisconnected :
+        begin
+          ButtonWebserverConnect.Enabled := True;
+          ButtonWebserverConnect.Caption := 'Connect Webserver';
+          StatusBarMain.Panels[1].Text := 'WebSocket Disconnected';
+        end;
+      lcsClientConnected :
+        begin
+          ListItem := ListviewConnections.Items.Add;
+          Listitem.Caption := 'WebSocket Client Connected: ' + (Info as TLccEthernetConnectionInfo).ClientIP + ':' + IntToStr((Info as TLccEthernetConnectionInfo).ClientPort);
+          ListItem.ImageIndex := 3;
+        end;
+      lcsClientDisconnected :
+        begin
+          ListItem := ListviewConnections.FindCaption(0, 'WebSocket Client Connected: ' + (Info as TLccEthernetConnectionInfo).ClientIP + ':' + IntToStr((Info as TLccEthernetConnectionInfo).ClientPort), True, True, True, True);
+          if Assigned(ListItem) then
+            ListviewConnections.Items.Delete(ListItem.Index);
+        end;
+    end;
+  end else
+{  if Manager = LccHTTPServer then
+  begin
+    if Sender is TLccEthernetServerThread then
+    begin
+      case Info.ConnectionState of
+        lcsConnecting :
+          begin
+            StatusBarMain.Panels[2].Text := 'HTTP Server Connecting';
+            ButtonHTTPServer.Enabled := False;
+          end;
+        lcsConnected :
+          begin
+            StatusBarMain.Panels[2].Text := 'HTTP Server Connected: ' + (Info as TLccEthernetConnectionInfo).ListenerIP + ':' + IntToStr((Info as TLccEthernetConnectionInfo).ListenerPort);
+            ButtonHTTPServer.Caption := 'HTTP Disconnect';
+            ButtonHTTPServer.Enabled := True;
+          end;
+        lcsDisconnecting :
+          begin
+            ButtonHTTPServer.Caption := 'Disconnecting from HTTP Server';
+            ButtonHTTPServer.Enabled := False;
+          end;
+        lcsDisconnected :
+          begin
+            StatusBarMain.Panels[2].Text := 'HTTP Server Disconnected';
+            ButtonHTTPServer.Caption := 'HTTP Connect';
+            ButtonHTTPServer.Enabled := True;
+          end;
+      end;
+
+    end else
+    if Sender is TLccConnectionThread then
+    begin
+      case Info.ConnectionState of
+        lcsConnecting :
+          begin
+          end;
+        lcsConnected :
+          begin
+            ListItem := ListviewConnections.Items.Add;
+            Listitem.Caption := 'Device connected HTTP: ' + (Info as TLccEthernetConnectionInfo).ClientIP + ':' + IntToStr((Info as TLccEthernetConnectionInfo).ClientPort);
+            ListItem.ImageIndex := 3;
+          end;
+        lcsDisconnecting :
+          begin
+          end;
+        lcsDisconnected :
+          begin
+            ListItem := ListviewConnections.FindCaption(1, 'Device connected HTTP: ' + (Info as TLccEthernetConnectionInfo).ClientIP + ':' + IntToStr((Info as TLccEthernetConnectionInfo).ClientPort), True, True, True, True);
+            if Assigned(ListItem) then
+              ListviewConnections.Items.Delete(ListItem.Index);
+          end;
+      end;
+  end else   }
+  if Manager = LccComPort then
+  begin
+    case (Info as TLccComPortConnectionInfo).ConnectionState of
+      lcsConnecting :    StatusBarMain.Panels[3].Text := 'ComPort Connecting';
+      lcsConnected :
+        begin
+          StatusBarMain.Panels[3].Text := 'ComPort: ' + (Info as TLccComPortConnectionInfo).ComPort;
+          ButtonManualConnectComPort.Caption := 'Close ComPort';
+        end;
+      lcsDisConnecting : StatusBarMain.Panels[3].Text := 'ComPort Disconnectiong';
+      lcsDisconnected :
+        begin
+          ButtonManualConnectComPort.Caption := 'Open ComPort';
+          StatusBarMain.Panels[3].Text := 'ComPort Disconnected';
+        end;
+    end;
   end;
 end;
 
-procedure TFormTrainCommander.DisconnectHTTPServer;
+procedure TFormTrainCommander.OnServerErrorMessage(Sender: TObject;
+  Manager: TLccConnectionThreadManager; Thread: TLccConnectionThread;
+  Info: TLccConnectionInfo);
 begin
- // LccHTTPServer.CloseConnection(nil);
-end;
-
-function TFormTrainCommander.ConnectComPortServer: Boolean;
-var
-  LocalInfo: TLccComPortConnectionInfo;
-begin
-  Result := False;
-  LocalInfo := TLccComPortConnectionInfo.Create;
-  try
-    LocalInfo.ComPort := ComboBoxComPorts.Items[ComboBoxComPorts.ItemIndex];
-    LocalInfo.Baud := 9600;
-    LocalInfo.StopBits := 8;
-    LocalInfo.Parity := 'N';
-    LocalInfo.GridConnect := IS_GRIDCONNECT;
-    Result := Assigned(ComPort.OpenConnection(LocalInfo))
-  finally
-    LocalInfo.Free;
+  if Manager = LccServer then
+  begin
+    ShowMessage('Server: ' + Info.MessageStr);
+  end else
+  if Manager = LccWebsocketServer then
+  begin
+     ShowMessage('WebSocket Server: ' + Info.MessageStr);
+  end else
+{  if Manager = LccHTTPServer then
+  begin
+    ShowMessage('HTTP Server: ' + Info.MessageStr);
+  end else  }
+  if Manager = LccComPort then
+  begin
+    ShowMessage('ComPort: ' + Info.MessageStr);
   end;
-end;
-
-procedure TFormTrainCommander.DisconnectComPortServer;
-begin
-  ComPort.CloseConnection;
 end;
 
 procedure TFormTrainCommander.FormCloseQuery(Sender: TObject; var CanClose: boolean);
 begin
   CanClose := CanClose; // Keep Hints quiet
-  ComPort.CloseConnection;
+  LccComPort.CloseConnection;
   LccServer.CloseConnection;
   LccWebsocketServer.CloseConnection;
 //  LccHTTPServer.CloseConnection;
 end;
 
 procedure TFormTrainCommander.FormCreate(Sender: TObject);
+var
+  ConnectionInfo: TLccConnectionInfo;
 begin
 
-  NodeManager := TLccNodeManager.Create(nil, IS_GRIDCONNECT);
+  NodeManager := TLccNodeManager.Create(nil);
+  NodeManager.EmulateCanNetworkLogin := True;
   NodeManager.OnNodeAliasIDChanged := @OnNodeManagerAliasIDChanged;
   NodeManager.OnNodeIDChanged := @OnNodeManagerIDChanged;
   NodeManager.OnNodeLogin := @OnNodeManagerNodeLogin;
@@ -379,31 +552,44 @@ begin
   NodeManager.OnAliasRelease := @OnNodeManagerAliasRelease;
   NodeManager.OnNodeDestroy := @OnNodeManagerNodeDestroy;
 
-  ServerManager := TLccServerManager.Create(nil);
- // ServerManager.OnLccMessageReceive := OnCommandStationMessage;
+  ConnectionInfo := TLccEthernetConnectionInfo.Create;
+  (ConnectionInfo as TLccEthernetConnectionInfo).AutoResolveIP := not CheckBoxLoopBackIP.Checked;
+  (ConnectionInfo as TLccEthernetConnectionInfo).ListenerIP := '127.0.0.1';
+  (ConnectionInfo as TLccEthernetConnectionInfo).ListenerPort := 12021;
+  LccServer := ConnectionFactory.CreateConnection(TLccEthernetServerThreadManager, ConnectionInfo, IS_GRIDCONNECT) as TLccEthernetServerThreadManager;
 
-  FLccServer := TLccEthernetServerThreadManager.Create(nil, NodeManager);
-  LccServer.OnConnectionStateChange := @OnCommandStationServerConnectionState;
-  LccServer.OnErrorMessage := @OnCommandStationServerErrorMessage;
-//  LccServer.OnLccMessageReceive := @OnCommandStationServerReceiveMessage;
- // LccServer.OnLccMessageSend := @OnCommandStationServerSendMessage;
-  LccServer.Hub := True;
 
-  FLccWebsocketServer := TLccWebSocketServerThreadManager.Create(nil, NodeManager);
-  LccWebsocketServer.OnConnectionStateChange := @OnCommandStationWebsocketConnectionState;
-  LccWebsocketServer.OnErrorMessage := @OnCommandStationWebsocketErrorMessage;
- // LccWebsocketServer.OnLccMessageReceive := @OnCommandStationWebsocketServerReceiveMessage;
+  ConnectionInfo := TLccEthernetConnectionInfo.Create;
+  (ConnectionInfo as TLccEthernetConnectionInfo).AutoResolveIP := not CheckBoxLoopBackIP.Checked;
+  (ConnectionInfo as TLccEthernetConnectionInfo).ListenerIP := '127.0.0.1';
+  (ConnectionInfo as TLccEthernetConnectionInfo).ListenerPort := 12022;
+  LccWebsocketServer := ConnectionFactory.CreateConnection(TLccWebSocketServerThreadManager, ConnectionInfo, IS_GRIDCONNECT) as TLccWebSocketServerThreadManager;
+
+ { ConnectionInfo := TLccEthernetConnectionInfo.Create;
+  (ConnectionInfo as TLccEthernetConnectionInfo).AutoResolveIP := not CheckBoxLoopBackIP.Checked;
+  (ConnectionInfo as TLccEthernetConnectionInfo).ListenerIP := '127.0.0.1';
+  (ConnectionInfo as TLccEthernetConnectionInfo).ListenerPort := 12020;
+  LccWebsocketServer := ConnectionFactory.CreateConnection(TLccHTTPServer, ConnectionInfo, IS_GRIDCONNECT) as TLccHTTPServer;
+ }
+
+  ConnectionInfo := TLccComPortConnectionInfo.Create;
+  (ConnectionInfo as TLccComPortConnectionInfo).ComPort := ComboBoxComPorts.Items[ComboBoxComPorts.ItemIndex];
+  (ConnectionInfo as TLccComPortConnectionInfo).Baud := 9600;
+  (ConnectionInfo as TLccComPortConnectionInfo).StopBits := 8;
+  (ConnectionInfo as TLccComPortConnectionInfo).Parity := 'N';
+  LccComPort := ConnectionFactory.CreateConnection(TLccComPort, ConnectionInfo, IS_GRIDCONNECT) as TLccComPort;
+  LccComPort.RawData := True;
+
+  ConnectionFactory.OnStateChange := @OnServerManagerConnectionState;
+  ConnectionFactory.OnError := @OnServerErrorMessage;
+  ConnectionFactory.OnLccMessageReceive := @OnServerManagerReceiveMessage;
+  ConnectionFactory.OnLccMessageSend := @OnServerManagerSendMessage;
+
 
 
 //  FLccHTTPServer := TLccHTTPServer.Create(nil, NodeManager); // OpenLCB messages do not move on this interface
 //  LccHTTPServer.OnConnectionStateChange := @OnCommandStationHTTPConnectionState;
 //  LccHTTPServer.OnErrorMessage := @OnCommandStationHTTPErrorMessage;
-
-  ComPort := TLccComPort.Create(nil, NodeManager); // This is only to send Raw GridConnect Message to the CS so it is defined as not a LCCLink
-  ComPort.OnConnectionStateChange := @OnComPortConnectionStateChange;
-  ComPort.OnErrorMessage := @OnComPortErrorMessage;
-  ComPort.OnReceiveMessage := @OnComPortReceiveMessage;
-  ComPort.RawData := True;
 
   Max_Allowed_Buffers := 1;
   AutoCreateTrainAddress := 1;
@@ -414,7 +600,6 @@ end;
 procedure TFormTrainCommander.FormDestroy(Sender: TObject);
 begin
   NodeManager.ReleaseAliasAll;
-  FreeAndNil(FServerManager);
  // FreeAndNil(FLccHTTPServer);
   FreeAndNil(FLccServer);
   FreeAndNil(FLccWebsocketServer);
@@ -558,205 +743,6 @@ end;
 procedure TFormTrainCommander.SpeedButton3Click(Sender: TObject);
 begin
   SpeedButton3.Caption := 'Datagram: ' + IntToStr(CommandStationNode.DatagramResendQueue.Count);
-end;
-
-procedure TFormTrainCommander.OnCommandStationServerConnectionState(Sender: TObject; Info: TLccHardwareConnectionInfo);
-var
-  ListItem: TListItem;
-begin
-
-  case Info.ConnectionState of
-    lcsConnecting :
-      begin
-        ButtonEthernetConnect.Enabled := False;
-        StatusBarMain.Panels[0].Text := 'Connecting to Ethernet';
-      end;
-    lcsConnected :
-      begin
-        ButtonEthernetConnect.Enabled := True;
-        ButtonEthernetConnect.Caption := 'Disconnect Ethernet';
-        StatusBarMain.Panels[0].Text := 'Ethernet: Command Station Connected at: ' + (Info as TLccEthernetConnectionInfo).ListenerIP + ':' + IntToStr((Info as TLccEthernetConnectionInfo).ListenerPort);
-        if NodeManager.Nodes.Count = 0 then
-          CommandStationNode := NodeManager.AddNodeByClass('', TLccCommandStationNode, True, NULL_NODE_ID) as TLccCommandStationNode;
-        if Assigned(CommandStationNode) then
-        begin
-          CommandStationNode.TractionServer.OnSpeedChange := @OnTractionNotify;
-          CommandStationNode.TractionServer.OnEmergencyStopChange := @OnTractionNotify;
-          CommandStationNode.TractionServer.OnFunctionChange := @OnTractionNotify;
-          CommandStationNode.TractionServer.OnSNIPChange := @OnTractionNotify;
-          CommandStationNode.TractionServer.OnTrainSNIPChange := @OnTractionNotify;
-          CommandStationNode.TractionServer.OnRegisterChange := @OnTractionRegisterNotify;
-        end;
-      end;
-    lcsDisconnecting :
-      begin
-        ButtonEthernetConnect.Enabled := False;
-        ButtonEthernetConnect.Caption := 'Command Station Disconnecting from Ethernet';
-        // We are not clearing the nodes, only disconnecting the connection.  There is no such thing
-        // as taking a node offline in OpenLCB, only reallocating an Alias if a duplicate is found (handled
-        // automatically in the library) or totally off line if the NodeID is found to be a duplicate
-      end;
-    lcsDisconnected :
-      begin
-        ButtonEthernetConnect.Enabled := True;
-        ButtonEthernetConnect.Caption := 'Connect Ethernet';
-        StatusBarMain.Panels[0].Text := 'Command Station Disconnected from Ethernet';
-      end;
-    lcsClientConnected :
-      begin
-        ListItem := ListviewConnections.Items.Add;
-        Listitem.Caption := 'Throttle connected via Ethernet: ' + (Info as TLccEthernetConnectionInfo).ClientIP + ':' + IntToStr((Info as TLccEthernetConnectionInfo).ClientPort);
-        ListItem.ImageIndex := 3;
-      end;
-    lcsClientDisconnected :
-      begin
-        ListItem := ListviewConnections.FindCaption(0, 'Throttle connected via Ethernet: ' + (Info as TLccEthernetConnectionInfo).ClientIP + ':' + IntToStr((Info as TLccEthernetConnectionInfo).ClientPort), True, True, True, True);
-        if Assigned(ListItem) then
-          ListviewConnections.Items.Delete(ListItem.Index);
-      end;
-  end;
-end;
-
-procedure TFormTrainCommander.OnCommandStationServerErrorMessage(Sender: TObject; Info: TLccHardwareConnectionInfo);
-begin
-  ShowMessage('TCP Server: ' + Info.MessageStr);
-
-end;
-
-procedure TFormTrainCommander.OnCommandStationWebsocketConnectionState(Sender: TObject; Info: TLccHardwareConnectionInfo);
-var
-  ListItem: TListItem;
-begin
-
-  case Info.ConnectionState of
-    lcsConnecting :
-      begin
-
-      end;
-    lcsConnected :
-      begin
-        ButtonWebserverConnect.Enabled := True;
-        ButtonWebserverConnect.Caption := 'Disconnect Webserver';
-        StatusBarMain.Panels[1].Text := 'Ethernet: WebSocket Connected at: ' + (Info as TLccEthernetConnectionInfo).ListenerIP + ':' + IntToStr((Info as TLccEthernetConnectionInfo).ListenerPort);
-      end;
-    lcsDisconnecting :
-      begin
-      end;
-    lcsDisconnected :
-      begin
-        ButtonWebserverConnect.Enabled := True;
-        ButtonWebserverConnect.Caption := 'Connect Webserver';
-        StatusBarMain.Panels[1].Text := 'WebSocket Disconnected';
-      end;
-    lcsClientConnected :
-      begin
-        ListItem := ListviewConnections.Items.Add;
-        Listitem.Caption := 'WebSocket Client Connected: ' + (Info as TLccEthernetConnectionInfo).ClientIP + ':' + IntToStr((Info as TLccEthernetConnectionInfo).ClientPort);
-        ListItem.ImageIndex := 3;
-      end;
-    lcsClientDisconnected :
-      begin
-        ListItem := ListviewConnections.FindCaption(0, 'WebSocket Client Connected: ' + (Info as TLccEthernetConnectionInfo).ClientIP + ':' + IntToStr((Info as TLccEthernetConnectionInfo).ClientPort), True, True, True, True);
-        if Assigned(ListItem) then
-          ListviewConnections.Items.Delete(ListItem.Index);
-      end;
-  end;
-end;
-
-procedure TFormTrainCommander.OnCommandStationWebsocketErrorMessage(Sender: TObject; Info: TLccHardwareConnectionInfo);
-begin
-  ShowMessage('Websocket Server: ' + Info.MessageStr);
-  Info := Info;
-end;
-
-procedure TFormTrainCommander.OnCommandStationWebsocketServerReceiveMessage(Sender: TObject; LccMessage: TLccMessage);
-var
-  ByteArray: TLccDynamicByteArray;
-begin
-  if CheckBoxLogMessages.Checked then
-  begin
-    ByteArray := nil;
-    MemoLog.Lines.BeginUpdate;
-    try
-      if IS_GRIDCONNECT then
-      begin
-        if CheckBoxDetailedLog.Checked then
-          MemoLog.Lines.Add('Websocket R: ' + MessageToDetailedMessage(LccMessage))
-        else
-          MemoLog.Lines.Add('Websocket R: ' + LccMessage.ConvertToGridConnectStr('', False));
-      end else
-      begin
-        LccMessage.ConvertToLccTcp(ByteArray);
-        MemoLog.Lines.Add('Websocket R: ' + LccMessage.ConvertToLccTcpString(ByteArray));
-      end;
-
-      MemoLog.SelStart := Length(MemoLog.Lines.Text);
-    finally
-      MemoLog.Lines.EndUpdate;
-    end;
-  end;
-end;
-
-procedure TFormTrainCommander.OnCommandStationHTTPConnectionState(Sender: TObject; Info: TLccHardwareConnectionInfo);
-var
-  ListItem: TListItem;
-begin
-  if Sender is TLccEthernetServerThread then
-  begin
-    case Info.ConnectionState of
-      lcsConnecting :
-        begin
-          StatusBarMain.Panels[2].Text := 'HTTP Server Connecting';
-          ButtonHTTPServer.Enabled := False;
-        end;
-      lcsConnected :
-        begin
-          StatusBarMain.Panels[2].Text := 'HTTP Server Connected: ' + (Info as TLccEthernetConnectionInfo).ListenerIP + ':' + IntToStr((Info as TLccEthernetConnectionInfo).ListenerPort);
-          ButtonHTTPServer.Caption := 'HTTP Disconnect';
-          ButtonHTTPServer.Enabled := True;
-        end;
-      lcsDisconnecting :
-        begin
-          ButtonHTTPServer.Caption := 'Disconnecting from HTTP Server';
-          ButtonHTTPServer.Enabled := False;
-        end;
-      lcsDisconnected :
-        begin
-          StatusBarMain.Panels[2].Text := 'HTTP Server Disconnected';
-          ButtonHTTPServer.Caption := 'HTTP Connect';
-          ButtonHTTPServer.Enabled := True;
-        end;
-    end;
-
-  end else
-  if Sender is TLccConnectionThread then
-  begin
-    case Info.ConnectionState of
-      lcsConnecting :
-        begin
-        end;
-      lcsConnected :
-        begin
-          ListItem := ListviewConnections.Items.Add;
-          Listitem.Caption := 'Device connected HTTP: ' + (Info as TLccEthernetConnectionInfo).ClientIP + ':' + IntToStr((Info as TLccEthernetConnectionInfo).ClientPort);
-          ListItem.ImageIndex := 3;
-        end;
-      lcsDisconnecting :
-        begin
-        end;
-      lcsDisconnected :
-        begin
-          ListItem := ListviewConnections.FindCaption(1, 'Device connected HTTP: ' + (Info as TLccEthernetConnectionInfo).ClientIP + ':' + IntToStr((Info as TLccEthernetConnectionInfo).ClientPort), True, True, True, True);
-          if Assigned(ListItem) then
-            ListviewConnections.Items.Delete(ListItem.Index);
-        end;
-    end;
-  end
-end;
-
-procedure TFormTrainCommander.OnCommandStationHTTPErrorMessage(Sender: TObject; Info: TLccHardwareConnectionInfo);
-begin
-  ShowMessage('HTTP Server: ' + Info.MessageStr);
 end;
 
 procedure TFormTrainCommander.OnNodeManagerAliasIDChanged(Sender: TObject; LccSourceNode: TLccNode);
@@ -938,34 +924,7 @@ begin
   end;
 end;
 
-procedure TFormTrainCommander.OnComPortConnectionStateChange(Sender: TObject; Info: TLccHardwareConnectionInfo);
-begin
-  if Sender is TLccConnectionThread then
-  begin
-    case (Info as TLccComPortConnectionInfo).ConnectionState of
-      lcsConnecting :    StatusBarMain.Panels[3].Text := 'ComPort Connecting';
-      lcsConnected :
-        begin
-          StatusBarMain.Panels[3].Text := 'ComPort: ' + (Info as TLccComPortConnectionInfo).ComPort;
-          ButtonManualConnectComPort.Caption := 'Close ComPort';
-        end;
-      lcsDisConnecting : StatusBarMain.Panels[3].Text := 'ComPort Disconnectiong';
-      lcsDisconnected :
-        begin
-          ButtonManualConnectComPort.Caption := 'Open ComPort';
-          StatusBarMain.Panels[3].Text := 'ComPort Disconnected';
-        end;
-    end;
-  end;
-end;
-
-procedure TFormTrainCommander.OnComPortErrorMessage(Sender: TObject;
-  Info: TLccHardwareConnectionInfo);
-begin
-  ShowMessage(Info.MessageStr);
-end;
-
-procedure TFormTrainCommander.OnComPortReceiveMessage(Sender: TObject; Info: TLccHardwareConnectionInfo);
+procedure TFormTrainCommander.OnComPortReceiveMessage(Sender: TObject; Info: TLccConnectionInfo);
 begin
   MemoComPort.Lines.BeginUpdate;
   try
@@ -973,74 +932,6 @@ begin
     MemoComPort.SelStart := Length(MemoComPort.Lines.Text);
   finally
     MemoComPort.Lines.EndUpdate;
-  end;
-end;
-
-procedure TFormTrainCommander.OnComPortSendMessage(Sender: TObject; var GridConnectStyleMessage: string);
-begin
-  ComPort.SendMessageRawGridConnect(GridConnectStyleMessage);
-
-  MemoComPort.Lines.BeginUpdate;
-  try
-    MemoComPort.Lines.Add('S: ' + GridConnectStyleMessage);
-    MemoComPort.SelStart := Length(MemoComPort.Lines.Text);
-  finally
-    MemoComPort.Lines.EndUpdate;
-  end;
-end;
-
-procedure TFormTrainCommander.OnCommandStationServerReceiveMessage(Sender: TObject; LccMessage: TLccMessage);
-var
-  ByteArray: TLccDynamicByteArray;
-begin
-  if CheckBoxLogMessages.Checked then
-  begin
-    ByteArray := nil;
-    MemoLog.Lines.BeginUpdate;
-    try
-      if IS_GRIDCONNECT then
-      begin
-        if CheckBoxDetailedLog.Checked then
-          MemoLog.Lines.Add('R: ' + MessageToDetailedMessage(LccMessage))
-        else
-          MemoLog.Lines.Add('R: ' + LccMessage.ConvertToGridConnectStr('', False));
-      end else
-      begin
-        LccMessage.ConvertToLccTcp(ByteArray);
-        MemoLog.Lines.Add('R: ' + LccMessage.ConvertToLccTcpString(ByteArray));
-      end;
-
-      MemoLog.SelStart := Length(MemoLog.Lines.Text);
-    finally
-      MemoLog.Lines.EndUpdate;
-    end;
-  end;
-end;
-
-procedure TFormTrainCommander.OnCommandStationServerSendMessage(Sender: TObject; LccMessage: TLccMessage);
-var
-  ByteArray: TLccDynamicByteArray;
-begin
-  if CheckBoxLogMessages.Checked then
-  begin
-    ByteArray := nil;
-    MemoLog.Lines.BeginUpdate;
-    try
-      if IS_GRIDCONNECT then
-      begin
-        if CheckBoxDetailedLog.Checked then
-          MemoLog.Lines.Add('S: ' + MessageToDetailedMessage(LccMessage))
-        else
-          MemoLog.Lines.Add('S: ' + LccMessage.ConvertToGridConnectStr('', False));
-      end else
-      begin
-        LccMessage.ConvertToLccTcp(ByteArray);
-        MemoLog.Lines.Add('S: ' + LccMessage.ConvertToLccTcpString(ByteArray));
-      end;
-      MemoLog.SelStart := Length(MemoLog.Lines.Text);
-    finally
-      MemoLog.Lines.EndUpdate;
-    end;
   end;
 end;
 
