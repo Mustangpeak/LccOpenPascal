@@ -59,11 +59,11 @@ type
 
   TLccEthernetConnectionInfo = class;
 
-  TOnEthernetEvent = procedure(Sender: TObject; ConnectionInfo: TLccHardwareConnectionInfo) of object;
+  TOnEthernetEvent = procedure(Sender: TObject; ConnectionInfo: TLccConnectionInfo) of object;
 
   { TLccEthernetConnectionInfo }
 
-  TLccEthernetConnectionInfo = class(TLccHardwareConnectionInfo)
+  TLccEthernetConnectionInfo = class(TLccConnectionInfo)
   private
     FAutoResolve: Boolean;           // IN
     FClientIP: string;               // IN
@@ -78,7 +78,7 @@ type
     property ListenerPort: word read FListenerPort write FListenerPort;
 
     constructor Create;
-    function Clone: TLccHardwareConnectionInfo; override;
+    function Clone: TLccConnectionInfo; override;
   end;
 
 
@@ -320,7 +320,7 @@ begin
   inherited;
 end;
 
-function TLccEthernetConnectionInfo.Clone: TLccHardwareConnectionInfo;
+function TLccEthernetConnectionInfo.Clone: TLccConnectionInfo;
 begin
   Result := inherited Clone;
   (Result as TLccEthernetConnectionInfo).AutoResolveIP := (Self as TLccEthernetConnectionInfo).AutoResolveIP;

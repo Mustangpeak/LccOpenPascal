@@ -122,7 +122,7 @@ type
 
     property OnControllerAssignChange: TOnLccTrainControllerAssignChange read FOnControllerAssignChange write FOnControllerAssignChange;
 
-    constructor Create(ANodeManager: {$IFDEF LCC_DELPHI}TComponent{$ELSE}TObject{$ENDIF}; CdiXML: string; GridConnectLink: Boolean); override;
+    constructor Create(AOwner: TComponent; CdiXML: string); override;
     destructor Destroy; override;
 
     procedure AfterLogin; override;
@@ -196,7 +196,7 @@ begin
   if IsAssigned then
   begin
     WorkerMessage.LoadTractionSetSpeed(Owner.NodeID, Owner.AliasID, Train.NodeID, Train.Alias, NewSpeed);
-    Owner.SendMessageFunc(Self, WorkerMessage);
+    Owner.SendMessage(WorkerMessage);
   end;
 end;
 
@@ -205,7 +205,7 @@ begin
 if IsAssigned then
   begin
     WorkerMessage.LoadTractionSetFunction(Owner.NodeID, Owner.AliasID, Train.NodeID, Train.Alias, AnAddress, AValue);
-    Owner.SendMessageFunc(Self, WorkerMessage);
+    Owner.SendMessage(WorkerMessage);
   end;
 end;
 
@@ -259,7 +259,7 @@ procedure TLccTrainController.HandleProducerIdentifiedAll(var SourceMessage: TLc
 var
   AliasMapping: TLccAliasMapping;
 begin
-  if SourceMessage.TractionIsSearchEvent and (SourceMessage.TractionSearchExtractSearchData = AssignedTrain.SearchCriteriaPending) then
+{  if SourceMessage.TractionIsSearchEvent and (SourceMessage.TractionSearchExtractSearchData = AssignedTrain.SearchCriteriaPending) then
   begin
     // Move from Pending the this is the Search Critera used.
     AssignedTrain.AcceptSearchCriteriaPending;
@@ -270,8 +270,8 @@ begin
       WorkerMessage.LoadTractionControllerAssign(NodeID, AliasID, AliasMapping.NodeID, AliasMapping.NodeAlias, NodeID);
     end else
       WorkerMessage.LoadTractionControllerAssign(NodeID, AliasID, SourceMessage.SourceID, SourceMessage.SourceAlias, NodeID);
-    SendMessageFunc(Self, WorkerMessage);    // The reply will fill in the assigned train if successful
-  end;
+    SendMessage(WorkerMessage);    // The reply will fill in the assigned train if successful
+  end;  }
 end;
 
 procedure TLccTrainController.HandleProducerIdentifiedClear(var SourceMessage: TLccMessage);
@@ -325,7 +325,7 @@ procedure TLccTrainController.FindAllTrains;
 begin
   // Send global Producer Identify.  When done the TrainServer property will have the trains and the information
    WorkerMessage.LoadTractionIsTrainProducer(NodeID, AliasID, NULL_NODE_ID, 0);
-   SendMessageFunc(Self, WorkerMessage);
+   SendMessage(WorkerMessage);
 end;
 
 procedure TLccTrainController.ReleaseTrain;
@@ -333,7 +333,7 @@ begin
   if AssignedTrain.IsAssigned then
   begin
     WorkerMessage.LoadTractionControllerRelease(NodeID, AliasID, AssignedTrain.Train.NodeID, AssignedTrain.Train.Alias, NodeID, AliasID);
-    SendMessageFunc(Self, WorkerMessage);
+    SendMessage(WorkerMessage);
     AssignedTrain.ClearTrain;
   end;
 end;
@@ -343,9 +343,9 @@ begin
   Result := AssignedTrain.IsAssigned;
 end;
 
-constructor TLccTrainController.Create(ANodeManager: {$IFDEF LCC_DELPHI}TComponent{$ELSE}TObject{$ENDIF}; CdiXML: string; GridConnectLink: Boolean);
+constructor TLccTrainController.Create(AOwner: TComponent; CdiXML: string);
 begin
-  inherited Create(ANodeManager, CdiXML, GridConnectLink);
+  inherited Create(AOwner, CdiXML);
   TractionServer.Enabled := True;
   FAssignedTrain := TAssignedTrainState.Create;
   AssignedTrain.Owner := Self;
@@ -401,19 +401,19 @@ begin
   AssignedTrain.SearchCriteriaPending := LocalSearchCriteria;
   // Search for that train... the reply to this is handled in the Process Message MTI_PRODUCER_IDENTIFIED_XXXXX
   WorkerMessage.LoadTractionSearch(NodeID, AliasID, LocalSearchCriteria);
-  SendMessageFunc(Self, WorkerMessage);
+  SendMessage(WorkerMessage);
 end;
 
 procedure TLccTrainController.ListenerAttach(TrainObject: TLccTractionObject);
 begin
   WorkerMessage.LoadTractionListenerAttach(NodeID, AliasID, TrainObject.NodeID, TrainObject.NodeAlias, TRACTION_LISTENER_FLAG_HIDDEN, NodeID);
-  SendMessageFunc(Self, WorkerMessage);
+  SendMessage(WorkerMessage);
 end;
 
 procedure TLccTrainController.ListenerDetach(TrainObject: TLccTractionObject);
 begin
   WorkerMessage.LoadTractionListenerDetach(NodeID, AliasID, TrainObject.NodeID, TrainObject.NodeAlias, 0, NodeID);
-  SendMessageFunc(Self, WorkerMessage);
+  SendMessage(WorkerMessage);
 end;
 
 procedure TLccTrainController.ListenerDetachFromAssignedTrain;
@@ -421,7 +421,7 @@ begin
   if AssignedTrain.IsAssigned then
   begin
     WorkerMessage.LoadTractionListenerDetach(NodeID, AliasID, AssignedTrain.Train.NodeID, AssignedTrain.Train.Alias, 0, NodeID);
-    SendMessageFunc(Self, WorkerMessage);
+    SendMessage(WorkerMessage);
   end;
 end;
 

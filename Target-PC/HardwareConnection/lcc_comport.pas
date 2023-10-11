@@ -91,10 +91,7 @@ type
   private
     FComPortThread: TLccComPortThread;
     FCurrentConnectionState: TLccConnectionState;
-    FHub: Boolean;
     FLccSettings: TLccSettings;
-    FNodeManager: TLccNodeManager;
-  //  FOnReceiveMessage: TOnLccConnectionInfoEvent;
     FRawData: Boolean;
     { Private declarations }
   protected
@@ -116,10 +113,7 @@ type
     procedure SendMessageRawGridConnect(GridConnectStr: String); override;
   published
     { Published declarations }
-    property Hub: Boolean read FHub write FHub;
     property LccSettings: TLccSettings read FLccSettings write FLccSettings;
-
-    property NodeManager: TLccNodeManager read FNodeManager write FNodeManager;
   end;
   TLccComPortClass = class of TLccComPort;
 
@@ -169,7 +163,6 @@ end;
 constructor TLccComPort.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
-  FHub := False;
 end;
 
 function TLccComPort.FormatComPortString(ComPort: string): string;

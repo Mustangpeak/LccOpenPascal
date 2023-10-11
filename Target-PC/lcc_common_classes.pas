@@ -109,9 +109,10 @@ type
   TLccConnectionThreadManager = class(TComponent)
   private
     FConnectionThreadList: Classes.TThreadList;
+    FCustomConnection: Boolean;
     FDefaultConnectionInfo: TLccConnectionInfo;
     FCriticalSection: TCriticalSection;
-    FGridConnect: Boolean;
+    FEmulateCanBus: Boolean;
     FOwnerConnectionFactory: TLccConnectionFactory;
 
     procedure SetDefaultConnectionInfo(AValue: TLccConnectionInfo);
@@ -138,7 +139,8 @@ type
     property Connected: Boolean read GetConnected;
     property Connecting: Boolean read GetConnecting;
     property OwnerConnectionFactory: TLccConnectionFactory read FOwnerConnectionFactory write FOwnerConnectionFactory;
-    property GridConnect: Boolean read FGridConnect write FGridConnect;
+    property EmulateCanBus: Boolean read FEmulateCanBus write FEmulateCanBus;
+    property CustomConnection: Boolean read FCustomConnection write FCustomConnection;
 
     procedure CriticalSectionEnter;
     procedure CriticalSectionLeave;
@@ -172,9 +174,9 @@ type
     property ServerList: Classes.TThreadList read FServerList write FServerList;
 
     // Event Doer for the messages coming in from child Connections
-    procedure DoReceiveMessage(Manager: TLccConnectionThreadManager; Thread: TLccConnectionThread; LccMessage: TLccMessage); virtual;
+    procedure DoReceiveLccMessage(Manager: TLccConnectionThreadManager; Thread: TLccConnectionThread; LccMessage: TLccMessage); virtual;
     /// Event Doer for messages being sent to child Connections
-    procedure DoSendMessage(ALccMessage: TLccMessage); virtual;
+    procedure DoSendLccMessage(ALccMessage: TLccMessage); virtual;
     // Event Doer for the Connection State Change of a child Connection
     procedure DoStateChange(Manager: TLccConnectionThreadManager; Thread: TLccConnectionThread; ConnectionInfo: TLccConnectionInfo); virtual;
     // Event Doer for the Connection Error of a child Connection
@@ -183,13 +185,17 @@ type
 
     // Closes and frees the Servers
     procedure ClearServerList;
+    procedure SendLccMessageToOtherManagers(ALccMessage: TLccMessage);
 
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
 
-    function CreateConnection(AConnectionManagerClass: TLccConnectionThreadManagerClass; ConnectionInfo: TLccConnectionInfo; IsGridConnect: Boolean): TLccConnectionThreadManager;
-    procedure SendMessage(ALccMessage: TLccMessage);
+    // Creates a connection that receives and sendmessages from the NodeManager to other nodes on the connection network
+    function CreateLccMessageConnection(AConnectionManagerClass: TLccConnectionThreadManagerClass; ConnectionInfo: TLccConnectionInfo; IsEmulateCanBus: Boolean): TLccConnectionThreadManager;
+    // Creates a connection that sends custom data across the connection (such as the GridConnect NMRA DCC packets), These will not get the OnLccReceiveMessage/OnLccSendMessage events as they don't define LccMessages as their data format
+    function CreateConnection(AConnectionManagerClass: TLccConnectionThreadManagerClass; ConnectionInfo: TLccConnectionInfo): TLccConnectionThreadManager;
+    procedure SendLccMessage(ALccMessage: TLccMessage);
 
     property OnLccMessageReceive: TOnLccConnectionReceiveMessageEvent read FOnLccMessageReceive write FOnLccMessageReceive;
     property OnLccMessageSend: TOnLccConnectionSendMessageEvent read FOnLccMessageSend write FOnLccMessageSend;
@@ -205,7 +211,7 @@ implementation
 
 { TLccConnectionFactory }
 
-procedure TLccConnectionFactory.DoReceiveMessage(
+procedure TLccConnectionFactory.DoReceiveLccMessage(
   Manager: TLccConnectionThreadManager; Thread: TLccConnectionThread;
   LccMessage: TLccMessage);
 begin
@@ -213,7 +219,7 @@ begin
     OnLccMessageReceive(Self, Manager, Thread, LccMessage);
 end;
 
-procedure TLccConnectionFactory.DoSendMessage(ALccMessage: TLccMessage);
+procedure TLccConnectionFactory.DoSendLccMessage(ALccMessage: TLccMessage);
 begin
   if Assigned(OnLccMessageSend) then
     OnLccMessageSend(Self, ALccMessage);
@@ -255,6 +261,25 @@ begin
   end;
 end;
 
+procedure TLccConnectionFactory.SendLccMessageToOtherManagers(ALccMessage: TLccMessage);
+var
+  i: Integer;
+  List: TList;
+  Manager: TLccConnectionThreadManager;
+begin
+  List := ServerList.LockList;
+  try
+    for i := 0 to List.Count - 1 do
+    begin
+      Manager := TLccConnectionThreadManager( List[i]);
+      if not Manager.CustomConnection then
+        Manager.SendMessage(ALccMessage);
+    end;
+  finally
+    ServerList.UnlockList;
+  end;
+end;
+
 constructor TLccConnectionFactory.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
@@ -268,36 +293,30 @@ begin
   inherited Destroy;
 end;
 
-function TLccConnectionFactory.CreateConnection(
+function TLccConnectionFactory.CreateLccMessageConnection(
   AConnectionManagerClass: TLccConnectionThreadManagerClass;
-  ConnectionInfo: TLccConnectionInfo; IsGridConnect: Boolean
+  ConnectionInfo: TLccConnectionInfo; IsEmulateCanBus: Boolean
   ): TLccConnectionThreadManager;
 begin
   Result := AConnectionManagerClass.Create(Self);
   Result.OwnerConnectionFactory := Self;
   Result.DefaultConnectionInfo := ConnectionInfo;
-  Result.GridConnect := IsGridConnect;
+  Result.EmulateCanBus := IsEmulateCanBus;
   ServerList.Add(Result);
 end;
 
-procedure TLccConnectionFactory.SendMessage(ALccMessage: TLccMessage);
-var
-  i: Integer;
-  List: TList;
-  Manager: TLccConnectionThreadManager;
+function TLccConnectionFactory.CreateConnection(
+  AConnectionManagerClass: TLccConnectionThreadManagerClass;
+  ConnectionInfo: TLccConnectionInfo): TLccConnectionThreadManager;
 begin
-  DoSendMessage(ALccMessage);
+  Result := CreateLccMessageConnection(AConnectionManagerClass, ConnectionInfo, False);
+  Result.CustomConnection := True;
+end;
 
-  List := ServerList.LockList;
-  try
-    for i := 0 to List.Count - 1 do
-    begin
-      Manager := TLccConnectionThreadManager( List[i]);
-      Manager.SendMessage(ALccMessage);
-    end;
-  finally
-    ServerList.UnlockList;
-  end;
+procedure TLccConnectionFactory.SendLccMessage(ALccMessage: TLccMessage);
+begin
+  DoSendLccMessage(ALccMessage);
+  SendLccMessageToOtherManagers(ALccMessage);
 end;
 
 { TLccConnectionInfo }
@@ -543,7 +562,7 @@ begin
 
   MessageList := AMessageBuffer.LockList;
   try
-    if OwnerConnectionManager.GridConnect then
+    if OwnerConnectionManager.EmulateCanBus then
     begin
       for i := 0 to MessageList.Count - 1 do
         AStream.WriteAnsiString(TLccMessage( MessageList[i]).ConvertToGridConnectStr(#10, False) + #10);

@@ -64,7 +64,7 @@ type
   public
     property TractionServer;
 
-    constructor Create(ANodeManager: {$IFDEF LCC_DELPHI}TComponent{$ELSE}TObject{$ENDIF}; CdiXML: string; GridConnectLink: Boolean); override;
+    constructor Create(AOwner: TComponent; CdiXML: string); override;
     function AddTrain(CdiXML: string; ADccAddress: Word; ALongAddress: Boolean; ASpeedStep: TLccDccSpeedStep): TLccTrainDccNode;  // Null CDI for default train node CDI
     procedure ClearTrains;
     function FindTrainByLccNodeID(ANodeID: TNodeID): TLccTrainDccNode;
@@ -82,15 +82,12 @@ uses
 
 function TLccCommandStationNode.AddTrain(CdiXML: string; ADccAddress: Word; ALongAddress: Boolean; ASpeedStep: TLccDccSpeedStep): TLccTrainDccNode;
 begin
-  if Assigned(NodeManager) then
+  Result := ((Owner as TLccNodeManager) as TLccNodeManager).AddNodeByClass(CdiXML, TLccTrainDccNode, False, NULL_NODE_ID) as TLccTrainDccNode;
+  if Assigned(Result) then
   begin
-  Result := (NodeManager as TLccNodeManager).AddNodeByClass(CdiXML, TLccTrainDccNode, False, NULL_NODE_ID) as TLccTrainDccNode;
-    if Assigned(Result) then
-    begin
-      Result.DccAddress := ADccAddress;
-      Result.DccLongAddress := ALongAddress;
-      Result.DccSpeedStep := ASpeedStep;
-    end;
+    Result.DccAddress := ADccAddress;
+    Result.DccLongAddress := ALongAddress;
+    Result.DccSpeedStep := ASpeedStep;
   end;
 end;
 
@@ -127,9 +124,9 @@ begin
   ProtocolMemoryOptions.LowSpace := MSI_TRACTION_FUNCTION_CONFIG;
 end;
 
-constructor TLccCommandStationNode.Create(ANodeManager: {$IFDEF LCC_DELPHI}TComponent{$ELSE}TObject{$ENDIF}; CdiXML: string; GridConnectLink: Boolean);
+constructor TLccCommandStationNode.Create(AOwner: TComponent; CdiXML: string);
 begin
-  inherited Create(ANodeManager, CdiXML, GridConnectLink);
+  inherited Create(AOwner, CdiXML);
   TractionServer.Enabled := True;
 end;
 
@@ -139,7 +136,7 @@ var
   LocalNode: TLccNode;
   LocalNodeList: TList;
 begin
-  LocalNodeList := (NodeManager as TLccNodeManager).Nodes;
+  LocalNodeList := (Owner as TLccNodeManager).Nodes;
   for i := LocalNodeList.Count - 1 downto 0 do
    begin
      LocalNode := TLccNode(LocalNodeList[i]);
@@ -158,7 +155,7 @@ var
   LocalNodeList: TList;
 begin
   Result := nil;
-  LocalNodeList := (NodeManager as TLccNodeManager).Nodes;
+  LocalNodeList := (Owner as TLccNodeManager).Nodes;
   for i := LocalNodeList.Count - 1 downto 0 do
    begin
      if TLccNode(LocalNodeList[i]) is TLccTrainDccNode then
@@ -180,7 +177,7 @@ var
   LocalNodeList: TList;
 begin
   Result := nil;
-  LocalNodeList := (NodeManager as TLccNodeManager).Nodes;
+  LocalNodeList := (Owner as TLccNodeManager).Nodes;
   for i := LocalNodeList.Count - 1 downto 0 do
    begin
      if TLccNode(LocalNodeList[i]) is TLccTrainDccNode then
@@ -251,7 +248,7 @@ begin
                 if ATrain.Permitted then  // Once it logs in and becomes permitted it will send this message if not permitted yet
                 begin
                   WorkerMessage.LoadProducerIdentified(ATrain.NodeID, ATrain.AliasID, ReturnEvent, evs_Valid);
-                  SendMessageFunc(ATrain, WorkerMessage);      // Need to send the train for this one
+                  SendMessage(WorkerMessage);
                 end;
               end else
               if SourceMessage.TractionSearchIsForceAllocate then

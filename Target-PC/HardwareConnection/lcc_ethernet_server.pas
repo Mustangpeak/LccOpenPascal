@@ -681,7 +681,7 @@ var
 begin
   DataStream.Position := 0;
 
-  if OwnerConnectionContextList.OwnerConnectionThread.OwnerConnectionManager.GridConnect then
+  if OwnerConnectionContextList.OwnerConnectionThread.OwnerConnectionManager.EmulateCanBus then
   begin
     for iData := 0 to DataStream.Size - 1 do
     begin
@@ -697,7 +697,7 @@ begin
         // Lcc message.
         case GridConnectMessageAssembler.IncomingMessageGridConnect(WorkerMessage) of
           imgcr_True         : AliasServerThread.AddIncomingMessage(WorkerMessage, True);
-          imgcr_ErrorToSend  : OwnerConnectionContextList.OwnerConnectionThread.OwnerConnectionManager.OwnerConnectionFactory.SendMessage(WorkerMessage);
+          imgcr_ErrorToSend  : OwnerConnectionContextList.OwnerConnectionThread.OwnerConnectionManager.OwnerConnectionFactory.SendLccMessage(WorkerMessage);
           imgcr_False,
           imgcr_UnknownError : begin end;
         end;

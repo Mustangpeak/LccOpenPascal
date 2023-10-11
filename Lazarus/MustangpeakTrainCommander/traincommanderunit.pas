@@ -8,7 +8,6 @@ uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ComCtrls, ExtCtrls,
   StdCtrls, Buttons,
   lcc_ethernet_server,
-  lcc_ethernet_client,
   lcc_defines,
   lcc_node,
   lcc_node_manager,
@@ -30,7 +29,7 @@ uses
 
 
 const
-  IS_GRIDCONNECT = True;
+  EMULATE_CAN_BUS = True;
 
 type
 
@@ -265,7 +264,7 @@ begin
 
     MemoLog.Lines.BeginUpdate;
     try
-      if IS_GRIDCONNECT then
+      if EMULATE_CAN_BUS then
       begin
         if CheckBoxDetailedLog.Checked then
           MemoLog.Lines.Add(Preamble + MessageToDetailedMessage(ALccMessage))
@@ -286,20 +285,20 @@ begin
 end;
 
 procedure TFormTrainCommander.OnServerManagerSendMessage(Sender: TObject; ALccMessage: TLccMessage);
-var
-  ByteArray: TLccDynamicByteArray;
-  Preamble: String;
+//var
+ // ByteArray: TLccDynamicByteArray;
+ // Preamble: String;
 begin
-  if CheckBoxLogMessages.Checked then
+ { if CheckBoxLogMessages.Checked then
   begin
     if Manager = LccServer then
       Preamble := 'TCP:S: '
     else
     if Manager = LccWebsocketServer then
       Preamble := 'WebSocket:S: '
-  {  else
+    else
     if Manager = LccHTTPServer then
-      Preamble := 'HTTP:S: '   }
+      Preamble := 'HTTP:S: '
     else
     if Manager = LccComPort then      // Should never hit as the Comport is SendMessage Only
     begin
@@ -319,7 +318,7 @@ begin
 
     MemoLog.Lines.BeginUpdate;
     try
-      if IS_GRIDCONNECT then
+      if EMULATE_CAN_BUS then
       begin
         if CheckBoxDetailedLog.Checked then
           MemoLog.Lines.Add('S: ' + MessageToDetailedMessage(LccMessage))
@@ -335,7 +334,7 @@ begin
     finally
       MemoLog.Lines.EndUpdate;
     end;
-  end;
+  end;     }
 end;
 
 procedure TFormTrainCommander.OnServerManagerConnectionState(Sender: TObject;
@@ -556,28 +555,28 @@ begin
   (ConnectionInfo as TLccEthernetConnectionInfo).AutoResolveIP := not CheckBoxLoopBackIP.Checked;
   (ConnectionInfo as TLccEthernetConnectionInfo).ListenerIP := '127.0.0.1';
   (ConnectionInfo as TLccEthernetConnectionInfo).ListenerPort := 12021;
-  LccServer := ConnectionFactory.CreateConnection(TLccEthernetServerThreadManager, ConnectionInfo, IS_GRIDCONNECT) as TLccEthernetServerThreadManager;
+  LccServer := ConnectionFactory.CreateLccMessageConnection(TLccEthernetServerThreadManager, ConnectionInfo, EMULATE_CAN_BUS) as TLccEthernetServerThreadManager;
 
 
   ConnectionInfo := TLccEthernetConnectionInfo.Create;
   (ConnectionInfo as TLccEthernetConnectionInfo).AutoResolveIP := not CheckBoxLoopBackIP.Checked;
   (ConnectionInfo as TLccEthernetConnectionInfo).ListenerIP := '127.0.0.1';
   (ConnectionInfo as TLccEthernetConnectionInfo).ListenerPort := 12022;
-  LccWebsocketServer := ConnectionFactory.CreateConnection(TLccWebSocketServerThreadManager, ConnectionInfo, IS_GRIDCONNECT) as TLccWebSocketServerThreadManager;
+  LccWebsocketServer := ConnectionFactory.CreateLccMessageConnection(TLccWebSocketServerThreadManager, ConnectionInfo, EMULATE_CAN_BUS) as TLccWebSocketServerThreadManager;
 
  { ConnectionInfo := TLccEthernetConnectionInfo.Create;
   (ConnectionInfo as TLccEthernetConnectionInfo).AutoResolveIP := not CheckBoxLoopBackIP.Checked;
   (ConnectionInfo as TLccEthernetConnectionInfo).ListenerIP := '127.0.0.1';
   (ConnectionInfo as TLccEthernetConnectionInfo).ListenerPort := 12020;
-  LccWebsocketServer := ConnectionFactory.CreateConnection(TLccHTTPServer, ConnectionInfo, IS_GRIDCONNECT) as TLccHTTPServer;
+  LccHTTPServer := ConnectionFactory.CreateConnection(TLccHTTPServer, ConnectionInfo, EMULATE_CAN_BUS) as TLccHTTPServer;
  }
 
-  ConnectionInfo := TLccComPortConnectionInfo.Create;
+   ConnectionInfo := TLccComPortConnectionInfo.Create;
   (ConnectionInfo as TLccComPortConnectionInfo).ComPort := ComboBoxComPorts.Items[ComboBoxComPorts.ItemIndex];
   (ConnectionInfo as TLccComPortConnectionInfo).Baud := 9600;
   (ConnectionInfo as TLccComPortConnectionInfo).StopBits := 8;
   (ConnectionInfo as TLccComPortConnectionInfo).Parity := 'N';
-  LccComPort := ConnectionFactory.CreateConnection(TLccComPort, ConnectionInfo, IS_GRIDCONNECT) as TLccComPort;
+  LccComPort := ConnectionFactory.CreateConnection(TLccComPort, ConnectionInfo) as TLccComPort;
   LccComPort.RawData := True;
 
   ConnectionFactory.OnStateChange := @OnServerManagerConnectionState;
@@ -585,11 +584,6 @@ begin
   ConnectionFactory.OnLccMessageReceive := @OnServerManagerReceiveMessage;
   ConnectionFactory.OnLccMessageSend := @OnServerManagerSendMessage;
 
-
-
-//  FLccHTTPServer := TLccHTTPServer.Create(nil, NodeManager); // OpenLCB messages do not move on this interface
-//  LccHTTPServer.OnConnectionStateChange := @OnCommandStationHTTPConnectionState;
-//  LccHTTPServer.OnErrorMessage := @OnCommandStationHTTPErrorMessage;
 
   Max_Allowed_Buffers := 1;
   AutoCreateTrainAddress := 1;
@@ -619,7 +613,6 @@ procedure TFormTrainCommander.SpeedButton1Click(Sender: TObject);
 var
   AValue, Size, Result_: Integer;
   Hex, Temp: string;
-  W: Word;
   CharPtr: PChar;
   B: Byte;
   StartIndex, i: Integer;
@@ -687,7 +680,7 @@ var
   CharPtr: PAnsiChar;
   B: Byte;
   MemoryStream: TMemoryStream;
-  AValue, Result_: TEventID;
+  AValue: TEventID;
 begin
   MemoryStream := TMemoryStream.Create;
 
@@ -732,8 +725,6 @@ begin
     Temp := Temp + Hex;
   end;
 
-  Result_ := StrToEventID(Temp);
-
   // Reset for use
   MemoryStream.Position := 0;
 
@@ -766,7 +757,7 @@ begin
   begin
     TrainNode := LccSourceNode as TLccTrainDccNode;
 
-    TrainNode.OnSendMessageComPort := @OnComPortSendMessage;
+ //   TrainNode.OnSendMessageComPort := @OnComPortSendMessage;
 
     TreeNode := TreeViewTrains.Items.Add(nil, TrainNodeToCaption(TrainNode));
     TreeNode.Data := TrainNode;

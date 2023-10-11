@@ -137,7 +137,7 @@ type
     property EngineListenerInfo: TLccEngineRetrieveListenerInfo read FEngineListenerInfo write FEngineListenerInfo;
     property TractionServer: TLccTractionServer read FTractionServer;
 
-    constructor Create(ANodeManager: {$IFDEF LCC_DELPHI}TComponent{$ELSE}TObject{$ENDIF}; CdiXML: string; GridConnectLink: Boolean); override;
+    constructor Create(AOwner: TComponent; CdiXML: string); override;
     destructor Destroy; override;
     function ProcessMessageLCC(SourceMessage: TLccMessage): Boolean; override;
   end;
@@ -193,7 +193,7 @@ var
   LocalListener: TLccListenerObject;
   LocalMapping: TLccAliasMapping;
 begin
-  if EqualNodeID(TargetNodeID, SourceMessage.SourceID, False) then
+ { if EqualNodeID(TargetNodeID, SourceMessage.SourceID, False) then
   begin
     case SourceMessage.MTI of
       MTI_TRACTION_REPLY :
@@ -231,7 +231,7 @@ begin
           end;
         end;
     end
-  end;
+  end;  }
 end;
 
 procedure TLccEngineRetrieveListenerInfo.QueryNextListener;
@@ -239,7 +239,7 @@ begin
   if QueryNodeIndex < QueryNodeCount then
   begin
     WorkerMessage.LoadTractionListenerQuery(OwnerNode.NodeID, OwnerNode.AliasID, TargetNodeID, TargetAlias, QueryNodeIndex);
-    OwnerNode.SendMessageFunc(OwnerNode, WorkerMessage);
+    OwnerNode.SendMessage(WorkerMessage);
     Inc(FQueryNodeIndex);
   end else
   begin
@@ -258,7 +258,7 @@ procedure TLccEngineRetrieveListenerInfo.Start;
 begin
   inherited;
   WorkerMessage.LoadTractionListenerQueryCount(OwnerNode.NodeID, OwnerNode.AliasID, TargetNodeID, TargetAlias);
-  OwnerNode.SendMessageFunc(OwnerNode, WorkerMessage);
+  OwnerNode.SendMessage(WorkerMessage);
 end;
 
 { TLccEngineSearchTrain }
@@ -267,7 +267,7 @@ procedure TLccEngineSearchTrain.HandleProducerIdentified(SourceMessage: TLccMess
 var
   AliasMapping: TLccAliasMapping;
 begin
-  if SourceMessage.TractionIsSearchEvent and (SourceMessage.TractionSearchExtractSearchData = SearchCriteriaPending) then
+ { if SourceMessage.TractionIsSearchEvent and (SourceMessage.TractionSearchExtractSearchData = SearchCriteriaPending) then
   begin
     if OwnerNode.GridConnect then
     begin
@@ -277,7 +277,7 @@ begin
       SearchTrain.NodeIdentification.AssignID(SourceMessage.SourceID, SourceMessage.SourceAlias);
     SearchTrain.SearchCriteria := SearchCriteriaPending;
     Callback(Self, SearchTrain)
-  end;
+  end; }
 end;
 
 constructor TLccEngineSearchTrain.Create(AnOwner: TLccNode);
@@ -297,7 +297,7 @@ begin
   inherited Start;
   // Search for that train... the reply to this is handled in the Process Message MTI_PRODUCER_IDENTIFIED_XXXXX
   WorkerMessage.LoadTractionSearch(OwnerNode.NodeID, OwnerNode.AliasID, SearchCriteriaPending);
-  OwnerNode.SendMessageFunc(OwnerNode, WorkerMessage);
+  OwnerNode.SendMessage(WorkerMessage);
 end;
 
 procedure TLccEngineSearchTrain.Reset;
@@ -368,7 +368,7 @@ begin
   begin
     // AliasMapping was done in the Search Engine
     WorkerMessage.LoadTractionControllerAssign(OwnerNode.NodeID, OwnerNode.AliasID, ASearchTrain.NodeIdentification.NodeID, ASearchTrain.NodeIdentification.Alias, OwnerNode.NodeID);
-    OwnerNode.SendMessageFunc(Self, WorkerMessage);
+    OwnerNode.SendMessage(WorkerMessage);
   end else
   begin  // Problem
   //  EngineState := AnEngineSearchTrain.EngineState;
@@ -495,10 +495,10 @@ begin
   end;
 end;
 
-constructor TLccTractionServerNode.Create(ANodeManager: {$IFDEF LCC_DELPHI}TComponent{$ELSE}TObject{$ENDIF}; CdiXML: string; GridConnectLink: Boolean);
+constructor TLccTractionServerNode.Create(AOwner: TComponent; CdiXML: string);
 begin
-  inherited Create(ANodeManager, CdiXML, GridConnectLink);
-  FTractionServer := TLccTractionServer.Create(GridConnectLink);
+  inherited Create(AOwner, CdiXML);
+  FTractionServer := TLccTractionServer.Create;
   FEngineSearchAndAllocateTrain := TLccEngineSearchAndAllocateTrain.Create(Self);
   FEngineSearchTrain := TLccEngineSearchTrain.Create(Self);
   FEngineListenerInfo := TLccEngineRetrieveListenerInfo.Create(Self);
