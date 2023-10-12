@@ -53,7 +53,7 @@ uses
   lcc_node_messages_can_assembler_disassembler;
 
 const
-  THREAD_SLEEP_TIME = 2;
+  THREAD_SLEEP_TIME = 50;
 
 type
 

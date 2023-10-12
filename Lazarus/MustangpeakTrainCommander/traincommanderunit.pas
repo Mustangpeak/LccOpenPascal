@@ -571,13 +571,16 @@ begin
   LccHTTPServer := ConnectionFactory.CreateConnection(TLccHTTPServer, ConnectionInfo, EMULATE_CAN_BUS) as TLccHTTPServer;
  }
 
+ // Comports not initialized or selected yet... may be an issue doing it this way.
+
    ConnectionInfo := TLccComPortConnectionInfo.Create;
-  (ConnectionInfo as TLccComPortConnectionInfo).ComPort := ComboBoxComPorts.Items[ComboBoxComPorts.ItemIndex];
+ /// (ConnectionInfo as TLccComPortConnectionInfo).ComPort := ComboBoxComPorts.Items[ComboBoxComPorts.ItemIndex];
   (ConnectionInfo as TLccComPortConnectionInfo).Baud := 9600;
   (ConnectionInfo as TLccComPortConnectionInfo).StopBits := 8;
   (ConnectionInfo as TLccComPortConnectionInfo).Parity := 'N';
   LccComPort := ConnectionFactory.CreateConnection(TLccComPort, ConnectionInfo) as TLccComPort;
   LccComPort.RawData := True;
+
 
   ConnectionFactory.OnStateChange := @OnServerManagerConnectionState;
   ConnectionFactory.OnError := @OnServerErrorMessage;
@@ -594,10 +597,9 @@ end;
 procedure TFormTrainCommander.FormDestroy(Sender: TObject);
 begin
   NodeManager.ReleaseAliasAll;
- // FreeAndNil(FLccHTTPServer);
-  FreeAndNil(FLccServer);
-  FreeAndNil(FLccWebsocketServer);
-  FreeAndNil(FComPort);
+  // Factory destroys all connections
+
+//  FreeAndNil(FComPort);
   FreeAndNil(FNodeManager);   // after the servers are destroyed
   FreeAndNil(FWorkerMessage);
 end;

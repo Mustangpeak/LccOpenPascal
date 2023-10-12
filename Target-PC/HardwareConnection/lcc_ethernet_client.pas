@@ -230,10 +230,10 @@ end;
 procedure TLccEthernetClientThread.OnThreadComponentRun(Sender: TIdThreadComponent);
 begin
 
-  if not IdTCPClient.IOHandler.InputBufferIsEmpty and IdTCPClient.IOHandler.Connected then
+  if not IdTCPClient.IOHandler.InputBufferIsEmpty then
   begin
     ReceiveStream.Clear;
-    idTCPClient.IOHandler.ReadStream(ReceiveStream);
+    idTCPClient.IOHandler.ReadStream(ReceiveStream, idTCPClient.IOHandler.InputBuffer.Size);
   end;
 
     // https://stackoverflow.com/questions/64593756/delphi-rio-indy-tcpserver-high-cpu-usage

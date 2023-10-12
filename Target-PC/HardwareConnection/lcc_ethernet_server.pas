@@ -631,23 +631,20 @@ var
   iContext: Integer;
   ConnectionContext: TLccConnectionContext;
 begin
-  if AContext.Connection.IOHandler.Connected then
-  begin
-    ContextList := LockList;
-    try
-      // Contexts are added/removed in IdTCPServerConnect/IdTCPServerDisconnectConnect events
-      for iContext := 0 to ContextList.Count - 1 do
+  ContextList := LockList;
+  try
+    // Contexts are added/removed in IdTCPServerConnect/IdTCPServerDisconnectConnect events
+    for iContext := 0 to ContextList.Count - 1 do
+    begin
+      ConnectionContext := TLccConnectionContext(ContextList[iContext]);
+      if ConnectionContext.Context = AContext then
       begin
-        ConnectionContext := TLccConnectionContext(ContextList[iContext]);
-        if ConnectionContext.Context = AContext then
-        begin
-          ConnectionContext.IncomingRawData(ADataStream);
-          Break;
-        end;
+        ConnectionContext.IncomingRawData(ADataStream);
+        Break;
       end;
-    finally
-      UnlockList;
     end;
+  finally
+    UnlockList;
   end;
 end;
 
@@ -915,10 +912,13 @@ begin
 
   // Do this so when read the Size is the number of Bytes vs using Position which can be moved
   ReceiveStream.Clear;
-  AContext.Connection.IOHandler.ReadStream(ReceiveStream);
-  ConnectionContextList.IncomingRawDataForContext(AContext, ReceiveStream);
+  if not AContext.Connection.IOHandler.InputBufferIsEmpty then
+  begin
+    AContext.Connection.IOHandler.ReadStream(ReceiveStream, AContext.Connection.IOHandler.InputBuffer.Size);
+    ConnectionContextList.IncomingRawDataForContext(AContext, ReceiveStream);
 
-  RelayToOtherConnections(AContext, ReceiveStream);
+    RelayToOtherConnections(AContext, ReceiveStream);
+  end;
 
      // https://stackoverflow.com/questions/64593756/delphi-rio-indy-tcpserver-high-cpu-usage
     // There is another way to do this but with this simple program this is fine
