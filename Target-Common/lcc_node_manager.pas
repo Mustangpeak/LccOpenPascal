@@ -26,7 +26,8 @@ uses
   lcc_utilities,
   lcc_node_messages,
   lcc_train_server,
-  lcc_alias_server;
+  lcc_alias_server,
+  lcc_alias_server_thread;
 
 type
 
@@ -186,6 +187,8 @@ type
     procedure DoTractionSetSpeed(LccNode: TLccNode; ALccMessage: TLccMessage; var DoDefault: Boolean);
     procedure DoTractionTrainSNIP(LccNode: TLccNode; ALccMessage: TLccMessage; var DoDefault: Boolean);
 
+
+    procedure DispatchMessageCallback(ALccMessage: TLccMessage);  // callback for AliasServerThread to connect to the incoming messages
 
    public
     property Nodes: TList read FNodes write FNodes;
@@ -425,6 +428,14 @@ begin
     OnNodeTractionTrainSNIP(Self, LccNode, ALccMessage, DoDefault);
 end;
 
+procedure TLccNodeManager.DispatchMessageCallback(ALccMessage: TLccMessage);
+var
+  i: Integer;
+begin
+  for i := 0 to Nodes.Count - 1 do
+    Node[i].ProcessMessage(ALccMessage);
+end;
+
 procedure TLccNodeManager.DoTractionControllerAssign(LccNode: TLccNode; ALccMessage: TLccMessage; var DoDefault: Boolean);
 begin
   if Assigned(OnNodeTractionControllerAssign) then
@@ -519,6 +530,8 @@ begin
   _100msTimer.OnTimer := {$IFNDEF LCC_DELPHI}@{$ENDIF}On_100msTimer;
   _100msTimer.Interval := 100;
   _100msTimer.Enabled := True;
+
+  AliasServerThread.DispatchProcessedMessage := {$IFNDEF LCC_DELPHI}@{$ENDIF}DispatchMessageCallback;
 end;
 
 function TLccNodeManager.AddNode(CdiXML: string; AutoLogin: Boolean): TLccNode;
@@ -590,6 +603,7 @@ end;
 
 destructor TLccNodeManager.Destroy;
 begin
+  AliasServerThread.DispatchProcessedMessage := nil;
   Clear;
   _100msTimer.Enabled := False;
   FNodes.Free;

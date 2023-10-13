@@ -31,13 +31,17 @@ uses
   lcc_alias_server,
   lcc_node_messages;
 
+
 type
+
+TLccAliasServerDispatchProcessedMessageFunc = procedure(ALccMessage: TLccMessage) of object;
 
 
 { TReceiveMessageAliasServerThread }
 
 TReceiveMessageAliasServerThread = class(TThread)
   private
+    FDispatchProcessedMessage: TLccAliasServerDispatchProcessedMessageFunc;
     FMappingRequestMessageList: TThreadList;
     FOutgoingProcessedMessageList: TThreadList;
     FIncomingMessageList: TThreadList;
@@ -55,9 +59,10 @@ TReceiveMessageAliasServerThread = class(TThread)
 
     procedure Execute; override;
     procedure ClearThreadedObjectList(AThreadedList: TThreadList);
-    procedure ProcessAliasAndNodeIDMessages(AMessage: TLccMessage);
+    procedure ProcessAliasAndNodeIDMappingMessages(AMessage: TLccMessage);
     procedure RequestMappingMessageSentCallback(ANodeID: TNodeID; AnAliasID: Word);
     function MappingRequestExists(ANodeID: TNodeID; AnAliasID: Word): Boolean;
+    procedure DispatchMessageThroughSyncronize;
 
   public
     constructor Create(CreateSuspended: Boolean; const StackSize: SizeUInt = DefaultStackSize); reintroduce;
@@ -68,6 +73,7 @@ TReceiveMessageAliasServerThread = class(TThread)
     // Mapping Requests, TLccMessages filled in to request the mappings the Alias Server needs.. These need to picked up and sent by the Node Manager
     property MappingRequestMessageList: TThreadList read FMappingRequestMessageList write FMappingRequestMessageList;
 
+    property DispatchProcessedMessage: TLccAliasServerDispatchProcessedMessageFunc read FDispatchProcessedMessage write FDispatchProcessedMessage;
     // Adds a message that is incoming from a connection.  This thread will validate that the Alias Server contains
     // any mappings necessary for the message and place them in the OutgoingProcessedMessageList when Node Manager can handle them
     procedure AddIncomingMessage(AMessage: TLccMessage; GridConnect: Boolean);
@@ -99,11 +105,20 @@ begin
       for i := 0 to List.Count -1 do
       begin
         LocalMessage := TLccMessage( List[i]);
-        ProcessAliasAndNodeIDMessages(LocalMessage);
-        if LocalMessage.ValidateAndRequestIfNecessaryAliasMappings({$IFNDEF LCC_DELPHI}@{$ENDIF}RequestMappingMessageSentCallback) then
+        // Process any mapping definition messages.  If they are mapping messages then we know the mapping exisits and can skip any more checking.
+        ProcessAliasAndNodeIDMappingMessages(LocalMessage);
+
+        // If it is a CAN message send it on, we don't try to map CAN messages since during Alias
+        // reconciliation they must go through because the Alias is not valid yet and a CAN message only delivers
+        // NodeIDs it never requires them to be used
+        if not LocalMessage.IsCAN then
+        begin
+          if LocalMessage.ValidateAndRequestIfNecessaryAliasMappings({$IFNDEF LCC_DELPHI}@{$ENDIF}RequestMappingMessageSentCallback) then
+            OutgoingProcessedMessageList.Add(LocalMessage)
+          else
+            WaitingForMappingMessageList.Add(LocalMessage)
+        end else
           OutgoingProcessedMessageList.Add(LocalMessage)
-        else
-          WaitingForMappingMessageList.Add(LocalMessage)
 
       end;
     finally
@@ -127,6 +142,8 @@ begin
       WaitingForMappingMessageList.UnlockList;
     end;
 
+    Synchronize({$IFDEF FPC}@{$ENDIF}DispatchMessageThroughSyncronize);
+
     Sleep(50);
   end;
 end;
@@ -147,7 +164,8 @@ begin
   end;
 end;
 
-procedure TReceiveMessageAliasServerThread.ProcessAliasAndNodeIDMessages(AMessage: TLccMessage);
+procedure TReceiveMessageAliasServerThread.ProcessAliasAndNodeIDMappingMessages(
+  AMessage: TLccMessage);
 var
   DummyNodeID: TNodeID;
 begin
@@ -183,21 +201,21 @@ begin
   end;
 end;
 
-procedure TReceiveMessageAliasServerThread.RequestMappingMessageSentCallback(
-  ANodeID: TNodeID; AnAliasID: Word);
+procedure TReceiveMessageAliasServerThread.RequestMappingMessageSentCallback(ANodeID: TNodeID; AnAliasID: Word);
 var
   LccMessage: TLccMessage;
 begin
+  // Don't send duplicate requests for mapping messages
   if not MappingRequestExists(ANodeID, AnAliasID) then
   begin
-    if AnAliasID <> 0 then
+    if AnAliasID <> 0 then   // If we have the Alias use the CAN messages to get the full Node ID
     begin
       LccMessage := TLccMessage.Create;
       LccMessage.LoadVerifyNodeIDAddressed(NULL_NODE_ID, 0, ANodeID, AnAliasID, NULL_NODE_ID);
       MappingRequestMessageList.Add(LccMessage);
       {$IFDEF LOG_MAPPING}DebugLn('Mapping Request Sent via LoadVerifyNodeIDAddressed: 0x' + IntToHex(AnAliasID, 4) + '; ' + NodeIDToString(ANodeID, True));{$ENDIF}
     end else
-    if not NullNodeID(ANodeID) then
+    if not NullNodeID(ANodeID) then  // If we have the NodeID use it to send us the Alias
     begin
       LccMessage := TLccMessage.Create;
       LccMessage.LoadVerifyNodeID(NULL_NODE_ID, 0, ANodeID);
@@ -230,6 +248,28 @@ begin
     end;
   finally
     MappingRequestMessageList.UnlockList;
+  end;
+end;
+
+procedure TReceiveMessageAliasServerThread.DispatchMessageThroughSyncronize;
+var
+  List: TList;
+  i: Integer;
+begin
+  List := OutgoingProcessedMessageList.LockList;
+  try
+    try
+      for i := 0 to List.Count - 1 do
+      begin
+        if Assigned(FDispatchProcessedMessage) then
+          DispatchProcessedMessage(TLccMessage( List[i]));
+        TObject( List[i]).Free;
+      end;
+    finally
+      List.Clear
+    end;
+  finally
+    OutgoingProcessedMessageList.UnlockList;
   end;
 end;
 
