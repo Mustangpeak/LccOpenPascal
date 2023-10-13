@@ -689,6 +689,16 @@ begin
         MessageStr := GridConnectBufferToString(GridConnectStrPtr^);
         WorkerMessage.LoadByGridConnectStr(MessageStr);
 
+        // Not a fan of having it here to block the main connection thread but need to hook into the raw individual messages.
+        // after the next call to GridConnectMessageAssembler split up CAN messages will be recombined into a single LCC message
+        if Assigned(OwnerConnectionContextList.OwnerConnectionThread.OwnerConnectionManager.OwnerConnectionFactory.OnLccMessageReceive) then
+        begin
+          WorkerMessage.CopyToTarget(OwnerConnectionContextList.OwnerConnectionThread.OwnerConnectionManager.ReceiveMessageWorkerMessage);
+          OwnerConnectionContextList.OwnerConnectionThread.OwnerConnectionManager.ReceiveMessageObject := Self;
+          OwnerConnectionContextList.OwnerConnectionThread.OwnerConnectionManager.ReceiveMessageThread := OwnerConnectionContextList.OwnerConnectionThread;
+          OwnerConnectionContextList.OwnerConnectionThread.Synchronize(OwnerConnectionContextList.OwnerConnectionThread.OwnerConnectionManager.ReceiveMessageThroughSyncronize);
+        end;
+
         // Message may only be part of a larger string of messages to make up a full LCC message.
         // This call will concatinate these partial Lcc message and return with a fully qualified
         // Lcc message.
@@ -710,6 +720,15 @@ begin
       begin
         if WorkerMessage.LoadByLccTcp(LocalDataArray) then
         begin
+
+          if Assigned(OwnerConnectionContextList.OwnerConnectionThread.OwnerConnectionManager.OwnerConnectionFactory.OnLccMessageReceive) then
+          begin
+            WorkerMessage.CopyToTarget(OwnerConnectionContextList.OwnerConnectionThread.OwnerConnectionManager.ReceiveMessageWorkerMessage);
+            OwnerConnectionContextList.OwnerConnectionThread.OwnerConnectionManager.ReceiveMessageObject := Self;
+            OwnerConnectionContextList.OwnerConnectionThread.OwnerConnectionManager.ReceiveMessageThread := OwnerConnectionContextList.OwnerConnectionThread;
+            OwnerConnectionContextList.OwnerConnectionThread.Synchronize(OwnerConnectionContextList.OwnerConnectionThread.OwnerConnectionManager.ReceiveMessageThroughSyncronize);
+          end;
+
           AliasServerThread.AddIncomingMessage(WorkerMessage, False);
         end
       end;
@@ -784,9 +803,9 @@ begin
                 // it does not.
                 for i := 0 to IdTCPServer.Contexts.Count - 1 do
                 begin
+                  SendMessageStream.Position := 0;  // Reset for the next Connection Context
                   if TIdContext( ContextList[i]).Connection.Connected then
                     TIdContext( ContextList[i]).Connection.IOHandler.Write(SendMessageStream);
-                  SendMessageStream.Position := 0;  // Reset for the next Connection Context
                 end;
               end;
             finally
@@ -935,6 +954,7 @@ begin
   if Assigned(ServerListener) then
   begin
     try
+      ConnectionThreadList.Remove(ServerListener); // Remove from the connection list
       TimeCount := 0;
       ServerListener.HandleSendConnectionChangeNotify(lcsDisconnecting, False);
       ServerListener.Terminate;
@@ -961,8 +981,12 @@ begin
   CloseConnection;
   inherited OpenConnection;
   Result := CreateListenerObject;
-  ServerListener := Result as TLccEthernetServerThread;
-  ServerListener.Suspended := False;
+  if Assigned(Result) then
+  begin
+    ServerListener := Result as TLccEthernetServerThread;
+    ConnectionThreadList.Add(ServerListener);  // Add to the Internal List
+    ServerListener.Suspended := False;
+  end;
 end;
 
 function TLccEthernetServerThreadManager.CreateListenerObject: TLccEthernetServerThread;

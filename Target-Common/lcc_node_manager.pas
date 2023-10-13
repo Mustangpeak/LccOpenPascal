@@ -23,6 +23,7 @@ uses
   lcc_node_controller,
   lcc_defines,
   lcc_base_classes,
+  lcc_common_classes,
   lcc_utilities,
   lcc_node_messages,
   lcc_train_server,
@@ -214,6 +215,7 @@ type
     procedure ReleaseAliasAll;
 
     procedure On_100msTimer(Sender: TObject);  virtual;
+    procedure SendMessage(ALccMessage: TLccMessage; NeedsSourceNode: Boolean = False);
 
   published
 
@@ -432,8 +434,14 @@ procedure TLccNodeManager.DispatchMessageCallback(ALccMessage: TLccMessage);
 var
   i: Integer;
 begin
+  // This is called from the AliasServerThread from incoming connection and the Connection Factory which relays Sent Messages back through here to
+  // dispatch to other virtual nodes so we need to make sure we don't send the message back to the node
+  // that initially sent it.
   for i := 0 to Nodes.Count - 1 do
-    Node[i].ProcessMessage(ALccMessage);
+  begin
+    if not EqualNodeID(Node[i].NodeID, ALccMessage.SourceID, False) then
+      Node[i].ProcessMessage(ALccMessage);
+  end;
 end;
 
 procedure TLccNodeManager.DoTractionControllerAssign(LccNode: TLccNode; ALccMessage: TLccMessage; var DoDefault: Boolean);
@@ -531,7 +539,8 @@ begin
   _100msTimer.Interval := 100;
   _100msTimer.Enabled := True;
 
-  AliasServerThread.DispatchProcessedMessage := {$IFNDEF LCC_DELPHI}@{$ENDIF}DispatchMessageCallback;
+  AliasServerThread.DispatchProcessedMessageCallback := {$IFNDEF LCC_DELPHI}@{$ENDIF}DispatchMessageCallback;
+  AliasServerThread.SendMessageCallback := {$IFNDEF LCC_DELPHI}@{$ENDIF}SendMessage;
 end;
 
 function TLccNodeManager.AddNode(CdiXML: string; AutoLogin: Boolean): TLccNode;
@@ -603,7 +612,8 @@ end;
 
 destructor TLccNodeManager.Destroy;
 begin
-  AliasServerThread.DispatchProcessedMessage := nil;
+  AliasServerThread.DispatchProcessedMessageCallback := nil;
+  AliasServerThread.SendMessageCallback := nil;
   Clear;
   _100msTimer.Enabled := False;
   FNodes.Free;
@@ -654,6 +664,20 @@ begin
     LccNode := TLccNode( Nodes[i]);
     LccNode.On_100msTimer(Sender);
   end;
+end;
+
+procedure TLccNodeManager.SendMessage(ALccMessage: TLccMessage; NeedsSourceNode: Boolean);
+begin
+  if NeedsSourceNode then
+  begin;
+    if Nodes.Count > 0 then
+    begin
+      ALccMessage.SourceAlias := Node[0].AliasID;
+      ALccMessage.SourceID := Node[0].NodeID;
+    end else
+      Exit;
+  end;
+  ConnectionFactory.SendLccMessage(ALccMessage);
 end;
 
 end.

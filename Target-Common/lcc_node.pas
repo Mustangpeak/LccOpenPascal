@@ -77,12 +77,12 @@ type
 
   TDatagramQueue = class
   private
+    FOwnerNode: TLccNode;
     {$IFDEF LCC_DELPHI}
     FQueue: TObjectList<TLccMessage>;
     {$ELSE}
     FQueue: TObjectList;
     {$ENDIF}
-    FSendMessageFunc: TOnMessageEvent;
     function GetCount: Integer;
   protected
     {$IFDEF LCC_DELPHI}
@@ -94,7 +94,7 @@ type
     function FindBySourceNode(LccMessage: TLccMessage): Integer;
   public
     property Count: Integer read GetCount;
-    property SendMessageFunc: TOnMessageEvent read FSendMessageFunc write FSendMessageFunc;
+    property OwnerNode: TLccNode read FOwnerNode write FOwnerNode;
 
     constructor Create;
     destructor Destroy; override;
@@ -1339,14 +1339,10 @@ begin
     if LocalMessage.RetryAttemptsDatagram < 5 then
     begin
       LocalMessage := Queue[iLocalMessage] as TLccMessage;
-      SendMessageFunc(Self, LocalMessage);
+      OwnerNode.SendMessage(LocalMessage);
       LocalMessage.RetryAttemptsDatagram := LocalMessage.RetryAttemptsDatagram + 1;
     end else
-      {$IFDEF DWSCRIPT}
-      Queue.Remove(Queue.IndexOf(LocalMessage));
-      {$ELSE}
       Queue.Delete(iLocalMessage);
-      {$ENDIF}
   end;
 end;
 
@@ -1369,9 +1365,7 @@ end;
 
 procedure TLccNode.SendMessage(ALccMessage: TLccMessage);
 begin
-
-
- // HOW TO LINK THE OPENLCB CODE TO THE CONNECTIONS/HARDWARE.......
+  (Owner as TLccNodeManager).SendMessage(ALccMessage);
 end;
 
 procedure TLccNode.DoMemorySpaceReadEngineDone(MemoryReadEngine: TLccEngineMemorySpaceAccess);
@@ -1847,6 +1841,7 @@ begin
   FStreamTractionFdi := TMemoryStream.Create;
 
   FDatagramResendQueue := TDatagramQueue.Create;
+  DatagramResendQueue.OwnerNode := Self;
   FWorkerMessageForAckMessages := TLccMessage.Create;
   FWorkerMessage := TLccMessage.Create;
   FEngineMemorySpaceAccess := TLccEngineMemorySpaceAccess.Create(Self);

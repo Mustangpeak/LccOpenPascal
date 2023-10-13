@@ -285,13 +285,14 @@ begin
 end;
 
 procedure TFormTrainCommander.OnServerManagerSendMessage(Sender: TObject; ALccMessage: TLccMessage);
-//var
- // ByteArray: TLccDynamicByteArray;
- // Preamble: String;
+var
+  ByteArray: TLccDynamicByteArray;
+  Preamble: String;
 begin
- { if CheckBoxLogMessages.Checked then
+
+  if CheckBoxLogMessages.Checked then
   begin
-    if Manager = LccServer then
+  {  if Manager = LccServer then
       Preamble := 'TCP:S: '
     else
     if Manager = LccWebsocketServer then
@@ -315,26 +316,27 @@ begin
       end;
       Exit;
     end;
+   }
 
     MemoLog.Lines.BeginUpdate;
     try
       if EMULATE_CAN_BUS then
       begin
         if CheckBoxDetailedLog.Checked then
-          MemoLog.Lines.Add('S: ' + MessageToDetailedMessage(LccMessage))
+          MemoLog.Lines.Add('TCP: S: ' + MessageToDetailedMessage(ALccMessage))
         else
-          MemoLog.Lines.Add('S: ' + LccMessage.ConvertToGridConnectStr('', False));
+          MemoLog.Lines.Add('TCP: S: ' + ALccMessage.ConvertToGridConnectStr('', False));
       end else
       begin
         ByteArray := nil;
-        LccMessage.ConvertToLccTcp(ByteArray);
-        MemoLog.Lines.Add('S: ' + LccMessage.ConvertToLccTcpString(ByteArray));
+        ALccMessage.ConvertToLccTcp(ByteArray);
+        MemoLog.Lines.Add('TCP: S: ' + ALccMessage.ConvertToLccTcpString(ByteArray));
       end;
       MemoLog.SelStart := Length(MemoLog.Lines.Text);
     finally
       MemoLog.Lines.EndUpdate;
     end;
-  end;     }
+  end;
 end;
 
 procedure TFormTrainCommander.OnServerManagerConnectionState(Sender: TObject;

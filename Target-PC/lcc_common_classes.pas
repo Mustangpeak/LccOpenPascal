@@ -114,6 +114,9 @@ type
     FCriticalSection: TCriticalSection;
     FEmulateCanBus: Boolean;
     FOwnerConnectionFactory: TLccConnectionFactory;
+    FReceiveMessageObject: TObject;
+    FReceiveMessageThread: TLccConnectionThread;
+    FReceiveMessageWorkerMessage: TLccMessage;
 
     procedure SetDefaultConnectionInfo(AValue: TLccConnectionInfo);
   protected
@@ -122,7 +125,7 @@ type
 
     // Decendents only know what connected means to them
     // Property Getters to override
-    function GetConnected: Boolean; virtual;    // IHardwareConnectionManagerLink
+    function GetConnected: Boolean; virtual;
     function GetConnecting: Boolean; virtual;
 
     procedure ClearConnectionThreadList;
@@ -141,6 +144,9 @@ type
     property OwnerConnectionFactory: TLccConnectionFactory read FOwnerConnectionFactory write FOwnerConnectionFactory;
     property EmulateCanBus: Boolean read FEmulateCanBus write FEmulateCanBus;
     property CustomConnection: Boolean read FCustomConnection write FCustomConnection;
+    property ReceiveMessageWorkerMessage: TLccMessage read FReceiveMessageWorkerMessage write FReceiveMessageWorkerMessage;
+    property ReceiveMessageObject: TObject read FReceiveMessageObject write FReceiveMessageObject;
+    property ReceiveMessageThread: TLccConnectionThread read FReceiveMessageThread write FReceiveMessageThread;
 
     procedure CriticalSectionEnter;
     procedure CriticalSectionLeave;
@@ -148,6 +154,7 @@ type
     // When a thread owned by the manager receives a message it will call these centraized methods
     // ----------------------
 
+    procedure ReceiveMessageThroughSyncronize;
     // Puts a GridConnect string in the buffer to be sent without needing to deal with a TLccMessage as not all links are LCC, using custom GridConnect for the UART to the Command Station
     procedure SendMessageRawGridConnect(GridConnectStr: String); virtual;
     // Decendant must override this.  The Node Manager calls this when its nodes needs to send a message to the "wire".
@@ -317,6 +324,9 @@ procedure TLccConnectionFactory.SendLccMessage(ALccMessage: TLccMessage);
 begin
   DoSendLccMessage(ALccMessage);
   SendLccMessageToOtherManagers(ALccMessage);
+
+  // This will send the message back to other virtual nodes.
+  AliasServerThread.DispatchProcessedMessageCallback(ALccMessage);
 end;
 
 { TLccConnectionInfo }
@@ -404,6 +414,12 @@ begin
   end;
 end;
 
+procedure TLccConnectionThreadManager.ReceiveMessageThroughSyncronize;
+begin
+  if Assigned(OwnerConnectionFactory.OnLccMessageReceive) then
+    OwnerConnectionFactory.OnLccMessageReceive(ReceiveMessageObject, Self, ReceiveMessageThread, ReceiveMessageWorkerMessage);
+end;
+
 procedure TLccConnectionThreadManager.SendMessageRawGridConnect(GridConnectStr: String);
 begin
 
@@ -428,6 +444,7 @@ end;
 constructor TLccConnectionThreadManager.Create(AOwner: TComponent);
 begin
   FConnectionThreadList := Classes.TThreadList.Create;
+  FReceiveMessageWorkerMessage := TLccMessage.Create;
 
   inherited Create(AOwner);
   FCriticalSection := TCriticalSection.Create;
@@ -438,6 +455,7 @@ begin
   ClearConnectionThreadList;
   FreeAndNil(FConnectionThreadList);
   FreeAndNil(FCriticalSection);
+  FreeAndNil(FReceiveMessageWorkerMessage);
   inherited Destroy;
 end;
 
