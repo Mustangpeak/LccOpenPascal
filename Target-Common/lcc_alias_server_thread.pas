@@ -118,9 +118,6 @@ begin
         // If a node sends a Verify Node ID message then we clear the Alias Mapping list before this so it will now fail validate below...
         //   .... what should be done in this case?????????
 
-        if LocalMessage.MTI = MTI_VERIFY_NODE_ID_NUMBER then
-          beep;
-
         if not LocalMessage.IsCAN {or not (LocalMessage.MTI = MTI_VERIFY_NODE_ID_NUMBER)} then
         begin
           if LocalMessage.ValidateAndRequestIfNecessaryAliasMappings({$IFNDEF LCC_DELPHI}@{$ENDIF}RequestMappingMessageSent) then
@@ -188,17 +185,17 @@ begin
   case AMessage.CAN_MTI of
     MTI_CAN_AMR :
       begin
-        AliasServer.MarkForRemovalByAlias(AMessage.SourceAlias);
+        AliasServer.RemoveMapping(AMessage.SourceAlias, False);
       end;
     MTI_CAN_AMD :
       begin
         DummyNodeID := NULL_NODE_ID;
-        AliasServer.AddMapping(AMessage.ExtractDataBytesAsNodeID(0, DummyNodeID), AMessage.SourceAlias);
+        AliasServer.AddMapping(AMessage.ExtractDataBytesAsNodeID(0, DummyNodeID), AMessage.SourceAlias, False);
       end;
     MTI_CAN_AME :
       begin
         if AMessage.DataCount = 0 then      // A global AME will repoplulate the entire database so this will flush invalid mappings as well since they won't respond anymore
-          AliasServer.Clear;                // BUT be aware that the node sending this message will not be restored as it won't send out an AME message
+          AliasServer.Clear(False);                // BUT be aware that the node sending this message will not be restored as it won't send out an AME message
       end;
   end;
 
@@ -207,12 +204,12 @@ begin
     MTI_INITIALIZATION_COMPLETE :
       begin
         DummyNodeID := NULL_NODE_ID;
-        AliasServer.AddMapping(AMessage.ExtractDataBytesAsNodeID(0, DummyNodeID), AMessage.SourceAlias);
+        AliasServer.AddMapping(AMessage.ExtractDataBytesAsNodeID(0, DummyNodeID), AMessage.SourceAlias, False);
       end;
     MTI_VERIFY_NODE_ID_NUMBER :
       begin
         if AMessage.DataCount = 0 then     // A global Verify Node ID will repoplulate the entire database so this will flush invalid mappings as well since they won't respond anymore
-          AliasServer.Clear;               // BUT be aware that the node sending this message will not be restored as it won't send out an MTI_VERIFIED_NODE_ID_NUMBER message
+          AliasServer.Clear(False);               // BUT be aware that the node sending this message will not be restored as it won't send out an MTI_VERIFIED_NODE_ID_NUMBER message
       end;
   end;
 end;
@@ -222,6 +219,11 @@ var
   LccMessage: TLccMessage;
 begin
   Assert(Assigned(SendMessageCallback), 'TReceiveMessageAliasServerThread,SendMessageCallback not assigned');
+
+  // This mechinism does not work for trying to request mapping on internal virtual nodes as it
+  // may be trying to send a message to itself to VerifyNode and we need to use the first Node as the source
+  // The nodes Add and Removing mapping directly as they are created to simplify this
+
 
   // Don't send duplicate requests for mapping messages
   if not MappingRequestExists(ANodeID, AnAliasID) then

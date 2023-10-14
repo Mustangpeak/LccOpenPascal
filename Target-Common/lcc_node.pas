@@ -448,7 +448,7 @@ type
     function GenerateID_Alias_From_Seed(var Seed: TNodeID): Word;
     procedure GenerateNewSeed(var Seed: TNodeID);
     procedure Relogin;
-    procedure NotifyAndUpdateMappingChanges;
+ //   procedure NotifyAndUpdateMappingChanges;
 
   public
     property DatagramResendQueue: TDatagramQueue read FDatagramResendQueue;
@@ -2335,10 +2335,10 @@ begin
   LoginTimoutCounter := 0;
 end;
 
+{
 procedure TLccNode.NotifyAndUpdateMappingChanges;
 var
   LocalMapping: TLccAliasMapping;
-  LocalNodeIdentificationObject: TLccNodeIdentificationObject;
   MappingList: TList;
   i: Integer;
 begin
@@ -2359,57 +2359,22 @@ begin
         {$IFDEF LOG_MAPPING}DebugLn('Mapping Deleted: 0x' + IntToHex(LocalMapping.NodeAlias, 4) + '; ' + NodeIDToString(LocalMapping.NodeID, True));{$ENDIF}
         LocalMapping.Free;
         MappingList.Delete(i);
+
+
+
+        DOES NOT WORK>>> ONLY ONE NODE WILL GET AN EVENT.........
+
+        IS THERE EVEN A REASON TO HAVE EVENTS?  IT WAS NICE FOR DEBUGGING BUT IF IT IS NOT SOLID AND EASY TO DEBUG THIS IS A LOT OF COMPLICATION
+
+
+
       end;
     end;
   finally
     AliasServer.MappingList.UnlockList;
   end;
-
-  // Now work on the Mapping Requests, if this is the first time we looked at it then
-  // make a copy of it into the WorkerList to have a Verify Node message sent
-
-  MappingList := AliasServer.MappingRequestList.LockList;
-  try
-    for i := 0 to MappingList.Count - 1 do
-    begin
-      LocalNodeIdentificationObject := TLccNodeIdentificationObject( MappingList[i]);
-      if LocalNodeIdentificationObject.AbandonCount = 0 then
-        AliasServer.WorkerMappingRequestList.Add(LocalNodeIdentificationObject.Clone)
-    end;
-  finally
-    AliasServer.MappingRequestList.UnlockList;
-  end;
-
-  // If the Request has been in the list too long then toss it out
-  AliasServer.MappingRequestLiveTimeIncreaseAndDeleteAbandoned(20);
-
-
-  // Do this outside of the MappingRequestList lock, these are the partial mappings that need
-  // messages sent to complete the mapping then they are all released for this runthrough
-  try
-    for i := 0 to AliasServer.WorkerMappingRequestList.Count - 1 do
-    begin
-      LocalNodeIdentificationObject := TLccNodeIdentificationObject( AliasServer.WorkerMappingRequestList[i]);
-
-      if LocalNodeIdentificationObject.Alias <> 0 then
-      begin
-        // We have the Alias but not the NodeID so use addressed to that Alias (don't need the NodeID for CAN)
-        WorkerMessage.LoadVerifyNodeIDAddressed(NodeID, AliasID, LocalNodeIdentificationObject.NodeID, LocalNodeIdentificationObject.Alias, NULL_NODE_ID);
-        SendMessage(WorkerMessage);
-        {$IFDEF LOG_MAPPING}DebugLn('Mapping Request Sent: 0x' + IntToHex(LocalNodeIdentificationObject.Alias, 4) + '; ' + NodeIDToString(LocalNodeIdentificationObject.NodeID, True));{$ENDIF}
-      end else
-      if not NullNodeID(LocalNodeIdentificationObject.NodeID) then
-      begin
-        WorkerMessage.LoadVerifyNodeID(NodeID, AliasID, LocalNodeIdentificationObject.NodeID);
-        SendMessage(WorkerMessage);
-        {$IFDEF LOG_MAPPING}DebugLn('Mapping Request Sent: 0x' + IntToHex(LocalNodeIdentificationObject.Alias, 4) + '; ' + NodeIDToString(LocalNodeIdentificationObject.NodeID, True));{$ENDIF}
-      end;
-    end;
-  finally
-    AliasServer.ClearWorkerMappingRequests;
-  end;
-
 end;
+ }
 
 procedure TLccNode.CreateNodeID(var Seed: TNodeID);
 begin
@@ -2419,7 +2384,7 @@ end;
 
 destructor TLccNode.Destroy;
 begin
-  NotifyAndUpdateMappingChanges; // fire any eventfor Mapping changes are are marked for deletion in the Logout method
+//  NotifyAndUpdateMappingChanges; // fire any eventfor Mapping changes are are marked for deletion in the Logout method
 
   UnRegisterEngine(EngineMemorySpaceAccess);
 
@@ -2534,8 +2499,8 @@ begin
       // This assumes they are all running in separate thread and they keep running
       Sleep(DelayTime_ms);
       FPermitted := False;
+      AliasServer.RemoveMapping(AliasID, True);
       ((Owner as TLccNodeManager) as INodeManagerCallbacks).DoAliasRelease(Self);
-      AliasServer.MarkForRemovalByAlias(AliasID);
       FAliasID := 0;
       Enabled := False; // must call LogIn again to reenable
     end;
@@ -2555,7 +2520,7 @@ begin
     if not Permitted then
       begin
         Inc(FLoginTimoutCounter);
-         // Did any node object to this Alias through ProcessMessage?
+         // Did any node object to this Alias registration attempt?
         if DuplicateAliasDetected then
         begin
           DuplicateAliasDetected := False;  // Reset
@@ -2588,7 +2553,7 @@ begin
       end else  // Is Permitted
       begin
         DatagramResendQueue.TickTimeout;
-        NotifyAndUpdateMappingChanges;
+   //     NotifyAndUpdateMappingChanges;
       end;
     end
   end else  // Is not GridConnect

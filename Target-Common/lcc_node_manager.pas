@@ -37,7 +37,6 @@ type
   INodeManagerCallbacks = interface
     ['{C6920bCA-08BC-4D45-B27C-174640FA3106}']
     procedure DoAliasIDChanged(LccNode: TLccNode);
-    procedure DoAliasMappingChange(LccNode: TLccNode; AnAliasMapping: TLccAliasMapping; IsMapped: Boolean);
     procedure DoAliasRelease(LccNode: TLccNode);
     procedure DoCDIRead(LccNode: TLccNode);
     procedure DoConfigMemAddressSpaceInfoReply(LccNode: TLccNode);
@@ -88,7 +87,6 @@ type
   TOnLccNodeMessageCallBack = procedure(Sender: TObject; ALccNode: TLccNode; ALccMessage: TLccMessage; var DoDefault: Boolean) of object;
   TOnLccNodeMessage = procedure(Sender: TObject; ALccNode: TLccNode) of object;
   TOnLccNodeMessageReply = procedure(Sender: TObject; ALccNode: TLccNode; LccMessage: TLccMessage) of object;
-  TOnAliasMappingChange = procedure(Sender: TObject; ALccNode: TLccNode; AnAliasMapping: TLccAliasMapping; IsMapped: Boolean) of object;
 
   TLccNodeManager = class;  // forward
 
@@ -100,7 +98,6 @@ type
   private
     FEmulateCanNetworkLogin: Boolean;
     FNodes: TList;
-    FOnAliasMappingChange: TOnAliasMappingChange;
     FOnAliasRelease: TOnLccNodeMessage;
     FOnLccNodeMessageCallBack: TOnLccNodeMessageCallBack;
     FOnNodeAliasIDChanged: TOnLccNodeMessage;
@@ -147,7 +144,6 @@ type
 
     // INodeManagerCallbacks
     procedure DoAliasIDChanged(LccNode: TLccNode);     // Check
-    procedure DoAliasMappingChange(LccNode: TLccNode; AnAliasMapping: TLccAliasMapping; IsMapped: Boolean);  // Check
     procedure DoAliasRelease(LccNode: TLccNode);
     procedure DoCDIRead(LccNode: TLccNode);    // TODO  Necessary?
     procedure DoConfigMemAddressSpaceInfoReply(LccNode: TLccNode);   // TODO  Necessary?
@@ -189,7 +185,7 @@ type
     procedure DoTractionTrainSNIP(LccNode: TLccNode; ALccMessage: TLccMessage; var DoDefault: Boolean);
 
 
-    procedure DispatchMessageCallback(ALccMessage: TLccMessage);  // callback for AliasServerThread to connect to the incoming messages
+    procedure ReceiveMessage(ALccMessage: TLccMessage);  // callback for AliasServerThread to connect to the incoming messages
 
    public
     property Nodes: TList read FNodes write FNodes;
@@ -275,9 +271,6 @@ type
     // Other stuff that may not be useful
     property OnNodeOptionalInteractionRejected: TOnLccNodeMessageReply read FOnNodeOptionalInteractionRejected write FOnNodeOptionalInteractionRejected;
     property OnNodeRemoteButtonReply: TOnLccNodeMessageReply read FOnNodeRemoteButtonReply write FOnNodeRemoteButtonReply;
-
-    // Other interesting stuff
-    property OnAliasMappingChange: TOnAliasMappingChange read FOnAliasMappingChange write FOnAliasMappingChange;
   end;
 
 
@@ -287,6 +280,10 @@ implementation
 
 procedure TLccNodeManager.DoAliasIDChanged(LccNode: TLccNode);
 begin
+  // internal node update the server directly to simplify the case where we need mappings of these nodes
+  if LccNode.AliasID <> 0 then // Releasing the Alias will set it to zero so don't map that, other code removed the mapping already
+    AliasServer.AddMapping(LccNode.NodeID, LccNode.AliasID, True);
+
   if Assigned(OnNodeAliasIDChanged) then
     OnNodeAliasIDChanged(Self, LccNode);
 end;
@@ -430,7 +427,7 @@ begin
     OnNodeTractionTrainSNIP(Self, LccNode, ALccMessage, DoDefault);
 end;
 
-procedure TLccNodeManager.DispatchMessageCallback(ALccMessage: TLccMessage);
+procedure TLccNodeManager.ReceiveMessage(ALccMessage: TLccMessage);
 var
   i: Integer;
 begin
@@ -522,12 +519,6 @@ begin
     OnNodeVerifiedNodeID(Self, LccNode, LccMessage);
 end;
 
-procedure TLccNodeManager.DoAliasMappingChange(LccNode: TLccNode; AnAliasMapping: TLccAliasMapping; IsMapped: Boolean);
-begin
-  if Assigned(OnAliasMappingChange) then
-    OnAliasMappingChange(Self, LccNode, AnAliasMapping, IsMapped);
-end;
-
 constructor TLccNodeManager.Create(AnOwner: TComponent);
 begin
   inherited Create(AnOwner);
@@ -539,7 +530,7 @@ begin
   _100msTimer.Interval := 100;
   _100msTimer.Enabled := True;
 
-  AliasServerThread.DispatchProcessedMessageCallback := {$IFNDEF LCC_DELPHI}@{$ENDIF}DispatchMessageCallback;
+  AliasServerThread.DispatchProcessedMessageCallback := {$IFNDEF LCC_DELPHI}@{$ENDIF}ReceiveMessage;
   AliasServerThread.SendMessageCallback := {$IFNDEF LCC_DELPHI}@{$ENDIF}SendMessage;
 end;
 

@@ -21,7 +21,6 @@ uses
   lcc_common_classes,
   lcc_ethernet_common,
   servervisualunit,
-  lcc_alias_server,
   lcc_train_server,
   lcc_utilities;
  // lcc_syn_ethenet_server;
@@ -122,7 +121,6 @@ type
     procedure OnNodeTractionListenerQuery(Sender: TObject; LccNode: TLccNode; AMessage: TLccMessage; var DoDefault: Boolean);
 
     // Other
-    procedure OnAliasMappingChange(Sender: TObject; LccSourceNode: TLccNode; AnAliasMapping: TLccAliasMapping; IsMapped: Boolean);
     procedure OnTractionRegisterNotify(TractionObject: TLccTractionObject; IsRegistered: Boolean);
     procedure OnTractionNotify(TractionObject: TLccTractionObject);
 
@@ -549,7 +547,6 @@ begin
   NodeManager.OnNodeTractionListenerAttached := @OnNodeTractionListenerAttached;
   NodeManager.OnNodeTractionListenerDetached := @OnNodeTractionListenerDetached;
   NodeManager.OnNodeTractionListenerQuery := @OnNodeTractionListenerQuery;
-  NodeManager.OnAliasMappingChange := @OnAliasMappingChange;
   NodeManager.OnAliasRelease := @OnNodeManagerAliasRelease;
   NodeManager.OnNodeDestroy := @OnNodeManagerNodeDestroy;
 
@@ -795,14 +792,6 @@ procedure TFormTrainCommander.OnNodeTractionListenerQuery(Sender: TObject;
   LccNode: TLccNode; AMessage: TLccMessage; var DoDefault: Boolean);
 begin
   RebuildTrainTreeview;
-end;
-
-procedure TFormTrainCommander.OnAliasMappingChange(Sender: TObject; LccSourceNode: TLccNode; AnAliasMapping: TLccAliasMapping; IsMapped: Boolean);
-begin
-  if IsMapped then
-    FormServerInfo.AddAliasMap(AnAliasMapping)
-  else
-    FormServerInfo.RemoveAliasMap(AnAliasMapping);
 end;
 
 procedure TFormTrainCommander.OnTractionRegisterNotify(

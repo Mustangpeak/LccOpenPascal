@@ -38,8 +38,7 @@ type
   TLccAliasMapping = class(TObject)
   private
     FAbandonCount: Integer;
-    FMarkedForDeletion: Boolean;   // These are for the Event notification system.  It is called through a timer
-    FMarkedForInsertion: Boolean;  // to call the main threads event handlers to notify the app of insertion or deletion
+    FInternalNode: Boolean;
     FNodeAlias: Word;
     FNodeID: TNodeID;
   protected
@@ -47,8 +46,7 @@ type
   public
     property NodeID: TNodeID read FNodeID write FNodeID;
     property NodeAlias: Word read FNodeAlias write FNodeAlias;
-    property MarkedForDeletion: Boolean read FMarkedForDeletion write FMarkedForDeletion;
-    property MarkedForInsertion: Boolean read FMarkedForInsertion write FMarkedForInsertion;
+    property InternalNode: Boolean read FInternalNode write FInternalNode;
 
     procedure AssignID(ANodeID: TNodeID; AnAlias: Word);
     function Clone: TLccAliasMapping;
@@ -72,35 +70,23 @@ type
 
   private
     FMappingList: TThreadList;          // Valid Mappings
-    FMappingRequestList: TThreadList;   // Mappings that have only one ID and waiting for a message to come in to fill them out and move them to the MappingList
-    FWorkerMappingRequestList: TList;
 
   protected
     procedure FlushOldMappingWithAlias(AnAlias: Word);
 
   public
     property MappingList: TThreadList read FMappingList write FMappingList;
-    property MappingRequestList: TThreadList read FMappingRequestList write FMappingRequestList;
-    property WorkerMappingRequestList: TList read FWorkerMappingRequestList write FWorkerMappingRequestList;
-
 
     constructor Create;
     destructor Destroy; override;
 
-    procedure Clear;
-    procedure ClearMappingRequests;
-    procedure ClearWorkerMappingRequests;
+    procedure Clear(ForceInternalNodes: Boolean);
     function Count: Integer;
     function FindMapping(AnAliasID: Word): TLccAliasMapping; overload;
     function FindMapping(ANodeID: TNodeID): TLccAliasMapping; overload;
     function FindMapping(ANodeID: TNodeID; AnAliasID: Word): TLccAliasMapping; overload;
-    function AddMapping(ANodeID: TNodeID; AnAlias: Word): TLccAliasMapping;
-
-    // These are for internal virtual nodes to deal with Alias messages.  If the Receive Message Thread finds a message with a node that is not mapped that could be a
-    // node that is internal to this application.  That said there needs to be a mechinism for the receive thread to function the same as if it was an external node by
-    procedure AddMappingRequest(ANodeID: TNodeID; AnAlias: Word);
-    function MarkForRemovalByAlias(AnAlias: Word): TLccAliasMapping;
-    procedure MappingRequestLiveTimeIncreaseAndDeleteAbandoned(MaxAbandonTimeCount: Word);
+    function AddMapping(ANodeID: TNodeID; AnAlias: Word; AnInternalNode: Boolean): TLccAliasMapping;
+    procedure RemoveMapping(AnAliasID: Word; ForceInternalNodes: Boolean);
   end;
 
 var
@@ -163,68 +149,32 @@ constructor TLccAliasServer.Create;
 begin
   inherited Create;
   FMappingList := TThreadList.Create;
-  FMappingRequestList := TThreadList.Create;
-  FWorkerMappingRequestList := TList.Create;
 end;
 
 destructor TLccAliasServer.Destroy;
 begin
-  Clear;
-  ClearMappingRequests;
-  ClearWorkerMappingRequests;
+  Clear(True);
   FreeAndNil(FMappingList);
-  FreeAndNil(FMappingRequestList);
-  FreeAndNil(FWorkerMappingRequestList);
   inherited Destroy;
 end;
 
-procedure TLccAliasServer.Clear;
+procedure TLccAliasServer.Clear(ForceInternalNodes: Boolean);
 var
   i: Integer;
   List: TList;
 begin
   List := MappingList.LockList;
   try
-  for i := 0 to List.Count - 1 do
-    TObject(List[i]).Free
+  for i := List.Count - 1 downto 0 do
+  begin
+    if not TLccAliasMapping( List[i]).InternalNode then
+    begin
+      TObject(List[i]).Free;
+      List.Delete(i);
+    end;
+  end;
   finally
-    List.Clear;
     MappingList.UnlockList;
-  end;
-end;
-
-procedure TLccAliasServer.ClearMappingRequests;
-var
-  LocalObj: TLccNodeIdentificationObject;
-  i: Integer;
-  List: TList;
-begin
-  List := MappingRequestList.LockList;
-  try
-    for i := 0 to List.Count - 1 do
-    begin
-      LocalObj := TLccNodeIdentificationObject( List[i]);
-      LocalObj.Free;
-    end;
-  finally
-    List.Clear;
-    MappingRequestList.UnlockList;
-  end;
-end;
-
-procedure TLccAliasServer.ClearWorkerMappingRequests;
-var
-  LocalObj: TLccNodeIdentificationObject;
-  i: Integer;
-begin
-  try
-    for i := 0 to WorkerMappingRequestList.Count - 1 do
-    begin
-      LocalObj := TLccNodeIdentificationObject( WorkerMappingRequestList[i]);
-      LocalObj.Free;
-    end;
-  finally
-    WorkerMappingRequestList.Clear;
   end;
 end;
 
@@ -309,7 +259,8 @@ begin
   end;
 end;
 
-function TLccAliasServer.AddMapping(ANodeID: TNodeID; AnAlias: Word): TLccAliasMapping;
+function TLccAliasServer.AddMapping(ANodeID: TNodeID; AnAlias: Word;
+  AnInternalNode: Boolean): TLccAliasMapping;
 begin
   Assert(AnAlias <> 0, 'Alias = 0 in TLccAliasServer.AddMapping');
   Assert(not NullNodeID(ANodeID), 'NodeID = NULL_ID in TLccAliasServer.AddMapping');
@@ -323,7 +274,7 @@ begin
       Result := TLccAliasMapping.Create;
       Result.NodeID := ANodeID;
       Result.NodeAlias := AnAlias;
-      Result.MarkedForInsertion := True;
+      Result.InternalNode := AnInternalNode;
       MappingList.Add(Result);
       {$IFDEF LOG_MAPPING}DebugLn('Adding Mapping: 0x' + IntToHex(Result.NodeAlias, 4) + '; ' + NodeIDToString(Result.NodeID, True));{$ENDIF}
     end;
@@ -332,77 +283,30 @@ begin
   end;
 end;
 
-procedure TLccAliasServer.AddMappingRequest(ANodeID: TNodeID; AnAlias: Word);
+procedure TLccAliasServer.RemoveMapping(AnAliasID: Word; ForceInternalNodes: Boolean);
 var
-  LocalObj: TLccNodeIdentificationObject;
   i: Integer;
   List: TList;
-  Duplicate: Boolean;
+  Mapping: TLccAliasMapping;
 begin
-  // Someone is asking for a Mapping Request, first we see if it is a duplicate
-  Duplicate := False;
-  List := MappingRequestList.LockList;
+  List := MappingList.LockList;
   try
     for i := 0 to List.Count - 1 do
     begin
-      LocalObj := TLccNodeIdentificationObject( List[i]);
-      if (not NullNodeID(ANodeID) and ((ANodeID[0] = LocalObj.NodeID[0]) and (ANodeID[1] = LocalObj.NodeID[1]))) or (AnAlias = LocalObj.Alias) then
+      Mapping := TLccAliasMapping( List[i]);
+      if AnAliasID = Mapping.NodeAlias then
       begin
-        Duplicate := True;
+        if not Mapping.InternalNode or (Mapping.InternalNode and ForceInternalNodes) then
+        begin
+          {$IFDEF LOG_MAPPING}DebugLn('Mapping Deleted: 0x' + IntToHex(Mapping.NodeAlias, 4) + '; ' + NodeIDToString(Mapping.NodeID, True));{$ENDIF}
+          Mapping.Free;
+          List.Delete(i);
+        end;
         Break;
       end;
     end;
   finally
-    MappingRequestList.UnlockList;
-  end;
-
-  // Nope not a duplicate (as of before we unlocked the list) so create a new request object and add it to the list (that call is thread safe)
-  if not Duplicate then
-  begin
-    LocalObj := TLccNodeIdentificationObject.Create;
-    LocalObj.AssignID(ANodeID, AnAlias);
-    MappingRequestList.Add(LocalObj);
-    {$IFDEF LOG_MAPPING}DebugLn('New Mapping Request Added: 0x' + IntToHex(LocalObj.Alias, 4) + '; ' + NodeIDToString(LocalObj.NodeID, True));{$ENDIF}
-  end;
-end;
-
-function TLccAliasServer.MarkForRemovalByAlias(AnAlias: Word): TLccAliasMapping;
-begin
-  MappingList.LockList;
-  try
-    Result := FindMapping(AnAlias);
-    if Assigned(Result) then
-    begin
-      Result.MarkedForDeletion := True;
-      {$IFDEF LOG_MAPPING}DebugLn('Marked for Deletion Mapping: 0x' + IntToHex(Result.NodeAlias, 4) + '; ' + NodeIDToString(Result.NodeID, True));{$ENDIF}
-    end;
-  finally
     MappingList.UnlockList;
-  end;
-end;
-
-procedure TLccAliasServer.MappingRequestLiveTimeIncreaseAndDeleteAbandoned(MaxAbandonTimeCount: Word);
-var
-  LocalNodeIdentificationObject: TLccNodeIdentificationObject;
-  i: Integer;
-  List: TList;
-begin
-  List := MappingRequestList.LockList;
-  try
-    for i := List.Count - 1 downto 0 do
-    begin
-      LocalNodeIdentificationObject := TLccNodeIdentificationObject( List[i]);
-      LocalNodeIdentificationObject.AbandonCount := LocalNodeIdentificationObject.AbandonCount + 1;
-
-      if LocalNodeIdentificationObject.AbandonCount > MaxAbandonTimeCount then
-      begin
-        {$IFDEF LOG_MAPPING}DebugLn('Mapping Request Deleted: 0x' + IntToHex(LocalNodeIdentificationObject.Alias, 4) + '; ' + NodeIDToString(LocalNodeIdentificationObject.NodeID, True));{$ENDIF}
-        LocalNodeIdentificationObject.Free;
-        List.Delete(i);
-      end;
-    end;
-  finally
-    MappingRequestList.UnlockList;
   end;
 end;
 
@@ -410,7 +314,6 @@ initialization
   AliasServer := TLccAliasServer.Create;
 
 finalization;
-  AliasServer.Clear;
   FreeAndNil(AliasServer);
 
 end.
