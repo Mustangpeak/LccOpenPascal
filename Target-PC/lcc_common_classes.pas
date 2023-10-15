@@ -37,7 +37,8 @@ type
   TLccConnectionFactory = class;
 
   TOnLccConnectionInfoEvent = procedure(Sender: TObject; Manager: TLccConnectionThreadManager; Thread: TLccConnectionThread; ConnectionInfo: TLccConnectionInfo) of object;
-  TOnLccConnectionReceiveMessageEvent = procedure(Sender: TObject; Manager: TLccConnectionThreadManager; Thread: TLccConnectionThread; LccMessage: TLccMessage) of object;
+  TOnLccConnectionReceiveMessageEvent = procedure(Sender: TObject; LccMessage: TLccMessage) of object;
+  TOnLccConnectionReceiveGridConnectStringEvent = procedure(Sender: TObject; GridConnectStr: string) of object;
   TOnLccConnectionSendMessageEvent = procedure(Sender: TObject; LccMessage: TLccMessage) of object;
 
 
@@ -114,8 +115,8 @@ type
     FCriticalSection: TCriticalSection;
     FEmulateCanBus: Boolean;
     FOwnerConnectionFactory: TLccConnectionFactory;
+    FReceiveGridConnectString: string;
     FReceiveMessageObject: TObject;
-    FReceiveMessageThread: TLccConnectionThread;
     FReceiveMessageWorkerMessage: TLccMessage;
 
     procedure SetDefaultConnectionInfo(AValue: TLccConnectionInfo);
@@ -144,9 +145,11 @@ type
     property OwnerConnectionFactory: TLccConnectionFactory read FOwnerConnectionFactory write FOwnerConnectionFactory;
     property EmulateCanBus: Boolean read FEmulateCanBus write FEmulateCanBus;
     property CustomConnection: Boolean read FCustomConnection write FCustomConnection;
+
+    // Holds the information that was copied in from the thread so the main thread can access it through a Syncronize call from the thread
     property ReceiveMessageWorkerMessage: TLccMessage read FReceiveMessageWorkerMessage write FReceiveMessageWorkerMessage;
     property ReceiveMessageObject: TObject read FReceiveMessageObject write FReceiveMessageObject;
-    property ReceiveMessageThread: TLccConnectionThread read FReceiveMessageThread write FReceiveMessageThread;
+    property ReceiveGridConnectString: string read FReceiveGridConnectString write FReceiveGridConnectString;
 
     procedure CriticalSectionEnter;
     procedure CriticalSectionLeave;
@@ -155,6 +158,8 @@ type
     // ----------------------
 
     procedure ReceiveMessageThroughSyncronize;
+    procedure ReceiveGridConnectStrThoughSyncronize;
+
     // Puts a GridConnect string in the buffer to be sent without needing to deal with a TLccMessage as not all links are LCC, using custom GridConnect for the UART to the Command Station
     procedure SendMessageRawGridConnect(GridConnectStr: String); virtual;
     // Decendant must override this.  The Node Manager calls this when its nodes needs to send a message to the "wire".
@@ -174,6 +179,7 @@ type
   private
     FOnConnectionStateChange: TOnLccConnectionInfoEvent;
     FOnError: TOnLccConnectionInfoEvent;
+    FOnLccGridConnectStrReceive: TOnLccConnectionReceiveGridConnectStringEvent;
     FOnLccMessageReceive: TOnLccConnectionReceiveMessageEvent;
     FOnLccMessageSend: TOnLccConnectionSendMessageEvent;
     FServerList: Classes.TThreadList;
@@ -181,7 +187,9 @@ type
     property ServerList: Classes.TThreadList read FServerList write FServerList;
 
     // Event Doer for the messages coming in from child Connections
-    procedure DoReceiveLccMessage(Manager: TLccConnectionThreadManager; Thread: TLccConnectionThread; LccMessage: TLccMessage); virtual;
+    procedure DoReceiveLccMessage(LccMessage: TLccMessage); virtual;
+    // Event Doer for the GridConnectStrings coming in from child Connections
+    procedure DoReceiveGridConnectStr(GridConnectStr: string); virtual;
     /// Event Doer for messages being sent to child Connections
     procedure DoSendLccMessage(ALccMessage: TLccMessage); virtual;
     // Event Doer for the Connection State Change of a child Connection
@@ -204,7 +212,10 @@ type
     function CreateConnection(AConnectionManagerClass: TLccConnectionThreadManagerClass; ConnectionInfo: TLccConnectionInfo): TLccConnectionThreadManager;
     procedure SendLccMessage(ALccMessage: TLccMessage);
 
+    procedure ReceiveMessageCallbackHack(ALccMessage: TLccMessage; NeedsSourceNode: Boolean);   // Temporary.... need to figure this out better;
+
     property OnLccMessageReceive: TOnLccConnectionReceiveMessageEvent read FOnLccMessageReceive write FOnLccMessageReceive;
+    property OnLccGridConnectStrReceive: TOnLccConnectionReceiveGridConnectStringEvent read FOnLccGridConnectStrReceive write FOnLccGridConnectStrReceive;
     property OnLccMessageSend: TOnLccConnectionSendMessageEvent read FOnLccMessageSend write FOnLccMessageSend;
     property OnStateChange: TOnLccConnectionInfoEvent read FOnConnectionStateChange write FOnConnectionStateChange;
     property OnError: TOnLccConnectionInfoEvent read FOnError write FOnError;
@@ -218,12 +229,16 @@ implementation
 
 { TLccConnectionFactory }
 
-procedure TLccConnectionFactory.DoReceiveLccMessage(
-  Manager: TLccConnectionThreadManager; Thread: TLccConnectionThread;
-  LccMessage: TLccMessage);
+procedure TLccConnectionFactory.DoReceiveLccMessage(LccMessage: TLccMessage);
 begin
   if Assigned(OnLccMessageReceive) then
-    OnLccMessageReceive(Self, Manager, Thread, LccMessage);
+    OnLccMessageReceive(Self, LccMessage);
+end;
+
+procedure TLccConnectionFactory.DoReceiveGridConnectStr(GridConnectStr: string);
+begin
+  if Assigned(OnLccGridConnectStrReceive) then
+    OnLccGridConnectStrReceive(Self, GridConnectStr);
 end;
 
 procedure TLccConnectionFactory.DoSendLccMessage(ALccMessage: TLccMessage);
@@ -329,6 +344,12 @@ begin
   AliasServerThread.DispatchProcessedMessageCallback(ALccMessage);
 end;
 
+procedure TLccConnectionFactory.ReceiveMessageCallbackHack(
+  ALccMessage: TLccMessage; NeedsSourceNode: Boolean);
+begin
+  DoReceiveLccMessage(ALccMessage);
+end;
+
 { TLccConnectionInfo }
 
 constructor TLccConnectionInfo.Create;
@@ -417,7 +438,12 @@ end;
 procedure TLccConnectionThreadManager.ReceiveMessageThroughSyncronize;
 begin
   if Assigned(OwnerConnectionFactory.OnLccMessageReceive) then
-    OwnerConnectionFactory.OnLccMessageReceive(ReceiveMessageObject, Self, ReceiveMessageThread, ReceiveMessageWorkerMessage);
+    OwnerConnectionFactory.OnLccMessageReceive(ReceiveMessageObject, ReceiveMessageWorkerMessage);
+end;
+
+procedure TLccConnectionThreadManager.ReceiveGridConnectStrThoughSyncronize;
+begin
+  OwnerConnectionFactory.DoReceiveGridConnectStr(ReceiveGridConnectString);
 end;
 
 procedure TLccConnectionThreadManager.SendMessageRawGridConnect(GridConnectStr: String);
@@ -575,6 +601,8 @@ var
   i: Integer;
   DynamicByteArray: TLccDynamicByteArray;
   IntStreamPos: Int64;
+  MessageString: AnsiString;
+  P: PAnsiChar;
 begin
   IntStreamPos := AStream.Position;
 
@@ -583,7 +611,11 @@ begin
     if OwnerConnectionManager.EmulateCanBus then
     begin
       for i := 0 to MessageList.Count - 1 do
-        AStream.WriteAnsiString(TLccMessage( MessageList[i]).ConvertToGridConnectStr(#10, False) + #10);
+      begin
+        MessageString := TLccMessage( MessageList[i]).ConvertToGridConnectStr(#10, False) + #10;
+        P := @MessageString[1];
+        AStream.Write( P^, Length(MessageString));
+      end;
     end else
     begin
       DynamicByteArray := nil;

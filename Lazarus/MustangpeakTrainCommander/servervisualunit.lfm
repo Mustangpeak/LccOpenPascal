@@ -2,73 +2,52 @@ object FormServerInfo: TFormServerInfo
   Left = 554
   Height = 511
   Top = 201
-  Width = 673
+  Width = 633
   Caption = 'Server Information'
   ClientHeight = 511
-  ClientWidth = 673
-  LCLVersion = '2.2.2.0'
+  ClientWidth = 633
+  LCLVersion = '2.2.4.0'
   object PanelAliasMappingMain: TPanel
     Left = 0
     Height = 511
     Top = 0
-    Width = 320
-    Align = alLeft
+    Width = 633
+    Align = alClient
     ClientHeight = 511
-    ClientWidth = 320
+    ClientWidth = 633
     TabOrder = 0
     object PanelAliasMappingHeader: TPanel
       Left = 1
       Height = 50
       Top = 1
-      Width = 318
+      Width = 631
       Align = alTop
+      Anchors = [akTop, akRight]
       Caption = 'Node Alias Mappings'
+      ClientHeight = 50
+      ClientWidth = 631
       TabOrder = 0
+      object ButtonAliasMappingRefresh: TButton
+        Left = 544
+        Height = 32
+        Top = 8
+        Width = 75
+        Anchors = [akTop, akRight]
+        Caption = 'Refresh'
+        OnClick = ButtonAliasMappingRefreshClick
+        TabOrder = 0
+      end
     end
-    object TreeViewAliasMaps: TTreeView
+    object MemoMappings: TMemo
       Left = 1
       Height = 459
       Top = 51
-      Width = 318
+      Width = 631
       Align = alClient
-      ShowRoot = False
+      Lines.Strings = (
+        ''
+      )
       TabOrder = 1
-      Options = [tvoAutoItemHeight, tvoHideSelection, tvoKeepCollapsedNodes, tvoShowButtons, tvoShowLines, tvoToolTips, tvoThemedDraw]
     end
-  end
-  object PanelTrainObjectMain: TPanel
-    Left = 325
-    Height = 511
-    Top = 0
-    Width = 348
-    Align = alClient
-    ClientHeight = 511
-    ClientWidth = 348
-    TabOrder = 1
-    object PanelTrainObjectHeader: TPanel
-      Left = 1
-      Height = 50
-      Top = 1
-      Width = 346
-      Align = alTop
-      Caption = 'Train Objects'
-      TabOrder = 0
-    end
-    object TreeViewTrains: TTreeView
-      Left = 1
-      Height = 459
-      Top = 51
-      Width = 346
-      Align = alClient
-      ShowRoot = False
-      TabOrder = 1
-      Options = [tvoAutoItemHeight, tvoHideSelection, tvoKeepCollapsedNodes, tvoShowButtons, tvoShowLines, tvoToolTips, tvoThemedDraw]
-    end
-  end
-  object SplitterMain: TSplitter
-    Left = 320
-    Height = 511
-    Top = 0
-    Width = 5
   end
 end

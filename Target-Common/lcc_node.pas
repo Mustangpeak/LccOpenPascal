@@ -1499,7 +1499,7 @@ var
 begin
   // Note here that for ACDI overlays the ConfigMemory so the ConfigMemory Address
   // must be offset by 1 as the ACDI has byte 0 = the ACDI version number
-  Code := ProtocolMemoryAccess.DatagramReadRequest(SourceMessage, WorkerMessage, StreamConfig, True, 1);
+  Code := ProtocolMemoryAccess.DatagramReadRequest(SourceMessage, WorkerMessage, StreamConfig, 1);
   case Code of
      S_OK : QueueAndSendDatagramReplyToWaitForAck(SourceMessage, WorkerMessage);   // Source may not have memory to take the data, set it up to resend if needed
   else
@@ -1539,7 +1539,7 @@ var
 begin
   // Note here that for ACDI overlays the ConfigMemory so the ConfigMemory Address
   // must be offset by 1 as the ACDI has byte 0 = the ACDI version number
-  Code := ProtocolMemoryAccess.DatagramReadRequest(SourceMessage, WorkerMessage, StreamConfig, True);
+  Code := ProtocolMemoryAccess.DatagramReadRequest(SourceMessage, WorkerMessage, StreamConfig);
   case Code of
      S_OK : QueueAndSendDatagramReplyToWaitForAck(SourceMessage, WorkerMessage);   // Source may not have memory to take the data, set it up to resend if needed
   else
@@ -1551,7 +1551,7 @@ procedure TLccNode.HandleACDI_Manufacturer_MemorySpaceRead(var SourceMessage: TL
 var
   Code: Word;
 begin
-  Code := ProtocolMemoryAccess.DatagramReadRequest(SourceMessage, WorkerMessage, StreamManufacturerData, True);
+  Code := ProtocolMemoryAccess.DatagramReadRequest(SourceMessage, WorkerMessage, StreamManufacturerData);
   case Code of
      S_OK : QueueAndSendDatagramReplyToWaitForAck(SourceMessage, WorkerMessage);   // Source may not have memory to take the data, set it up to resend if needed
   else
@@ -1568,7 +1568,7 @@ procedure TLccNode.HandleCDI_MemorySpaceRead(var SourceMessage: TLccMessage);
 var
   Code: Word;
 begin
-  Code := ProtocolMemoryAccess.DatagramReadRequest(SourceMessage, WorkerMessage, StreamCdi, True);
+  Code := ProtocolMemoryAccess.DatagramReadRequest(SourceMessage, WorkerMessage, StreamCdi);
   case Code of
      S_OK : QueueAndSendDatagramReplyToWaitForAck(SourceMessage, WorkerMessage);   // Source may not have memory to take the data, set it up to resend if needed
   else
@@ -1632,7 +1632,7 @@ procedure TLccNode.HandleTractionFDI_ConfigurationMemorySpaceRead(var SourceMess
 var
   Code: Word;
 begin
-  Code := ProtocolMemoryAccess.DatagramReadRequest(SourceMessage, WorkerMessage, StreamTractionConfig, True);
+  Code := ProtocolMemoryAccess.DatagramReadRequest(SourceMessage, WorkerMessage, StreamTractionConfig);
   case Code of
      S_OK : QueueAndSendDatagramReplyToWaitForAck(SourceMessage, WorkerMessage);   // Source may not have memory to take the data, set it up to resend if needed
   else
@@ -1652,7 +1652,7 @@ procedure TLccNode.HandleTractionFDI_MemorySpaceRead(var SourceMessage: TLccMess
 var
   Code: Word;
 begin
-  Code := ProtocolMemoryAccess.DatagramReadRequest(SourceMessage, WorkerMessage, StreamTractionFdi, True);
+  Code := ProtocolMemoryAccess.DatagramReadRequest(SourceMessage, WorkerMessage, StreamTractionFdi);
   case Code of
      S_OK : QueueAndSendDatagramReplyToWaitForAck(SourceMessage, WorkerMessage);   // Source may not have memory to take the data, set it up to resend if needed
   else
@@ -1707,6 +1707,7 @@ end;
 
 procedure TLccNode.HandleVerifyNodeIDNumberDest;
 begin
+  // Must always respond (if we get through the destintaion Alias check) per the TN
   WorkerMessage.LoadVerifiedNodeID(NodeID, FAliasID);
   SendMessage(WorkerMessage);
 end;
@@ -1925,8 +1926,6 @@ begin
   ProtocolMemoryInfo.Add(MSI_CONFIG, True, False, True, 0, $FFFFFFFF);
   ProtocolMemoryInfo.Add(MSI_ACDI_MFG, True, True, True, 0, $FFFFFFFF);
   ProtocolMemoryInfo.Add(MSI_ACDI_USER, True, False, True, 0, $FFFFFFFF);
-  ProtocolMemoryInfo.Add(MSI_TRACTION_FDI, True, True, True, 0, $FFFFFFFF);
-  ProtocolMemoryInfo.Add(MSI_TRACTION_FUNCTION_CONFIG, True, False, True, 0, $FFFFFFFF);
 
   ProtocolMemoryOptions.WriteUnderMask := True;
   ProtocolMemoryOptions.UnAlignedReads := True;
@@ -1941,7 +1940,7 @@ begin
   ProtocolMemoryOptions.WriteArbitraryBytes := True;
   ProtocolMemoryOptions.WriteStream := False;
   ProtocolMemoryOptions.HighSpace := MSI_CDI;
-  ProtocolMemoryOptions.LowSpace := MSI_TRACTION_FUNCTION_CONFIG;
+  ProtocolMemoryOptions.LowSpace := MSI_ACDI_USER;
 
   // Create a few events for fun
   ProtocolEventConsumed.AutoGenerate.Count := 5;

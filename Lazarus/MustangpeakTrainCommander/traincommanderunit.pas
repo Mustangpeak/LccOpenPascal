@@ -22,7 +22,8 @@ uses
   lcc_ethernet_common,
   servervisualunit,
   lcc_train_server,
-  lcc_utilities;
+  lcc_utilities,
+  lcc_alias_server_thread;
  // lcc_syn_ethenet_server;
   //lcc_syn_ethenet_client;
 
@@ -36,6 +37,7 @@ type
 
   TFormTrainCommander = class(TForm)
     Button1: TButton;
+    ButtonGridConnectStrClear: TButton;
     ButtonCreateConsist: TButton;
     ButtonHTTPServer: TButton;
     ButtonWebserverConnect: TButton;
@@ -58,6 +60,8 @@ type
     ListviewConnections: TListView;
     MemoComPort: TMemo;
     MemoLog: TMemo;
+    MemoRawGridConnectReceive: TMemo;
+    Panel1: TPanel;
     PanelTrainsHeader: TPanel;
     PanelTrains: TPanel;
     PanelConnections: TPanel;
@@ -73,6 +77,7 @@ type
     TreeViewTrains: TTreeView;
     procedure Button1Click(Sender: TObject);
     procedure ButtonCreateConsistClick(Sender: TObject);
+    procedure ButtonGridConnectStrClearClick(Sender: TObject);
     procedure ButtonHTTPServerClick(Sender: TObject);
     procedure ButtonWebserverConnectClick(Sender: TObject);
     procedure ButtonManualConnectComPortClick(Sender: TObject);
@@ -101,7 +106,8 @@ type
     property WorkerMessage: TLccMessage read FWorkerMessage write FWorkerMessage;
 
     // Events occuring on the connections
-    procedure OnServerManagerReceiveMessage(Sender: TObject; Manager: TLccConnectionThreadManager; Thread: TLccConnectionThread; ALccMessage: TLccMessage);
+    procedure OnServerManagerReceiveMessage(Sender: TObject; ALccMessage: TLccMessage);
+    procedure OnServerManagerReceiveGridConnectStr(Sender: TObject; AGridConnectStr: string);
     procedure OnServerManagerSendMessage(Sender: TObject; ALccMessage: TLccMessage);
     procedure OnServerManagerConnectionState(Sender: TObject; Manager: TLccConnectionThreadManager; Thread: TLccConnectionThread; Info: TLccConnectionInfo);
     procedure OnServerErrorMessage(Sender: TObject; Manager: TLccConnectionThreadManager; Thread: TLccConnectionThread; Info: TLccConnectionInfo);
@@ -182,6 +188,16 @@ begin
   end;
 end;
 
+procedure TFormTrainCommander.ButtonGridConnectStrClearClick(Sender: TObject);
+begin
+  MemoRawGridConnectReceive.Lines.BeginUpdate;
+  try
+    MemoRawGridConnectReceive.Lines.Clear;
+  finally
+    MemoRawGridConnectReceive.Lines.EndUpdate;
+  end;
+end;
+
 procedure TFormTrainCommander.ButtonWebserverConnectClick(Sender: TObject);
 begin
   if LccWebsocketServer.Connected then
@@ -240,24 +256,27 @@ begin
 end;
 
 procedure TFormTrainCommander.OnServerManagerReceiveMessage(Sender: TObject;
-  Manager: TLccConnectionThreadManager; Thread: TLccConnectionThread;
   ALccMessage: TLccMessage);
 var
   ByteArray: TLccDynamicByteArray;
   Preamble: String;
+  ConnectionThread: TLccConnectionThread;
+  ConnectionManager: TLccConnectionThreadManager;
 begin
   if CheckBoxLogMessages.Checked then
   begin
-    if Manager = LccServer then
+    ConnectionThread := ALccMessage.ConnectionThread as TLccConnectionThread;
+    ConnectionManager := ConnectionThread.OwnerConnectionManager as TLccConnectionThreadManager;
+    if ConnectionManager = LccServer then
       Preamble := 'TCP:R: '
     else
-    if Manager = LccWebsocketServer then
+    if ConnectionManager = LccWebsocketServer then
       Preamble := 'WebSocket:R: '
   {  else
     if Manager = LccHTTPServer then
       Preamble := 'HTTP:R: '   }
     else
-    if Manager = LccComPort then      // Should never hit as the Comport is SendMessage Only
+    if ConnectionManager = LccComPort then      // Should never hit as the Comport is SendMessage Only
       Preamble := 'ComPort:R: ';
 
     MemoLog.Lines.BeginUpdate;
@@ -279,6 +298,18 @@ begin
     finally
       MemoLog.Lines.EndUpdate;
     end;
+  end;
+end;
+
+procedure TFormTrainCommander.OnServerManagerReceiveGridConnectStr(
+  Sender: TObject; AGridConnectStr: string);
+begin
+  MemoRawGridConnectReceive.Lines.BeginUpdate;
+  try
+    MemoRawGridConnectReceive.Lines.Add('R: ' + AGridConnectStr);
+    MemoRawGridConnectReceive.SelStart := Length( MemoRawGridConnectReceive.Text);
+  finally
+    MemoRawGridConnectReceive.Lines.EndUpdate;
   end;
 end;
 
@@ -584,7 +615,12 @@ begin
   ConnectionFactory.OnStateChange := @OnServerManagerConnectionState;
   ConnectionFactory.OnError := @OnServerErrorMessage;
   ConnectionFactory.OnLccMessageReceive := @OnServerManagerReceiveMessage;
+  ConnectionFactory.OnLccGridConnectStrReceive := @OnServerManagerReceiveGridConnectStr;
   ConnectionFactory.OnLccMessageSend := @OnServerManagerSendMessage;
+
+
+  // THIS IS A HACK TO MAKE THE CONNECTION....FIGURE OUT HOW TO DO THIS CLEANER
+  AliasServerThread.ReceivedMessageCallback := @ConnectionFactory.ReceiveMessageCallbackHack;
 
 
   Max_Allowed_Buffers := 1;

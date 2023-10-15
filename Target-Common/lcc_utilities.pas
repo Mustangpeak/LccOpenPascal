@@ -389,7 +389,7 @@ begin
     TempStr := NodeID;
 
   {$IFDEF LCC_FPC}
-  TempQ := StrToQWord(NodeID);
+  TempQ := StrToQWord(TempStr);
   {$ELSE}
   TempQ := StrToUInt64('$' + TempStr);
   {$ENDIF}

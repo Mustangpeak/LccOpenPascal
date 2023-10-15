@@ -6,25 +6,21 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ComCtrls, ExtCtrls,
-  lcc_alias_server, lcc_train_server, lcc_utilities;
+  StdCtrls, lcc_alias_server, lcc_train_server, lcc_utilities;
 
 type
 
   { TFormServerInfo }
 
   TFormServerInfo = class(TForm)
+    ButtonAliasMappingRefresh: TButton;
+    MemoMappings: TMemo;
     PanelAliasMappingMain: TPanel;
-    PanelTrainObjectMain: TPanel;
     PanelAliasMappingHeader: TPanel;
-    PanelTrainObjectHeader: TPanel;
-    SplitterMain: TSplitter;
-    TreeViewAliasMaps: TTreeView;
-    TreeViewTrains: TTreeView;
+    procedure ButtonAliasMappingRefreshClick(Sender: TObject);
   private
 
   public
-    procedure AddAliasMap(AMap: TLccAliasMapping);
-    procedure RemoveAliasMap(AMap: TLccAliasMapping);
 
     procedure AddTrainObject(ATrain: TLccTractionObject);
     procedure RemoveTrainObject(ATrain: TLccTractionObject);
@@ -39,48 +35,31 @@ implementation
 
 { TFormServerInfo }
 
-procedure TFormServerInfo.AddAliasMap(AMap: TLccAliasMapping);
+procedure TFormServerInfo.ButtonAliasMappingRefreshClick(Sender: TObject);
 var
-  TreeNode: TTreeNode;
-  CaptionStr: String;
+  StringList: TStringList;
 begin
-  TreeViewAliasMaps.Items.BeginUpdate;
+  MemoMappings.Lines.BeginUpdate;
   try
-    CaptionStr := NodeIDToString(AMap.NodeID, False) + '; ' + NodeAliasToString(AMap.NodeAlias);
+    StringList := TStringList.Create;
+    MemoMappings.Lines.Clear;
 
-    TreeNode := TreeViewAliasMaps.Items.FindNodeWithText( CaptionStr);
-    if not Assigned(TreeNode) then
-    begin
-      TreeNode := TreeViewAliasMaps.Items.Add(nil, CaptionStr);
-     end;
+    AliasServer.ReadMappingsToStringList(StringList);
+    MemoMappings.Lines.Assign(StringList);
+
   finally
-    TreeViewAliasMaps.Items.EndUpdate;
+    StringList.Free;
+    MemoMappings.Lines.EndUpdate;
   end;
 end;
 
-procedure TFormServerInfo.RemoveAliasMap(AMap: TLccAliasMapping);
-var
-  TreeNode: TTreeNode;
-  CaptionStr: String;
-begin
-  TreeViewAliasMaps.Items.BeginUpdate;
-  try
-    CaptionStr := NodeIDToString(AMap.NodeID, False) + '; ' + NodeAliasToString(AMap.NodeAlias);
-
-    TreeNode := TreeViewAliasMaps.Items.FindNodeWithText( CaptionStr);
-    if Assigned(TreeNode) then
-      TreeViewAliasMaps.Items.Delete(TreeNode);
-  finally
-    TreeViewAliasMaps.Items.EndUpdate;
-  end;
-end;
 
 procedure TFormServerInfo.AddTrainObject(ATrain: TLccTractionObject);
 var
   TreeNode: TTreeNode;
   CaptionStr: String;
 begin
-  TreeViewTrains.Items.BeginUpdate;
+ { TreeViewTrains.Items.BeginUpdate;
   try
     CaptionStr := NodeIDToString(ATrain.NodeID, False) + '; ' + NodeAliasToString(ATrain.NodeAlias);
 
@@ -91,7 +70,7 @@ begin
      end;
   finally
     TreeViewTrains.Items.EndUpdate;
-  end;
+  end;  }
 end;
 
 procedure TFormServerInfo.RemoveTrainObject(ATrain: TLccTractionObject);
@@ -99,7 +78,7 @@ var
   TreeNode: TTreeNode;
   CaptionStr: String;
 begin
-  TreeViewTrains.Items.BeginUpdate;
+ { TreeViewTrains.Items.BeginUpdate;
   try
     CaptionStr := NodeIDToString(ATrain.NodeID, False) + '; ' + NodeAliasToString(ATrain.NodeAlias);
 
@@ -109,7 +88,7 @@ begin
   finally
     TreeViewTrains.Items.EndUpdate;
   end;
-
+       }
 end;
 
 end.

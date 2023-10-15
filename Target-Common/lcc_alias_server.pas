@@ -87,6 +87,7 @@ type
     function FindMapping(ANodeID: TNodeID; AnAliasID: Word): TLccAliasMapping; overload;
     function AddMapping(ANodeID: TNodeID; AnAlias: Word; AnInternalNode: Boolean): TLccAliasMapping;
     procedure RemoveMapping(AnAliasID: Word; ForceInternalNodes: Boolean);
+    procedure ReadMappingsToStringList(AStringList: TStringList);
   end;
 
 var
@@ -310,8 +311,32 @@ begin
   end;
 end;
 
+procedure TLccAliasServer.ReadMappingsToStringList(AStringList: TStringList);
+var
+  i: Integer;
+  List: TList;
+  Mapping: TLccAliasMapping;
+begin
+  AStringList.Clear;
+  List := MappingList.LockList;
+  try
+    for i := 0 to List.Count - 1 do
+    begin
+      Mapping := TLccAliasMapping( List[i]);
+      if Mapping.InternalNode then
+        AStringList.Add( 'NodeID: ' + NodeIDToString( Mapping.NodeID, True) + '  Alias: ' + IntToHex(Mapping.NodeAlias) + ' [Internal]')
+      else
+        AStringList.Add( 'NodeID: ' + NodeIDToString( Mapping.NodeID, True) + '  Alias: ' + IntToHex(Mapping.NodeAlias) + ' [External]');
+    end;
+  finally
+    MappingList.UnlockList;
+  end;
+end;
+
 initialization
   AliasServer := TLccAliasServer.Create;
+  // To Run the Python Scripts
+  AliasServer.AddMapping( StrToNodeID('01.02.03.04.05.06', True), $AAA, True);
 
 finalization;
   FreeAndNil(AliasServer);

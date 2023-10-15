@@ -40,7 +40,7 @@ type
     constructor Create; virtual;
     destructor Destroy; override;
 
-    function DatagramReadRequest(LccMessage: TLccMessage; OutMessage: TLccMessage; AStream: TStream; AutoGrow: Boolean; MemOffset: Int64 = 0): Word; virtual;
+    function DatagramReadRequest(LccMessage: TLccMessage; OutMessage: TLccMessage; AStream: TStream; {AutoGrow: Boolean;} MemOffset: Int64 = 0): Word; virtual;
     function DatagramWriteRequest(LccMessage: TLccMessage; AStream: TStream; AutoGrow: Boolean; MemOffset: Int64 = 0): Word; virtual;
   end;
 
@@ -387,7 +387,7 @@ begin
   inherited Destroy;
 end;
 
-function TNodeProtocolBase.DatagramReadRequest(LccMessage: TLccMessage; OutMessage: TLccMessage; AStream: TStream; AutoGrow: Boolean; MemOffset: Int64 = 0): Word;
+function TNodeProtocolBase.DatagramReadRequest(LccMessage: TLccMessage; OutMessage: TLccMessage; AStream: TStream; {AutoGrow: Boolean;} MemOffset: Int64 = 0): Word;
 //
 // Assumes the Source and Destination have already been set up
 //
@@ -422,6 +422,10 @@ begin
   AddressStart := LccMessage.ExtractDataBytesAsInt(2, 5);     // Pull out the AddressStart
   AddressStart := AddressStart + MemOffset;
 
+
+  if BytesToRead = 8 then
+    beep;
+
   if BytesToRead > 64 then
   begin
     Result := ERROR_TEMPORARY_INVALID_ARGUMENTS;
@@ -438,7 +442,7 @@ begin
   end else
   begin
 
-    if AutoGrow then
+  {  if AutoGrow then
     begin
       if AStream.Size < Int64( AddressStart) + Int64( BytesToRead) then         // Grow the Address space
       begin
@@ -451,7 +455,7 @@ begin
           AStream.Write(B, SizeOf(B));
         end;
       end;
-    end;
+    end; }
 
     if AddressStart >= AStream.Size then
     begin

@@ -95,19 +95,17 @@ private
   FAbandonCount: Integer;                   // If the message is being held for some reason (CAN multi frame assembly, waiting for AME to aquire the Alias, etc) this is used to see how long it has been alive and when to decide it has been abandon and should be freed
   FCAN_FramingBits: Byte;                   // Bottom 2 bits, upper nibble of the Destination alias
   FCAN_MTI: DWord;                          // WARNING:  This MTI is shifted Left by 2 Bytes where the Source Address Was!!!!!!  CAN encoded MTI
+  FConnectionThread: TObject;
   FDestAlias: Word;
-  FFramingBits: Byte;
   FIsCAN: Boolean;                          // The message is a CAN link message which typically needs special handling
   FDataArray: TLccByteArray;                // The payload of the message (if there is a payload).  This is the full payload that has been already been assembled if we are on a CAN link
   FDataCount: Integer;                      // How many bytes in the DataArray are valid
   FDestID: TNodeID;                         // NodeID of the Destination of a message (typically a node in our NodeManager)
   FiTag: Integer;                           // General purpose counter/integer depending on the message
-  FNodeIdentifications: TLccNodeIdentificationObjectList;
   FSourceAlias: Word;
   FSourceID: TNodeID;                       // NodeID of the Source of a message
   FMTI: Word;                               // The Actual MTI of the message IF it is not a CAN frame message, The full OpenLcb MTI
   FRetryAttemptsDatagram: Integer;          // If a message returned "Temporary" (like no buffers) this holds how many time it has been retried and defines a give up time to stop resending
-  FWorkerNodeIdentifcationObject: TLccNodeIdentificationObject;
 
   function GetHasDestination: Boolean;
   function GetHasDestNodeID: Boolean;
@@ -136,9 +134,7 @@ public
   property SourceAlias: Word read FSourceAlias write FSourceAlias;
   property SourceID: TNodeID read FSourceID write FSourceID;
 
-
-  property NodeIdentifications: TLccNodeIdentificationObjectList read FNodeIdentifications write FNodeIdentifications;
-  property WorkerNodeIdentifcationObject: TLccNodeIdentificationObject read FWorkerNodeIdentifcationObject write FWorkerNodeIdentifcationObject;
+  property ConnectionThread: TObject read FConnectionThread write FConnectionThread; // TLccConnectionThread that created this message, can get the Manager through the ConnectionThread.OwnerConnectionThreadManager
 
   constructor Create;
   destructor Destroy; override;
@@ -158,8 +154,6 @@ public
   function ExtractDataBytesAsDWord(StartIndex: Integer): DWORD;
   function ExtractDataBytesAsHex(StartByteIndex, EndByteIndex: Integer): string;
   function DestinationMatchs(TestAliasID: Word; TestNodeID: TNodeID): Boolean;
-  function ExtractNodeIdentifications(ForceEvaluation, IgnoreCANMessages: Boolean): TLccNodeIdentificationObjectList;
-  function ExtractNodeIdentificationToCallback(NodeIdentificationCallback: TNodeIdentificationCallback; UnMappedOnly, IgnoreCANMessages: Boolean): Boolean;
 
   function ValidateAndRequestIfNecessaryAliasMappings(RequestMappingCallback: TLccMessageRequestMappingCallback): Boolean;
   function ValidateByNodeID(RequestMappingCallback: TLccMessageRequestMappingCallback; ANodeID: TNodeID): TLccAliasMapping;
@@ -459,6 +453,7 @@ var
   j, S_Len: Integer;
   f: single;
   Half: Word;
+  AddressSpace: Word;
 begin
   Result := AMessage.ConvertToGridConnectStr('', False);
   S_Len := Length(Result);
@@ -486,9 +481,83 @@ begin
   else
     Result := Result + '0x' + IntToHex( AMessage.SourceAlias, 4);
 
+  if AMessage.MTI = MTI_DATAGRAM_REJECTED_REPLY then
+  begin
+    // Display the type if rejection
+ //   Result := Result + 'Datagram Reply Rejected'
+  end;
+
+
   if AMessage.MTI = MTI_DATAGRAM then
+  begin
+    case AMessage.DataArray[0] of
+      DATAGRAM_PROTOCOL_CONFIGURATION :                                       {0x20}  // Configuration
+      begin
+
+       AddressSpace := 0;
+
+       // Figure out where the Memory space to work on is located, encoded in the header or in the first databyte slot.
+       case AMessage.DataArray[1] and $03 of
+         MCP_NONE          : AddressSpace := AMessage.DataArray[6];
+         MCP_CDI           : AddressSpace := MSI_CDI;
+         MCP_ALL           : AddressSpace := MSI_ALL;
+         MCP_CONFIGURATION : AddressSpace := MSI_CONFIG;
+       end;
+
+       Result := Result + '  Memory Config -> ';
+
+       case AMessage.DataArray[1] and $F0 of
+         MCP_WRITE :
+            begin
+               case AddressSpace of
+                 MSI_CDI                      : Result := Result + ' Write -> CDI ';
+                 MSI_ALL                      : Result := Result + ' Write -> All ';
+                 MSI_CONFIG                   : Result := Result + ' Write -> CDI Config ';
+                 MSI_ACDI_MFG                 : Result := Result + ' Write -> ACDI Manufacturer ';
+                 MSI_ACDI_USER                : Result := Result + ' Write -> ACDI User ';
+                 MSI_TRACTION_FDI             : Result := Result + ' Write -> Traction FDI ';
+                 MSI_TRACTION_FUNCTION_CONFIG : Result := Result + ' Write -> Traction FDI Config '
+               else
+                Result := Result + ' Write -> Unknown'
+               end;
+            end;
+            MCP_READ :
+            begin
+               case AddressSpace of
+                 MSI_CDI                      : Result := Result + ' Read -> CDI ';
+                 MSI_ALL                      : Result := Result + ' Read -> All ';
+                 MSI_CONFIG                   : Result := Result + ' Read -> CDI Config ';
+                 MSI_ACDI_MFG                 : Result := Result + ' Read -> ACDI MAnufacturer ';
+                 MSI_ACDI_USER                : Result := Result + ' Read -> ACDI User ';
+                 MSI_TRACTION_FDI             : Result := Result + ' Read -> Traction FDI ';
+                 MSI_TRACTION_FUNCTION_CONFIG : Result := Result + ' Read -> Traction FDI Config '
+               else
+                 Result := Result + ' Read -> Unknown ';
+             end;
+            end;
+            MCP_WRITE_STREAM : Result := Result + ' Write -> Stream ';
+            MCP_READ_STREAM  : Result := Result + ' Read -> Stream ' ;
+            MCP_OPERATION :
+            begin
+               case AMessage.DataArray[1] of
+                 MCP_OP_GET_CONFIG_OPTIONS : Result := Result + ' Operation -> Options ';
+                 MCP_OP_GET_ADD_SPACE_INFO : Result := Result + ' Operation -> Get Address Space Info ' ;
+                 MCP_OP_LOCK               : Result := Result + ' Operation -> Lock ';
+                 MCP_OP_GET_UNIQUEID       : Result := Result + ' Operation -> Get Unique ID ';
+                 MCP_OP_FREEZE             : Result := Result + ' Operation -> Freeze ';
+                 MCP_OP_INDICATE           : Result := Result + ' Operation -> Indicate ';
+                 MCP_OP_RESETS             : Result := Result + ' Operation -> Reset '
+               else
+                 Result := Result + ' Operation -> Unknown ';
+               end // case
+            end;
+         end // case
+       end else
+         Result := Result + '  Unknown Datagram Type ';
+    end; // case
+
     Result := Result + RawHelperDataToStr(AMessage, True) + ' MTI: ' + MTI_ToString(AMessage.MTI)
-  else
+  end else
     Result := Result + '   MTI: ' + MTI_ToString(AMessage.MTI) + ' - ';
 
   if AMessage.MTI = MTI_STREAM_SEND then
@@ -731,19 +800,21 @@ end;
 function TLccMessage.Clone: TLccMessage;
 begin
   Result := TLccMessage.Create;
+  Result.CAN_MTI := FCAN_MTI;
   Result.FIsCAN := FIsCAN;
-  Result.FDestAlias := FDestAlias;
   Result.FCAN_FramingBits := FCAN_FramingBits;
   Result.FiTag := FiTag;
   Result.FMTI := FMTI;
-  Result.FSourceAlias := FSourceAlias;
   Result.FDataArray := FDataArray;
   Result.FDataCount := FDataCount;
+  Result.FDestAlias := FDestAlias;
   Result.FDestID := FDestID;
+  Result.FSourceAlias := FSourceAlias;
   Result.FSourceID := FSourceID;
   Result.FMTI := FMTI;
   Result.RetryAttemptsDatagram := 0;
   Result.AbandonCount := 0;
+  Result.ConnectionThread := FConnectionThread;
 end;
 
 procedure TLccMessage.InsertNodeID(StartIndex: Integer; var ANodeID: TNodeID);
@@ -805,14 +876,10 @@ end;
 constructor TLccMessage.Create;
 begin
   inherited Create;
-  FNodeIdentifications := TLccNodeIdentificationObjectList.Create;
-  FWorkerNodeIdentifcationObject := TLccNodeIdentificationObject.Create;
 end;
 
 destructor TLccMessage.Destroy;
 begin
-  FreeAndNil(FNodeIdentifications);
-  FreeAndNil(FWorkerNodeIdentifcationObject);
   inherited Destroy;
 end;
 
@@ -1321,6 +1388,8 @@ end;
 procedure TLccMessage.CopyToTarget(TargetMessage: TLccMessage);
 begin
   TargetMessage.FIsCAN := FIsCAN;
+  TargetMessage.FCAN_FramingBits := FCAN_FramingBits;
+  TargetMessage.CAN_MTI := CAN_MTI;
   TargetMessage.FMTI := FMTI;
   TargetMessage.FDataArray := FDataArray;
   TargetMessage.FDataCount := FDataCount;
@@ -1328,9 +1397,10 @@ begin
   TargetMessage.FSourceID := FSourceID;
   TargetMessage.FDestAlias := FDestAlias;
   TargetMessage.FSourceAlias := FSourceAlias;
-  TargetMessage.FCAN_FramingBits := FCAN_FramingBits;
   TargetMessage.FiTag := 0;
-  TargetMessage.FMTI := FMTI;
+  TargetMessage.FAbandonCount := 0;
+  TargetMessage.FRetryAttemptsDatagram := 0;
+  TargetMessage.FConnectionThread := FConnectionThread;
 end;
 
 function TLccMessage.DestinationMatchs(TestAliasID: Word; TestNodeID: TNodeID): Boolean;
@@ -1339,172 +1409,6 @@ begin
     Result := TestAliasID = DestAlias
   else
     Result := (TestNodeID[0] = DestID[0]) and (TestNodeID[1] = DestID[1]);
-end;
-
-function TLccMessage.ExtractNodeIdentifications(ForceEvaluation, IgnoreCANMessages: Boolean): TLccNodeIdentificationObjectList;
-
-  procedure NewIdentificationItem(ANodeID: TNodeID);
-  var
-    ADestinationObject: TLccNodeIdentificationObject;
-  begin
-    if not NullNodeID(ANodeID) then
-    begin
-      ADestinationObject := TLccNodeIdentificationObject.Create;
-      ADestinationObject.AssignID(ANodeID, 0);
-      NodeIdentifications.Add(ADestinationObject);
-    end;
-  end;
-
-var
-  ANodeID: TNodeID;
-begin
-  ANodeID := NULL_NODE_ID;
-
-  Result := NodeIdentifications;
-
-  if IgnoreCANMessages and IsCAN then
-    Exit;
-
-  if ForceEvaluation or (NodeIdentifications.Count = 0) then
-  begin
-    NodeIdentifications.ClearIdentifications;
-    NodeIdentifications.Source.AssignID(SourceID, SourceAlias);
-    if HasDestination then
-      NodeIdentifications.Destination.AssignID(DestID, DestAlias);
-
-    case MTI of
-      MTI_TRACTION_REQUEST :
-        begin
-          case DataArray[0] of
-            TRACTION_CONTROLLER_CONFIG :
-              begin
-                case DataArray[1] of
-                  TRACTION_CONTROLLER_CONFIG_ASSIGN,
-                  TRACTION_CONTROLLER_CONFIG_RELEASE,
-                  TRACTION_CONTROLLER_CONFIG_CHANGED_NOTIFY : NewIdentificationItem(ExtractDataBytesAsNodeID(3, ANodeID));
-                end
-              end;
-            TRACTION_LISTENER_CONFIG :
-              begin
-                case DataArray[1] of
-                  TRACTION_LISTENER_CONFIG_ATTACH,
-                  TRACTION_LISTENER_CONFIG_DETACH : NewIdentificationItem(ExtractDataBytesAsNodeID(3, ANodeID));
-                end;
-              end
-          end
-        end;
-          MTI_TRACTION_REPLY :
-        begin
-          case DataArray[0] of
-            TRACTION_CONTROLLER_CONFIG :
-              begin
-                case DataArray[1] of
-                  TRACTION_CONTROLLER_CONFIG_QUERY :
-                    begin
-                     if not NullNodeID(ExtractDataBytesAsNodeID(3, ANodeID)) then    // NULL is valid for no controller assigned
-                       NewIdentificationItem(ANodeID);
-                    end;
-                  end
-              end;
-
-             TRACTION_LISTENER_CONFIG :
-               case DataArray[1] of
-                  TRACTION_LISTENER_CONFIG_ATTACH,
-                  TRACTION_LISTENER_CONFIG_DETACH : NewIdentificationItem(ExtractDataBytesAsNodeID(2, ANodeID));
-                end;
-          end;
-        end;
-    end;
-  end;
-end;
-
-function TLccMessage.ExtractNodeIdentificationToCallback(NodeIdentificationCallback: TNodeIdentificationCallback; UnMappedOnly, IgnoreCANMessages: Boolean): Boolean;
-
-  function IdentifyIdentificationItem(ANodeID: TNodeID; AnAliasID: Word; var OuterResult: Boolean): TLccAliasMapping;
-  begin
-    Result := AliasServer.FindMapping(ANodeID, AnAliasID);
-    if UnMappedOnly then
-    begin
-      if not Assigned(Result) then
-      begin
-        WorkerNodeIdentifcationObject.AssignID(ANodeID, AnAliasID);
-        NodeIdentificationCallback(WorkerNodeIdentifcationObject);
-        OuterResult := False;
-      end;
-    end else
-    begin
-      WorkerNodeIdentifcationObject.AssignID(ANodeID, AnAliasID);
-      NodeIdentificationCallback(WorkerNodeIdentifcationObject);
-    end;
-  end;
-
-var
-  ANodeID: TNodeID;
-  AnAliasMapping: TLccAliasMapping;
-begin
-  Result := True;
-
-  if IgnoreCANMessages and IsCAN then
-    Exit;
-
-  ANodeID := NULL_NODE_ID;
-
-  AnAliasMapping := IdentifyIdentificationItem(SourceID, SourceAlias, Result);
-  if Assigned(AnAliasMapping) then
-  begin
-    SourceID := AnAliasMapping.NodeID;
-    SourceAlias := AnAliasMapping.NodeAlias;
-  end;
-
-  if HasDestination then
-  begin
-    AnAliasMapping := IdentifyIdentificationItem(DestID, DestAlias, Result);
-    if Assigned(AnAliasMapping) then
-    begin
-      DestID := AnAliasMapping.NodeID;
-      DestAlias := AnAliasMapping.NodeAlias;
-    end;
-  end;
-
-  case MTI of
-    MTI_TRACTION_REQUEST :
-      begin
-        case DataArray[0] of
-          TRACTION_CONTROLLER_CONFIG :
-            begin
-              case DataArray[1] of
-                TRACTION_CONTROLLER_CONFIG_ASSIGN,
-                TRACTION_CONTROLLER_CONFIG_RELEASE,
-                TRACTION_CONTROLLER_CONFIG_CHANGED_NOTIFY : IdentifyIdentificationItem(ExtractDataBytesAsNodeID(3, ANodeID), 0, Result);
-              end
-            end;
-          TRACTION_LISTENER_CONFIG :
-            begin
-              case DataArray[1] of
-                TRACTION_LISTENER_CONFIG_ATTACH,
-                TRACTION_LISTENER_CONFIG_DETACH : IdentifyIdentificationItem(ExtractDataBytesAsNodeID(3, ANodeID), 0, Result);
-              end;
-            end
-        end
-      end;
-        MTI_TRACTION_REPLY :
-      begin
-        case DataArray[0] of
-          TRACTION_CONTROLLER_CONFIG :
-            begin
-              case DataArray[1] of
-                TRACTION_CONTROLLER_CONFIG_QUERY : IdentifyIdentificationItem(ExtractDataBytesAsNodeID(3, ANodeID), 0, Result);
-                end
-            end;
-
-           TRACTION_LISTENER_CONFIG :
-             case DataArray[1] of
-                TRACTION_LISTENER_CONFIG_ATTACH,
-                TRACTION_LISTENER_CONFIG_DETACH : IdentifyIdentificationItem(ExtractDataBytesAsNodeID(2, ANodeID), 0, Result);
-              end;
-        end;
-      end;
-  end;
 end;
 
 function TLccMessage.ValidateAndRequestIfNecessaryAliasMappings(RequestMappingCallback: TLccMessageRequestMappingCallback): Boolean;

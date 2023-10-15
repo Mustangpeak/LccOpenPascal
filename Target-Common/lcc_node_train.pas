@@ -649,9 +649,9 @@ begin
   ProtocolSupportedProtocols.EventExchange := True;
   ProtocolSupportedProtocols.SimpleNodeInfo := True;
   ProtocolSupportedProtocols.TractionControl := True;
-  ProtocolSupportedProtocols.TractionSimpleTrainNodeInfo := True;
-  ProtocolSupportedProtocols.TractionFunctionDefinitionInfo := True;
-  ProtocolSupportedProtocols.TractionFunctionConfiguration := True;
+//  ProtocolSupportedProtocols.TractionSimpleTrainNodeInfo := True;
+//  ProtocolSupportedProtocols.TractionFunctionDefinitionInfo := True;
+//  ProtocolSupportedProtocols.TractionFunctionConfiguration := True;
 
   ProtocolEventsProduced.Add(EVENT_IS_TRAIN, evs_Valid);
   ProtocolEventConsumed.Add(EVENT_EMERGENCY_STOP, evs_InValid);
@@ -661,8 +661,10 @@ begin
   ProtocolMemoryInfo.Add(MSI_CONFIG, True, False, True, 0, $FFFFFFFF);
   ProtocolMemoryInfo.Add(MSI_ACDI_MFG, True, True, True, 0, $FFFFFFFF);
   ProtocolMemoryInfo.Add(MSI_ACDI_USER, True, False, True, 0, $FFFFFFFF);
-  ProtocolMemoryInfo.Add(MSI_TRACTION_FDI, True, True, True, 0, $FFFFFFFF);
-  ProtocolMemoryInfo.Add(MSI_TRACTION_FUNCTION_CONFIG, True, False, True, 0, $FFFFFFFF);
+
+  // Support these later
+ // ProtocolMemoryInfo.Add(MSI_TRACTION_FDI, True, True, True, 0, $FFFFFFFF);
+ // ProtocolMemoryInfo.Add(MSI_TRACTION_FUNCTION_CONFIG, True, False, True, 0, $FFFFFFFF);
 
   ProtocolMemoryOptions.WriteUnderMask := True;
   ProtocolMemoryOptions.UnAlignedReads := True;
@@ -677,7 +679,8 @@ begin
   ProtocolMemoryOptions.WriteArbitraryBytes := True;
   ProtocolMemoryOptions.WriteStream := False;
   ProtocolMemoryOptions.HighSpace := MSI_CDI;
-  ProtocolMemoryOptions.LowSpace := MSI_TRACTION_FUNCTION_CONFIG;
+ // ProtocolMemoryOptions.LowSpace := MSI_TRACTION_FUNCTION_CONFIG;
+  ProtocolMemoryOptions.LowSpace := MSI_ACDI_USER;
 
   // TODO... this should be a persistent Stream if the user changes the name in the Configuration Dialog
   //         save to a file with the DccAddress as the filename??????

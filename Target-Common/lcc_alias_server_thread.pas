@@ -46,6 +46,7 @@ TReceiveMessageAliasServerThread = class(TThread)
     FOutgoingProcessedMessageList: TThreadList;
     FIncomingMessageList: TThreadList;
     FReceivedMessage: TLccMessage;
+    FReceivedMessageCallback: TOnMessageEvent;
     FSendMessageCallback: TOnMessageEvent;
     FWaitingForMappingMessageList: TThreadList;
     FWorkerMessage: TLccMessage;
@@ -77,6 +78,8 @@ TReceiveMessageAliasServerThread = class(TThread)
     property DispatchProcessedMessageCallback: TLccAliasServerDispatchProcessedMessageFunc read FDispatchProcessedMessageCallback write FDispatchProcessedMessageCallback;
     // This property is set to a function that will send a Message to the network, current calls into TLccNodeManager.SendMessage so it can pickup a node as the source to send the message
     property SendMessageCallback: TOnMessageEvent read FSendMessageCallback write FSendMessageCallback;
+
+    property ReceivedMessageCallback: TOnMessageEvent read FReceivedMessageCallback write FReceivedMessageCallback;
     // Adds a message that is incoming from a connection.  This thread will validate that the Alias Server contains
     // any mappings necessary for the message and place them in the OutgoingProcessedMessageList when Node Manager can handle them
     procedure AddIncomingMessage(AMessage: TLccMessage; GridConnect: Boolean);
@@ -157,7 +160,7 @@ begin
 
     Synchronize({$IFNDEF LCC_DELPHI}@{$ENDIF}DispatchMessageThroughSyncronize);
 
-    Sleep(50);
+    Sleep(10);
   end;
 end;
 
@@ -278,13 +281,15 @@ var
   List: TList;
   i: Integer;
 begin
-  Assert( Assigned(SendMessageCallback), 'TReceiveMessageAliasServerThread,DispatchProcessedMessageCallback not assigned');
+  Assert( Assigned(SendMessageCallback), 'TReceiveMessageAliasServerThread,SendMessageCallback not assigned');
+  Assert( Assigned(ReceivedMessageCallback), 'TReceiveMessageAliasServerThread,ReceiveMessageCallback not assigned');
 
   List := OutgoingProcessedMessageList.LockList;
   try
     try
       for i := 0 to List.Count - 1 do
       begin
+        ReceivedMessageCallback(TLccMessage( List[i]), False);  // Send the Event first or it may show the message was responded to before it was received!
         if Assigned(FDispatchProcessedMessageCallback) then
           DispatchProcessedMessageCallback(TLccMessage( List[i]));
         TObject( List[i]).Free;
