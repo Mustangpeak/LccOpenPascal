@@ -1,12 +1,12 @@
 object FormTrainCommander: TFormTrainCommander
-  Left = 137
+  Left = 50
   Height = 563
   Top = 171
-  Width = 1288
+  Width = 1365
   Align = alBottom
   Caption = 'Train Commander [LccOpenPascal]'
   ClientHeight = 563
-  ClientWidth = 1288
+  ClientWidth = 1365
   OnCloseQuery = FormCloseQuery
   OnCreate = FormCreate
   OnDestroy = FormDestroy
@@ -16,10 +16,10 @@ object FormTrainCommander: TFormTrainCommander
     Left = 0
     Height = 96
     Top = 0
-    Width = 1288
+    Width = 1365
     Align = alTop
     ClientHeight = 96
-    ClientWidth = 1288
+    ClientWidth = 1365
     TabOrder = 0
     object CheckBoxAutoConnect: TCheckBox
       Left = 192
@@ -192,36 +192,33 @@ object FormTrainCommander: TFormTrainCommander
       OnClick = ButtonCreateConsistClick
       TabOrder = 14
     end
-    object SpeedButton1: TSpeedButton
-      Left = 1162
-      Height = 22
-      Top = 21
-      Width = 23
-      OnClick = SpeedButton1Click
+    object ButtonLiveMessages: TButton
+      Left = 1136
+      Height = 25
+      Top = 8
+      Width = 218
+      Caption = 'Live Messages: '
+      OnClick = ButtonLiveMessagesClick
+      TabOrder = 15
     end
-    object SpeedButton2: TSpeedButton
-      Left = 1202
-      Height = 22
-      Top = 25
-      Width = 23
-      OnClick = SpeedButton2Click
-    end
-    object SpeedButton3: TSpeedButton
-      Left = 1126
-      Height = 22
-      Top = 64
-      Width = 106
-      OnClick = SpeedButton3Click
+    object ButtonDatagramQueue: TButton
+      Left = 1136
+      Height = 25
+      Top = 32
+      Width = 216
+      Caption = 'Datagram Queue:'
+      OnClick = ButtonDatagramQueueClick
+      TabOrder = 16
     end
   end
   object PanelConnections: TPanel
     Left = 0
     Height = 102
     Top = 443
-    Width = 1288
+    Width = 1365
     Align = alBottom
     ClientHeight = 102
-    ClientWidth = 1288
+    ClientWidth = 1365
     TabOrder = 1
     object ListviewConnections: TListView
       Left = 1
@@ -244,14 +241,14 @@ object FormTrainCommander: TFormTrainCommander
       Left = 512
       Height = 100
       Top = 1
-      Width = 775
+      Width = 852
       Align = alClient
       Caption = 'Panel1'
       ClientHeight = 100
-      ClientWidth = 775
+      ClientWidth = 852
       TabOrder = 1
       object MemoRawGridConnectReceive: TMemo
-        Left = 112
+        Left = 189
         Height = 98
         Top = 1
         Width = 662
@@ -274,7 +271,7 @@ object FormTrainCommander: TFormTrainCommander
     Left = 0
     Height = 9
     Top = 335
-    Width = 1288
+    Width = 1365
     Align = alBottom
     ResizeAnchor = akBottom
   end
@@ -288,7 +285,7 @@ object FormTrainCommander: TFormTrainCommander
     Left = 0
     Height = 18
     Top = 545
-    Width = 1288
+    Width = 1365
     Panels = <    
       item
         Width = 420
@@ -354,7 +351,7 @@ object FormTrainCommander: TFormTrainCommander
     Left = 272
     Height = 239
     Top = 96
-    Width = 1016
+    Width = 1093
     Align = alClient
     ScrollBars = ssVertical
     TabOrder = 6
@@ -363,7 +360,7 @@ object FormTrainCommander: TFormTrainCommander
     Left = 0
     Height = 90
     Top = 344
-    Width = 1288
+    Width = 1365
     Align = alBottom
     Lines.Strings = (
       'MemoComPort'
@@ -376,7 +373,7 @@ object FormTrainCommander: TFormTrainCommander
     Left = 0
     Height = 9
     Top = 434
-    Width = 1288
+    Width = 1365
     Align = alBottom
     ResizeAnchor = akBottom
   end

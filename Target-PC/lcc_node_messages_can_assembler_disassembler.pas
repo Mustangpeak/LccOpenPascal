@@ -229,6 +229,7 @@ begin                                                                           
               end else
               begin
                 LccMessage.LoadDatagramRejected(LccMessage.DestID, LccMessage.DestAlias, LccMessage.SourceID, LccMessage.SourceAlias, ERROR_TEMPORARY_BUFFER_UNAVAILABLE);
+                LccMessage.CheckNodeIDsBeforeDelivery := True;
                 Result := imgcr_ErrorToSend
               end;
             end;
@@ -239,6 +240,7 @@ begin                                                                           
             if Assigned(InProcessMessage) then
             begin
               LccMessage.LoadDatagramRejected(LccMessage.DestID, LccMessage.DestAlias, LccMessage.SourceID, LccMessage.SourceAlias, ERROR_TEMPORARY_NOT_EXPECTED or ERROR_NO_END_FRAME);
+              LccMessage.CheckNodeIDsBeforeDelivery := True;
               Result := imgcr_ErrorToSend;
               Remove(InProcessMessage, True)                                         // Something is wrong, out of order.  Throw it away
             end
@@ -277,6 +279,7 @@ begin                                                                           
             end else
             begin  // Out of order but let the node handle that if needed, note this could be also if we ran out of buffers....
               LccMessage.LoadDatagramRejected(LccMessage.DestID, LccMessage.DestAlias, LccMessage.SourceID, LccMessage.SourceAlias, ERROR_TEMPORARY_NOT_EXPECTED or ERROR_NO_START_FRAME);
+              LccMessage.CheckNodeIDsBeforeDelivery := True;
               Result := imgcr_ErrorToSend
             end;
           end;

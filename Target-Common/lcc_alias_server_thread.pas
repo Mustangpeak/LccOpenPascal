@@ -118,10 +118,7 @@ begin
         // reconciliation they must go through because the Alias is not valid yet and a CAN message only delivers
         // NodeIDs it never requires them to be used
 
-        // If a node sends a Verify Node ID message then we clear the Alias Mapping list before this so it will now fail validate below...
-        //   .... what should be done in this case?????????
-
-        if not LocalMessage.IsCAN {or not (LocalMessage.MTI = MTI_VERIFY_NODE_ID_NUMBER)} then
+        if not LocalMessage.IsCAN then
         begin
           if LocalMessage.ValidateAndRequestIfNecessaryAliasMappings({$IFNDEF LCC_DELPHI}@{$ENDIF}RequestMappingMessageSent) then
             OutgoingProcessedMessageList.Add(LocalMessage)
@@ -289,6 +286,10 @@ begin
     try
       for i := 0 to List.Count - 1 do
       begin
+
+        if TLccMessage( List[i]).ConvertToGridConnectStr(#10, false) = ':X194906FFN000000000001;' then
+          beep;
+
         ReceivedMessageCallback(TLccMessage( List[i]), False);  // Send the Event first or it may show the message was responded to before it was received!
         if Assigned(FDispatchProcessedMessageCallback) then
           DispatchProcessedMessageCallback(TLccMessage( List[i]));

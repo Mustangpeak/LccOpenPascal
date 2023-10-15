@@ -268,7 +268,7 @@ type
     FAliasID: Word;
     FDatagramResendQueue: TDatagramQueue;
     FDuplicateAliasDetected: Boolean;
-    FEnabled: Boolean;
+    FLogInEngineEnabled: Boolean;
     FEnginesRegisteredList: TList;
     FLoginTimoutCounter: Integer;
     FPermitted: Boolean;
@@ -416,7 +416,7 @@ type
     //**************************************************************************
 
 
-    property Enabled: Boolean read FEnabled write FEnabled;  // Internally used.. Set true by "LogIn" and false in "ReleaseAlias" so a new LogIn must be called
+    property LogInEngineEnabled: Boolean read FLogInEngineEnabled write FLogInEngineEnabled;  // Internally used.. Set true by "LogIn" and false in "ReleaseAlias" so a new LogIn must be called
     property StreamCdi: TMemoryStream read FStreamCdi write FStreamCdi;
     property StreamConfig: TMemoryStream read FStreamConfig write FStreamConfig;
     property StreamManufacturerData: TMemoryStream read FStreamManufacturerData write FStreamManufacturerData;
@@ -447,8 +447,6 @@ type
     // GridConnect Helpers
     function GenerateID_Alias_From_Seed(var Seed: TNodeID): Word;
     procedure GenerateNewSeed(var Seed: TNodeID);
-    procedure Relogin;
- //   procedure NotifyAndUpdateMappingChanges;
 
   public
     property DatagramResendQueue: TDatagramQueue read FDatagramResendQueue;
@@ -473,7 +471,7 @@ type
     constructor Create(AOwner: TComponent; CdiXML: string); reintroduce; virtual;
     destructor Destroy; override;
 
-    procedure Login(ANodeID: TNodeID); virtual;
+    procedure Login(ANodeID: TNodeID; InitialLogIn: Boolean = True); virtual;
     procedure On_100msTimer(Sender: TObject);  virtual;
     procedure ReleaseAlias(DelayTime_ms: Word); virtual;
     function ProcessMessage(SourceMessage: TLccMessage): Boolean; // Do not override this override the next 2
@@ -496,10 +494,6 @@ type
   end;
 
   TLccNodeClass = class of TLccNode;
-
-
-var
-  InprocessMessageAllocated: Integer = 0;
 
 implementation
 
@@ -1365,6 +1359,7 @@ end;
 
 procedure TLccNode.SendMessage(ALccMessage: TLccMessage);
 begin
+  ALccMessage.AssociatedNode := Self;
   (Owner as TLccNodeManager).SendMessage(ALccMessage);
 end;
 
@@ -1951,7 +1946,7 @@ end;
 
 procedure TLccNode.LccLogIn(ANodeID: TNodeID);
 begin
-  if Enabled then
+  if LogInEngineEnabled then
   begin
     BeforeLogin;
     if NullNodeID(ANodeID) then
@@ -2239,7 +2234,7 @@ begin
     begin
       // Another node used our Alias, stop using this Alias, log out and allocate a new node and relog in
       ReleaseAlias(100);
-      Relogin;
+      Login(NULL_NODE_ID, False);
       Result := True;   // Logout covers any LccNode logoffs, so don't call ancester Process Message
     end
   end;
@@ -2311,27 +2306,6 @@ begin
 
   Seed[1] := (Seed[1] and $00FFFFFF) or (Seed[0] and $FF000000) shr 24;   // Handle the carries of the lower 24 bits into the upper
   Seed[0] := Seed[0] and $00FFFFFF;
-end;
-
-procedure TLccNode.Relogin;
-var
-  Temp: TNodeID;
-begin
-  // Typically due to an alias conflict to create a new one
-  Temp := FSeedNodeID;
-  GenerateNewSeed(Temp);
-  FSeedNodeID := Temp;
-  FAliasID := GenerateID_Alias_From_Seed(Temp);
-  WorkerMessage.LoadCID(NodeID, AliasID, 0);
-  SendMessage(WorkerMessage);
-  WorkerMessage.LoadCID(NodeID, AliasID, 1);
-  SendMessage(WorkerMessage);
-  WorkerMessage.LoadCID(NodeID, AliasID, 2);
-  SendMessage(WorkerMessage);
-  WorkerMessage.LoadCID(NodeID, AliasID, 3);
-  SendMessage(WorkerMessage);
-
-  LoginTimoutCounter := 0;
 end;
 
 {
@@ -2452,22 +2426,32 @@ begin
   Result := NodeIDToString(NodeID, WithDots);
 end;
 
-procedure TLccNode.Login(ANodeID: TNodeID);
+procedure TLccNode.Login(ANodeID: TNodeID; InitialLogIn: Boolean);
 var
   Temp: TNodeID;
 begin
-  Enabled := True;
+  LogInEngineEnabled := True;
 
   if (Owner as TLccNodeManager).EmulateCanNetworkLogin then
   begin
     BeforeLogin;
-    if NullNodeID(ANodeID) then
-      CreateNodeID(ANodeID);
-    SeedNodeID := ANodeID;
-    Temp := FSeedNodeID;
+
+    if InitialLogIn then
+    begin
+      if NullNodeID(ANodeID) then
+        CreateNodeID(ANodeID);
+      SeedNodeID := ANodeID;
+      Temp := FSeedNodeID;
+      ((Owner as TLccNodeManager) as INodeManagerCallbacks).DoNodeIDChanged(Self);
+      FNodeID := ANodeID;
+    end else
+    begin
+      // Typically due to an alias conflict to create a new one
+      Temp := FSeedNodeID;
+      GenerateNewSeed(Temp);
+      FSeedNodeID := Temp;
+    end;
     FAliasID := GenerateID_Alias_From_Seed(Temp);
-    ((Owner as TLccNodeManager) as INodeManagerCallbacks).DoNodeIDChanged(Self);
-    FNodeID := ANodeID;
 
     WorkerMessage.LoadCID(NodeID, AliasID, 0);
     SendMessage(WorkerMessage);
@@ -2479,6 +2463,7 @@ begin
     SendMessage(WorkerMessage);
 
     LoginTimoutCounter := 0;
+
   end else
   begin
     BeforeLogIn;
@@ -2501,7 +2486,7 @@ begin
       AliasServer.RemoveMapping(AliasID, True);
       ((Owner as TLccNodeManager) as INodeManagerCallbacks).DoAliasRelease(Self);
       FAliasID := 0;
-      Enabled := False; // must call LogIn again to reenable
+      LogInEngineEnabled := False; // must call LogIn again to reenable
     end;
     DatagramResendQueue.Clear;
     FInitialized := False;
@@ -2514,7 +2499,7 @@ var
 begin
   if (Owner as TLccNodeManager).EmulateCanNetworkLogin then
   begin
-    if Enabled then
+    if LogInEngineEnabled then
     begin
     if not Permitted then
       begin
@@ -2665,7 +2650,9 @@ begin
 end;
 
 initialization
+  {$IFNDEF PYTHON_SCRIPT_COMPATIBLE}
   Randomize;
+  {$ENDIF}
 
 finalization
 

@@ -335,8 +335,6 @@ end;
 
 initialization
   AliasServer := TLccAliasServer.Create;
-  // To Run the Python Scripts
-  AliasServer.AddMapping( StrToNodeID('01.02.03.04.05.06', True), $AAA, True);
 
 finalization;
   FreeAndNil(AliasServer);

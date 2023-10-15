@@ -72,21 +72,27 @@ type
   private
     FErrorOnExit: Boolean;
     FOwnerConnectionManager: TLccConnectionThreadManager;
-    FReceiveStream: TMemoryStream;
     FRunning: Boolean;
     FSendMessageBuffer: Classes.TThreadList;
     FSendMessageStream: TMemoryStream;
     function GetIsTerminated: Boolean;
 
   protected
+    FReceiveBuffer: TLccDynamicByteArray;
+    FReceiveBufferSize: Int64;
+    FSendBuffer: TLccDynamicByteArray;
+    FSendBufferSize: Int64;
+
     procedure ConnectionStateChangePossiblyThroughSyncronize; virtual;
 
-    function LoadStreamFromMessageBuffer(AStream: TStream; AMessageBuffer: Classes.TThreadList; ClearBuffer: Boolean = True): Boolean; virtual;
+    function LoadBufferFromMessageBuffer(var ABuffer: TLccDynamicByteArray; var ABufferSize: Int64; AMessageBuffer: Classes.TThreadList; ClearBuffer: Boolean = True): Boolean; virtual;
     procedure SendMessage(ALccMessage: TLccMessage); virtual;
 
-    property ReceiveStream: TMemoryStream read FReceiveStream write FReceiveStream;
+    property ReceiveBuffer: TLccDynamicByteArray read FReceiveBuffer write FReceiveBuffer;
+    property ReceiveBufferSize: Int64 read FReceiveBufferSize write FReceiveBufferSize;
+    property SendBuffer: TLccDynamicByteArray read FSendBuffer write FSendBuffer;
+    property SendBufferSize: Int64 read FReceiveBufferSize write FSendBufferSize;
     property SendMessageBuffer: Classes.TThreadList read FSendMessageBuffer write FSendMessageBuffer;
-    property SendMessageStream: TMemoryStream read FSendMessageStream write FSendMessageStream;
     property Running: Boolean read FRunning write FRunning;
 
   public
@@ -200,7 +206,7 @@ type
 
     // Closes and frees the Servers
     procedure ClearServerList;
-    procedure SendLccMessageToOtherManagers(ALccMessage: TLccMessage);
+    procedure SendLccMessageToThreadManagers(ALccMessage: TLccMessage);
 
   public
     constructor Create(AOwner: TComponent); override;
@@ -283,7 +289,7 @@ begin
   end;
 end;
 
-procedure TLccConnectionFactory.SendLccMessageToOtherManagers(ALccMessage: TLccMessage);
+procedure TLccConnectionFactory.SendLccMessageToThreadManagers(ALccMessage: TLccMessage);
 var
   i: Integer;
   List: TList;
@@ -337,8 +343,8 @@ end;
 
 procedure TLccConnectionFactory.SendLccMessage(ALccMessage: TLccMessage);
 begin
-  DoSendLccMessage(ALccMessage);
-  SendLccMessageToOtherManagers(ALccMessage);
+  DoSendLccMessage(ALccMessage);   // Event handler to allow application to see the messages sent
+  SendLccMessageToThreadManagers(ALccMessage);
 
   // This will send the message back to other virtual nodes.
   AliasServerThread.DispatchProcessedMessageCallback(ALccMessage);
@@ -508,7 +514,8 @@ begin
   FOwnerConnectionManager := AnOwner;
   FSendMessageBuffer := Classes.TThreadList.Create;
   FSendMessageStream := TMemoryStream.Create;
-  FReceiveStream := TMemoryStream.Create;
+  FReceiveBuffer := nil;
+  FReceiveBufferSize := 0;
 end;
 
 destructor TLccConnectionThread.Destroy;
@@ -516,7 +523,6 @@ begin
   ClearSendMessageBuffer;
   FreeAndNil(FSendMessageBuffer);
   FreeAndNil(FSendMessageStream);
-  FreeAndNil(FReceiveStream);
   inherited Destroy;
 end;
 
@@ -595,48 +601,54 @@ begin
   end;
 end;
 
-function TLccConnectionThread.LoadStreamFromMessageBuffer(AStream: TStream; AMessageBuffer: Classes.TThreadList; ClearBuffer: Boolean): Boolean;
+function TLccConnectionThread.LoadBufferFromMessageBuffer(
+  var ABuffer: TLccDynamicByteArray; var ABufferSize: Int64;
+  AMessageBuffer: Classes.TThreadList; ClearBuffer: Boolean): Boolean;
 var
   MessageList: TList;
-  i: Integer;
-  DynamicByteArray: TLccDynamicByteArray;
-  IntStreamPos: Int64;
+  iMessage, iByte: Integer;
   MessageString: AnsiString;
-  P: PAnsiChar;
+//  DynamicByteArray: TLccDynamicByteArray;
 begin
-  IntStreamPos := AStream.Position;
-
   MessageList := AMessageBuffer.LockList;
   try
     if OwnerConnectionManager.EmulateCanBus then
     begin
-      for i := 0 to MessageList.Count - 1 do
+      ABufferSize := 0;
+
+      for iMessage := 0 to MessageList.Count - 1 do
       begin
-        MessageString := TLccMessage( MessageList[i]).ConvertToGridConnectStr(#10, False) + #10;
-        P := @MessageString[1];
-        AStream.Write( P^, Length(MessageString));
+        MessageString := TLccMessage( MessageList[iMessage]).ConvertToGridConnectStr(#10, False) + #10;
+
+        if Length(ABuffer) < ABufferSize + Length(MessageString) then
+          SetLength(ABuffer, Length(ABuffer) + 1024);
+
+        for iByte := 0 to Length(MessageString) - 1 do
+          ABuffer[iByte + ABufferSize] := Ord(MessageString[iByte + 1]);
+
+        ABufferSize := ABufferSize + Length(MessageString);
       end;
     end else
     begin
-      DynamicByteArray := nil;
-      for i := 0 to MessageList.Count - 1 do
+      for iMessage := 0 to MessageList.Count - 1 do
       begin
-        if TLccMessage( MessageList[i]).ConvertToLccTcp(DynamicByteArray) then
-          AStream.Write(DynamicByteArray, Length(DynamicByteArray));
+        // TODO
+     {   if TLccMessage( MessageList[iMessage]).ConvertToLccTcp(DynamicByteArray) then
+          AStream.Write(DynamicByteArray, Length(DynamicByteArray));  }
       end;
     end;
   finally
     if ClearBuffer then
     begin
       try
-        for i := 0 to MessageList.Count - 1 do
-          TObject( MessageList[i]).Free;
+        for iMessage := 0 to MessageList.Count - 1 do
+          TObject( MessageList[iMessage]).Free;
       finally
         MessageList.Clear;
       end;
     end;
     AMessageBuffer.UnlockList;
-    Result := AStream.Position > IntStreamPos;   // Did it write anything?
+    Result := ABufferSize > 0;   // Did it write anything?
   end;
 end;
 

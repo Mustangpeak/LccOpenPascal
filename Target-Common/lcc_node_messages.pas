@@ -93,8 +93,10 @@ type
 TLccMessage = class
 private
   FAbandonCount: Integer;                   // If the message is being held for some reason (CAN multi frame assembly, waiting for AME to aquire the Alias, etc) this is used to see how long it has been alive and when to decide it has been abandon and should be freed
+  FAssociatedNode: TObject;
   FCAN_FramingBits: Byte;                   // Bottom 2 bits, upper nibble of the Destination alias
   FCAN_MTI: DWord;                          // WARNING:  This MTI is shifted Left by 2 Bytes where the Source Address Was!!!!!!  CAN encoded MTI
+  FCheckNodeIDsBeforeDelivery: Boolean;
   FConnectionThread: TObject;
   FDestAlias: Word;
   FIsCAN: Boolean;                          // The message is a CAN link message which typically needs special handling
@@ -134,7 +136,9 @@ public
   property SourceAlias: Word read FSourceAlias write FSourceAlias;
   property SourceID: TNodeID read FSourceID write FSourceID;
 
-  property ConnectionThread: TObject read FConnectionThread write FConnectionThread; // TLccConnectionThread that created this message, can get the Manager through the ConnectionThread.OwnerConnectionThreadManager
+  property ConnectionThread: TObject read FConnectionThread write FConnectionThread; // TLccConnectionThread that created and received this message, can get the Manager through the ConnectionThread.OwnerConnectionThreadManager
+  property AssociatedNode: TObject read FAssociatedNode write FAssociatedNode; // TLccNode that created and is sending this message
+  property CheckNodeIDsBeforeDelivery: Boolean read FCheckNodeIDsBeforeDelivery write FCheckNodeIDsBeforeDelivery; // This to deal with sending messages look at TLccNodeManager.ReceiveMessage(ALccMessage: TLccMessage);  to understand its use
 
   constructor Create;
   destructor Destroy; override;
@@ -292,6 +296,9 @@ end;
 
 
 function MessageToDetailedMessage(AMessage: TLccMessage): String;
+
+var
+  LccMessagesAllocated: Integer = 0;
 
 implementation
 
@@ -815,6 +822,7 @@ begin
   Result.RetryAttemptsDatagram := 0;
   Result.AbandonCount := 0;
   Result.ConnectionThread := FConnectionThread;
+  Result.CheckNodeIDsBeforeDelivery := FCheckNodeIDsBeforeDelivery;
 end;
 
 procedure TLccMessage.InsertNodeID(StartIndex: Integer; var ANodeID: TNodeID);
@@ -876,10 +884,12 @@ end;
 constructor TLccMessage.Create;
 begin
   inherited Create;
+  Inc(LccMessagesAllocated);
 end;
 
 destructor TLccMessage.Destroy;
 begin
+  Dec(LccMessagesAllocated);
   inherited Destroy;
 end;
 
@@ -1291,6 +1301,12 @@ begin
       end;
     end;
   end;
+
+  // Strip off any terminating New Line characters
+  if Length(Result) > 1 then
+    if Result[Length(Result)] = #10 then
+      SetLength(Result, Length(Result) - 1);
+
   Result := UpperCase(Result);
 end;
 
@@ -1401,6 +1417,7 @@ begin
   TargetMessage.FAbandonCount := 0;
   TargetMessage.FRetryAttemptsDatagram := 0;
   TargetMessage.FConnectionThread := FConnectionThread;
+  TargetMessage.FCheckNodeIDsBeforeDelivery := FCheckNodeIDsBeforeDelivery;
 end;
 
 function TLccMessage.DestinationMatchs(TestAliasID: Word; TestNodeID: TNodeID): Boolean;
@@ -1417,6 +1434,8 @@ var
   LocalNodeID: TNodeID;
 begin
   Result := True;
+
+  {$IFNDEF PYTHON_SCRIPT_COMPATIBLE}
 
   AliasMapping := ValidateByAlias(RequestMappingCallback, SourceAlias);
   if Assigned(AliasMapping) then
@@ -1478,6 +1497,8 @@ begin
         end;
       end;
   end;
+
+  {$ENDIF}
 end;
 
 function TLccMessage.ValidateByNodeID(RequestMappingCallback: TLccMessageRequestMappingCallback; ANodeID: TNodeID): TLccAliasMapping;

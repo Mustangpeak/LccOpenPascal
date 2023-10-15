@@ -422,10 +422,6 @@ begin
   AddressStart := LccMessage.ExtractDataBytesAsInt(2, 5);     // Pull out the AddressStart
   AddressStart := AddressStart + MemOffset;
 
-
-  if BytesToRead = 8 then
-    beep;
-
   if BytesToRead > 64 then
   begin
     Result := ERROR_TEMPORARY_INVALID_ARGUMENTS;

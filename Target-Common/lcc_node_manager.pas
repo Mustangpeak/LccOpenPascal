@@ -431,12 +431,38 @@ procedure TLccNodeManager.ReceiveMessage(ALccMessage: TLccMessage);
 var
   i: Integer;
 begin
-  // This is called from the AliasServerThread from incoming connection and the Connection Factory which relays Sent Messages back through here to
-  // dispatch to other virtual nodes so we need to make sure we don't send the message back to the node
-  // that initially sent it.
+  // This is called from the AliasServerThread from incoming connections and also the Connection Factory
+  // which relays Sent Messages back through here to dispatch to other virtual nodes so we need to make
+  // sure we don't send the message back to the node that initially sent it.
+  //
+  // Can not just check the alias because it will bypass an Alias Conflict if anyother node uses our Alias so
+  // we have to check for how not to sent back on our own nodes ourselves.
+  //
+  // Sometimes a message does not originate from a node direction.  Example is during GridConnect receive decode and/or AliasMapping requests the
+  // message needs and error reply and I have all the information I need in the message to turn it around and send it out.
+  // CheckNodeIDsBeforeDelivery gives us a way to tell this dispatcher if we should not send the message to the node (which
+  // would cause a duplicate NodeID error because we are using the nodes IDs without it know about it and able to set the
+  // AssociatedNode field.  Would could search and find the right node and set it but that is complex).
+  //
   for i := 0 to Nodes.Count - 1 do
   begin
-    if not EqualNodeID(Node[i].NodeID, ALccMessage.SourceID, False) then
+    if Assigned(ALccMessage.AssociatedNode) then
+    begin
+      if ALccMessage.AssociatedNode <> Node[i] then   // If the message originiated from an internal node don't send the message back to it
+        Node[i].ProcessMessage(ALccMessage)
+    end else
+    if ALccMessage.CheckNodeIDsBeforeDelivery then
+    begin
+      if EmulateCanNetworkLogin then
+      begin
+        if (ALccMessage.SourceAlias <> Node[i].AliasID) then
+          Node[i].ProcessMessage(ALccMessage);
+      end else
+      begin
+        if not EqualNodeID(ALccMessage.SourceID, Node[i].NodeID, False) then
+          Node[i].ProcessMessage(ALccMessage);
+      end;
+    end else
       Node[i].ProcessMessage(ALccMessage);
   end;
 end;
@@ -665,6 +691,7 @@ begin
     begin
       ALccMessage.SourceAlias := Node[0].AliasID;
       ALccMessage.SourceID := Node[0].NodeID;
+      ALccMessage.AssociatedNode := Node[0];
     end else
       Exit;
   end;

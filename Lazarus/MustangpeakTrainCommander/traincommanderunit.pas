@@ -37,6 +37,8 @@ type
 
   TFormTrainCommander = class(TForm)
     Button1: TButton;
+    ButtonLiveMessages: TButton;
+    ButtonDatagramQueue: TButton;
     ButtonGridConnectStrClear: TButton;
     ButtonCreateConsist: TButton;
     ButtonHTTPServer: TButton;
@@ -66,9 +68,6 @@ type
     PanelTrains: TPanel;
     PanelConnections: TPanel;
     PanelDetails: TPanel;
-    SpeedButton1: TSpeedButton;
-    SpeedButton2: TSpeedButton;
-    SpeedButton3: TSpeedButton;
     SplitterConnections1: TSplitter;
     SplitterTrains: TSplitter;
     SplitterConnections: TSplitter;
@@ -76,6 +75,8 @@ type
     ToggleBoxServerForm: TToggleBox;
     TreeViewTrains: TTreeView;
     procedure Button1Click(Sender: TObject);
+    procedure ButtonLiveMessagesClick(Sender: TObject);
+    procedure ButtonDatagramQueueClick(Sender: TObject);
     procedure ButtonCreateConsistClick(Sender: TObject);
     procedure ButtonGridConnectStrClearClick(Sender: TObject);
     procedure ButtonHTTPServerClick(Sender: TObject);
@@ -89,9 +90,6 @@ type
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure FormShow(Sender: TObject);
-    procedure SpeedButton1Click(Sender: TObject);
-    procedure SpeedButton2Click(Sender: TObject);
-    procedure SpeedButton3Click(Sender: TObject);
     procedure ToggleBoxServerFormChange(Sender: TObject);
   private
     FAutoCreateTrainAddress: Word;
@@ -176,6 +174,19 @@ begin
     Inc(FAutoCreateTrainAddress);
     Train.Login(NULL_NODE_ID);
   end;
+end;
+
+procedure TFormTrainCommander.ButtonLiveMessagesClick(Sender: TObject);
+begin
+  ButtonLiveMessages.Caption := 'Live Messages: ' + IntToStr(LccMessagesAllocated);
+end;
+
+procedure TFormTrainCommander.ButtonDatagramQueueClick(Sender: TObject);
+begin
+  if Assigned(CommandStationNode) then
+    ButtonDatagramQueue.Caption := 'Datagram Queue: ' + IntToStr(CommandStationNode.DatagramResendQueue.Count)
+  else
+   ButtonDatagramQueue.Caption := 'No CommandStationNode';
 end;
 
 procedure TFormTrainCommander.ButtonCreateConsistClick(Sender: TObject);
@@ -296,6 +307,9 @@ begin
 
       MemoLog.SelStart := Length(MemoLog.Lines.Text);
     finally
+      if MemoLog.Lines.Count > 200 then
+        MemoLog.Lines.Delete(0);
+
       MemoLog.Lines.EndUpdate;
     end;
   end;
@@ -309,6 +323,9 @@ begin
     MemoRawGridConnectReceive.Lines.Add('R: ' + AGridConnectStr);
     MemoRawGridConnectReceive.SelStart := Length( MemoRawGridConnectReceive.Text);
   finally
+    if MemoRawGridConnectReceive.Lines.Count > 200 then
+      MemoRawGridConnectReceive.Lines.Delete(0);
+
     MemoRawGridConnectReceive.Lines.EndUpdate;
   end;
 end;
@@ -363,6 +380,8 @@ begin
       end;
       MemoLog.SelStart := Length(MemoLog.Lines.Text);
     finally
+      if MemoLog.Lines.Count > 200 then
+        MemoLog.Lines.Delete(0);
       MemoLog.Lines.EndUpdate;
     end;
   end;
@@ -644,133 +663,6 @@ begin
   ComboBoxComPorts.Items.Delimiter := ';';
   ComboBoxComPorts.Items.DelimitedText := StringReplace(GetSerialPortNames, ',', ';', [rfReplaceAll, rfIgnoreCase]);
   ComboBoxComPorts.ItemIndex := 0;
-end;
-
-procedure TFormTrainCommander.SpeedButton1Click(Sender: TObject);
-var
-  AValue, Size, Result_: Integer;
-  Hex, Temp: string;
-  CharPtr: PChar;
-  B: Byte;
-  StartIndex, i: Integer;
-  MemoryStream: TMemoryStream;
-begin
-  AValue := 567;
-  Size := 2;
-
-
-  MemoryStream := TMemoryStream.Create;
-
-
-  MemoryStream.Clear;
-
-  Hex := IntToHex(AValue, Size * 2);
-
-  {$IFDEF LCC_MOBILE}
-  StartIndex := 0;
-  {$ELSE}
-  StartIndex := 1;
-  {$ENDIF}
-  CharPtr := @Hex[StartIndex];
-
-  for i := 0 to Size - 1 do
-  begin
-    Temp := '';
-    Temp := CharPtr^;
-    Inc(CharPtr);
-    Temp := Temp + CharPtr^;
-    Inc(CharPtr);
-    B := StrToInt('$' + Temp);
-    MemoryStream.Write(B, SizeOf(B));
-  end;
-
-  // Reset for use
-  MemoryStream.Position := 0;
-
-
-  // Undo
-  MemoryStream.Position := 0;
-
-  Temp := '';
-  for i := 0 to MemoryStream.Size - 1 do
-  begin
-    B := 0;
-    MemoryStream.Read(B, SizeOf(B));
-    Hex := IntToHex(B, 2);
-    Temp := Temp + Hex;
-  end;
-
-  if not TryStrToInt('$' + Temp, Result_) then
-    Result_ := 0;
-
-  // Reset for use
-  MemoryStream.Position := 0;
-
-
-  MemoryStream.Free;
-end;
-
-procedure TFormTrainCommander.SpeedButton2Click(Sender: TObject);
-var
-  EventIDStr, Temp, Hex: AnsiString;
-  StartIndex, i: Integer;
-  CharPtr: PAnsiChar;
-  B: Byte;
-  MemoryStream: TMemoryStream;
-  AValue: TEventID;
-begin
-  MemoryStream := TMemoryStream.Create;
-
-  AValue := EVENT_IS_TRAIN;
-
-  MemoryStream.Position := 0;
-
-  EventIDStr := EventIDToString(AValue, False);
-
-  {$IFDEF LCC_MOBILE}
-  StartIndex := 0;
-  {$ELSE}
-  StartIndex := 1;
-  {$ENDIF}
-  CharPtr := @EventIDStr[StartIndex];
-
-  // Implicit 8 Bytes
-  for i := 0 to 7 do
-  begin
-    Temp := '';
-    Temp := CharPtr^;
-    Inc(CharPtr);
-    Temp := Temp + CharPtr^;
-    Inc(CharPtr);
-    B := StrToInt('$' + Temp);
-    MemoryStream.Write(B, SizeOf(B));
-  end;
-
-  // Reset for use
-  MemoryStream.Position := 0;
-
-
-  // Read it back
-  MemoryStream.Position := 0;
-
-  Temp := '';
-  for i := 0 to MemoryStream.Size - 1 do
-  begin
-    B := 0;
-    MemoryStream.Read(B, SizeOf(B));
-    Hex := IntToHex(B, 2);
-    Temp := Temp + Hex;
-  end;
-
-  // Reset for use
-  MemoryStream.Position := 0;
-
-  MemoryStream.Free;
-end;
-
-procedure TFormTrainCommander.SpeedButton3Click(Sender: TObject);
-begin
-  SpeedButton3.Caption := 'Datagram: ' + IntToStr(CommandStationNode.DatagramResendQueue.Count);
 end;
 
 procedure TFormTrainCommander.OnNodeManagerAliasIDChanged(Sender: TObject; LccSourceNode: TLccNode);

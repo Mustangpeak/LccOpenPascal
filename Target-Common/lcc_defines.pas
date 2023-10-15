@@ -223,10 +223,8 @@ const
   MTI_CAN_SIMPLE_TRAIN_INFO_REQUEST      = $09DA8000;                                // Databytes = Destination Alias
   MTI_CAN_SIMPLE_TRAIN_INFO_REPLY        = $099C8000;                                // Databytes = Destination Alias, ACDI Data
 
-  MTI_CAN_TRACTION_PROTOCOL              = $095EB000;                                // Databyte = depends
-//  MTI_CAN_TRACTION_PROXY_PROTOCOL        = $091EA000;
+  MTI_CAN_TRACTION_PROTOCOL              = $095EB000;                                // Databyte = depends;
   MTI_CAN_TRACTION_REPLY                 = $091E9000;                                // Databyte = depends
-//  MTI_CAN_TRACTION_PROXY_REPLY           = $091E8000;
 
   MTI_CAN_STREAM_INIT_REQUEST            = $09CC8000;
   MTI_CAN_STREAM_INIT_REPLY              = $09868000;
