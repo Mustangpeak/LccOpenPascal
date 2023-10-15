@@ -23,6 +23,7 @@ uses
   servervisualunit,
   lcc_train_server,
   lcc_utilities,
+  lcc_node_messages_can_assembler_disassembler,
   lcc_alias_server_thread;
  // lcc_syn_ethenet_server;
   //lcc_syn_ethenet_client;
@@ -37,6 +38,7 @@ type
 
   TFormTrainCommander = class(TForm)
     Button1: TButton;
+    ButtonMsgAssemberlDatagramMsg: TButton;
     ButtonLiveMessages: TButton;
     ButtonDatagramQueue: TButton;
     ButtonGridConnectStrClear: TButton;
@@ -47,7 +49,6 @@ type
     ButtonTrainsClear: TButton;
     ButtonClear: TButton;
     ButtonEthernetConnect: TButton;
-    CheckBox1: TCheckBox;
     CheckBoxDetailedLog: TCheckBox;
     CheckBoxLogMessages: TCheckBox;
     CheckBoxLoopBackIP: TCheckBox;
@@ -80,12 +81,12 @@ type
     procedure ButtonCreateConsistClick(Sender: TObject);
     procedure ButtonGridConnectStrClearClick(Sender: TObject);
     procedure ButtonHTTPServerClick(Sender: TObject);
+    procedure ButtonMsgAssemberlDatagramMsgClick(Sender: TObject);
     procedure ButtonWebserverConnectClick(Sender: TObject);
     procedure ButtonManualConnectComPortClick(Sender: TObject);
     procedure ButtonClearClick(Sender: TObject);
     procedure ButtonEthernetConnectClick(Sender: TObject);
     procedure ButtonTrainsReleaseAliasClick(Sender: TObject);
-    procedure CheckBox1Change(Sender: TObject);
     procedure FormCloseQuery(Sender: TObject; var CanClose: boolean);
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
@@ -163,6 +164,11 @@ begin
  //   LccHTTPServer.OpenConnection;
 end;
 
+procedure TFormTrainCommander.ButtonMsgAssemberlDatagramMsgClick(Sender: TObject);
+begin
+  ButtonMsgAssemberlDatagramMsg.Caption := 'Msg Assember Datagram: ' + IntToStr(AllocatedDatagrams);
+end;
+
 procedure TFormTrainCommander.Button1Click(Sender: TObject);
 var
   i: Integer;
@@ -184,7 +190,7 @@ end;
 procedure TFormTrainCommander.ButtonDatagramQueueClick(Sender: TObject);
 begin
   if Assigned(CommandStationNode) then
-    ButtonDatagramQueue.Caption := 'Datagram Queue: ' + IntToStr(CommandStationNode.DatagramResendQueue.Count)
+    ButtonDatagramQueue.Caption := 'CS Resend Datagram Queue: ' + IntToStr(CommandStationNode.DatagramResendQueue.Count)
   else
    ButtonDatagramQueue.Caption := 'No CommandStationNode';
 end;
@@ -253,17 +259,6 @@ end;
 procedure TFormTrainCommander.ButtonTrainsReleaseAliasClick(Sender: TObject);
 begin
   ReleaseAliasOnTrains
-end;
-
-procedure TFormTrainCommander.CheckBox1Change(Sender: TObject);
-begin
-  if CheckBox1.Checked then
-  begin
-    Max_Allowed_Buffers := 1;
-  end else
-  begin
-    Max_Allowed_Buffers := 2048;
-  end;
 end;
 
 procedure TFormTrainCommander.OnServerManagerReceiveMessage(Sender: TObject;
@@ -641,8 +636,6 @@ begin
   // THIS IS A HACK TO MAKE THE CONNECTION....FIGURE OUT HOW TO DO THIS CLEANER
   AliasServerThread.ReceivedMessageCallback := @ConnectionFactory.ReceiveMessageCallbackHack;
 
-
-  Max_Allowed_Buffers := 1;
   AutoCreateTrainAddress := 1;
 
   FWorkerMessage := TLccMessage.Create;

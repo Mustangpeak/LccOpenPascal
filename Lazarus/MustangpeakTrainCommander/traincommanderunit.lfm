@@ -1,12 +1,12 @@
 object FormTrainCommander: TFormTrainCommander
-  Left = 50
+  Left = 117
   Height = 563
-  Top = 171
-  Width = 1365
+  Top = 226
+  Width = 1289
   Align = alBottom
   Caption = 'Train Commander [LccOpenPascal]'
   ClientHeight = 563
-  ClientWidth = 1365
+  ClientWidth = 1289
   OnCloseQuery = FormCloseQuery
   OnCreate = FormCreate
   OnDestroy = FormDestroy
@@ -16,10 +16,10 @@ object FormTrainCommander: TFormTrainCommander
     Left = 0
     Height = 96
     Top = 0
-    Width = 1365
+    Width = 1289
     Align = alTop
     ClientHeight = 96
-    ClientWidth = 1365
+    ClientWidth = 1289
     TabOrder = 0
     object CheckBoxAutoConnect: TCheckBox
       Left = 192
@@ -39,10 +39,10 @@ object FormTrainCommander: TFormTrainCommander
       TabOrder = 1
     end
     object ButtonClear: TButton
-      Left = 763
+      Left = 648
       Height = 23
-      Top = 72
-      Width = 104
+      Top = 64
+      Width = 152
       Caption = 'Clear'
       OnClick = ButtonClearClick
       TabOrder = 2
@@ -129,7 +129,7 @@ object FormTrainCommander: TFormTrainCommander
       TabOrder = 7
     end
     object ButtonWebserverConnect: TButton
-      Left = 672
+      Left = 648
       Height = 23
       Top = 32
       Width = 152
@@ -138,76 +138,74 @@ object FormTrainCommander: TFormTrainCommander
       TabOrder = 8
     end
     object ButtonHTTPServer: TButton
-      Left = 672
+      Left = 648
       Height = 22
-      Top = 8
+      Top = 9
       Width = 147
       Caption = 'HTTP Connect'
       OnClick = ButtonHTTPServerClick
       TabOrder = 9
     end
-    object CheckBox1: TCheckBox
-      Left = 896
-      Height = 18
-      Top = 11
-      Width = 175
-      Caption = 'Allow Python Script To Run'
-      Checked = True
-      OnChange = CheckBox1Change
-      State = cbChecked
-      TabOrder = 10
-    end
     object ToggleBoxServerForm: TToggleBox
-      Left = 512
+      Left = 488
       Height = 25
       Top = 8
       Width = 147
       Caption = 'Show Server Form'
       OnChange = ToggleBoxServerFormChange
-      TabOrder = 11
+      TabOrder = 10
     end
     object Button1: TButton
-      Left = 904
+      Left = 1064
       Height = 25
-      Top = 38
+      Top = 6
       Width = 120
       Caption = 'Create Trains'
       OnClick = Button1Click
-      TabOrder = 12
+      TabOrder = 11
     end
     object Edit1: TEdit
-      Left = 1032
+      Left = 1192
       Height = 22
-      Top = 41
+      Top = 8
       Width = 80
-      TabOrder = 13
+      TabOrder = 12
       Text = '1'
     end
     object ButtonCreateConsist: TButton
-      Left = 904
+      Left = 1064
       Height = 25
-      Top = 65
+      Top = 34
       Width = 208
       Caption = 'Create a Consist from Selected'
       OnClick = ButtonCreateConsistClick
-      TabOrder = 14
+      TabOrder = 13
     end
     object ButtonLiveMessages: TButton
-      Left = 1136
+      Left = 808
       Height = 25
       Top = 8
-      Width = 218
+      Width = 248
       Caption = 'Live Messages: '
       OnClick = ButtonLiveMessagesClick
-      TabOrder = 15
+      TabOrder = 14
     end
     object ButtonDatagramQueue: TButton
-      Left = 1136
+      Left = 808
       Height = 25
-      Top = 32
-      Width = 216
-      Caption = 'Datagram Queue:'
+      Top = 34
+      Width = 248
+      Caption = 'CS Resend Datagram Queue:'
       OnClick = ButtonDatagramQueueClick
+      TabOrder = 15
+    end
+    object ButtonMsgAssemberlDatagramMsg: TButton
+      Left = 808
+      Height = 25
+      Top = 64
+      Width = 248
+      Caption = 'Msg Assember Datagram:'
+      OnClick = ButtonMsgAssemberlDatagramMsgClick
       TabOrder = 16
     end
   end
@@ -215,10 +213,10 @@ object FormTrainCommander: TFormTrainCommander
     Left = 0
     Height = 102
     Top = 443
-    Width = 1365
+    Width = 1289
     Align = alBottom
     ClientHeight = 102
-    ClientWidth = 1365
+    ClientWidth = 1289
     TabOrder = 1
     object ListviewConnections: TListView
       Left = 1
@@ -241,14 +239,14 @@ object FormTrainCommander: TFormTrainCommander
       Left = 512
       Height = 100
       Top = 1
-      Width = 852
+      Width = 776
       Align = alClient
       Caption = 'Panel1'
       ClientHeight = 100
-      ClientWidth = 852
+      ClientWidth = 776
       TabOrder = 1
       object MemoRawGridConnectReceive: TMemo
-        Left = 189
+        Left = 113
         Height = 98
         Top = 1
         Width = 662
@@ -271,7 +269,7 @@ object FormTrainCommander: TFormTrainCommander
     Left = 0
     Height = 9
     Top = 335
-    Width = 1365
+    Width = 1289
     Align = alBottom
     ResizeAnchor = akBottom
   end
@@ -285,7 +283,7 @@ object FormTrainCommander: TFormTrainCommander
     Left = 0
     Height = 18
     Top = 545
-    Width = 1365
+    Width = 1289
     Panels = <    
       item
         Width = 420
@@ -351,7 +349,7 @@ object FormTrainCommander: TFormTrainCommander
     Left = 272
     Height = 239
     Top = 96
-    Width = 1093
+    Width = 1017
     Align = alClient
     ScrollBars = ssVertical
     TabOrder = 6
@@ -360,7 +358,7 @@ object FormTrainCommander: TFormTrainCommander
     Left = 0
     Height = 90
     Top = 344
-    Width = 1365
+    Width = 1289
     Align = alBottom
     Lines.Strings = (
       'MemoComPort'
@@ -373,7 +371,7 @@ object FormTrainCommander: TFormTrainCommander
     Left = 0
     Height = 9
     Top = 434
-    Width = 1365
+    Width = 1289
     Align = alBottom
     ResizeAnchor = akBottom
   end

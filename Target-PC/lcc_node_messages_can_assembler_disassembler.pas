@@ -221,7 +221,7 @@ begin                                                                           
             if Assigned(InProcessMessage) then
               Remove(InProcessMessage, True)                                         // Something is wrong, out of order.  Throw it away
             else begin
-              if AllocatedDatagrams < Max_Allowed_Buffers then
+              if AllocatedDatagrams < MAX_ALLOWED_BUFFERS then
               begin
                 LccMessage.IsCAN := False;
                 LccMessage.MTI := MTI_DATAGRAM;
@@ -229,7 +229,7 @@ begin                                                                           
               end else
               begin
                 LccMessage.LoadDatagramRejected(LccMessage.DestID, LccMessage.DestAlias, LccMessage.SourceID, LccMessage.SourceAlias, ERROR_TEMPORARY_BUFFER_UNAVAILABLE);
-                LccMessage.CheckNodeIDsBeforeDelivery := True;
+                LccMessage.CheckNodeIDsBeforeDelivery := True;   // Don't dispatch this message back to the target node
                 Result := imgcr_ErrorToSend
               end;
             end;
@@ -240,12 +240,12 @@ begin                                                                           
             if Assigned(InProcessMessage) then
             begin
               LccMessage.LoadDatagramRejected(LccMessage.DestID, LccMessage.DestAlias, LccMessage.SourceID, LccMessage.SourceAlias, ERROR_TEMPORARY_NOT_EXPECTED or ERROR_NO_END_FRAME);
-              LccMessage.CheckNodeIDsBeforeDelivery := True;
+              LccMessage.CheckNodeIDsBeforeDelivery := True;  // Don't dispatch this message back to the target node
               Result := imgcr_ErrorToSend;
               Remove(InProcessMessage, True)                                         // Something is wrong, out of order.  Throw it away
             end
             else begin
-              if AllocatedDatagrams < Max_Allowed_Buffers then
+              if AllocatedDatagrams < MAX_ALLOWED_BUFFERS then
               begin
                 InProcessMessage := TLccMessage.Create;
                 InProcessMessage.MTI := MTI_DATAGRAM;
@@ -279,7 +279,7 @@ begin                                                                           
             end else
             begin  // Out of order but let the node handle that if needed, note this could be also if we ran out of buffers....
               LccMessage.LoadDatagramRejected(LccMessage.DestID, LccMessage.DestAlias, LccMessage.SourceID, LccMessage.SourceAlias, ERROR_TEMPORARY_NOT_EXPECTED or ERROR_NO_START_FRAME);
-              LccMessage.CheckNodeIDsBeforeDelivery := True;
+              LccMessage.CheckNodeIDsBeforeDelivery := True; // Don't dispatch this message back to the target node
               Result := imgcr_ErrorToSend
             end;
           end;
@@ -300,6 +300,7 @@ begin                                                                           
                   if Assigned(InProcessMessage) then
                   begin
                     LccMessage.LoadOptionalInteractionRejected(LccMessage.DestID, LccMessage.DestAlias, LccMessage.SourceID, LccMessage.SourceAlias, ERROR_TEMPORARY_NOT_EXPECTED or ERROR_NO_END_FRAME, LccMessage.MTI);
+                    LccMessage.CheckNodeIDsBeforeDelivery := True;   // Don't dispatch this message back to the target node
                     Result := imgcr_ErrorToSend;
                     Remove(InProcessMessage, True)                              // Something is wrong, out of order.  Throw it away
                   end else
@@ -322,6 +323,7 @@ begin                                                                           
                     // Out of order but let the node handle that if needed (Owned Nodes Only)
                     // Don't swap the IDs, need to find the right target node first
                     LccMessage.LoadOptionalInteractionRejected(LccMessage.DestID, LccMessage.DestAlias, LccMessage.SourceID, LccMessage.SourceAlias, ERROR_TEMPORARY_NOT_EXPECTED or ERROR_NO_START_FRAME, LccMessage.MTI);
+                    LccMessage.CheckNodeIDsBeforeDelivery := True;   // Don't dispatch this message back to the target node
                     Result := imgcr_ErrorToSend
                   end;
                 end;

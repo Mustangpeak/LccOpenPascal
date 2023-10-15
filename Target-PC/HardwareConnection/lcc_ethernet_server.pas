@@ -706,12 +706,12 @@ begin
 
         // Not a fan of having it here to block the main connection thread but need to hook into the raw individual messages.
         // after the next call to GridConnectMessageAssembler split up CAN messages will be recombined into a single LCC message
-        if Assigned(OwnerConnectionContextList.OwnerConnectionThread.OwnerConnectionManager.OwnerConnectionFactory.OnLccMessageReceive) then
+   {     if Assigned(OwnerConnectionContextList.OwnerConnectionThread.OwnerConnectionManager.OwnerConnectionFactory.OnLccMessageReceive) then
         begin
           OwnerConnectionContextList.OwnerConnectionThread.OwnerConnectionManager.ReceiveGridConnectString := MessageStr;
           OwnerConnectionContextList.OwnerConnectionThread.Synchronize(OwnerConnectionContextList.OwnerConnectionThread.OwnerConnectionManager.ReceiveGridConnectStrThoughSyncronize);
         end;
-
+    }
         // Message may only be part of a larger string of messages to make up a full LCC message.
         // This call will concatinate these partial Lcc message and return with a fully qualified
         // Lcc message.

@@ -1527,6 +1527,8 @@ begin
   FiTag := 0;
   FCAN_MTI := 0;
   FMTI := 0;
+  FCheckNodeIDsBeforeDelivery := False;
+  FAssociatedNode := nil;
 end;
 
 procedure TLccMessage.LoadCID(ASourceID: TNodeID; ASourceAlias: Word; ACID: Byte);

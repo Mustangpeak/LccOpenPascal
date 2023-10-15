@@ -287,8 +287,8 @@ begin
       for i := 0 to List.Count - 1 do
       begin
 
-        if TLccMessage( List[i]).ConvertToGridConnectStr(#10, false) = ':X194906FFN000000000001;' then
-          beep;
+//        if TLccMessage( List[i]).ConvertToGridConnectStr(#10, false) = ':X194906FFN000000000001;' then
+ //         beep;
 
         ReceivedMessageCallback(TLccMessage( List[i]), False);  // Send the Event first or it may show the message was responded to before it was received!
         if Assigned(FDispatchProcessedMessageCallback) then

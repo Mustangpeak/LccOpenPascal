@@ -640,7 +640,11 @@ var
     MAX_TCP_MESSAGE_ONLY_LEN = MAX_LCC_TCP_FRAME_LEN - MAX_HEADER_ONLY_LEN;               // Max frame size for just the Lcc Message itself
 
 var
-  Max_Allowed_Buffers: Integer = 1;
+  {$IFDEF PYTHON_SCRIPT_COMPATIBLE}
+  MAX_ALLOWED_BUFFERS: Integer = 1;
+  {$ELSE}
+  MAX_ALLOWED_BUFFERS: Integer = 100;
+  {$ENDIF}
 
 implementation
 
