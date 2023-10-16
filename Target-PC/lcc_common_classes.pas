@@ -66,6 +66,14 @@ type
     property SuppressErrorMessages: Boolean read FSuppressErrorMessages write FSuppressErrorMessages;
   end;
 
+  { TReceiveMessageCallbackObject }
+
+  TReceiveMessageCallbackObject = class
+  public
+    Callback: TLccAliasServerDispatchProcessedMessageFunc;
+    IsNodeManagerReceive: Boolean;
+  end;
+
   { TLccConnectionThread }
 
   TLccConnectionThread = class(TThread)
@@ -121,10 +129,9 @@ type
     FCriticalSection: TCriticalSection;
     FEmulateCanBus: Boolean;
     FOwnerConnectionFactory: TLccConnectionFactory;
-    FReceiveGridConnectString: string;
-    FReceiveMessageObject: TObject;
-    FReceiveMessageWorkerMessage: TLccMessage;
-    FSendMessageWorkerMessage: TLccMessage;
+    FReceiveGridConnectStringSyncronize: string;
+    FReceiveMessageWorkerMessageSyncronize: TLccMessage;
+    FSendMessageWorkerMessageSyncronize: TLccMessage;
 
     procedure SetDefaultConnectionInfo(AValue: TLccConnectionInfo);
   protected
@@ -154,18 +161,16 @@ type
     property CustomConnection: Boolean read FCustomConnection write FCustomConnection;
 
     // Holds the information that was copied in from the thread so the main thread can access it through a Syncronize call from the thread
-    property ReceiveMessageWorkerMessage: TLccMessage read FReceiveMessageWorkerMessage write FReceiveMessageWorkerMessage;
-    property ReceiveMessageObject: TObject read FReceiveMessageObject write FReceiveMessageObject;
-    property ReceiveGridConnectString: string read FReceiveGridConnectString write FReceiveGridConnectString;
-    property SendMessageWorkerMessage: TLccMessage read FSendMessageWorkerMessage write FSendMessageWorkerMessage;
+    property ReceiveMessageWorkerMessageSyncronize: TLccMessage read FReceiveMessageWorkerMessageSyncronize write FReceiveMessageWorkerMessageSyncronize;
+    property ReceiveGridConnectStringSyncronize: string read FReceiveGridConnectStringSyncronize write FReceiveGridConnectStringSyncronize;
+    property SendMessageWorkerMessageSyncronize: TLccMessage read FSendMessageWorkerMessageSyncronize write FSendMessageWorkerMessageSyncronize;
 
     procedure CriticalSectionEnter;
     procedure CriticalSectionLeave;
     procedure CriticalSectionTryEnter;
+
     // When a thread owned by the manager receives a message it will call these centraized methods
     // ----------------------
-
-    procedure ReceiveMessageThroughSyncronize;
     procedure ReceiveGridConnectStrThoughSyncronize;
     procedure SendMessageThroughSyncronize;
 
@@ -191,9 +196,12 @@ type
     FOnLccGridConnectStrReceive: TOnLccConnectionReceiveGridConnectStringEvent;
     FOnLccMessageReceive: TOnLccConnectionReceiveMessageEvent;
     FOnLccMessageSend: TOnLccConnectionSendMessageEvent;
+    FReceiveMessageCallbackList: TList;
     FServerList: Classes.TThreadList;
   protected
     property ServerList: Classes.TThreadList read FServerList write FServerList;
+    // List of ReceiveMessageCallbacks
+    property ReceiveMessageCallbackList: TList read FReceiveMessageCallbackList write FReceiveMessageCallbackList;
 
     // Event Doer for the messages coming in from child Connections
     procedure DoReceiveLccMessage(LccMessage: TLccMessage); virtual;
@@ -210,6 +218,8 @@ type
     // Closes and frees the Servers
     procedure ClearServerList;
     procedure SendLccMessageToThreadManagers(ALccMessage: TLccMessage);
+    function IsDuplicateCallback(ACallback: TLccAliasServerDispatchProcessedMessageFunc): Boolean;
+    procedure ReceiveMessageCallbacksDispatch(ALccMessage: TLccMessage; SendOnlyToNodeManager: Boolean = False);
 
   public
     constructor Create(AOwner: TComponent); override;
@@ -219,9 +229,13 @@ type
     function CreateLccMessageConnection(AConnectionManagerClass: TLccConnectionThreadManagerClass; ConnectionInfo: TLccConnectionInfo; IsEmulateCanBus: Boolean): TLccConnectionThreadManager;
     // Creates a connection that sends custom data across the connection (such as the GridConnect NMRA DCC packets), These will not get the OnLccReceiveMessage/OnLccSendMessage events as they don't define LccMessages as their data format
     function CreateConnection(AConnectionManagerClass: TLccConnectionThreadManagerClass; ConnectionInfo: TLccConnectionInfo): TLccConnectionThreadManager;
-    procedure SendLccMessage(ALccMessage: TLccMessage);
 
-    procedure ReceiveMessageCallbackHack(ALccMessage: TLccMessage; NeedsSourceNode: Boolean);   // Temporary.... need to figure this out better;
+    procedure SendLccMessage(ALccMessage: TLccMessage);
+    // Register a callback to get notified when a Message has been validated and ready to be dispatched
+    procedure RegisterReceiveMessageCallback(ACallback: TLccAliasServerDispatchProcessedMessageFunc; IsNodeManager: Boolean = False);
+    procedure UnregisterReceiveMessageCallback(ACallback: TLccAliasServerDispatchProcessedMessageFunc);
+
+    procedure ReceiveMessageSink(ALccMessage: TLccMessage);  // Resistered with the Alias Server Thread as the sink for the messages it dispatches
 
     property OnLccMessageReceive: TOnLccConnectionReceiveMessageEvent read FOnLccMessageReceive write FOnLccMessageReceive;
     property OnLccGridConnectStrReceive: TOnLccConnectionReceiveGridConnectStringEvent read FOnLccGridConnectStrReceive write FOnLccGridConnectStrReceive;
@@ -311,16 +325,52 @@ begin
   end;
 end;
 
+function TLccConnectionFactory.IsDuplicateCallback(ACallback: TLccAliasServerDispatchProcessedMessageFunc): Boolean;
+var
+  i: Integer;
+begin
+  Result := False;
+  for i := 0 to ReceiveMessageCallbackList.Count - 1 do
+  begin
+    if TReceiveMessageCallbackObject( ReceiveMessageCallbackList[i]).Callback = ACallback then
+    begin
+      Result := True;
+      Break
+    end;
+  end;
+end;
+
+procedure TLccConnectionFactory.ReceiveMessageCallbacksDispatch(ALccMessage: TLccMessage; SendOnlyToNodeManager: Boolean);
+var
+  i: Integer;
+begin
+  for i := 0 to ReceiveMessageCallbackList.Count - 1 do
+  if SendOnlyToNodeManager then
+  begin
+    if SendOnlyToNodeManager then
+    begin
+      if TReceiveMessageCallbackObject( ReceiveMessageCallbackList[i]).IsNodeManagerReceive then
+      begin
+        TReceiveMessageCallbackObject( ReceiveMessageCallbackList[i]).Callback(ALccMessage);
+        Break;
+      end;
+    end
+  end else
+    TReceiveMessageCallbackObject( ReceiveMessageCallbackList[i]).Callback(ALccMessage);
+end;
+
 constructor TLccConnectionFactory.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
   ServerList := Classes.TThreadList.Create;
+  FReceiveMessageCallbackList := TList.Create;
 end;
 
 destructor TLccConnectionFactory.Destroy;
 begin
   ClearServerList;
   FreeAndNil(FServerList);
+  FreeAndNil(FReceiveMessageCallbackList);
   inherited Destroy;
 end;
 
@@ -345,18 +395,50 @@ begin
 end;
 
 procedure TLccConnectionFactory.SendLccMessage(ALccMessage: TLccMessage);
+var
+  i: Integer;
 begin
   DoSendLccMessage(ALccMessage);   // Event handler to allow application to see the messages sent
   SendLccMessageToThreadManagers(ALccMessage);
 
   // This will send the message back to other virtual nodes.
-  AliasServerThread.DispatchProcessedMessageCallback(ALccMessage);
+  ReceiveMessageCallbacksDispatch(ALccMessage, True);
 end;
 
-procedure TLccConnectionFactory.ReceiveMessageCallbackHack(
-  ALccMessage: TLccMessage; NeedsSourceNode: Boolean);
+procedure TLccConnectionFactory.RegisterReceiveMessageCallback(
+  ACallback: TLccAliasServerDispatchProcessedMessageFunc; IsNodeManager: Boolean);
+var
+  LocalCallbackObj: TReceiveMessageCallbackObject;
+begin
+  if not IsDuplicateCallback(ACallback) then
+  begin
+    LocalCallbackObj := TReceiveMessageCallbackObject.Create;
+    LocalCallbackObj.IsNodeManagerReceive := IsNodeManager;
+    LocalCallbackObj.Callback := ACallback;
+    ReceiveMessageCallbackList.Add( LocalCallbackObj);
+  end;
+end;
+
+procedure TLccConnectionFactory.UnregisterReceiveMessageCallback(
+  ACallback: TLccAliasServerDispatchProcessedMessageFunc);
+var
+  i: Integer;
+begin
+  for i := 0 to  ReceiveMessageCallbackList.Count - 1 do
+  begin
+    if TReceiveMessageCallbackObject( ReceiveMessageCallbackList[i]).Callback = ACallback then
+    begin
+      TObject( ReceiveMessageCallbackList[i]).Free;
+      ReceiveMessageCallbackList.Delete(i);
+      Break;
+    end;
+  end;
+end;
+
+procedure TLccConnectionFactory.ReceiveMessageSink(ALccMessage: TLccMessage);
 begin
   DoReceiveLccMessage(ALccMessage);
+  ReceiveMessageCallbacksDispatch(ALccMessage);
 end;
 
 { TLccConnectionInfo }
@@ -444,20 +526,14 @@ begin
   end;
 end;
 
-procedure TLccConnectionThreadManager.ReceiveMessageThroughSyncronize;
-begin
-  if Assigned(OwnerConnectionFactory.OnLccMessageReceive) then
-    OwnerConnectionFactory.OnLccMessageReceive(ReceiveMessageObject, ReceiveMessageWorkerMessage);
-end;
-
 procedure TLccConnectionThreadManager.ReceiveGridConnectStrThoughSyncronize;
 begin
-  OwnerConnectionFactory.DoReceiveGridConnectStr(ReceiveGridConnectString);
+  OwnerConnectionFactory.DoReceiveGridConnectStr(ReceiveGridConnectStringSyncronize);
 end;
 
 procedure TLccConnectionThreadManager.SendMessageThroughSyncronize;
 begin
-  OwnerConnectionFactory.SendLccMessage(SendMessageWorkerMessage);
+  OwnerConnectionFactory.SendLccMessage(SendMessageWorkerMessageSyncronize);
 end;
 
 procedure TLccConnectionThreadManager.SendMessageRawGridConnect(GridConnectStr: String);
@@ -484,8 +560,8 @@ end;
 constructor TLccConnectionThreadManager.Create(AOwner: TComponent);
 begin
   FConnectionThreadList := Classes.TThreadList.Create;
-  FReceiveMessageWorkerMessage := TLccMessage.Create;
-  FSendMessageWorkerMessage := TLccMessage.Create;
+  FReceiveMessageWorkerMessageSyncronize := TLccMessage.Create;
+  FSendMessageWorkerMessageSyncronize := TLccMessage.Create;
 
   inherited Create(AOwner);
   FCriticalSection := TCriticalSection.Create;
@@ -496,8 +572,8 @@ begin
   ClearConnectionThreadList;
   FreeAndNil(FConnectionThreadList);
   FreeAndNil(FCriticalSection);
-  FreeAndNil(FReceiveMessageWorkerMessage);
-  FreeAndNil(FSendMessageWorkerMessage);
+  FreeAndNil(FReceiveMessageWorkerMessageSyncronize);
+  FreeAndNil(FSendMessageWorkerMessageSyncronize);
   inherited Destroy;
 end;
 
@@ -677,6 +753,8 @@ end;
 
 initialization
   ConnectionFactory := TLccConnectionFactory.Create(nil);
+  if Assigned(AliasServerThread) then
+    AliasServerThread.ReceiveMessageSource := @ConnectionFactory.ReceiveMessageSink;
 
 finalization
   ConnectionFactory.Free;

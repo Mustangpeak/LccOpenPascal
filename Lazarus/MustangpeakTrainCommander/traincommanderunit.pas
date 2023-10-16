@@ -38,7 +38,6 @@ type
 
   TFormTrainCommander = class(TForm)
     Button1: TButton;
-    Button2: TButton;
     ButtonMsgAssemberlDatagramMsg: TButton;
     ButtonLiveMessages: TButton;
     ButtonDatagramQueue: TButton;
@@ -77,7 +76,6 @@ type
     ToggleBoxServerForm: TToggleBox;
     TreeViewTrains: TTreeView;
     procedure Button1Click(Sender: TObject);
-    procedure Button2Click(Sender: TObject);
     procedure ButtonLiveMessagesClick(Sender: TObject);
     procedure ButtonDatagramQueueClick(Sender: TObject);
     procedure ButtonCreateConsistClick(Sender: TObject);
@@ -182,19 +180,6 @@ begin
     Inc(FAutoCreateTrainAddress);
     Train.Login(NULL_NODE_ID);
   end;
-end;
-
-procedure TFormTrainCommander.Button2Click(Sender: TObject);
-begin
-
-  ShowMessage(
-    'InProcessMessageList: ' + IntToStr(InProcessMessageCount) +
-    ' OutOfBuffersMessageCount: ' + IntToStr(OutOfBuffersMessageCount) +
-    ' AliasServerThread.IncomingMessageList: ' + IntToStr(ThreadListCount(AliasServerThread.IncomingMessageList)) +
-    ' AliasServerThread.MappingRequestMessageList: ' + IntToStr(ThreadListCount(AliasServerThread.MappingRequestMessageList)) +
-    ' AliasServerThread.OutgoingProcessedMessageList: ' + IntToStr(ThreadListCount(AliasServerThread.OutgoingProcessedMessageList)) +
-    ' AliasServerThread.WaitingForMappingMessageList: ' + IntToStr(ThreadListCount(AliasServerThread.WaitingForMappingMessageList))
-    );
 end;
 
 procedure TFormTrainCommander.ButtonLiveMessagesClick(Sender: TObject);
@@ -652,10 +637,6 @@ begin
   ConnectionFactory.OnLccMessageReceive := @OnServerManagerReceiveMessage;
   ConnectionFactory.OnLccGridConnectStrReceive := @OnServerManagerReceiveGridConnectStr;
   ConnectionFactory.OnLccMessageSend := @OnServerManagerSendMessage;
-
-
-  // THIS IS A HACK TO MAKE THE CONNECTION....FIGURE OUT HOW TO DO THIS CLEANER
-  AliasServerThread.ReceivedMessageCallback := @ConnectionFactory.ReceiveMessageCallbackHack;
 
   AutoCreateTrainAddress := 1;
 

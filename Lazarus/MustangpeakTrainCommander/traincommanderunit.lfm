@@ -208,15 +208,6 @@ object FormTrainCommander: TFormTrainCommander
       OnClick = ButtonMsgAssemberlDatagramMsgClick
       TabOrder = 16
     end
-    object Button2: TButton
-      Left = 1080
-      Height = 25
-      Top = 63
-      Width = 75
-      Caption = 'Button2'
-      OnClick = Button2Click
-      TabOrder = 17
-    end
   end
   object PanelConnections: TPanel
     Left = 0

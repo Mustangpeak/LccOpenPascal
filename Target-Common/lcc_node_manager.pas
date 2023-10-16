@@ -184,7 +184,6 @@ type
     procedure DoTractionSetSpeed(LccNode: TLccNode; ALccMessage: TLccMessage; var DoDefault: Boolean);
     procedure DoTractionTrainSNIP(LccNode: TLccNode; ALccMessage: TLccMessage; var DoDefault: Boolean);
 
-
     procedure ReceiveMessage(ALccMessage: TLccMessage);  // callback for AliasServerThread to connect to the incoming messages
 
    public
@@ -556,7 +555,9 @@ begin
   _100msTimer.Interval := 100;
   _100msTimer.Enabled := True;
 
-  AliasServerThread.DispatchProcessedMessageCallback := {$IFNDEF LCC_DELPHI}@{$ENDIF}ReceiveMessage;
+  // Setup the links to allow the Connections from the Connection Factory to the NodeManager
+  ConnectionFactory.RegisterReceiveMessageCallback(@ReceiveMessage, True);
+  // AliasServerThread needs to request NodeIDs but is not a Node and thus does have have its own ID to request them so the NodeManager must handle that
   AliasServerThread.SendMessageCallback := {$IFNDEF LCC_DELPHI}@{$ENDIF}SendMessage;
 end;
 
@@ -629,7 +630,7 @@ end;
 
 destructor TLccNodeManager.Destroy;
 begin
-  AliasServerThread.DispatchProcessedMessageCallback := nil;
+  ConnectionFactory.UnregisterReceiveMessageCallback(@ReceiveMessage);
   AliasServerThread.SendMessageCallback := nil;
   Clear;
   _100msTimer.Enabled := False;

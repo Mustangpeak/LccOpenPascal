@@ -19,7 +19,8 @@ uses
 
 type
   TLccMessage = class; // forward
-  TOnMessageEvent = procedure(ALccMessage: TLccMessage; NeedsSourceNode: Boolean) of object;
+  TOnSendMessageEvent = procedure(ALccMessage: TLccMessage; NeedsSourceNode: Boolean) of object;
+  TOnMessageEvent = procedure(ALccMessage: TLccMessage) of object;
   TSearchEncodeStringError = (sese_ok, sese_TooLong, sese_InvalidCharacters);
 
   { TLccSNIPObject }

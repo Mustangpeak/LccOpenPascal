@@ -36,23 +36,28 @@ type
 
 TLccAliasServerDispatchProcessedMessageFunc = procedure(ALccMessage: TLccMessage) of object;
 
-
 { TReceiveMessageAliasServerThread }
 
 TReceiveMessageAliasServerThread = class(TThread)
   private
-    FDispatchProcessedMessageCallback: TLccAliasServerDispatchProcessedMessageFunc;
-    FMappingRequestMessageList: TThreadList;
-    FOutgoingProcessedMessageList: TThreadList;
-    FIncomingMessageList: TThreadList;
-    FReceivedMessage: TLccMessage;
-    FReceivedMessageCallback: TOnMessageEvent;
-    FSendMessageCallback: TOnMessageEvent;
+    FMappingRequestMessageList: TThreadList;                                         // Storage for messages that still require Alias mapping of nodes referenced in the message (source, destination, payload NodeIDs, etc)
+    FOutgoingProcessedMessageList: TThreadList;                                      // Holds the messages that are fully processed LCC messages ready to be sent via DispatchProcessedMessageCallback
+    FIncomingMessageList: TThreadList;                                               // Incoming CAN messages that need to be processed to ensures all mappings are validated to the nodes it references (source, destination, payload NodeIDs, etc)                                    // Before the fully processed
+    FReceiveMessageSource: TOnMessageEvent;
+    FSendMessageCallback: TOnSendMessageEvent;
     FWaitingForMappingMessageList: TThreadList;
     FWorkerMessage: TLccMessage;
   protected
-    property ReceivedMessage: TLccMessage read FReceivedMessage write FReceivedMessage;
-    // internal worker message
+    // Messages coming in from the connections
+    property IncomingMessageList: TThreadList read FIncomingMessageList write FIncomingMessageList;
+    // Message waiting for the Mapping of any NodeID/AliasID that the message requires to be found in the AliasServer
+    property WaitingForMappingMessageList: TThreadList read FWaitingForMappingMessageList write FWaitingForMappingMessageList;
+    // Messages that have valid mappings and can be picked up by the Node Manager
+    property OutgoingProcessedMessageList: TThreadList read FOutgoingProcessedMessageList;
+    // Mapping Requests, TLccMessages filled in to request the mappings the Alias Server needs.. These need to picked up and sent by the Node Manager
+    property MappingRequestMessageList: TThreadList read FMappingRequestMessageList write FMappingRequestMessageList;
+
+
     property WorkerMessage: TLccMessage read FWorkerMessage write FWorkerMessage;
 
     procedure Execute; override;
@@ -66,31 +71,21 @@ TReceiveMessageAliasServerThread = class(TThread)
     constructor Create(CreateSuspended: Boolean; const StackSize: SizeUInt = DefaultStackSize); reintroduce;
     destructor Destroy; override;
 
-    // Messages coming in from the connections
-    property IncomingMessageList: TThreadList read FIncomingMessageList write FIncomingMessageList;
-    // Message waiting for the Mapping of any NodeID/AliasID that the message requires to be found in the AliasServer
-    property WaitingForMappingMessageList: TThreadList read FWaitingForMappingMessageList write FWaitingForMappingMessageList;
-
-    // Messages that have valid mappings and can be picked up by the Node Manager
-    property OutgoingProcessedMessageList: TThreadList read FOutgoingProcessedMessageList;
-    // Mapping Requests, TLccMessages filled in to request the mappings the Alias Server needs.. These need to picked up and sent by the Node Manager
-    property MappingRequestMessageList: TThreadList read FMappingRequestMessageList write FMappingRequestMessageList;
-    // This property is set to where the processed (defined as Alias Mapping is valid in the Alias Server) are sent to, currently calls into TLccNodeManager.DispatchMessageCallback
-    property DispatchProcessedMessageCallback: TLccAliasServerDispatchProcessedMessageFunc read FDispatchProcessedMessageCallback write FDispatchProcessedMessageCallback;
     // This property is set to a function that will send a Message to the network, current calls into TLccNodeManager.SendMessage so it can pickup a node as the source to send the message
-    property SendMessageCallback: TOnMessageEvent read FSendMessageCallback write FSendMessageCallback;
-
-    property ReceivedMessageCallback: TOnMessageEvent read FReceivedMessageCallback write FReceivedMessageCallback;
+    property SendMessageCallback: TOnSendMessageEvent read FSendMessageCallback write FSendMessageCallback;
     // Adds a message that is incoming from a connection.  This thread will validate that the Alias Server contains
     // any mappings necessary for the message and place them in the OutgoingProcessedMessageList when Node Manager can handle them
+    property ReceiveMessageSource: TOnMessageEvent read FReceiveMessageSource write FReceiveMessageSource;
     procedure AddIncomingLccMessage(AMessage: TLccMessage; GridConnect: Boolean);
-
   end;
 
 var
   AliasServerThread: TReceiveMessageAliasServerThread;
 
 implementation
+
+uses
+  lcc_common_classes;
 
 
 { TReceiveMessageAliasServerThread }
@@ -279,21 +274,14 @@ var
   List: TList;
   i: Integer;
 begin
-  Assert( Assigned(SendMessageCallback), 'TReceiveMessageAliasServerThread,SendMessageCallback not assigned');
-  Assert( Assigned(ReceivedMessageCallback), 'TReceiveMessageAliasServerThread,ReceiveMessageCallback not assigned');
+  Assert( Assigned(ReceiveMessageSource), 'TReceiveMessageAliasServerThread,ReceiveMessageSource is not assigned');
 
   List := OutgoingProcessedMessageList.LockList;
   try
     try
       for i := 0 to List.Count - 1 do
       begin
-
-//        if TLccMessage( List[i]).ConvertToGridConnectStr(#10, false) = ':X194906FFN000000000001;' then
- //         beep;
-
-        ReceivedMessageCallback(TLccMessage( List[i]), False);  // Send the Event first or it may show the message was responded to before it was received!
-        if Assigned(FDispatchProcessedMessageCallback) then
-          DispatchProcessedMessageCallback(TLccMessage( List[i]));
+        ReceiveMessageSource(TLccMessage( List[i]));
         TObject( List[i]).Free;
       end;
     finally
@@ -339,6 +327,8 @@ end;
 initialization
   AliasServerThread := TReceiveMessageAliasServerThread.Create(False);
   AliasServerThread.FreeOnTerminate := True;
+  if Assigned(ConnectionFactory) then
+    AliasServerThread.ReceiveMessageSource := @ConnectionFactory.ReceiveMessageSink;
 
 finalization
   AliasServerThread.Terminate;

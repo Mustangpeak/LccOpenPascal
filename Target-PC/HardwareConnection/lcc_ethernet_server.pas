@@ -709,7 +709,7 @@ begin
         // after the next call to GridConnectMessageAssembler split up CAN messages will be recombined into a single LCC message
         if Assigned(OwnerConnectionContextList.OwnerConnectionThread.OwnerConnectionManager.OwnerConnectionFactory.OnLccMessageReceive) then
         begin
-          OwnerConnectionContextList.OwnerConnectionThread.OwnerConnectionManager.ReceiveGridConnectString := MessageStr;
+          OwnerConnectionContextList.OwnerConnectionThread.OwnerConnectionManager.ReceiveGridConnectStringSyncronize := MessageStr;
           OwnerConnectionContextList.OwnerConnectionThread.Synchronize(OwnerConnectionContextList.OwnerConnectionThread.OwnerConnectionManager.ReceiveGridConnectStrThoughSyncronize);
         end;
 
@@ -719,7 +719,7 @@ begin
         case GridConnectMessageAssembler.IncomingMessageGridConnect(WorkerMessage) of
           imgcr_True         : AliasServerThread.AddIncomingLccMessage(WorkerMessage, True);
           imgcr_ErrorToSend  : begin
-                                 WorkerMessage.CopyToTarget( OwnerConnectionContextList.OwnerConnectionThread.OwnerConnectionManager.SendMessageWorkerMessage);
+                                 WorkerMessage.CopyToTarget( OwnerConnectionContextList.OwnerConnectionThread.OwnerConnectionManager.SendMessageWorkerMessageSyncronize);
                                  OwnerConnectionContextList.OwnerConnectionThread.Synchronize(OwnerConnectionContextList.OwnerConnectionThread.OwnerConnectionManager.SendMessageThroughSyncronize);
                                end;
           imgcr_False,
