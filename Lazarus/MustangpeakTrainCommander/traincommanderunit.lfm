@@ -41,7 +41,7 @@ object FormTrainCommander: TFormTrainCommander
     object ButtonClear: TButton
       Left = 648
       Height = 23
-      Top = 64
+      Top = 58
       Width = 152
       Caption = 'Clear'
       OnClick = ButtonClearClick
@@ -131,7 +131,7 @@ object FormTrainCommander: TFormTrainCommander
     object ButtonWebserverConnect: TButton
       Left = 648
       Height = 23
-      Top = 32
+      Top = 34
       Width = 152
       Caption = 'Webserver Connect'
       OnClick = ButtonWebserverConnectClick
@@ -202,11 +202,20 @@ object FormTrainCommander: TFormTrainCommander
     object ButtonMsgAssemberlDatagramMsg: TButton
       Left = 808
       Height = 25
-      Top = 64
+      Top = 56
       Width = 248
       Caption = 'Msg Assember Datagram:'
       OnClick = ButtonMsgAssemberlDatagramMsgClick
       TabOrder = 16
+    end
+    object Button2: TButton
+      Left = 1080
+      Height = 25
+      Top = 63
+      Width = 75
+      Caption = 'Button2'
+      OnClick = Button2Click
+      TabOrder = 17
     end
   end
   object PanelConnections: TPanel

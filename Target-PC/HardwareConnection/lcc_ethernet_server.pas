@@ -624,6 +624,7 @@ begin
     begin
       if TLccConnectionContext(List[i]).Context = AContext then
       begin
+        TLccConnectionContext(List[i]).Free;
         List.Delete(i);
         Result := True;
         Break;
@@ -706,18 +707,21 @@ begin
 
         // Not a fan of having it here to block the main connection thread but need to hook into the raw individual messages.
         // after the next call to GridConnectMessageAssembler split up CAN messages will be recombined into a single LCC message
-   {     if Assigned(OwnerConnectionContextList.OwnerConnectionThread.OwnerConnectionManager.OwnerConnectionFactory.OnLccMessageReceive) then
+        if Assigned(OwnerConnectionContextList.OwnerConnectionThread.OwnerConnectionManager.OwnerConnectionFactory.OnLccMessageReceive) then
         begin
           OwnerConnectionContextList.OwnerConnectionThread.OwnerConnectionManager.ReceiveGridConnectString := MessageStr;
           OwnerConnectionContextList.OwnerConnectionThread.Synchronize(OwnerConnectionContextList.OwnerConnectionThread.OwnerConnectionManager.ReceiveGridConnectStrThoughSyncronize);
         end;
-    }
+
         // Message may only be part of a larger string of messages to make up a full LCC message.
         // This call will concatinate these partial Lcc message and return with a fully qualified
         // Lcc message.
         case GridConnectMessageAssembler.IncomingMessageGridConnect(WorkerMessage) of
-          imgcr_True         : AliasServerThread.AddIncomingMessage(WorkerMessage, True);
-          imgcr_ErrorToSend  : OwnerConnectionContextList.OwnerConnectionThread.OwnerConnectionManager.OwnerConnectionFactory.SendLccMessage(WorkerMessage);
+          imgcr_True         : AliasServerThread.AddIncomingLccMessage(WorkerMessage, True);
+          imgcr_ErrorToSend  : begin
+                                 WorkerMessage.CopyToTarget( OwnerConnectionContextList.OwnerConnectionThread.OwnerConnectionManager.SendMessageWorkerMessage);
+                                 OwnerConnectionContextList.OwnerConnectionThread.Synchronize(OwnerConnectionContextList.OwnerConnectionThread.OwnerConnectionManager.SendMessageThroughSyncronize);
+                               end;
           imgcr_False,
           imgcr_UnknownError : begin end;
         end;
@@ -732,7 +736,7 @@ begin
       if TcpDecodeStateMachine.OPStackcoreTcp_DecodeMachine(RawData[iData], LocalDataArray) then
       begin
         if WorkerMessage.LoadByLccTcp(LocalDataArray) then
-          AliasServerThread.AddIncomingMessage(WorkerMessage, False);
+          AliasServerThread.AddIncomingLccMessage(WorkerMessage, False);
       end;
     end;
   end;

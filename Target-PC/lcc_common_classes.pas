@@ -85,7 +85,7 @@ type
 
     procedure ConnectionStateChangePossiblyThroughSyncronize; virtual;
 
-    function LoadBufferFromMessageBuffer(var ABuffer: TLccDynamicByteArray; var ABufferSize: Int64; AMessageBuffer: Classes.TThreadList; ClearBuffer: Boolean = True): Boolean; virtual;
+    function LoadBufferFromMessageBuffer(var ABuffer: TLccDynamicByteArray; var ABufferSize: Int64; ALccMessageList: Classes.TThreadList; ClearBuffer: Boolean = True): Boolean; virtual;
     procedure SendMessage(ALccMessage: TLccMessage); virtual;
 
     property ReceiveBuffer: TLccDynamicByteArray read FReceiveBuffer write FReceiveBuffer;
@@ -124,6 +124,7 @@ type
     FReceiveGridConnectString: string;
     FReceiveMessageObject: TObject;
     FReceiveMessageWorkerMessage: TLccMessage;
+    FSendMessageWorkerMessage: TLccMessage;
 
     procedure SetDefaultConnectionInfo(AValue: TLccConnectionInfo);
   protected
@@ -156,6 +157,7 @@ type
     property ReceiveMessageWorkerMessage: TLccMessage read FReceiveMessageWorkerMessage write FReceiveMessageWorkerMessage;
     property ReceiveMessageObject: TObject read FReceiveMessageObject write FReceiveMessageObject;
     property ReceiveGridConnectString: string read FReceiveGridConnectString write FReceiveGridConnectString;
+    property SendMessageWorkerMessage: TLccMessage read FSendMessageWorkerMessage write FSendMessageWorkerMessage;
 
     procedure CriticalSectionEnter;
     procedure CriticalSectionLeave;
@@ -165,6 +167,7 @@ type
 
     procedure ReceiveMessageThroughSyncronize;
     procedure ReceiveGridConnectStrThoughSyncronize;
+    procedure SendMessageThroughSyncronize;
 
     // Puts a GridConnect string in the buffer to be sent without needing to deal with a TLccMessage as not all links are LCC, using custom GridConnect for the UART to the Command Station
     procedure SendMessageRawGridConnect(GridConnectStr: String); virtual;
@@ -452,6 +455,11 @@ begin
   OwnerConnectionFactory.DoReceiveGridConnectStr(ReceiveGridConnectString);
 end;
 
+procedure TLccConnectionThreadManager.SendMessageThroughSyncronize;
+begin
+  OwnerConnectionFactory.SendLccMessage(SendMessageWorkerMessage);
+end;
+
 procedure TLccConnectionThreadManager.SendMessageRawGridConnect(GridConnectStr: String);
 begin
 
@@ -477,6 +485,7 @@ constructor TLccConnectionThreadManager.Create(AOwner: TComponent);
 begin
   FConnectionThreadList := Classes.TThreadList.Create;
   FReceiveMessageWorkerMessage := TLccMessage.Create;
+  FSendMessageWorkerMessage := TLccMessage.Create;
 
   inherited Create(AOwner);
   FCriticalSection := TCriticalSection.Create;
@@ -488,6 +497,7 @@ begin
   FreeAndNil(FConnectionThreadList);
   FreeAndNil(FCriticalSection);
   FreeAndNil(FReceiveMessageWorkerMessage);
+  FreeAndNil(FSendMessageWorkerMessage);
   inherited Destroy;
 end;
 
@@ -604,31 +614,37 @@ end;
 
 function TLccConnectionThread.LoadBufferFromMessageBuffer(
   var ABuffer: TLccDynamicByteArray; var ABufferSize: Int64;
-  AMessageBuffer: Classes.TThreadList; ClearBuffer: Boolean): Boolean;
+  ALccMessageList: Classes.TThreadList; ClearBuffer: Boolean): Boolean;
 var
   MessageList: TList;
-  iMessage, iByte: Integer;
+  iMessage, iByte, StartIndex: Integer;
   MessageString: AnsiString;
 //  DynamicByteArray: TLccDynamicByteArray;
 begin
-  MessageList := AMessageBuffer.LockList;
+  MessageList := ALccMessageList.LockList;
   try
     if OwnerConnectionManager.EmulateCanBus then
     begin
       ABufferSize := 0;
+      MessageString := '';
 
       for iMessage := 0 to MessageList.Count - 1 do
-      begin
-        MessageString := TLccMessage( MessageList[iMessage]).ConvertToGridConnectStr(#10, False) + #10;
+        MessageString := MessageString + TLccMessage( MessageList[iMessage]).ConvertToGridConnectStr(#10, False) + #10;
 
-        if Length(ABuffer) < ABufferSize + Length(MessageString) then
-          SetLength(ABuffer, Length(ABuffer) + 1024);
+      if Length(ABuffer) < Length(MessageString) then
+        SetLength(ABuffer, Length(MessageString));
 
-        for iByte := 0 to Length(MessageString) - 1 do
-          ABuffer[iByte + ABufferSize] := Ord(MessageString[iByte + 1]);
+      {$IFDEF LCC_MOBILE}
+      StartIndex := 0;
+      {$ELSE}
+      StartIndex := 1;
+      {$ENDIF}
 
-        ABufferSize := ABufferSize + Length(MessageString);
-      end;
+      for iByte := 0 to Length(MessageString) - 1 do
+        ABuffer[iByte] := Ord(MessageString[iByte + StartIndex]);
+
+      ABufferSize := Length(MessageString);
+
     end else
     begin
       for iMessage := 0 to MessageList.Count - 1 do
@@ -648,7 +664,7 @@ begin
         MessageList.Clear;
       end;
     end;
-    AMessageBuffer.UnlockList;
+    ALccMessageList.UnlockList;
     Result := ABufferSize > 0;   // Did it write anything?
   end;
 end;

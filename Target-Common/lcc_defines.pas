@@ -536,26 +536,30 @@ const
   MAX_CONFIG_MEM_READWRITE_SIZE = 64;
 
   // Permanent error modifier
-  ERROR_PERMANENT                     = $1000;
-  ERROR_PERMANENT_SOURCE_NOT_PERMITED = $1020;
-  ERROR_PERMANENT_NOT_IMPLEMENTED     = $1040;
-  ERROR_PERMANENT_INVALID_ARGUMENTS   = $1080;
-
-  ERROR_SUBCOMMAND                    = $0001;
-  ERROR_TYPE                          = $0002;
-  ERROR_MTI                           = $0003;
+  ERROR_CODE_PERMANENT                       = $1000; // major code: Permanent error.
+  ERROR_CODE_PERMANENT_SOURCE_NOT_PERMITED   = $1020; // major code: Source not permitted.
+  ERROR_CODE_PERMANENT_NOT_IMPLEMENTED       = $1040; // major code: Not implemented.
+  ERROR_CODE_PERMANENT_INVALID_ARGUMENTS     = $1080; // major code: Invalid arguments. Some of the values sent in the message fall outside
+                                                      //             of the expected range, or do not match the expectations of the receiving node.
+  ERROR_CODE_PERMANENT_SUBCOMMAND_UNKNOWN    = $1041; // complete code: Not implemented, subcommand is unknown.
+  ERROR_CODE_PERMANENT_TYPE_UNKNOWN          = $1042; // complete code: Not implemented, Datagram-type, Stream-type, or command is unknown.
+  ERROR_CODE_PERMANENT_MTI_TRANSPORT_UNKNOWN = $1043; // complete code: Not implemented, unknown MTI, or Transport protocol (datagrams/streams) is not supported.
 
   // Temporary error modifier
-  ERROR_TEMPORARY                     = $2000;
-  ERROR_TEMPORARY_TIMEOUT             = $2010;
-  ERROR_TEMPORARY_BUFFER_UNAVAILABLE  = $2020;
-  ERROR_TEMPORARY_NOT_EXPECTED        = $2040;
-  ERROR_TEMPORARY_TRANSFER_ERROR      = $0080;
-  ERROR_TEMPORARY_INVALID_ARGUMENTS   = $2080;
+  ERROR_CODE_TEMPORARY                       = $2000; // major code: Temporary error, not further not specified
+  ERROR_CODE_TEMPORARY_TIMEOUT               = $2010; // major code: Timeout, the expected message or message-part did not arrive in time.
+  ERROR_CODE_TEMPORARY_BUFFER_UNAVAILABLE    = $2020; // major code: Buffer unavailable or destination node busy.
+  ERROR_CODE_TEMPORARY_NOT_EXPECTED          = $2040; // major code: Not expected, Out of order. An inconsistency was found in the message or frame
+                                                      //             sequence received, the arrived message is unexpected or does not match the state of the receiving node.
+  ERROR_CODE_TEMPORARY_TRANSFER_ERROR        = $2080; // major code: Transfer error. The message or received message was ill-formed, failed checksum, or is
+                                                      //             otherwise uninterpretable. On CAN, this is handled by the hardware
 
-  ERROR_WAITING_FOR_ENDFRAME          = $0001;
-  ERROR_NO_START_FRAME                = $0001;
-  ERROR_NO_END_FRAME                  = $0002;
+  ERROR_CODE_TEMPORARY_TIMEOUT_OF_END_FRAME = $2011;  // complete code: Time-out, waiting for End-frame.
+  ERROR_CODE_OUT_OF_ORDER_NO_START_FRAME    = $2041;  // complete code: Out of Order, Middle- or End-frame without a Start-frame.
+  ERROR_CODE_OUT_OF_ORDER_START_BEFORE_END  = $2042;  // complete code: Out of Order, Start-frame before finishing previous message.
+
+  ERROR_CODE_ACCEPT                         = $8000;  // major code: Accept, no error. This value shall not be used in reject messages.
+
 
   DATAGRAM_PROTOCOL_LOGREQUEST             = $01;
   DATAGRAM_PROTOCOL_LOGREPLY               = $02;

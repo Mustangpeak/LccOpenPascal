@@ -240,9 +240,11 @@ if TargetOS = &apos;linux&apos; then
     <CodeGeneration>
       <Checks>
         <IOChecks Value="True"/>
+        <RangeChecks Value="True"/>
         <OverflowChecks Value="True"/>
         <StackChecks Value="True"/>
       </Checks>
+      <VerifyObjMethodCallValidity Value="True"/>
       <TargetCPU Value="x86_64"/>
       <TargetOS Value="darwin"/>
       <Optimizations>

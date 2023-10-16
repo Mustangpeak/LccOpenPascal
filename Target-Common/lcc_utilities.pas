@@ -37,6 +37,8 @@ uses
   function _Highest1(Data: QWord): Byte;
   function _Highest2(Data: QWord): Byte;
   function IsPrintableChar(C: Char): Boolean;
+  function ThreadListCount(AThreadedList: TThreadList): Int64;
+
 
   function StreamReadByte(AStream: TStream): Byte;
   procedure StreamWriteByte(AStream: TStream; AByte: Byte);
@@ -829,5 +831,18 @@ end;
         Result := Result + ' ';  // Pad them all to the same length
     end;
   {$ENDIF}
+
+  function ThreadListCount(AThreadedList: TThreadList): Int64;
+  var
+    L: TList;
+  begin
+    L := AThreadedList.LockList;
+    try
+      Result := L.Count;
+    finally
+      AThreadedList.UnlockList;
+    end;
+
+  end;
 
 end.

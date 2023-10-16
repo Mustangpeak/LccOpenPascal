@@ -52,10 +52,6 @@ TReceiveMessageAliasServerThread = class(TThread)
     FWorkerMessage: TLccMessage;
   protected
     property ReceivedMessage: TLccMessage read FReceivedMessage write FReceivedMessage;
-    // Messages coming in from the connections
-    property IncomingMessageList: TThreadList read FIncomingMessageList write FIncomingMessageList;
-    // Message waiting for the Mapping of any NodeID/AliasID that the message requires to be found in the AliasServer
-    property WaitingForMappingMessageList: TThreadList read FWaitingForMappingMessageList write FWaitingForMappingMessageList;
     // internal worker message
     property WorkerMessage: TLccMessage read FWorkerMessage write FWorkerMessage;
 
@@ -70,6 +66,11 @@ TReceiveMessageAliasServerThread = class(TThread)
     constructor Create(CreateSuspended: Boolean; const StackSize: SizeUInt = DefaultStackSize); reintroduce;
     destructor Destroy; override;
 
+    // Messages coming in from the connections
+    property IncomingMessageList: TThreadList read FIncomingMessageList write FIncomingMessageList;
+    // Message waiting for the Mapping of any NodeID/AliasID that the message requires to be found in the AliasServer
+    property WaitingForMappingMessageList: TThreadList read FWaitingForMappingMessageList write FWaitingForMappingMessageList;
+
     // Messages that have valid mappings and can be picked up by the Node Manager
     property OutgoingProcessedMessageList: TThreadList read FOutgoingProcessedMessageList;
     // Mapping Requests, TLccMessages filled in to request the mappings the Alias Server needs.. These need to picked up and sent by the Node Manager
@@ -82,7 +83,7 @@ TReceiveMessageAliasServerThread = class(TThread)
     property ReceivedMessageCallback: TOnMessageEvent read FReceivedMessageCallback write FReceivedMessageCallback;
     // Adds a message that is incoming from a connection.  This thread will validate that the Alias Server contains
     // any mappings necessary for the message and place them in the OutgoingProcessedMessageList when Node Manager can handle them
-    procedure AddIncomingMessage(AMessage: TLccMessage; GridConnect: Boolean);
+    procedure AddIncomingLccMessage(AMessage: TLccMessage; GridConnect: Boolean);
 
   end;
 
@@ -325,7 +326,8 @@ begin
   inherited Destroy;
 end;
 
-procedure TReceiveMessageAliasServerThread.AddIncomingMessage(AMessage: TLccMessage; GridConnect: Boolean);
+procedure TReceiveMessageAliasServerThread.AddIncomingLccMessage(
+  AMessage: TLccMessage; GridConnect: Boolean);
 begin
   // No such thing as an Alias if not dealing with GridConnect
   if GridConnect then

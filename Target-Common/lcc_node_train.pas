@@ -1035,7 +1035,7 @@ begin
     end;
 
     if EqualNodeID(NodeID, ListenerNodeID, False) then  // Trying to create a Listener that is the nodes itself.... will cause infinte loops
-      WorkerMessage.LoadTractionListenerAttachReply(NodeID, AliasID, SourceMessage.SourceID, SourceMessage.SourceAlias, ListenerNodeID, ERROR_PERMANENT_INVALID_ARGUMENTS)
+      WorkerMessage.LoadTractionListenerAttachReply(NodeID, AliasID, SourceMessage.SourceID, SourceMessage.SourceAlias, ListenerNodeID, ERROR_CODE_PERMANENT_INVALID_ARGUMENTS)
     else begin
       NewListenerNode := Listeners.FindListener(ListenerNodeID);
       if Assigned(NewListenerNode) then
@@ -1053,7 +1053,7 @@ begin
           Listeners.Add(NewListenerNode);
           WorkerMessage.LoadTractionListenerAttachReply(NodeID, AliasID, SourceMessage.SourceID, SourceMessage.SourceAlias, ListenerNodeID, S_OK)
         end else
-          WorkerMessage.LoadTractionListenerAttachReply(NodeID, AliasID, SourceMessage.SourceID, SourceMessage.SourceAlias, ListenerNodeID, ERROR_TEMPORARY_BUFFER_UNAVAILABLE)
+          WorkerMessage.LoadTractionListenerAttachReply(NodeID, AliasID, SourceMessage.SourceID, SourceMessage.SourceAlias, ListenerNodeID, ERROR_CODE_TEMPORARY_BUFFER_UNAVAILABLE)
       end;
     end;
     SendMessage(WorkerMessage);
@@ -1077,7 +1077,7 @@ begin
     if Listeners.DeleteListener(ListenerNodeID) then
       WorkerMessage.LoadTractionListenerDetachReply(NodeID, AliasID, SourceMessage.SourceID, SourceMessage.SourceAlias, ListenerNodeID, S_OK)
     else
-      WorkerMessage.LoadTractionListenerDetachReply(NodeID, AliasID, SourceMessage.SourceID, SourceMessage.SourceAlias, ListenerNodeID, ERROR_PERMANENT_INVALID_ARGUMENTS);
+      WorkerMessage.LoadTractionListenerDetachReply(NodeID, AliasID, SourceMessage.SourceID, SourceMessage.SourceAlias, ListenerNodeID, ERROR_CODE_PERMANENT_INVALID_ARGUMENTS);
     SendMessage(WorkerMessage);
 
     ((Owner as TLccNodeManager) as INodeManagerTractionCallbacks).DoTractionListenerDetached(Self, SourceMessage);

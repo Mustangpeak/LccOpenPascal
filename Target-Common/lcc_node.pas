@@ -1485,7 +1485,7 @@ end;
 procedure TLccNode.HandleACDI_Manufacturer_MemorySpaceWrite(var SourceMessage: TLccMessage);
 begin
   // Can't write to this memory space
-  SendMemoryWriteFailure(SourceMessage, ERROR_PERMANENT_NOT_IMPLEMENTED, '');
+  SendMemoryWriteFailure(SourceMessage, ERROR_CODE_PERMANENT_NOT_IMPLEMENTED, '');
 end;
 
 procedure TLccNode.HandleConfiguration_MemorySpaceRead(var SourceMessage: TLccMessage);
@@ -1556,7 +1556,7 @@ end;
 
 procedure TLccNode.HandleAll_MemorySpaceRead(var SourceMessage: TLccMessage);
 begin
-  SendMemoryReadFailure(SourceMessage, ERROR_PERMANENT_NOT_IMPLEMENTED, '');
+  SendMemoryReadFailure(SourceMessage, ERROR_CODE_PERMANENT_NOT_IMPLEMENTED, '');
 end;
 
 procedure TLccNode.HandleCDI_MemorySpaceRead(var SourceMessage: TLccMessage);
@@ -1574,13 +1574,13 @@ end;
 procedure TLccNode.HandleCDI_MemorySpaceWrite(var SourceMessage: TLccMessage);
 begin
   // Can't write to this memory space
-  SendMemoryWriteFailure(SourceMessage, ERROR_PERMANENT_NOT_IMPLEMENTED, '');
+  SendMemoryWriteFailure(SourceMessage, ERROR_CODE_PERMANENT_NOT_IMPLEMENTED, '');
 end;
 
 procedure TLccNode.HandleAll_MemorySpaceWrite(var SourceMessage: TLccMessage);
 begin
   // Can't write to this memory space
-  SendMemoryWriteFailure(SourceMessage, ERROR_PERMANENT_NOT_IMPLEMENTED, '');
+  SendMemoryWriteFailure(SourceMessage, ERROR_CODE_PERMANENT_NOT_IMPLEMENTED, '');
 end;
 
 procedure TLccNode.HandleConsumerIdentifiedSet(var SourceMessage: TLccMessage);
@@ -2195,7 +2195,7 @@ begin
              end
          else begin {case else}
              // Unknown Datagram Type
-             WorkerMessage.LoadDatagramRejected(NodeID, FAliasID, SourceMessage.SourceID, SourceMessage.SourceAlias, ERROR_PERMANENT_NOT_IMPLEMENTED or ERROR_TYPE);
+             WorkerMessage.LoadDatagramRejected(NodeID, FAliasID, SourceMessage.SourceID, SourceMessage.SourceAlias, ERROR_CODE_PERMANENT_TYPE_UNKNOWN);
              SendMessage(WorkerMessage);
            end;
          end;  // case
@@ -2203,7 +2203,7 @@ begin
   else begin
       if SourceMessage.HasDestination then
       begin
-        WorkerMessage.LoadOptionalInteractionRejected(NodeID, FAliasID, SourceMessage.SourceID, SourceMessage.SourceAlias, ERROR_PERMANENT_NOT_IMPLEMENTED or ERROR_MTI, SourceMessage.MTI);
+        WorkerMessage.LoadOptionalInteractionRejected(NodeID, FAliasID, SourceMessage.SourceID, SourceMessage.SourceAlias, ERROR_CODE_PERMANENT_MTI_TRANSPORT_UNKNOWN, SourceMessage.MTI);
         SendMessage(WorkerMessage);
       end;
     end;
@@ -2601,7 +2601,7 @@ begin
     SendDatagramAckReply(DatagramRequest, False, 0);       // Ack the Request
     SendMessage(DatagramReply);                  // Now send our reply
   end else
-    SendDatagramRejectedReply(DatagramRequest, ERROR_TEMPORARY_BUFFER_UNAVAILABLE)   // We have problems so ask the node to resend if it wants
+    SendDatagramRejectedReply(DatagramRequest, ERROR_CODE_TEMPORARY_BUFFER_UNAVAILABLE)   // We have problems so ask the node to resend if it wants
 end;
 
 procedure TLccNode.SendEvents;

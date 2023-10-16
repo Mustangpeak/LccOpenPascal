@@ -334,10 +334,10 @@ begin
   AddressStart := AddressStart + MemOffset;
 
   if BytesToWrite > 64 then
-    Result := ERROR_TEMPORARY_INVALID_ARGUMENTS
+    Result := ERROR_CODE_PERMANENT_INVALID_ARGUMENTS
   else
   if BytesToWrite = 0 then
-    Result := ERROR_TEMPORARY_INVALID_ARGUMENTS
+    Result := ERROR_CODE_PERMANENT_INVALID_ARGUMENTS
   else begin
 
     if AutoGrow then
@@ -357,7 +357,7 @@ begin
     end;
 
     if AddressStart >= AStream.Size then
-      Result := ERROR_TEMPORARY_INVALID_ARGUMENTS
+      Result := ERROR_CODE_PERMANENT_INVALID_ARGUMENTS
     else begin
 
       MemspaceDataSentCount := LccMessage.DataCount - FirstDataByte;
@@ -424,14 +424,14 @@ begin
 
   if BytesToRead > 64 then
   begin
-    Result := ERROR_TEMPORARY_INVALID_ARGUMENTS;
+    Result := ERROR_CODE_PERMANENT_INVALID_ARGUMENTS;
     OutMessage.DataArrayIndexer[1] := LccMessage.DataArray[1] or $08;  // Set a Failure Status
     OutMessage.InsertWordAsDataBytes(Result, FirstDataByte);           // Errorcode
     OutMessage.DataCount := 2;
   end else
   if BytesToRead = 0 then
   begin
-    Result := ERROR_TEMPORARY_INVALID_ARGUMENTS;
+    Result := ERROR_CODE_PERMANENT_INVALID_ARGUMENTS;
     OutMessage.DataArrayIndexer[1] := LccMessage.DataArray[1] or $08;  // Set a Failure Status
     OutMessage.InsertWordAsDataBytes(Result, FirstDataByte);           // Errorcode
     OutMessage.DataCount := 2;
@@ -455,7 +455,7 @@ begin
 
     if AddressStart >= AStream.Size then
     begin
-      Result := ERROR_TEMPORARY_INVALID_ARGUMENTS;
+      Result := ERROR_CODE_PERMANENT_INVALID_ARGUMENTS;
       OutMessage.DataArrayIndexer[1] := LccMessage.DataArray[1] or $08;  // Set a Failure Status
       OutMessage.InsertWordAsDataBytes(Result, FirstDataByte);         // Errorcode
       OutMessage.DataCount := 2;

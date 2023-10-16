@@ -38,6 +38,7 @@ type
 
   TFormTrainCommander = class(TForm)
     Button1: TButton;
+    Button2: TButton;
     ButtonMsgAssemberlDatagramMsg: TButton;
     ButtonLiveMessages: TButton;
     ButtonDatagramQueue: TButton;
@@ -76,6 +77,7 @@ type
     ToggleBoxServerForm: TToggleBox;
     TreeViewTrains: TTreeView;
     procedure Button1Click(Sender: TObject);
+    procedure Button2Click(Sender: TObject);
     procedure ButtonLiveMessagesClick(Sender: TObject);
     procedure ButtonDatagramQueueClick(Sender: TObject);
     procedure ButtonCreateConsistClick(Sender: TObject);
@@ -180,6 +182,19 @@ begin
     Inc(FAutoCreateTrainAddress);
     Train.Login(NULL_NODE_ID);
   end;
+end;
+
+procedure TFormTrainCommander.Button2Click(Sender: TObject);
+begin
+
+  ShowMessage(
+    'InProcessMessageList: ' + IntToStr(InProcessMessageCount) +
+    ' OutOfBuffersMessageCount: ' + IntToStr(OutOfBuffersMessageCount) +
+    ' AliasServerThread.IncomingMessageList: ' + IntToStr(ThreadListCount(AliasServerThread.IncomingMessageList)) +
+    ' AliasServerThread.MappingRequestMessageList: ' + IntToStr(ThreadListCount(AliasServerThread.MappingRequestMessageList)) +
+    ' AliasServerThread.OutgoingProcessedMessageList: ' + IntToStr(ThreadListCount(AliasServerThread.OutgoingProcessedMessageList)) +
+    ' AliasServerThread.WaitingForMappingMessageList: ' + IntToStr(ThreadListCount(AliasServerThread.WaitingForMappingMessageList))
+    );
 end;
 
 procedure TFormTrainCommander.ButtonLiveMessagesClick(Sender: TObject);
@@ -583,6 +598,12 @@ procedure TFormTrainCommander.FormCreate(Sender: TObject);
 var
   ConnectionInfo: TLccConnectionInfo;
 begin
+
+  {$IFDEF PYTHON_SCRIPT_COMPATIBLE}
+  Caption := 'Train Commander [LccOpenPascal]' + ' PYTHON SCRIPT ENABLED';
+  {$ELSE}
+  Caption := 'Train Commander [LccOpenPascal]' + ' PYTHON SCRIPT DISABLED';
+  {$ENDIF}
 
   NodeManager := TLccNodeManager.Create(nil);
   NodeManager.EmulateCanNetworkLogin := True;

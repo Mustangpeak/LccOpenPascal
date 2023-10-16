@@ -39,33 +39,25 @@ type
 
 TLccGridConnectMessageAssembler = class
 private
-  {$IFDEF LCC_DELPHI}
-  FInProcessMessageList: TObjectList<TLccMessage>;
-  {$ELSE}
-  FInProcessMessageList: TObjectList;
-  {$ENDIF}
+  FInProcessMessageList: TList;
+  FOutOfBuffersList: TList;
   FWorkerMessage: TLccMessage;
-  function GetCount: Integer;
 protected
   property WorkerMessage: TLccMessage read FWorkerMessage write FWorkerMessage;
 public
-  property Count: Integer read GetCount;
-  {$IFDEF LCC_DELPHI}
-  property Messages: TObjectList<TLccMessage> read FInProcessMessageList write FInProcessMessageList;
-  {$ELSE}
-  property Messages: TObjectList read FInProcessMessageList write FInProcessMessageList;
-  {$ENDIF}
+  property InProcessMessageList: TList read FInProcessMessageList write FInProcessMessageList;
+  property OutOfBuffersList: TList read FOutOfBuffersList write FOutOfBuffersList;
 
   constructor Create;
   destructor Destroy; override;
 
-  procedure Add(AMessage: TLccMessage);
-  procedure Clear;
-  procedure Remove(AMessage: TLccMessage; DoFree: Boolean);
-  function FindByAliasAndMTI(AMessage: TLccMessage): TLccMessage;
-  procedure FlushMessagesByAlias(Alias: Word);
-  function IncomingMessageGridConnect(GridConnectStr: String; LccMessage: TLccMessage): TIncomingMessageGridConnectReply; overload;
-  function IncomingMessageGridConnect(LccMessage: TLccMessage): TIncomingMessageGridConnectReply; overload;
+  procedure Add(ALccMessageList: TList; ALccMessage: TLccMessage);
+  procedure Clear(ALccMessageList: TList);
+  procedure Remove(ALccMessageList: TList; ALccMessage: TLccMessage);
+  function FindByAliasPairsAndMessageType(ALccMessageList: TList; ALccMessage: TLccMessage): TLccMessage;
+  procedure FlushMessagesByAlias(ALccMessageList: TList; Alias: Word);
+  function IncomingMessageGridConnect(AGridConnectStr: String; ALccMessage: TLccMessage): TIncomingMessageGridConnectReply; overload;
+  function IncomingMessageGridConnect(ALccMessage: TLccMessage): TIncomingMessageGridConnectReply; overload;
 end;
 
 { TLccGridConnectMessageDisAssembler }
@@ -78,6 +70,8 @@ end;
 
 var
   AllocatedDatagrams: Integer;
+  InProcessMessageCount: Integer;
+  OutOfBuffersMessageCount: Integer;
 
 
 implementation
@@ -98,188 +92,216 @@ end;
 
 { TLccGridConnectMessageAssembler }
 
-function TLccGridConnectMessageAssembler.GetCount: Integer;
-begin
-  Result := FInProcessMessageList.Count;
-end;
-
 constructor TLccGridConnectMessageAssembler.Create;
 begin
   inherited Create;
-  {$IFDEF LCC_DELPHI}
-   FInProcessMessageList := TObjectList<TLccMessage>.Create;
-  {$ELSE}
-  FInProcessMessageList := TObjectList.Create;
-  {$ENDIF}
-
-  Messages.OwnsObjects := False;
-  WorkerMessage := TLccMessage.Create;
+  FInProcessMessageList := TList.Create;
+  FOutOfBuffersList := TList.Create;
+  FWorkerMessage := TLccMessage.Create;
 end;
 
-procedure TLccGridConnectMessageAssembler.Remove(AMessage: TLccMessage; DoFree: Boolean);
+procedure TLccGridConnectMessageAssembler.Remove(ALccMessageList: TList; ALccMessage: TLccMessage);
 begin
-  Messages.Remove(AMessage);
-  if DoFree then
-    AMessage.Free;
+  if Assigned(ALccMessage) then
+  begin
+    ALccMessageList.Remove(ALccMessage);
+    ALccMessage.Free;
+    if ALccMessageList = InProcessMessageList then
+      Dec(InProcessMessageCount);
+    if ALccMessageList = OutOfBuffersList then
+      Dec(OutOfBuffersMessageCount);
+  end;
 end;
 
 destructor TLccGridConnectMessageAssembler.Destroy;
 begin
-  Clear;
+  Clear(InProcessMessageList);
   FInProcessMessageList.Free;
+  Clear(OutOfBuffersList);
+  FOutOfBuffersList.Free;
   FWorkerMessage.Free;
   inherited Destroy;
 end;
 
-procedure TLccGridConnectMessageAssembler.Add(AMessage: TLccMessage);
+procedure TLccGridConnectMessageAssembler.Add(ALccMessageList: TList; ALccMessage: TLccMessage);
 begin
-  Messages.Add(AMessage);
+  ALccMessageList.Add(ALccMessage);
+  if ALccMessageList = InProcessMessageList then
+    Inc(InProcessMessageCount);
+  if ALccMessageList = OutOfBuffersList then
+    Inc(OutOfBuffersMessageCount);
 end;
 
-procedure TLccGridConnectMessageAssembler.Clear;
+procedure TLccGridConnectMessageAssembler.Clear(ALccMessageList: TList);
 var
   i: Integer;
 begin
   try
-    for i := 0 to Messages.Count - 1 do
-      Messages[i].Free
+    for i := 0 to ALccMessageList.Count - 1 do
+    begin
+      TObject(ALccMessageList[i]).Free;
+      if ALccMessageList = InProcessMessageList then
+        Dec(InProcessMessageCount);
+      if ALccMessageList = OutOfBuffersList then
+        Dec(OutOfBuffersMessageCount);
+    end;
   finally
-    Messages.Clear;
+    ALccMessageList.Clear;
   end;
 end;
 
 
-function TLccGridConnectMessageAssembler.FindByAliasAndMTI(AMessage: TLccMessage): TLccMessage;
+function TLccGridConnectMessageAssembler.FindByAliasPairsAndMessageType(
+  ALccMessageList: TList; ALccMessage: TLccMessage): TLccMessage;
 var
   i: Integer;
-  LccMessage: TLccMessage;
+  LocalLccMessage: TLccMessage;
 begin
   Result := nil;
-  for i := 0 to Messages.Count - 1 do
+  for i := 0 to ALccMessageList.Count - 1 do
   begin
-    LccMessage := TLccMessage(Messages[i]);
-    if (AMessage.SourceAlias = LccMessage.SourceAlias) and (AMessage.DestAlias = LccMessage.DestAlias) and (AMessage.MTI = LccMessage.MTI) then
+    LocalLccMessage := TLccMessage(ALccMessageList[i]);
+    if (ALccMessage.SourceAlias = LocalLccMessage.SourceAlias) and (ALccMessage.DestAlias = LocalLccMessage.DestAlias) and (ALccMessage.MTI = LocalLccMessage.MTI) then
     begin
-      Result := LccMessage;
+      Result := LocalLccMessage;
       Break
     end;
   end;
 end;
 
 
-procedure TLccGridConnectMessageAssembler.FlushMessagesByAlias(Alias: Word);
+procedure TLccGridConnectMessageAssembler.FlushMessagesByAlias(ALccMessageList: TList;
+  Alias: Word);
 var
   i: Integer;
-  AMessage: TLccMessage;
+  LocalLccMessage: TLccMessage;
 begin
-  for i := Messages.Count - 1 downto 0  do
+  for i := ALccMessageList.Count - 1 downto 0  do
   begin
-    AMessage := TLccMessage(Messages[i]);
-    if (AMessage.SourceAlias = Alias) or (AMessage.DestAlias = Alias) then
+    LocalLccMessage := TLccMessage(ALccMessageList[i]);
+    if (LocalLccMessage.SourceAlias = Alias) or (LocalLccMessage.DestAlias = Alias) then
     begin
-      if AMessage.MTI = MTI_DATAGRAM then
+      if LocalLccMessage.MTI = MTI_DATAGRAM then
         Dec(AllocatedDatagrams);
-      Messages.Delete(i);
-      AMessage.Free
+      ALccMessageList.Delete(i);
+      LocalLccMessage.Free
     end;
   end;
 end;
 
-function TLccGridConnectMessageAssembler.IncomingMessageGridConnect(GridConnectStr: String; LccMessage: TLccMessage): TIncomingMessageGridConnectReply;
+function TLccGridConnectMessageAssembler.IncomingMessageGridConnect(AGridConnectStr: String; ALccMessage: TLccMessage): TIncomingMessageGridConnectReply;
 begin
-  if LccMessage.LoadByGridConnectStr(GridConnectStr) then
-    Result := IncomingMessageGridConnect(LccMessage)
+  if ALccMessage.LoadByGridConnectStr(AGridConnectStr) then
+    Result := IncomingMessageGridConnect(ALccMessage)
   else
     Result := imgcr_UnknownError
 end;
 
-function TLccGridConnectMessageAssembler.IncomingMessageGridConnect(LccMessage: TLccMessage): TIncomingMessageGridConnectReply;
+function TLccGridConnectMessageAssembler.IncomingMessageGridConnect(ALccMessage: TLccMessage): TIncomingMessageGridConnectReply;
 var
-  InProcessMessage: TLccMessage;
+  LocalLccMessage: TLccMessage;
   i: Integer;
-begin                                                                           // The result of LccMessage is undefined if false is returned!
+  ErrorCode: Word;
+begin                                                                           // The result of ALccMessage is undefined if false is returned!
   Result := imgcr_False;
-  if Assigned(LccMessage) then
+  if Assigned(ALccMessage) then
   begin
-    if LccMessage.IsCAN then
+    if ALccMessage.IsCAN then
     begin  // CAN Only frames
-      case LccMessage.CAN_MTI of
+      case ALccMessage.CAN_MTI of
         MTI_CAN_AMR :
           begin
             // If the Alias is being reset flush all messages associated with it
-            FlushMessagesByAlias(LccMessage.SourceAlias);
+            FlushMessagesByAlias(InProcessMessageList, ALccMessage.SourceAlias);
+            FlushMessagesByAlias(OutOfBuffersList, ALccMessage.SourceAlias);
             Result := imgcr_True  // Pass it on
           end;
-        MTI_CAN_AMD :
-          begin
-            FlushMessagesByAlias(LccMessage.SourceAlias);
-            Result := imgcr_True  // Pass it on
-          end;
+//        MTI_CAN_AMD :       // 10/16/2023 don't think this should be here.. this message is not a problem and can be called anytime for many reasons
+ //         begin
+ //           FlushMessagesByAlias(ALccMessage.SourceAlias);
+ //           Result := imgcr_True  // Pass it on
+ //         end;
         MTI_CAN_FRAME_TYPE_DATAGRAM_FRAME_ONLY :
           begin
-            InProcessMessage := FindByAliasAndMTI(LccMessage);
-            if Assigned(InProcessMessage) then
-              Remove(InProcessMessage, True)                                         // Something is wrong, out of order.  Throw it away
-            else begin
-              if AllocatedDatagrams < MAX_ALLOWED_BUFFERS then
-              begin
-                LccMessage.IsCAN := False;
-                LccMessage.MTI := MTI_DATAGRAM;
+            LocalLccMessage := FindByAliasPairsAndMessageType(InProcessMessageList, ALccMessage);
+            if Assigned(LocalLccMessage) then  // A node can not start start to send a multiframe datagram to a node then
+            begin
+              ALccMessage.LoadDatagramRejected(ALccMessage.DestID, ALccMessage.DestAlias, ALccMessage.SourceID, ALccMessage.SourceAlias, ERROR_CODE_OUT_OF_ORDER_START_BEFORE_END);
+              ALccMessage.CheckNodeIDsBeforeDelivery := True;  // Don't dispatch this message back to the target node
+              Result := imgcr_ErrorToSend;
+              Remove(InProcessMessageList, LocalLccMessage)    // send a single new one in the middle of the previous one out of order.  Throw it away
+            end else
+            begin
+              if AllocatedDatagrams < MAX_ALLOWED_BUFFERS then  // Another node may have the datagram space filled up with a multiframe
+              begin                                             // datagram so this single one for another one will have to wait
+                ALccMessage.IsCAN := False;                     // All done, converted to a real LCC Datagram Message
+                ALccMessage.CAN_MTI := 0;
                 Result := imgcr_True
               end else
               begin
-                LccMessage.LoadDatagramRejected(LccMessage.DestID, LccMessage.DestAlias, LccMessage.SourceID, LccMessage.SourceAlias, ERROR_TEMPORARY_BUFFER_UNAVAILABLE);
-                LccMessage.CheckNodeIDsBeforeDelivery := True;   // Don't dispatch this message back to the target node
+                // Reuse the Message to load up the rejection mession and send it back
+                ALccMessage.LoadDatagramRejected(ALccMessage.DestID, ALccMessage.DestAlias, ALccMessage.SourceID, ALccMessage.SourceAlias, ERROR_CODE_TEMPORARY_BUFFER_UNAVAILABLE);
+                // Don't dispatch this message back to the target node
+                ALccMessage.CheckNodeIDsBeforeDelivery := True;
                 Result := imgcr_ErrorToSend
               end;
             end;
           end;
         MTI_CAN_FRAME_TYPE_DATAGRAM_FRAME_START :
           begin
-            InProcessMessage := FindByAliasAndMTI(LccMessage);
-            if Assigned(InProcessMessage) then
+            LocalLccMessage := FindByAliasPairsAndMessageType(InProcessMessageList, ALccMessage);
+            if Assigned(LocalLccMessage) then
             begin
-              LccMessage.LoadDatagramRejected(LccMessage.DestID, LccMessage.DestAlias, LccMessage.SourceID, LccMessage.SourceAlias, ERROR_TEMPORARY_NOT_EXPECTED or ERROR_NO_END_FRAME);
-              LccMessage.CheckNodeIDsBeforeDelivery := True;  // Don't dispatch this message back to the target node
+              ALccMessage.LoadDatagramRejected(ALccMessage.DestID, ALccMessage.DestAlias, ALccMessage.SourceID, ALccMessage.SourceAlias, ERROR_CODE_OUT_OF_ORDER_START_BEFORE_END);
+              ALccMessage.CheckNodeIDsBeforeDelivery := True;  // Don't dispatch this message back to the target node
               Result := imgcr_ErrorToSend;
-              Remove(InProcessMessage, True)                                         // Something is wrong, out of order.  Throw it away
+              Remove(InProcessMessageList, LocalLccMessage) // Something is wrong, out of order.  Throw it away what was there
             end
             else begin
+              LocalLccMessage := ALccMessage.Clone;
               if AllocatedDatagrams < MAX_ALLOWED_BUFFERS then
               begin
-                InProcessMessage := TLccMessage.Create;
-                InProcessMessage.MTI := MTI_DATAGRAM;
-                LccMessage.CopyToTarget(InProcessMessage);
-                Add(InProcessMessage);
+                Add(InProcessMessageList, LocalLccMessage);
                 Inc(AllocatedDatagrams)
-              end
-              // We wait for the final frame before we send any error messages
+              end else
+                Add(OutOfBuffersList, LocalLccMessage) // We wait for the successful final frame before we buffer full messages, for now just throw it away and return false
             end;
           end;
         MTI_CAN_FRAME_TYPE_DATAGRAM_FRAME :
           begin
-            InProcessMessage := FindByAliasAndMTI(LccMessage);
-            if Assigned(InProcessMessage) then
-              InProcessMessage.AppendDataArray(LccMessage)
-            // We wait for the final frame before we send any error messages
+            LocalLccMessage := FindByAliasPairsAndMessageType(InProcessMessageList, ALccMessage);
+            if Assigned(LocalLccMessage) then
+              LocalLccMessage.AppendDataArray(ALccMessage)
+            else begin   // Python Script does not expect this to occur
+              {
+              ALccMessage.LoadDatagramRejected(ALccMessage.DestID, ALccMessage.DestAlias, ALccMessage.SourceID, ALccMessage.SourceAlias, ERROR_CODE_OUT_OF_ORDER_NO_START_FRAME);
+              ALccMessage.CheckNodeIDsBeforeDelivery := True;  // Don't dispatch this message back to the target node
+              Result := imgcr_ErrorToSend;
+              }
+            end  // We wait for the successful final frame before we send buffer full error messages
           end;
         MTI_CAN_FRAME_TYPE_DATAGRAM_FRAME_END :
           begin
-            InProcessMessage := FindByAliasAndMTI(LccMessage);
-            if Assigned(InProcessMessage) then
+            LocalLccMessage := FindByAliasPairsAndMessageType(InProcessMessageList, ALccMessage);
+            if Assigned(LocalLccMessage) then
             begin
-              InProcessMessage.AppendDataArray(LccMessage);
-              InProcessMessage.CopyToTarget(LccMessage);
-              Remove(InProcessMessage, True);
-              LccMessage.IsCAN := False;
-              LccMessage.MTI := MTI_DATAGRAM;
-              LccMessage.CAN_MTI := 0;
+              LocalLccMessage.AppendDataArray(ALccMessage);
+              LocalLccMessage.CopyToTarget(ALccMessage);
+              Remove(InProcessMessageList, LocalLccMessage);
+              ALccMessage.IsCAN := False;  // Is a fully qualified LCC Datagram now
+              ALccMessage.CAN_MTI := 0;
               Dec(AllocatedDatagrams);
               Result := imgcr_True
             end else
-            begin  // Out of order but let the node handle that if needed, note this could be also if we ran out of buffers....
-              LccMessage.LoadDatagramRejected(LccMessage.DestID, LccMessage.DestAlias, LccMessage.SourceID, LccMessage.SourceAlias, ERROR_TEMPORARY_NOT_EXPECTED or ERROR_NO_START_FRAME);
-              LccMessage.CheckNodeIDsBeforeDelivery := True; // Don't dispatch this message back to the target node
+            begin
+              LocalLccMessage := FindByAliasPairsAndMessageType(OutOfBuffersList, ALccMessage);
+              if Assigned(LocalLccMessage) then
+                ErrorCode := ERROR_CODE_TEMPORARY_BUFFER_UNAVAILABLE
+              else
+                ErrorCode := ERROR_CODE_OUT_OF_ORDER_NO_START_FRAME;
+              Remove(OutOfBuffersList, LocalLccMessage);
+              ALccMessage.LoadDatagramRejected(ALccMessage.DestID, ALccMessage.DestAlias, ALccMessage.SourceID, ALccMessage.SourceAlias, ErrorCode);
+              ALccMessage.CheckNodeIDsBeforeDelivery := True; // Don't dispatch this message back to the target node
               Result := imgcr_ErrorToSend
             end;
           end;
@@ -292,67 +314,67 @@ begin                                                                           
       end
     end else
     begin
-      if LccMessage.CAN_FramingBits <> $00 then                                // Is it a Multi Frame Message?
+      if ALccMessage.CAN_FramingBits <> $00 then                                // Is it a Multi Frame Message?
       begin
-        case LccMessage.CAN_FramingBits of                                     // Train SNIP falls under this now
+        case ALccMessage.CAN_FramingBits of                                     // Train SNIP falls under this now
           $10 : begin   // First Frame
-                  InProcessMessage := FindByAliasAndMTI(LccMessage);
-                  if Assigned(InProcessMessage) then
+                  LocalLccMessage := FindByAliasPairsAndMessageType(InProcessMessageList, ALccMessage);
+                  if Assigned(LocalLccMessage) then
                   begin
-                    LccMessage.LoadOptionalInteractionRejected(LccMessage.DestID, LccMessage.DestAlias, LccMessage.SourceID, LccMessage.SourceAlias, ERROR_TEMPORARY_NOT_EXPECTED or ERROR_NO_END_FRAME, LccMessage.MTI);
-                    LccMessage.CheckNodeIDsBeforeDelivery := True;   // Don't dispatch this message back to the target node
+                    ALccMessage.LoadOptionalInteractionRejected(ALccMessage.DestID, ALccMessage.DestAlias, ALccMessage.SourceID, ALccMessage.SourceAlias, ERROR_CODE_OUT_OF_ORDER_START_BEFORE_END, ALccMessage.MTI);
+                    ALccMessage.CheckNodeIDsBeforeDelivery := True;   // Don't dispatch this message back to the target node
                     Result := imgcr_ErrorToSend;
-                    Remove(InProcessMessage, True)                              // Something is wrong, out of order.  Throw it away
+                    Remove(InProcessMessageList, LocalLccMessage)                              // Something is wrong, out of order.  Throw it away
                   end else
                   begin
-                    InProcessMessage := TLccMessage.Create;
-                    LccMessage.CopyToTarget(InProcessMessage);
-                    Add(InProcessMessage);
+                    LocalLccMessage := TLccMessage.Create;
+                    ALccMessage.CopyToTarget(LocalLccMessage);
+                    Add(InProcessMessageList, LocalLccMessage);
                   end;
                 end;
           $20 : begin   // Last Frame
-                  InProcessMessage := FindByAliasAndMTI(LccMessage);
-                  if Assigned(InProcessMessage) then
+                  LocalLccMessage := FindByAliasPairsAndMessageType(InProcessMessageList, ALccMessage);
+                  if Assigned(LocalLccMessage) then
                   begin
-                    InProcessMessage.AppendDataArray(LccMessage);
-                    InProcessMessage.CopyToTarget(LccMessage);
-                    Remove(InProcessMessage, True);
+                    LocalLccMessage.AppendDataArray(ALccMessage);
+                    LocalLccMessage.CopyToTarget(ALccMessage);
+                    Remove(InProcessMessageList, LocalLccMessage);
                     Result := imgcr_True
                   end else
                   begin
                     // Out of order but let the node handle that if needed (Owned Nodes Only)
                     // Don't swap the IDs, need to find the right target node first
-                    LccMessage.LoadOptionalInteractionRejected(LccMessage.DestID, LccMessage.DestAlias, LccMessage.SourceID, LccMessage.SourceAlias, ERROR_TEMPORARY_NOT_EXPECTED or ERROR_NO_START_FRAME, LccMessage.MTI);
-                    LccMessage.CheckNodeIDsBeforeDelivery := True;   // Don't dispatch this message back to the target node
+                    ALccMessage.LoadOptionalInteractionRejected(ALccMessage.DestID, ALccMessage.DestAlias, ALccMessage.SourceID, ALccMessage.SourceAlias, ERROR_CODE_OUT_OF_ORDER_NO_START_FRAME, ALccMessage.MTI);
+                    ALccMessage.CheckNodeIDsBeforeDelivery := True;   // Don't dispatch this message back to the target node
                     Result := imgcr_ErrorToSend
                   end;
                 end;
           $30 : begin   // Middle Frame
-                  InProcessMessage := FindByAliasAndMTI(LccMessage);
-                  if Assigned(InProcessMessage) then
-                    InProcessMessage.AppendDataArray(LccMessage)
+                  LocalLccMessage := FindByAliasPairsAndMessageType(InProcessMessageList, ALccMessage);
+                  if Assigned(LocalLccMessage) then
+                    LocalLccMessage.AppendDataArray(ALccMessage)
                 end;
         end;
       end else                                                                  // Is it a Multi Frame String Message?
-      if (LccMessage.MTI = MTI_SIMPLE_NODE_INFO_REPLY) then
+      if (ALccMessage.MTI = MTI_SIMPLE_NODE_INFO_REPLY) then
       begin
-        InProcessMessage := FindByAliasAndMTI(LccMessage);
-        if not Assigned(InProcessMessage) then
+        LocalLccMessage := FindByAliasPairsAndMessageType(InProcessMessageList, ALccMessage);
+        if not Assigned(LocalLccMessage) then
         begin
-          InProcessMessage := TLccMessage.Create;
-          LccMessage.CopyToTarget(InProcessMessage);
-          for i := 0 to InProcessMessage.DataCount - 1 do
+          LocalLccMessage := TLccMessage.Create;
+          ALccMessage.CopyToTarget(LocalLccMessage);
+          for i := 0 to LocalLccMessage.DataCount - 1 do
           begin
-            if InProcessMessage.DataArray[i] = Ord(#0) then
-              InProcessMessage.iTag := InProcessMessage.iTag + 1
+            if LocalLccMessage.DataArray[i] = Ord(#0) then
+              LocalLccMessage.iTag := LocalLccMessage.iTag + 1
           end;
-          Add(InProcessMessage);
+          Add(InProcessMessageList, LocalLccMessage);
         end else
         begin
-          if InProcessMessage.AppendDataArrayAsString(LccMessage, 6) then
+          if LocalLccMessage.AppendDataArrayAsString(ALccMessage, 6) then
           begin
-            InProcessMessage.CopyToTarget(LccMessage);
-            Remove(InProcessMessage, True);
+            LocalLccMessage.CopyToTarget(ALccMessage);
+            Remove(InProcessMessageList, LocalLccMessage);
             Result := imgcr_True;
           end
         end
@@ -364,6 +386,8 @@ end;
 
 initialization
   AllocatedDatagrams := 0;
+  InProcessMessageCount := 0;
+  OutOfBuffersMessageCount := 0;
 
 end.
 
