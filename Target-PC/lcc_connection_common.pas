@@ -79,7 +79,6 @@ type
 
   TLccConnectionThread = class(TThread)
   private
-    FErrorOnExit: Boolean;
     FOwnerConnectionManager: TLccConnectionThreadManager;
     FReceiveStreamConnectionThread: TMemoryStream;
     FRunning: Boolean;
@@ -100,6 +99,8 @@ type
 
     // Calls the actual event handler back through the Connection Factory
     procedure ConnectionStateChangePossiblyThroughSyncronize; virtual;
+    //
+    procedure ErrorMessagePossiblyThroughSyncronize; virtual;
     // Loads the stream with data based on the LccMessages sent in the ALccMessageList could be GridConnect strings or TCP depending on OwnerConnectionManager.EmulateCanBus
     function LoadStreamFromMessageBuffer(AStream: TStream; ALccMessageList: Classes.TThreadList; ClearBuffer: Boolean = True): Boolean; virtual;
     // Called to place a message into the SendMessageLccMessgeBuffer, typically called by the OwnerConnectionManager
@@ -113,10 +114,6 @@ type
     constructor Create(CreateSuspended: Boolean; AnOwner: TLccConnectionThreadManager); reintroduce; virtual;
     destructor Destroy; override;
 
-    procedure ErrorMessage; virtual;
-
-    // Set to true if the thread was terminated because of an exception vs closing gracefully
-    property ErrorOnExit: Boolean read FErrorOnExit write FErrorOnExit;
     // Connection Manager that owns this thread
     property OwnerConnectionManager: TLccConnectionThreadManager read FOwnerConnectionManager;
     // Give public access to test if the thread has been set to Terminate
@@ -639,13 +636,13 @@ begin
   if ThroughSyncronize then
   begin
     if not SuppressMessage then
-      Synchronize({$IFDEF FPC}@{$ENDIF}ErrorMessage);
+      Synchronize({$IFDEF FPC}@{$ENDIF}ErrorMessagePossiblyThroughSyncronize);
     HandleSendConnectionChangeNotify(lcsDisconnected, ThroughSyncronize);
     Terminate;
   end else
   begin
     if not SuppressMessage then
-      ErrorMessage;
+      ErrorMessagePossiblyThroughSyncronize;
     HandleSendConnectionChangeNotify(lcsDisconnected, ThroughSyncronize);
     Terminate;
   end;
@@ -666,17 +663,14 @@ begin
     ConnectionStateChangePossiblyThroughSyncronize;
 end;
 
-procedure TLccConnectionThread.ErrorMessage;
-// Called in context of main thread from connection thread
-var
-  LocalConnectionInfo: TLccConnectionInfo;
+procedure TLccConnectionThread.ErrorMessagePossiblyThroughSyncronize;
 begin
-{  LocalConnectionInfo := ConnectionInfo.Clone;
+  OwnerConnectionManager.CriticalSectionEnter;
   try
-    OwnerConnectionManager.ErrorMessage(Self, LocalConnectionInfo);
+    (OwnerConnectionManager.Owner as TLccConnectionFactory).DoError(OwnerConnectionManager, Self, OwnerConnectionManager.ConnectionInfo);
   finally
-    LocalConnectionInfo.Free
-  end; }
+    OwnerConnectionManager.CriticalSectionLeave;
+  end;
 end;
 
 procedure TLccConnectionThread.ConnectionStateChangePossiblyThroughSyncronize;

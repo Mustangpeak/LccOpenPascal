@@ -3,7 +3,7 @@ unit lcc_ethernet_server;
 {$I ../../lcc_compilers.inc}
 
 {$IFDEF LCC_FPC}
-{$mode delphi}{$H+}
+{$mode delphi}{$H+}     // Needed to deal with generics for the WebSocket code and Dictionary
 {$ENDIF}
 
 interface

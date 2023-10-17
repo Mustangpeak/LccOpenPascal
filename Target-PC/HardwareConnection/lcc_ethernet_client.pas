@@ -1,4 +1,7 @@
 unit lcc_ethernet_client;
+
+{$I ../../lcc_compilers.inc}
+
 {$IFDEF LCC_FPC}
 {$mode objfpc}{$H+}
 {$ENDIF}
@@ -35,7 +38,7 @@ uses
   lcc_node_messages,
   lcc_utilities,
   lcc_app_common_settings,
-  lcc_common_classes,
+  lcc_connection_common,
   lcc_ethernet_common,
   lcc_alias_server;
 
@@ -77,19 +80,15 @@ type
 
     function OpenConnection: TLccConnectionThread; override;
     procedure CloseConnection; override;
-    procedure SendMessage(ALccMessage: TLccMessage); override;
   published
     { Published declarations }
   end;
 
+  TLccEthernetClientThreadManagerClass = class of TLccEthernetClientThreadManager;
+
 implementation
 
 { TLccEthernetClientThreadManager }
-
-procedure TLccEthernetClientThreadManager.SendMessage(ALccMessage: TLccMessage);
-begin
-
-end;
 
 function TLccEthernetClientThreadManager.OpenConnection: TLccConnectionThread;
 begin
@@ -121,8 +120,6 @@ begin
           Break // Something went really wrong
         end;
       end;
-      if ClientThread.ErrorOnExit then
-        ClientThread.ErrorMessage;
       ClientThread.HandleSendConnectionChangeNotify(lcsDisconnected, False);
     finally
       FreeAndNil(FClientThread);
@@ -134,12 +131,16 @@ end;
 constructor TLccEthernetClientThread.Create(CreateSuspended: Boolean; AnOwner: TLccConnectionThreadManager);
 begin
   inherited Create(CreateSuspended, AnOwner);
-//  WriteLn('TLccEthernetClientThread Create');
+  GridConnectHelper := TGridConnectDecodeStateMachine.Create;
+  idTCPClient := TIdTCPClient.Create();
+  idThreadComponent := TIdThreadComponent.Create();
 end;
 
 destructor TLccEthernetClientThread.Destroy;
 begin
-//  WriteLn('TLccEthernetClientThread Destroy');
+  FreeAndNil(FidTCPClient);
+  FreeAndNil(FidThreadComponent);
+  FreeAndNil(FGridConnectHelper);
   inherited;
 end;
 
@@ -147,35 +148,29 @@ procedure TLccEthernetClientThread.Execute;
 var
   LocalListenerPort: Word;
   LocalListenerIP: String;
-  LocalConnectionInfo: TLccEthernetConnectionInfo;
 begin
   Running := True;
   try
     HandleSendConnectionChangeNotify(lcsConnecting, True);
-    GridConnectHelper := TGridConnectDecodeStateMachine.Create;
-    idTCPClient := TIdTCPClient.Create();
-    idThreadComponent := TIdThreadComponent.Create();
     try
       idTCPClient.IPVersion := Id_IPv4;
-      idTCPClient.ConnectTimeout := 0;
+      idTCPClient.ConnectTimeout := 5000;  // Default 0 mean forever
       idTCPClient.OnConnected     := {$IFDEF LCC_FPC}@{$ENDIF}OnClientConnected;
       idTCPClient.OnDisconnected  := {$IFDEF LCC_FPC}@{$ENDIF}OnClientDisconnected;
       idThreadComponent.OnRun := {$IFDEF LCC_FPC}@{$ENDIF}OnThreadComponentRun;
 
       OwnerConnectionManager.CriticalSectionEnter;
       try
-        LocalConnectionInfo := OwnerConnectionManager.DefaultConnectionInfo as TLccEthernetConnectionInfo;
-
-        if LocalConnectionInfo.AutoResolveIP then
+        if (OwnerConnectionManager.ConnectionInfo as TLccEthernetConnectionInfo).AutoResolveIP then
         begin
           {$IFDEF LCC_WINDOWS}
-          LocalConnectionInfo).ClientIP := ResolveWindowsIp;
+          (OwnerConnectionManager.ConnectionInfo as TLccEthernetConnectionInfo).ClientIP := ResolveWindowsIp;
           {$ELSE}
-          LocalConnectionInfo.ClientIP := ResolveUnixIp;
+          (OwnerConnectionManager.ConnectionInfo as TLccEthernetConnectionInfo).ClientIP := ResolveUnixIp;
           {$ENDIF}
         end;
-        LocalListenerIP := LocalConnectionInfo.ListenerIP;
-        LocalListenerPort := LocalConnectionInfo.ListenerPort;
+        LocalListenerIP := (OwnerConnectionManager.ConnectionInfo as TLccEthernetConnectionInfo).ListenerIP;
+        LocalListenerPort := (OwnerConnectionManager.ConnectionInfo as TLccEthernetConnectionInfo).ListenerPort;
       finally
         OwnerConnectionManager.CriticalSectionLeave;
       end;
@@ -184,30 +179,23 @@ begin
       try
         while not IsTerminated and idTCPClient.Connected do
         begin
-          SendMessageStream.Clear;
-          if LoadStreamFromMessageBuffer(SendMessageStream, SendMessageBuffer) and idTCPClient.IOHandler.Connected then
-            idTCPClient.IOHandler.Write(SendMessageStream);
+          if LoadStreamFromMessageBuffer(SendStreamConnectionThread, SendMessageLccMessageBuffer) and idTCPClient.IOHandler.Connected then
+            idTCPClient.IOHandler.Write(SendStreamConnectionThread, SendStreamConnectionThread.Size);
 
           Sleep(THREAD_SLEEP_TIME);
         end;
       finally
         idThreadComponent.Active := False;
         idTCPClient.Disconnect;
-        idTCPClient.Free;
-        idThreadComponent.Free;
-        GridConnectHelper.Free;
       end;
     except   // Indy uses exceptions to trigger problems
       on E: EIdException do
       begin
-        OwnerConnectionManager.CriticalSectionEnter;
-        try
-        OwnerConnectionManager.DefaultConnectionInfo.ErrorMessage := E.Message;
-
-        finally
-          OwnerConnectionManager.CriticalSectionLeave;
-        end;
-        ErrorOnExit := True;
+        OwnerConnectionManager.ConnectionInfo.ErrorMessage := E.Message;
+        // Order important here to help with applications and auto connect timers and such... make
+        // sure it is signaled disconnected before the Error comes so it can trigger a retry
+        HandleSendConnectionChangeNotify(lcsDisconnected, True);
+        HandleErrorAndDisconnect(OwnerConnectionManager.ConnectionInfo.SuppressErrorMessages, True);
       end;
     end;
   finally
@@ -232,8 +220,9 @@ begin
 
   if not IdTCPClient.IOHandler.InputBufferIsEmpty then
   begin
-    ReceiveStream.Clear;
-    idTCPClient.IOHandler.ReadStream(ReceiveStream, idTCPClient.IOHandler.InputBuffer.Size);
+    ReceiveStreamConnectionThread.Position := 0;
+    ReceiveStreamConnectionThread.Size := 0;    // Would this set Postion too?
+    idTCPClient.IOHandler.ReadStream(ReceiveStreamConnectionThread, idTCPClient.IOHandler.InputBuffer.Size);
   end;
 
     // https://stackoverflow.com/questions/64593756/delphi-rio-indy-tcpserver-high-cpu-usage

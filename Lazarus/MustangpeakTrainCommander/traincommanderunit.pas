@@ -373,35 +373,8 @@ var
   ByteArray: TLccDynamicByteArray;
   Preamble: String;
 begin
-
   if CheckBoxLogMessages.Checked then
   begin
-  {  if Manager = LccServer then
-      Preamble := 'TCP:S: '
-    else
-    if Manager = LccWebsocketServer then
-      Preamble := 'WebSocket:S: '
-    else
-    if Manager = LccHTTPServer then
-      Preamble := 'HTTP:S: '
-    else
-    if Manager = LccComPort then      // Should never hit as the Comport is SendMessage Only
-    begin
-      Preamble := 'ComPort:S: ';
-
-      LccComPort.SendMessageRawGridConnect(GridConnectStyleMessage);
-
-      MemoComPort.Lines.BeginUpdate;
-      try
-        MemoComPort.Lines.Add(Preamble + GridConnectStyleMessage);
-        MemoComPort.SelStart := Length(MemoComPort.Lines.Text);
-      finally
-        MemoComPort.Lines.EndUpdate;
-      end;
-      Exit;
-    end;
-   }
-
     MemoLog.Lines.BeginUpdate;
     try
       if CheckBoxGridConnect.Checked then

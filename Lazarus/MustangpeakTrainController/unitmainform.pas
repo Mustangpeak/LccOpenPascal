@@ -29,7 +29,7 @@ uses
   lcc_node_train,
   lcc_node_traindatabase,
   lcc_node_controller,
-  lcc_common_classes,
+  lcc_connection_common,
   lcc_node,
   lcc_defines,
   lcc_base_classes,
@@ -188,8 +188,9 @@ type
     property DetailsTractionObject: TLccTractionObject read FDetailsTractionObject write FDetailsTractionObject;
 
     property ShownOnce: Boolean read FShownOnce write FShownOnce;
-    procedure OnConnectionStateChange(Sender: TObject; ConnectionInfo: TLccHardwareConnectionInfo);
-    procedure OnErrorMessage(Sender: TObject; ConnectionInfo: TLccHardwareConnectionInfo);
+
+    procedure OnConnectionFactoryConnectionState(Sender: TObject; Manager: TLccConnectionThreadManager; Thread: TLccConnectionThread; Info: TLccConnectionInfo);
+    procedure OnConnectionErrorMessage(Sender: TObject; Manager: TLccConnectionThreadManager; Thread: TLccConnectionThread; Info: TLccConnectionInfo);
 
     procedure OnMessageReceive(Sender: TObject; LccMessage: TLccMessage);
     procedure OnMessageSend(Sender: TObject; LccMessage: TLccMessage);
@@ -239,16 +240,13 @@ implementation
 
 procedure TFormTrainController.FormCreate(Sender: TObject);
 begin
-  NodeManager := TLccNodeManager.Create(nil, IS_GRIDCONNECT);
-  EthernetClient := TLccEthernetClientThreadManager.Create(nil, NodeManager);
+  NodeManager := TLccNodeManager.Create(nil);
   BitmapDetails := TBitmap.Create;
   CDIParser := TLccCdiParser.Create(nil);
   ImageListMain.GetBitmap(ICON_MORE_DOTS_IMAGE_INDEX, BitmapDetails);
 
-  EthernetClient.OnConnectionStateChange := @OnConnectionStateChange;
-  EthernetClient.OnErrorMessage := @OnErrorMessage;
-  EthernetClient.OnLccMessageReceive := @OnMessageReceive;
-  EthernetClient.OnLccMessageSend := @OnMessageSend;
+  ConnectionFactory.OnStateChange := @OnConnectionFactoryConnectionState;
+  ConnectionFactory.OnError := @OnConnectionErrorMessage;
 
   NodeManager.OnNodeAliasIDChanged := @OnNodeAliasChanged;
   NodeManager.OnNodeIDChanged := @OnNodeIdChanged;
@@ -260,23 +258,23 @@ end;
 procedure TFormTrainController.FormCloseQuery(Sender: TObject; var CanClose: Boolean);
 begin
   TimerMain.Enabled := False; // Stop trying to log in
+  ConnectionFactory.DestroyConnection(EthernetClient);
+  EthernetClient := nil;
   NodeManager.ReleaseAliasAll;
-  EthernetClient.CloseConnection;
 end;
 
 procedure TFormTrainController.ButtonSettingsRestartConnectionClick(Sender: TObject);
 var
-  Info: TLccEthernetConnectionInfo;
+  ConnectionInfo: TLccEthernetConnectionInfo;
 begin
-  Info := TLccEthernetConnectionInfo.Create;
-  begin
-    Info.ListenerIP := EditSettingsIP.Text;
-    Info.ListenerPort := StrToInt(EditSettingsPort.Text);
-    Info.GridConnect := IS_GRIDCONNECT;
-    Info.Hub := False;
-    Info.SuppressErrorMessages := False;
-    EthernetClient.OpenConnection(Info);
-  end;
+  ConnectionFactory.DestroyConnection(EthernetClient);
+  ConnectionInfo := TLccEthernetConnectionInfo.Create;
+  ConnectionInfo.ListenerIP := EditSettingsIP.Text;
+  ConnectionInfo.ListenerPort := StrToInt(EditSettingsPort.Text);
+  ConnectionInfo.SuppressErrorMessages := False;
+  EthernetClient := ConnectionFactory.CreateConnection(TLccEthernetClientThreadManager, ConnectionInfo) as TLccEthernetClientThreadManager;
+
+  EthernetClient.OpenConnection;
 end;
 
 procedure TFormTrainController.ActionRosterRefreshExecute(Sender: TObject);
@@ -344,7 +342,6 @@ end;
 procedure TFormTrainController.FormDestroy(Sender: TObject);
 begin
   NodeManager.ReleaseAliasAll;
-  EthernetClient.Free;
   NodeManager.Free;    // Must be last as previous 2 use it
   BitmapDetails.Free;
   CDIParser.Free;
@@ -617,12 +614,9 @@ end;
 
 procedure TFormTrainController.TimerMainTimer(Sender: TObject);
 begin
-//  WriteLn('Timer Tick');
+  TimerMain.Interval := 5000;
   if not (EthernetClient.Connected or EthernetClient.Connecting) then
-  begin
-//    WriteLn('Restarting on Timer');
     ButtonSettingsRestartConnectionClick(Self)
-  end;
 end;
 
 procedure TFormTrainController.ToggleBoxFunctionChange(Sender: TObject);
@@ -652,43 +646,54 @@ begin
   end
 end;
 
-procedure TFormTrainController.OnConnectionStateChange(Sender: TObject; ConnectionInfo: TLccHardwareConnectionInfo);
+
+procedure TFormTrainController.OnConnectionFactoryConnectionState(
+  Sender: TObject; Manager: TLccConnectionThreadManager;
+  Thread: TLccConnectionThread; Info: TLccConnectionInfo);
 begin
-  case TLccEthernetConnectionInfo(ConnectionInfo).ConnectionState of
-    lcsDisconnected :
-      begin
-        LabelSettingsConnectionState.Caption := 'Waiting for Connection';
-      end;
-    lcsConnecting :
-      begin
-        LabelSettingsConnectionState.Caption := 'Connecting';
-      end;
-    lcsConnected :
-      begin
-        LabelSettingsConnectionState.Caption := 'Connected';
-        if NodeManager.Nodes.Count = 0 then
+
+  if Manager = EthernetClient then
+  begin
+
+    case TLccEthernetConnectionInfo(Info).ConnectionState of
+      lcsDisconnected :
         begin
-          Controller := NodeManager.AddNodeByClass('', TLccTrainController, True, NULL_NODE_ID) as TLccTrainController;
-          Controller.TractionServer.OnSNIPChange := @OnSNIPChange;
-          Controller.TractionServer.OnTrainSNIPChange := @OnTrainSNIPChange;
-          Controller.TractionServer.OnRegisterChange := @OnRegisterChange;
-          Controller.TractionServer.OnEmergencyStopChange := @OnEmergencyStopChange;
-          Controller.TractionServer.OnFunctionChange := @OnFunctionChange;
-          Controller.TractionServer.OnSpeedChange := @OnSpeedChange;
-          Controller.OnControllerAssignChange := @OnControllerAssignChange;
-          Controller.TractionServer.Enabled := True;
+          LabelSettingsConnectionState.Caption := 'Waiting for Connection';
         end;
-      end;
-    lcsDisconnecting :
-      begin
-        LabelSettingsConnectionState.Caption := 'Disconnecting';
-      end;
+      lcsConnecting :
+        begin
+          LabelSettingsConnectionState.Caption := 'Connecting';
+        end;
+      lcsConnected :
+        begin
+          LabelSettingsConnectionState.Caption := 'Connected';
+          if NodeManager.Nodes.Count = 0 then
+          begin
+            Controller := NodeManager.AddNodeByClass('', TLccTrainController, True, NULL_NODE_ID) as TLccTrainController;
+            Controller.TractionServer.OnSNIPChange := @OnSNIPChange;
+            Controller.TractionServer.OnTrainSNIPChange := @OnTrainSNIPChange;
+            Controller.TractionServer.OnRegisterChange := @OnRegisterChange;
+            Controller.TractionServer.OnEmergencyStopChange := @OnEmergencyStopChange;
+            Controller.TractionServer.OnFunctionChange := @OnFunctionChange;
+            Controller.TractionServer.OnSpeedChange := @OnSpeedChange;
+            Controller.OnControllerAssignChange := @OnControllerAssignChange;
+            Controller.TractionServer.Enabled := True;
+          end;
+        end;
+      lcsDisconnecting :
+        begin
+          LabelSettingsConnectionState.Caption := 'Disconnecting';
+        end;
+    end;
   end;
 end;
 
-procedure TFormTrainController.OnErrorMessage(Sender: TObject; ConnectionInfo: TLccHardwareConnectionInfo);
+procedure TFormTrainController.OnConnectionErrorMessage(Sender: TObject;
+  Manager: TLccConnectionThreadManager; Thread: TLccConnectionThread;
+  Info: TLccConnectionInfo);
 begin
-
+  LabelSettingsConnectionState.Caption := Info.ErrorMessage;
+  TimerMain.Interval := 500;  // Fire immediatly once this Syncronize call returns
 end;
 
 procedure TFormTrainController.OnMessageReceive(Sender: TObject; LccMessage: TLccMessage);

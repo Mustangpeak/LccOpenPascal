@@ -276,15 +276,19 @@ if TargetOS = &apos;linux&apos; then
       </Item1>
       <Item2>
         <Name Value="ECodetoolError"/>
+        <Enabled Value="False"/>
       </Item2>
       <Item3>
         <Name Value="EFOpenError"/>
+        <Enabled Value="False"/>
       </Item3>
       <Item4>
         <Name Value="EIdSilentException"/>
+        <Enabled Value="False"/>
       </Item4>
       <Item5>
         <Name Value="EIdSocketError"/>
+        <Enabled Value="False"/>
       </Item5>
     </Exceptions>
   </Debugging>
