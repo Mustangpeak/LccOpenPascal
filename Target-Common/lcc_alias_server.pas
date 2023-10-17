@@ -182,15 +182,8 @@ begin
 end;
 
 function TLccAliasServer.Count: Integer;
-var
-  List: TList;
 begin
-  List := MappingList.LockList;
-  try
-    Result := List.Count;
-  finally
-     MappingList.UnlockList;
-  end;
+  Result := ThreadListCount(MappingList);
 end;
 
 function TLccAliasServer.FindMapping(AnAliasID: Word): TLccAliasMapping;

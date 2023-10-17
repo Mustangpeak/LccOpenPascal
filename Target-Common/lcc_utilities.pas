@@ -38,6 +38,8 @@ uses
   function _Highest2(Data: QWord): Byte;
   function IsPrintableChar(C: Char): Boolean;
   function ThreadListCount(AThreadedList: TThreadList): Int64;
+  procedure ThreadListClearObjects(AThreadList: TThreadList);
+  procedure ListClearObject(AList: TList);
 
 
   function StreamReadByte(AStream: TStream): Byte;
@@ -842,7 +844,33 @@ end;
     finally
       AThreadedList.UnlockList;
     end;
+  end;
 
+  procedure ThreadListClearObjects(AThreadList: TThreadList);
+  var
+    L: TList;
+    i: Integer;
+  begin
+    L := AThreadList.LockList;
+    try
+      for i := 0 to L.Count - 1 do
+        TObject( L[i]).Free;
+    finally
+      L.Clear;
+      AThreadList.UnlockList;
+    end;
+  end;
+
+  procedure ListClearObject(AList: TList);
+  var
+    i: Integer;
+  begin
+    try
+      for i := 0 to AList.Count - 1 do
+        TObject( AList[i]).Free;
+    finally
+      AList.Clear;
+    end;
   end;
 
 end.

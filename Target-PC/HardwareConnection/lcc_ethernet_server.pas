@@ -12,6 +12,7 @@ uses
   Classes,
   SysUtils,
   {$IFDEF LCC_FPC}
+    LazLogger,
     Generics.Collections,
     strutils,
     {$IFNDEF FPC_CONSOLE_APP}
@@ -81,7 +82,7 @@ type
     constructor Create(AnOwner: TLccConnectionContextList; AContext: TIdContext); virtual;
     destructor Destroy; override;
 
-    procedure IncomingRawData(RawData: TLccDynamicByteArray; DataSize: Int64); virtual;
+    procedure IncomingRawData(AStream: TStream); virtual;
   end;
 
   TLccConnectionContextClass = class of TLccConnectionContext;
@@ -101,7 +102,7 @@ type
     destructor Destroy; override;
     function ContextAdd(AContext: TIdContext): TLccConnectionContext;
     function ContextRemove(AContext: TIdContext): Boolean;
-    procedure IncomingRawDataForContext(AContext: TIdContext; RawData: TLccDynamicByteArray; DataSize: Int64);
+    procedure IncomingRawDataForContext(AContext: TIdContext; AStream: TStream);
   end;
 
 
@@ -119,7 +120,7 @@ type
     procedure IdTCPServerDisconnect(AContext: TIdContext); virtual;
     procedure IdTCPServerExecute(AContext: TIdContext); virtual;
     procedure Execute; override;
-    procedure RelayToOtherConnections(ASourceContext: TIdContext; RawData: TLccDynamicByteArray; DataSize: Int64);
+    procedure RelayToOtherConnections(ASourceContext: TIdContext; AStream: TStream);
   public
     constructor Create(CreateSuspended: Boolean; AnOwner: TLccConnectionThreadManager); override;
     destructor Destroy; override;
@@ -156,7 +157,7 @@ type
     constructor Create(AnOwner: TLccConnectionContextList; AContext: TIdContext); override;
     destructor Destroy; override;
 
-    procedure IncomingRawData(RawData: TLccDynamicByteArray; DataSize: Int64); override;
+    procedure IncomingRawData(AStream: TStream); override;
   end;
   TLccWebsocketConnectionContextClass = class of TLccWebsocketConnectionContext;
 
@@ -181,7 +182,7 @@ type
     procedure IdTCPServerExecute(AContext: TIdContext); override;
 
     function ParseHeader(const msg: string): TDictionary<string, string>;
-    function LoadBufferFromMessageBuffer(var ABuffer: TLccDynamicByteArray; var ABufferSize: Int64; AMessageBuffer: Classes.TThreadList; ClearBuffer: Boolean = True): Boolean; override;
+    function LoadStreamFromMessageBuffer(AStream: TStream; ALccMessageList: Classes.TThreadList; ClearBuffer: Boolean = True): Boolean; override;
   public
     constructor Create(CreateSuspended: Boolean; AnOwner: TLccConnectionThreadManager); override;
     destructor Destroy; override;
@@ -215,8 +216,7 @@ begin
   inherited Destroy;
 end;
 
-procedure TLccWebsocketConnectionContext.IncomingRawData(
-  RawData: TLccDynamicByteArray; DataSize: Int64);
+procedure TLccWebsocketConnectionContext.IncomingRawData(AStream: TStream);
 var
   l: byte;
   b: array [0..7] of byte;
@@ -227,42 +227,41 @@ begin
 
   // UPDATE THIS TO WORK WITH THE ARRAY
 
-  {
-  DataStream.Position := 0;
+  AStream.Position := 0;
   // Strip off the header from the data
   try
-    if DataStream.ReadByte = $81 then
+    if AStream.ReadByte = $81 then
     begin
-      l := DataStream.ReadByte;
+      l := AStream.ReadByte;
       case l of
         $FE:
           begin
-            b[1] := DataStream.ReadByte; b[0] := DataStream.ReadByte;
+            b[1] := AStream.ReadByte; b[0] := AStream.ReadByte;
             b[2] := 0; b[3] := 0; b[4] := 0; b[5] := 0; b[6] := 0; b[7] := 0;
             DecodedSize := Int64(b);
           end;
         $FF:
           begin
-            b[7] := DataStream.ReadByte; b[6] := DataStream.ReadByte; b[5] := DataStream.ReadByte; b[4] := DataStream.ReadByte;
-            b[3] := DataStream.ReadByte; b[2] := DataStream.ReadByte; b[1] := DataStream.ReadByte; b[0] := DataStream.ReadByte;
+            b[7] := AStream.ReadByte; b[6] := AStream.ReadByte; b[5] := AStream.ReadByte; b[4] := AStream.ReadByte;
+            b[3] := AStream.ReadByte; b[2] := AStream.ReadByte; b[1] := AStream.ReadByte; b[0] := AStream.ReadByte;
             DecodedSize := Int64(b);
           end;
         else
           DecodedSize := l - 128;
       end;
-      Mask[0] := DataStream.ReadByte; Mask[1] := DataStream.ReadByte; Mask[2] := DataStream.ReadByte; Mask[3] := DataStream.ReadByte;
+      Mask[0] := AStream.ReadByte; Mask[1] := AStream.ReadByte; Mask[2] := AStream.ReadByte; Mask[3] := AStream.ReadByte;
 
       if DecodedSize > 0 then
       begin
         // Client To Server has the data Masked
         WebSocketHeaderStrippedReceiveStream.Size := DecodedSize;
         WebSocketHeaderStrippedReceiveStream.Position := 0;
-        WebSocketHeaderStrippedReceiveStream.WriteByte( DataStream.ReadByte xor Mask[WebSocketHeaderStrippedReceiveStream.Position mod 4]);
+        WebSocketHeaderStrippedReceiveStream.WriteByte( AStream.ReadByte xor Mask[WebSocketHeaderStrippedReceiveStream.Position mod 4]);
         inherited IncomingRawData(WebSocketHeaderStrippedReceiveStream);
       end;
     end;
   except
-  end;   }
+  end;
 end;
 
 { TLccWebSocketServerThread }
@@ -451,9 +450,8 @@ begin
     inherited IdTCPServerExecute(AContext);
 end;
 
-function TLccWebSocketServerThread.LoadBufferFromMessageBuffer(
-  var ABuffer: TLccDynamicByteArray; var ABufferSize: Int64;
-  AMessageBuffer: Classes.TThreadList; ClearBuffer: Boolean): Boolean;
+function TLccWebSocketServerThread.LoadStreamFromMessageBuffer(AStream: TStream; ALccMessageList: Classes.TThreadList;
+  ClearBuffer: Boolean = True): Boolean;
 var
   StreamDataLen, i: Int64;
 begin
@@ -462,11 +460,8 @@ begin
   // Add the header to the data
   // No mask from Server to Client
 
-  // TODO
-  //  UPDATE TO WORK WITH THE BUFFER
-
- { SendMessageTemp.Position := 0;
-  Result := inherited LoadStreamFromMessageBuffer(SendMessageTemp, AMessageBuffer, ClearBuffer);
+  SendMessageTemp.Position := 0;
+  Result := inherited LoadStreamFromMessageBuffer(SendMessageTemp, ALccMessageList, ClearBuffer);
 
   if Result then
   begin
@@ -502,8 +497,7 @@ begin
 
     for i := 0 to SendMessageTemp.Size - 1 do
       AStream.WriteByte( SendMessageTemp.ReadByte);
-  end; }
-
+  end;
 end;
 
 {$IFDEF LCC_FPC}
@@ -582,8 +576,7 @@ begin
   inherited Destroy;
 end;
 
-function TLccConnectionContextList.ContextAdd(AContext: TIdContext
-  ): TLccConnectionContext;
+function TLccConnectionContextList.ContextAdd(AContext: TIdContext): TLccConnectionContext;
 var
   List: TList;
   i: Integer;
@@ -635,8 +628,7 @@ begin
   end;
 end;
 
-procedure TLccConnectionContextList.IncomingRawDataForContext(
-  AContext: TIdContext; RawData: TLccDynamicByteArray; DataSize: Int64);
+procedure TLccConnectionContextList.IncomingRawDataForContext(AContext: TIdContext; AStream: TStream);
 var
   ContextList:  TList;
   iContext: Integer;
@@ -650,7 +642,7 @@ begin
       ConnectionContext := TLccConnectionContext(ContextList[iContext]);
       if ConnectionContext.Context = AContext then
       begin
-        ConnectionContext.IncomingRawData(RawData, DataSize);
+        ConnectionContext.IncomingRawData(AStream);
         Break;
       end;
     end;
@@ -684,22 +676,34 @@ end;
 //The read and write streams seem to be having random issues.....
 
 
-procedure TLccConnectionContext.IncomingRawData(RawData: TLccDynamicByteArray;
-  DataSize: Int64);
+procedure TLccConnectionContext.IncomingRawData(AStream: TStream);
 var
   iData: Integer;
   LocalDataArray: TLccDynamicByteArray;
   GridConnectStrPtr: PGridConnectString;
   MessageStr: String;
+  B: Byte;
+
+  StartSize: Int64;
 begin
 
   if OwnerConnectionContextList.OwnerConnectionThread.OwnerConnectionManager.EmulateCanBus then
   begin
-    for iData := 0 to DataSize - 1 do
+    AStream.Position := 0;
+
+    StartSize := AStream.Size;
+
+    for iData := 0 to AStream.Size - 1 do
     begin
       // Take the incoming characters and try to make a valid gridconnect message
       GridConnectStrPtr := nil;
-      if GridConnectDecodeStateMachine.GridConnect_DecodeMachine(RawData[iData], GridConnectStrPtr) then
+
+      if AStream.Position < AStream.Size then
+        B := AStream.ReadByte
+      else
+        beep;
+
+      if GridConnectDecodeStateMachine.GridConnect_DecodeMachine(B, GridConnectStrPtr) then
       begin     // Have a valid gridconnect message
         MessageStr := GridConnectBufferToString(GridConnectStrPtr^);
         WorkerMessage.LoadByGridConnectStr(MessageStr);
@@ -732,9 +736,9 @@ begin
   end else
   begin
     LocalDataArray := [];
-    for iData := 0 to DataSize - 1 do
+    for iData := 0 to AStream.Size - 1 do
     begin
-      if TcpDecodeStateMachine.OPStackcoreTcp_DecodeMachine(RawData[iData], LocalDataArray) then
+      if TcpDecodeStateMachine.OPStackcoreTcp_DecodeMachine(AStream.ReadByte, LocalDataArray) then
       begin
         if WorkerMessage.LoadByLccTcp(LocalDataArray) then
           AliasServerThread.AddIncomingLccMessage(WorkerMessage, False);
@@ -801,7 +805,7 @@ begin
             try
               // Outside of the Message Buffer (so not to block the main thread sending more messages)
               // dispatch this string to all the connections
-              if LoadBufferFromMessageBuffer(FSendBuffer, FSendBufferSize, SendMessageBuffer) then
+              if LoadStreamFromMessageBuffer(SendStreamConnectionThread, SendMessageLccMessageBuffer) then
               begin
                 // Decided to make the sendmessage side more centralized vs having buffers
                 // in each connection context and have the message convertered N times in
@@ -809,8 +813,9 @@ begin
                 // it does not.
                 for i := 0 to IdTCPServer.Contexts.Count - 1 do
                 begin
+                  SendStreamConnectionThread.Position := 0;
                   if TIdContext( ContextList[i]).Connection.Connected then
-                    TIdContext( ContextList[i]).Connection.IOHandler.Write(FSendBuffer, FSendBufferSize);
+                    TIdContext( ContextList[i]).Connection.IOHandler.Write(SendStreamConnectionThread, SendStreamConnectionThread.Size);
                 end;
               end;
             finally
@@ -840,8 +845,7 @@ begin
   end;
 end;
 
-procedure TLccEthernetServerThread.RelayToOtherConnections(
-  ASourceContext: TIdContext; RawData: TLccDynamicByteArray; DataSize: Int64);
+procedure TLccEthernetServerThread.RelayToOtherConnections(ASourceContext: TIdContext; AStream: TStream);
 var
   List: TList;
   iContext: Integer;
@@ -854,7 +858,10 @@ begin
       NextContext := TIdContext(List[iContext]);
       if NextContext <> ASourceContext then
         if NextContext.Connection.Connected then
-          NextContext.Connection.IOHandler.Write(RawData, DataSize)
+        begin
+          AStream.Position := 0;
+          NextContext.Connection.IOHandler.Write(AStream, AStream.Size)
+        end;
     end;
   finally
     IdTCPServer.Contexts.UnlockList;
@@ -932,15 +939,12 @@ begin
 
   if not AContext.Connection.IOHandler.InputBufferIsEmpty then
   begin
+    ReceiveStreamConnectionThread.Position := 0;
+    ReceiveStreamConnectionThread.Size := 0;
+    AContext.Connection.IOHandler.ReadStream(ReceiveStreamConnectionThread, AContext.Connection.IOHandler.InputBuffer.Size);
+    ConnectionContextList.IncomingRawDataForContext(AContext, ReceiveStreamConnectionThread);
 
-    ReceiveBufferSize := AContext.Connection.IOHandler.InputBuffer.Size;
-    if Length(ReceiveBuffer) < ReceiveBufferSize then
-      SetLength(FReceiveBuffer, ReceiveBufferSize);
-
-    AContext.Connection.IOHandler.ReadBytes(FReceiveBuffer, ReceiveBufferSize, False);
-    ConnectionContextList.IncomingRawDataForContext(AContext, ReceiveBuffer, ReceiveBufferSize);
-
-    RelayToOtherConnections(AContext, ReceiveBuffer, ReceiveBufferSize);
+    RelayToOtherConnections(AContext, ReceiveStreamConnectionThread);
   end;
 
      // https://stackoverflow.com/questions/64593756/delphi-rio-indy-tcpserver-high-cpu-usage
