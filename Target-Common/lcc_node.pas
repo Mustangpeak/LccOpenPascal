@@ -1360,7 +1360,7 @@ end;
 procedure TLccNode.SendMessage(ALccMessage: TLccMessage);
 begin
   ALccMessage.AssociatedNode := Self;
-  (Owner as TLccNodeManager).SendMessage(ALccMessage);
+  (Owner as TLccNodeManager).SendLccMessageNodeManager(ALccMessage);
 end;
 
 procedure TLccNode.DoMemorySpaceReadEngineDone(MemoryReadEngine: TLccEngineMemorySpaceAccess);
@@ -1916,8 +1916,8 @@ begin
   ProtocolSupportedProtocols.TractionFunctionDefinitionInfo := True;
   ProtocolSupportedProtocols.TractionFunctionConfiguration := True;
 
-  ProtocolMemoryInfo.Add(MSI_CDI, True, True, True, 0, $FFFFFFFF);
-  ProtocolMemoryInfo.Add(MSI_ALL, True, True, True, 0, $FFFFFFFF);
+  ProtocolMemoryInfo.Add(MSI_CDI, True, True, True, 0, StreamCdi.Size);
+  ProtocolMemoryInfo.Add(MSI_ALL, False, True, True, 0, $FFFFFFFF);
   ProtocolMemoryInfo.Add(MSI_CONFIG, True, False, True, 0, $FFFFFFFF);
   ProtocolMemoryInfo.Add(MSI_ACDI_MFG, True, True, True, 0, $FFFFFFFF);
   ProtocolMemoryInfo.Add(MSI_ACDI_USER, True, False, True, 0, $FFFFFFFF);

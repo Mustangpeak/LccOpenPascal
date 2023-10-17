@@ -227,7 +227,6 @@ begin                                                                           
             if Assigned(LocalLccMessage) then  // A node can not start start to send a multiframe datagram to a node then
             begin
               ALccMessage.LoadDatagramRejected(ALccMessage.DestID, ALccMessage.DestAlias, ALccMessage.SourceID, ALccMessage.SourceAlias, ERROR_CODE_OUT_OF_ORDER_START_BEFORE_END);
-              ALccMessage.CheckNodeIDsBeforeDelivery := True;  // Don't dispatch this message back to the target node
               Result := imgcr_ErrorToSend;
               Remove(InProcessMessageList, LocalLccMessage)    // send a single new one in the middle of the previous one out of order.  Throw it away
             end else
@@ -242,7 +241,6 @@ begin                                                                           
                 // Reuse the Message to load up the rejection mession and send it back
                 ALccMessage.LoadDatagramRejected(ALccMessage.DestID, ALccMessage.DestAlias, ALccMessage.SourceID, ALccMessage.SourceAlias, ERROR_CODE_TEMPORARY_BUFFER_UNAVAILABLE);
                 // Don't dispatch this message back to the target node
-                ALccMessage.CheckNodeIDsBeforeDelivery := True;
                 Result := imgcr_ErrorToSend
               end;
             end;
@@ -253,7 +251,6 @@ begin                                                                           
             if Assigned(LocalLccMessage) then
             begin
               ALccMessage.LoadDatagramRejected(ALccMessage.DestID, ALccMessage.DestAlias, ALccMessage.SourceID, ALccMessage.SourceAlias, ERROR_CODE_OUT_OF_ORDER_START_BEFORE_END);
-              ALccMessage.CheckNodeIDsBeforeDelivery := True;  // Don't dispatch this message back to the target node
               Result := imgcr_ErrorToSend;
               Remove(InProcessMessageList, LocalLccMessage) // Something is wrong, out of order.  Throw it away what was there
             end
@@ -275,7 +272,6 @@ begin                                                                           
             else begin   // Python Script does not expect this to occur
               {
               ALccMessage.LoadDatagramRejected(ALccMessage.DestID, ALccMessage.DestAlias, ALccMessage.SourceID, ALccMessage.SourceAlias, ERROR_CODE_OUT_OF_ORDER_NO_START_FRAME);
-              ALccMessage.CheckNodeIDsBeforeDelivery := True;  // Don't dispatch this message back to the target node
               Result := imgcr_ErrorToSend;
               }
             end  // We wait for the successful final frame before we send buffer full error messages
@@ -301,7 +297,6 @@ begin                                                                           
                 ErrorCode := ERROR_CODE_OUT_OF_ORDER_NO_START_FRAME;
               Remove(OutOfBuffersList, LocalLccMessage);
               ALccMessage.LoadDatagramRejected(ALccMessage.DestID, ALccMessage.DestAlias, ALccMessage.SourceID, ALccMessage.SourceAlias, ErrorCode);
-              ALccMessage.CheckNodeIDsBeforeDelivery := True; // Don't dispatch this message back to the target node
               Result := imgcr_ErrorToSend
             end;
           end;
@@ -322,7 +317,6 @@ begin                                                                           
                   if Assigned(LocalLccMessage) then
                   begin
                     ALccMessage.LoadOptionalInteractionRejected(ALccMessage.DestID, ALccMessage.DestAlias, ALccMessage.SourceID, ALccMessage.SourceAlias, ERROR_CODE_OUT_OF_ORDER_START_BEFORE_END, ALccMessage.MTI);
-                    ALccMessage.CheckNodeIDsBeforeDelivery := True;   // Don't dispatch this message back to the target node
                     Result := imgcr_ErrorToSend;
                     Remove(InProcessMessageList, LocalLccMessage)                              // Something is wrong, out of order.  Throw it away
                   end else
@@ -345,7 +339,6 @@ begin                                                                           
                     // Out of order but let the node handle that if needed (Owned Nodes Only)
                     // Don't swap the IDs, need to find the right target node first
                     ALccMessage.LoadOptionalInteractionRejected(ALccMessage.DestID, ALccMessage.DestAlias, ALccMessage.SourceID, ALccMessage.SourceAlias, ERROR_CODE_OUT_OF_ORDER_NO_START_FRAME, ALccMessage.MTI);
-                    ALccMessage.CheckNodeIDsBeforeDelivery := True;   // Don't dispatch this message back to the target node
                     Result := imgcr_ErrorToSend
                   end;
                 end;

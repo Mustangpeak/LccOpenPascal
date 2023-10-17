@@ -719,6 +719,7 @@ begin
         case GridConnectMessageAssembler.IncomingMessageGridConnect(WorkerMessage) of
           imgcr_True         : AliasServerThread.AddIncomingLccMessage(WorkerMessage, True);
           imgcr_ErrorToSend  : begin
+                                 WorkerMessage.CheckNodeIDsBeforeDelivery := True;  // We just swapped Souce/Dest NodeID, make sure we don't feed the message back into our nodes as a received message with ourthese Alias/NodeID or we will trigger a duplicate Node/Alias
                                  WorkerMessage.CopyToTarget( OwnerConnectionContextList.OwnerConnectionThread.OwnerConnectionManager.SendMessageWorkerMessageSyncronize);
                                  OwnerConnectionContextList.OwnerConnectionThread.Synchronize(OwnerConnectionContextList.OwnerConnectionThread.OwnerConnectionManager.SendMessageThroughSyncronize);
                                end;

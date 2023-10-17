@@ -184,8 +184,6 @@ type
     procedure DoTractionSetSpeed(LccNode: TLccNode; ALccMessage: TLccMessage; var DoDefault: Boolean);
     procedure DoTractionTrainSNIP(LccNode: TLccNode; ALccMessage: TLccMessage; var DoDefault: Boolean);
 
-    procedure ReceiveMessage(ALccMessage: TLccMessage);  // callback for AliasServerThread to connect to the incoming messages
-
    public
     property Nodes: TList read FNodes write FNodes;
 
@@ -210,7 +208,8 @@ type
     procedure ReleaseAliasAll;
 
     procedure On_100msTimer(Sender: TObject);  virtual;
-    procedure SendMessage(ALccMessage: TLccMessage; NeedsSourceNode: Boolean = False);
+    procedure SendLccMessageNodeManager(ALccMessage: TLccMessage; NeedsSourceNode: Boolean = False);
+    procedure ReceiveLccMessageNodeManager(ALccMessage: TLccMessage);  // Registered in the ConnectionFactory as a ReceiveMessage Sink
 
   published
 
@@ -426,7 +425,8 @@ begin
     OnNodeTractionTrainSNIP(Self, LccNode, ALccMessage, DoDefault);
 end;
 
-procedure TLccNodeManager.ReceiveMessage(ALccMessage: TLccMessage);
+procedure TLccNodeManager.ReceiveLccMessageNodeManager(ALccMessage: TLccMessage
+  );
 var
   i: Integer;
 begin
@@ -556,9 +556,9 @@ begin
   _100msTimer.Enabled := True;
 
   // Setup the links to allow the Connections from the Connection Factory to the NodeManager
-  ConnectionFactory.RegisterReceiveMessageCallback(@ReceiveMessage, True);
+  ConnectionFactory.RegisterReceiveMessageCallback(@ReceiveLccMessageNodeManager, True);
   // AliasServerThread needs to request NodeIDs but is not a Node and thus does have have its own ID to request them so the NodeManager must handle that
-  AliasServerThread.SendMessageCallback := {$IFNDEF LCC_DELPHI}@{$ENDIF}SendMessage;
+  AliasServerThread.SendMessageCallback := {$IFNDEF LCC_DELPHI}@{$ENDIF}SendLccMessageNodeManager;
 end;
 
 function TLccNodeManager.AddNode(CdiXML: string; AutoLogin: Boolean): TLccNode;
@@ -630,7 +630,7 @@ end;
 
 destructor TLccNodeManager.Destroy;
 begin
-  ConnectionFactory.UnregisterReceiveMessageCallback(@ReceiveMessage);
+  ConnectionFactory.UnregisterReceiveMessageCallback(@ReceiveLccMessageNodeManager);
   AliasServerThread.SendMessageCallback := nil;
   Clear;
   _100msTimer.Enabled := False;
@@ -684,7 +684,8 @@ begin
   end;
 end;
 
-procedure TLccNodeManager.SendMessage(ALccMessage: TLccMessage; NeedsSourceNode: Boolean);
+procedure TLccNodeManager.SendLccMessageNodeManager(ALccMessage: TLccMessage;
+  NeedsSourceNode: Boolean);
 begin
   if NeedsSourceNode then
   begin;

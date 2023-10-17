@@ -656,8 +656,8 @@ begin
   ProtocolEventsProduced.Add(EVENT_IS_TRAIN, evs_Valid);
   ProtocolEventConsumed.Add(EVENT_EMERGENCY_STOP, evs_InValid);
 
-  ProtocolMemoryInfo.Add(MSI_CDI, True, True, True, 0, $FFFFFFFF);
-  ProtocolMemoryInfo.Add(MSI_ALL, True, True, True, 0, $FFFFFFFF);
+  ProtocolMemoryInfo.Add(MSI_CDI, True, True, True, 0, StreamCdi.Size);
+  ProtocolMemoryInfo.Add(MSI_ALL, False, True, True, 0, $FFFFFFFF);
   ProtocolMemoryInfo.Add(MSI_CONFIG, True, False, True, 0, $FFFFFFFF);
   ProtocolMemoryInfo.Add(MSI_ACDI_MFG, True, True, True, 0, $FFFFFFFF);
   ProtocolMemoryInfo.Add(MSI_ACDI_USER, True, False, True, 0, $FFFFFFFF);
