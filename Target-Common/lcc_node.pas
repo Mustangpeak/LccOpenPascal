@@ -22,11 +22,9 @@ uses
   {$ENDIF}
   lcc_protocol_utilities,
   lcc_defines,
-  lcc_base_classes,
   lcc_node_messages,
   lcc_utilities,
-  lcc_alias_server,
-  lcc_train_server;
+  lcc_alias_server;
 
 const
   ERROR_CONFIGMEM_ADDRESS_SPACE_MISMATCH = $0001;

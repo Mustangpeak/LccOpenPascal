@@ -40,7 +40,7 @@ uses
   IdSocketHandle,
   lcc_defines,
   lcc_node_messages_can_assembler_disassembler,
-  lcc_common_classes,
+  lcc_connection_common,
   lcc_node_messages,
   lcc_ethernet_common,
   lcc_gridconnect,
@@ -175,7 +175,7 @@ type
     property SendMessageTemp: TMemoryStream read FSendMessageTemp write FSendMessageTemp;
 
     // TODO
-    // Old WebSocket functions that used arrays once the stream versions here are functional these can be deleted
+    // Old WebSocket functions that used arrays once the stream versions here are verified these can be deleted
 
   {  function ReceiveContextDataAsString(AContext: TIdContext): string; override;
     function ReceiveContextDataAsBytes(AContext: TIdContext): TIdBytes; override;
@@ -772,19 +772,19 @@ begin
 
         OwnerConnectionManager.CriticalSectionEnter;
         try
-          if (OwnerConnectionManager.DefaultConnectionInfo as TLccEthernetConnectionInfo).AutoResolveIP then
+          if (OwnerConnectionManager.ConnectionInfo as TLccEthernetConnectionInfo).AutoResolveIP then
           begin
             {$IFDEF LCC_WINDOWS}
             (OwnerConnectionManager.DefaultConnectionInfo as TLccEthernetConnectionInfo).ListenerIP := ResolveWindowsIp
             {$ELSE}
-            (OwnerConnectionManager.DefaultConnectionInfo as TLccEthernetConnectionInfo).ListenerIP := ResolveUnixIp;
+            (OwnerConnectionManager.ConnectionInfo as TLccEthernetConnectionInfo).ListenerIP := ResolveUnixIp;
             {$ENDIF}
           end;
 
           IdTCPServer.Bindings.Clear;
           IdSocketHandle := IdTCPServer.Bindings.Add;
-          IdSocketHandle.Port := (OwnerConnectionManager.DefaultConnectionInfo as TLccEthernetConnectionInfo).ListenerPort;
-          IdSocketHandle.IP := (OwnerConnectionManager.DefaultConnectionInfo as TLccEthernetConnectionInfo).ListenerIP;
+          IdSocketHandle.Port := (OwnerConnectionManager.ConnectionInfo as TLccEthernetConnectionInfo).ListenerPort;
+          IdSocketHandle.IP := (OwnerConnectionManager.ConnectionInfo as TLccEthernetConnectionInfo).ListenerIP;
         finally
           OwnerConnectionManager.CriticalSectionLeave;
         end;
@@ -830,7 +830,7 @@ begin
       begin
         OwnerConnectionManager.CriticalSectionEnter;
         try
-          OwnerConnectionManager.DefaultConnectionInfo.ErrorMessage := E.Message;
+          OwnerConnectionManager.ConnectionInfo.ErrorMessage := E.Message;
         finally
           OwnerConnectionManager.CriticalSectionLeave;
         end;
@@ -889,13 +889,13 @@ begin
   OwnerConnectionManager.CriticalSectionEnter;
   try
     // Update the ConnectionInfo structure with the current connection
-    (OwnerConnectionManager.DefaultConnectionInfo as TLccEthernetConnectionInfo).ClientIP := AContext.Binding.PeerIP;
-    (OwnerConnectionManager.DefaultConnectionInfo as TLccEthernetConnectionInfo).ClientPort := AContext.Binding.PeerPort;
+    (OwnerConnectionManager.ConnectionInfo as TLccEthernetConnectionInfo).ClientIP := AContext.Binding.PeerIP;
+    (OwnerConnectionManager.ConnectionInfo as TLccEthernetConnectionInfo).ClientPort := AContext.Binding.PeerPort;
 
     if IdTCPServer.Bindings.Count > 0 then
     begin
-      (OwnerConnectionManager.DefaultConnectionInfo as TLccEthernetConnectionInfo).ListenerPort := IdTCPServer.Bindings[0].Port;
-      (OwnerConnectionManager.DefaultConnectionInfo as TLccEthernetConnectionInfo).ListenerIP := IdTCPServer.Bindings[0].IP;
+      (OwnerConnectionManager.ConnectionInfo as TLccEthernetConnectionInfo).ListenerPort := IdTCPServer.Bindings[0].Port;
+      (OwnerConnectionManager.ConnectionInfo as TLccEthernetConnectionInfo).ListenerIP := IdTCPServer.Bindings[0].IP;
     end;
 
   finally
@@ -914,12 +914,12 @@ begin
 
   OwnerConnectionManager.CriticalSectionEnter;
   try
-    (OwnerConnectionManager.DefaultConnectionInfo as TLccEthernetConnectionInfo).ClientIP := AContext.Binding.PeerIP;
-    (OwnerConnectionManager.DefaultConnectionInfo as TLccEthernetConnectionInfo).ClientPort := AContext.Binding.PeerPort;
+    (OwnerConnectionManager.ConnectionInfo as TLccEthernetConnectionInfo).ClientIP := AContext.Binding.PeerIP;
+    (OwnerConnectionManager.ConnectionInfo as TLccEthernetConnectionInfo).ClientPort := AContext.Binding.PeerPort;
     if IdTCPServer.Bindings.Count > 0 then
     begin
-      (OwnerConnectionManager.DefaultConnectionInfo as TLccEthernetConnectionInfo).ListenerPort := IdTCPServer.Bindings[0].Port;
-      (OwnerConnectionManager.DefaultConnectionInfo as TLccEthernetConnectionInfo).ListenerIP := IdTCPServer.Bindings[0].IP;
+      (OwnerConnectionManager.ConnectionInfo as TLccEthernetConnectionInfo).ListenerPort := IdTCPServer.Bindings[0].Port;
+      (OwnerConnectionManager.ConnectionInfo as TLccEthernetConnectionInfo).ListenerIP := IdTCPServer.Bindings[0].IP;
     end;
   finally
     OwnerConnectionManager.CriticalSectionLeave;

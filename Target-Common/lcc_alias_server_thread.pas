@@ -100,7 +100,7 @@ var
 implementation
 
 uses
-  lcc_common_classes;
+  lcc_connection_common;
 
 
 { TReceiveMessageAliasServerThread }
@@ -372,7 +372,9 @@ initialization
     AliasServerThread.ReceiveMessageCallback := @ConnectionFactory.ReceiveMessageConnectinFactory;
 
 finalization
+  AliasServerThread.ReceiveMessageCallback := nil;
   AliasServerThread.Terminate;
+  AliasServerThread := nil;
 
 
 end.

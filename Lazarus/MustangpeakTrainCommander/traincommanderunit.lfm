@@ -90,9 +90,9 @@ object FormTrainCommander: TFormTrainCommander
       ParentColor = False
     end
     object CheckBoxLogMessages: TCheckBox
-      Left = 520
+      Left = 496
       Height = 18
-      Top = 41
+      Top = 56
       Width = 104
       Caption = 'Log Messages'
       Checked = True
@@ -109,19 +109,19 @@ object FormTrainCommander: TFormTrainCommander
       TabOrder = 5
       Text = '0'
     end
-    object ButtonManualConnectComPort: TButton
+    object ButtonComPortConnect: TButton
       Left = 16
       Height = 23
       Top = 32
       Width = 152
       Caption = 'Open ComPort'
-      OnClick = ButtonManualConnectComPortClick
+      OnClick = ButtonComPortConnectClick
       TabOrder = 6
     end
     object CheckBoxDetailedLog: TCheckBox
-      Left = 520
+      Left = 496
       Height = 18
-      Top = 70
+      Top = 72
       Width = 94
       Caption = 'Detailed Log'
       ParentShowHint = False
@@ -143,6 +143,7 @@ object FormTrainCommander: TFormTrainCommander
       Top = 9
       Width = 147
       Caption = 'HTTP Connect'
+      Enabled = False
       OnClick = ButtonHTTPServerClick
       TabOrder = 9
     end
@@ -155,13 +156,13 @@ object FormTrainCommander: TFormTrainCommander
       OnChange = ToggleBoxServerFormChange
       TabOrder = 10
     end
-    object Button1: TButton
+    object ButtonCreateTrains: TButton
       Left = 1064
       Height = 25
       Top = 6
       Width = 120
       Caption = 'Create Trains'
-      OnClick = Button1Click
+      OnClick = ButtonCreateTrainsClick
       TabOrder = 11
     end
     object Edit1: TEdit
@@ -190,23 +191,15 @@ object FormTrainCommander: TFormTrainCommander
       OnClick = ButtonLiveMessagesClick
       TabOrder = 14
     end
-    object ButtonDatagramQueue: TButton
-      Left = 808
-      Height = 25
-      Top = 34
-      Width = 248
-      Caption = 'CS Resend Datagram Queue:'
-      OnClick = ButtonDatagramQueueClick
+    object CheckBoxGridConnect: TCheckBox
+      Left = 496
+      Height = 18
+      Top = 37
+      Width = 119
+      Caption = 'GridConnect Bus'
+      Checked = True
+      State = cbChecked
       TabOrder = 15
-    end
-    object ButtonMsgAssemberlDatagramMsg: TButton
-      Left = 808
-      Height = 25
-      Top = 56
-      Width = 248
-      Caption = 'Msg Assember Datagram:'
-      OnClick = ButtonMsgAssemberlDatagramMsgClick
-      TabOrder = 16
     end
   end
   object PanelConnections: TPanel

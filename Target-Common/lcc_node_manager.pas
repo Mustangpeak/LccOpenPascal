@@ -22,11 +22,9 @@ uses
   lcc_node,
   lcc_node_controller,
   lcc_defines,
-  lcc_base_classes,
-  lcc_common_classes,
+  lcc_connection_common,
   lcc_utilities,
   lcc_node_messages,
-  lcc_train_server,
   lcc_alias_server,
   lcc_alias_server_thread;
 

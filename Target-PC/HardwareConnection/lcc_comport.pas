@@ -33,7 +33,7 @@ uses
   lcc_node_manager,
   lcc_node_messages,
   lcc_app_common_settings,
-  lcc_common_classes,
+  lcc_connection_common,
   lcc_ethernet_tcp,
   lcc_node_messages_can_assembler_disassembler;
 

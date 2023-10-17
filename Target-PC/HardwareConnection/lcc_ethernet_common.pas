@@ -49,7 +49,7 @@ uses
   lcc_threaded_circulararray,
   lcc_threaded_stringlist,
   lcc_defines,
-  lcc_common_classes,
+  lcc_connection_common,
   lcc_node_messages_can_assembler_disassembler;
 
 const

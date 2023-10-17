@@ -18,38 +18,31 @@ uses
   lcc_comport,
   LazSynaSer,
  // lcc_ethernet_http,
-  lcc_common_classes,
+  lcc_connection_common,
   lcc_ethernet_common,
   servervisualunit,
   lcc_train_server,
-  lcc_utilities,
   lcc_node_messages_can_assembler_disassembler,
   lcc_alias_server_thread;
- // lcc_syn_ethenet_server;
-  //lcc_syn_ethenet_client;
 
-
-const
-  EMULATE_CAN_BUS = True;
 
 type
 
   { TFormTrainCommander }
 
   TFormTrainCommander = class(TForm)
-    Button1: TButton;
+    ButtonCreateTrains: TButton;
     ButtonRawGridConnectLogEnable: TButton;
-    ButtonMsgAssemberlDatagramMsg: TButton;
     ButtonLiveMessages: TButton;
-    ButtonDatagramQueue: TButton;
     ButtonGridConnectStrClear: TButton;
     ButtonCreateConsist: TButton;
     ButtonHTTPServer: TButton;
     ButtonWebserverConnect: TButton;
-    ButtonManualConnectComPort: TButton;
+    ButtonComPortConnect: TButton;
     ButtonTrainsClear: TButton;
     ButtonClear: TButton;
     ButtonEthernetConnect: TButton;
+    CheckBoxGridConnect: TCheckBox;
     CheckBoxDetailedLog: TCheckBox;
     CheckBoxLogMessages: TCheckBox;
     CheckBoxLoopBackIP: TCheckBox;
@@ -76,16 +69,14 @@ type
     StatusBarMain: TStatusBar;
     ToggleBoxServerForm: TToggleBox;
     TreeViewTrains: TTreeView;
-    procedure Button1Click(Sender: TObject);
+    procedure ButtonCreateTrainsClick(Sender: TObject);
     procedure ButtonLiveMessagesClick(Sender: TObject);
-    procedure ButtonDatagramQueueClick(Sender: TObject);
     procedure ButtonCreateConsistClick(Sender: TObject);
     procedure ButtonGridConnectStrClearClick(Sender: TObject);
     procedure ButtonHTTPServerClick(Sender: TObject);
-    procedure ButtonMsgAssemberlDatagramMsgClick(Sender: TObject);
     procedure ButtonRawGridConnectLogEnableClick(Sender: TObject);
     procedure ButtonWebserverConnectClick(Sender: TObject);
-    procedure ButtonManualConnectComPortClick(Sender: TObject);
+    procedure ButtonComPortConnectClick(Sender: TObject);
     procedure ButtonClearClick(Sender: TObject);
     procedure ButtonEthernetConnectClick(Sender: TObject);
     procedure ButtonTrainsReleaseAliasClick(Sender: TObject);
@@ -159,16 +150,22 @@ implementation
 { TFormTrainCommander }
 
 procedure TFormTrainCommander.ButtonHTTPServerClick(Sender: TObject);
+var
+  ConnectionInfo: TLccEthernetConnectionInfo;
 begin
- // if LccHTTPServer.ListenerConnected then
- //   LccHTTPServer.CloseConnection
- // else
- //   LccHTTPServer.OpenConnection;
-end;
-
-procedure TFormTrainCommander.ButtonMsgAssemberlDatagramMsgClick(Sender: TObject);
-begin
-  ButtonMsgAssemberlDatagramMsg.Caption := 'Msg Assember Datagram: ' + IntToStr(AllocatedDatagrams);
+ { if Assigned(LccHTTPServer) then
+  begin
+    LccHTTPServer := ConnectionFactory.DestroyConnection(LccHTTPServer);
+  end else
+  begin
+    ConnectionInfo := TLccEthernetConnectionInfo.Create;
+    ConnectionInfo.AutoResolveIP := not CheckBoxLoopBackIP.Checked;
+    ConnectionInfo.ListenerIP := '127.0.0.1';
+    ConnectionInfo.ListenerPort := 12020;
+    LccHTTPServer := ConnectionFactory.CreateConnection(TLccHTTPServer, ConnectionInfo, EMULATE_CAN_BUS) as TLccHTTPServer;
+    if Assigned(LccHTTPServer) then
+      LccHTTPServer.;
+  end;  }
 end;
 
 procedure TFormTrainCommander.ButtonRawGridConnectLogEnableClick(Sender: TObject);
@@ -184,7 +181,7 @@ begin
   end;
 end;
 
-procedure TFormTrainCommander.Button1Click(Sender: TObject);
+procedure TFormTrainCommander.ButtonCreateTrainsClick(Sender: TObject);
 var
   i: Integer;
   Train: TLccTrainDccNode;
@@ -200,14 +197,6 @@ end;
 procedure TFormTrainCommander.ButtonLiveMessagesClick(Sender: TObject);
 begin
   ButtonLiveMessages.Caption := 'Live Messages: ' + IntToStr(LccMessagesAllocated);
-end;
-
-procedure TFormTrainCommander.ButtonDatagramQueueClick(Sender: TObject);
-begin
-  if Assigned(CommandStationNode) then
-    ButtonDatagramQueue.Caption := 'CS Resend Datagram Queue: ' + IntToStr(CommandStationNode.DatagramResendQueue.Count)
-  else
-   ButtonDatagramQueue.Caption := 'No CommandStationNode';
 end;
 
 procedure TFormTrainCommander.ButtonCreateConsistClick(Sender: TObject);
@@ -231,19 +220,46 @@ begin
 end;
 
 procedure TFormTrainCommander.ButtonWebserverConnectClick(Sender: TObject);
+var
+  ConnectionInfo: TLccEthernetConnectionInfo;
 begin
-  if LccWebsocketServer.Connected then
-    LccWebsocketServer.CloseConnection
-  else
-    LccWebsocketServer.OpenConnection;
+  if Assigned(LccWebsocketServer) then
+  begin
+    ConnectionFactory.DestroyConnection(FLccWebsocketServer);
+  end else
+  begin
+    ConnectionInfo := TLccEthernetConnectionInfo.Create;
+    ConnectionInfo.AutoResolveIP := not CheckBoxLoopBackIP.Checked;
+    ConnectionInfo.ListenerIP := '127.0.0.1';
+    ConnectionInfo.ListenerPort := 12022;
+    LccWebsocketServer := ConnectionFactory.CreateLccMessageConnection(TLccWebSocketServerThreadManager, ConnectionInfo, CheckBoxGridConnect.Checked) as TLccWebSocketServerThreadManager;
+    if Assigned(LccWebsocketServer) then
+      LccWebsocketServer.OpenConnection;
+  end;
 end;
 
-procedure TFormTrainCommander.ButtonManualConnectComPortClick(Sender: TObject);
+procedure TFormTrainCommander.ButtonComPortConnectClick(Sender: TObject);
+var
+  ConnectionInfo: TLccComPortConnectionInfo;
 begin
-  if LccComPort.Connected then
-    LccComPort.CloseConnection
-  else
-    LccComPort.OpenConnection;
+  if Assigned(LccComPort) then
+  begin
+    ConnectionFactory.DestroyConnection(LccComPort);
+    LccComPort := nil;
+  end else
+  begin
+    ConnectionInfo := TLccComPortConnectionInfo.Create;
+    ConnectionInfo.ComPort := ComboBoxComPorts.Items[ComboBoxComPorts.ItemIndex];
+    ConnectionInfo.Baud := 9600;
+    ConnectionInfo.StopBits := 8;
+    ConnectionInfo.Parity := 'N';
+    LccComPort := ConnectionFactory.CreateConnection(TLccComPort, ConnectionInfo) as TLccComPort;
+    if Assigned(LccComPort) then
+    begin
+      LccComPort.RawData := True;
+      LccComPort.OpenConnection;
+    end;
+  end;
 end;
 
 procedure TFormTrainCommander.ButtonClearClick(Sender: TObject);
@@ -264,11 +280,23 @@ begin
 end;
 
 procedure TFormTrainCommander.ButtonEthernetConnectClick(Sender: TObject);
+var
+  ConnectionInfo: TLccEthernetConnectionInfo;
 begin
-  if LccServer.Connected then
-    LccServer.CloseConnection
-  else
-    LccServer.OpenConnection;
+  if Assigned(LccServer) then
+  begin
+    ConnectionFactory.DestroyConnection(LccServer);
+    LccServer := nil;
+  end else
+  begin
+    ConnectionInfo := TLccEthernetConnectionInfo.Create;
+    ConnectionInfo.AutoResolveIP := not CheckBoxLoopBackIP.Checked;
+    ConnectionInfo.ListenerIP := '127.0.0.1';
+    ConnectionInfo.ListenerPort := 12021;
+    LccServer := ConnectionFactory.CreateLccMessageConnection(TLccEthernetServerThreadManager, ConnectionInfo, CheckBoxGridConnect.Checked) as TLccEthernetServerThreadManager;
+    if Assigned(LccServer) then
+      LccServer.OpenConnection;
+  end;
 end;
 
 procedure TFormTrainCommander.ButtonTrainsReleaseAliasClick(Sender: TObject);
@@ -302,7 +330,7 @@ begin
 
     MemoLog.Lines.BeginUpdate;
     try
-      if EMULATE_CAN_BUS then
+      if CheckBoxGridConnect.Checked then
       begin
         if CheckBoxDetailedLog.Checked then
           MemoLog.Lines.Add(Preamble + MessageToDetailedMessage(ALccMessage))
@@ -376,7 +404,7 @@ begin
 
     MemoLog.Lines.BeginUpdate;
     try
-      if EMULATE_CAN_BUS then
+      if CheckBoxGridConnect.Checked then
       begin
         if CheckBoxDetailedLog.Checked then
           MemoLog.Lines.Add('TCP: S: ' + MessageToDetailedMessage(ALccMessage))
@@ -551,12 +579,12 @@ begin
       lcsConnected :
         begin
           StatusBarMain.Panels[3].Text := 'ComPort: ' + (Info as TLccComPortConnectionInfo).ComPort;
-          ButtonManualConnectComPort.Caption := 'Close ComPort';
+          ButtonComPortConnect.Caption := 'Close ComPort';
         end;
       lcsDisConnecting : StatusBarMain.Panels[3].Text := 'ComPort Disconnectiong';
       lcsDisconnected :
         begin
-          ButtonManualConnectComPort.Caption := 'Open ComPort';
+          ButtonComPortConnect.Caption := 'Open ComPort';
           StatusBarMain.Panels[3].Text := 'ComPort Disconnected';
         end;
     end;
@@ -588,15 +616,17 @@ end;
 procedure TFormTrainCommander.FormCloseQuery(Sender: TObject; var CanClose: boolean);
 begin
   CanClose := CanClose; // Keep Hints quiet
-  LccComPort.CloseConnection;
-  LccServer.CloseConnection;
-  LccWebsocketServer.CloseConnection;
-//  LccHTTPServer.CloseConnection;
+  ConnectionFactory.DestroyConnection(LccComPort);
+  ConnectionFactory.DestroyConnection(LccWebsocketServer);
+  ConnectionFactory.DestroyConnection(LccServer);
+//   ConnectionFactory.DestroyConnection(LccHTTPServer);
+  LccComPort := nil;
+  LccWebsocketServer:= nil;
+  LccServer:= nil;
+//  LccHTTPServer:= nil;
 end;
 
 procedure TFormTrainCommander.FormCreate(Sender: TObject);
-var
-  ConnectionInfo: TLccConnectionInfo;
 begin
 
   {$IFDEF PYTHON_SCRIPT_COMPATIBLE}
@@ -616,36 +646,6 @@ begin
   NodeManager.OnAliasRelease := @OnNodeManagerAliasRelease;
   NodeManager.OnNodeDestroy := @OnNodeManagerNodeDestroy;
 
-  ConnectionInfo := TLccEthernetConnectionInfo.Create;
-  (ConnectionInfo as TLccEthernetConnectionInfo).AutoResolveIP := not CheckBoxLoopBackIP.Checked;
-  (ConnectionInfo as TLccEthernetConnectionInfo).ListenerIP := '127.0.0.1';
-  (ConnectionInfo as TLccEthernetConnectionInfo).ListenerPort := 12021;
-  LccServer := ConnectionFactory.CreateLccMessageConnection(TLccEthernetServerThreadManager, ConnectionInfo, EMULATE_CAN_BUS) as TLccEthernetServerThreadManager;
-
-
-  ConnectionInfo := TLccEthernetConnectionInfo.Create;
-  (ConnectionInfo as TLccEthernetConnectionInfo).AutoResolveIP := not CheckBoxLoopBackIP.Checked;
-  (ConnectionInfo as TLccEthernetConnectionInfo).ListenerIP := '127.0.0.1';
-  (ConnectionInfo as TLccEthernetConnectionInfo).ListenerPort := 12022;
-  LccWebsocketServer := ConnectionFactory.CreateLccMessageConnection(TLccWebSocketServerThreadManager, ConnectionInfo, EMULATE_CAN_BUS) as TLccWebSocketServerThreadManager;
-
- { ConnectionInfo := TLccEthernetConnectionInfo.Create;
-  (ConnectionInfo as TLccEthernetConnectionInfo).AutoResolveIP := not CheckBoxLoopBackIP.Checked;
-  (ConnectionInfo as TLccEthernetConnectionInfo).ListenerIP := '127.0.0.1';
-  (ConnectionInfo as TLccEthernetConnectionInfo).ListenerPort := 12020;
-  LccHTTPServer := ConnectionFactory.CreateConnection(TLccHTTPServer, ConnectionInfo, EMULATE_CAN_BUS) as TLccHTTPServer;
- }
-
- // Comports not initialized or selected yet... may be an issue doing it this way.
-
-   ConnectionInfo := TLccComPortConnectionInfo.Create;
- /// (ConnectionInfo as TLccComPortConnectionInfo).ComPort := ComboBoxComPorts.Items[ComboBoxComPorts.ItemIndex];
-  (ConnectionInfo as TLccComPortConnectionInfo).Baud := 9600;
-  (ConnectionInfo as TLccComPortConnectionInfo).StopBits := 8;
-  (ConnectionInfo as TLccComPortConnectionInfo).Parity := 'N';
-  LccComPort := ConnectionFactory.CreateConnection(TLccComPort, ConnectionInfo) as TLccComPort;
-  LccComPort.RawData := True;
-
 
   ConnectionFactory.OnStateChange := @OnServerManagerConnectionState;
   ConnectionFactory.OnError := @OnServerErrorMessage;
@@ -661,9 +661,6 @@ end;
 procedure TFormTrainCommander.FormDestroy(Sender: TObject);
 begin
   NodeManager.ReleaseAliasAll;
-  // Factory destroys all connections
-
-//  FreeAndNil(FComPort);
   FreeAndNil(FNodeManager);   // after the servers are destroyed
   FreeAndNil(FWorkerMessage);
 end;
