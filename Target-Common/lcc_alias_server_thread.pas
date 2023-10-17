@@ -32,6 +32,12 @@ uses
   lcc_node_messages;
 
 
+const
+  SLEEP_ALIAS_SERVER_THREAD_MS = 10;
+  VERIFYNODE_RETRY_TIME_MS = 500;     // must be greater than SLEEP_ALIAS_SERVER_THREAD_MS
+  VERIFYNODE_ABANDON_TIME_MS = 5000;  // must be greater than VERIFYNODE_RETRY_TIME_MS
+
+
 type
 
 TLccAliasServerDispatchProcessedMessageFunc = procedure(ALccMessage: TLccMessage) of object;
@@ -64,8 +70,9 @@ TReceiveMessageAliasServerThread = class(TThread)
     procedure ClearThreadedObjectList(AThreadedList: TThreadList);
     procedure ProcessAliasAndNodeIDMappingMessages(AMessage: TLccMessage);
     procedure RequestMappingMessageSent(ANodeID: TNodeID; AnAliasID: Word);
-    function MappingRequestExists(ANodeID: TNodeID; AnAliasID: Word): Boolean;
+    function MappingRequest(ANodeID: TNodeID; AnAliasID: Word): TLccMessage;
     procedure DispatchMessageThroughSyncronize;
+    procedure SendMessageThroughSyncronize;
 
   public
     constructor Create(CreateSuspended: Boolean; const StackSize: SizeUInt = DefaultStackSize); reintroduce;
@@ -153,7 +160,7 @@ begin
 
     Synchronize({$IFNDEF LCC_DELPHI}@{$ENDIF}DispatchMessageThroughSyncronize);
 
-    Sleep(10);
+    Sleep(SLEEP_ALIAS_SERVER_THREAD_MS);
   end;
 end;
 
@@ -213,6 +220,7 @@ end;
 procedure TReceiveMessageAliasServerThread.RequestMappingMessageSent(ANodeID: TNodeID; AnAliasID: Word);
 var
   LccMessage: TLccMessage;
+  MappingRequestMessage: TLccMessage;
 begin
   Assert(Assigned(SendMessageCallback), 'TReceiveMessageAliasServerThread,SendMessageCallback not assigned');
 
@@ -222,37 +230,73 @@ begin
 
 
   // Don't send duplicate requests for mapping messages
-  if not MappingRequestExists(ANodeID, AnAliasID) then
+  MappingRequestMessage := MappingRequest(ANodeID, AnAliasID);
+
+  if AnAliasID <> 0 then   // If we have the Alias use the CAN messages to get the full Node ID
   begin
-    if AnAliasID <> 0 then   // If we have the Alias use the CAN messages to get the full Node ID
+    if not Assigned(MappingRequestMessage) then
     begin
       LccMessage := TLccMessage.Create;
       LccMessage.LoadVerifyNodeIDAddressed(NULL_NODE_ID, 0, ANodeID, AnAliasID, NULL_NODE_ID);
       MappingRequestMessageList.Add(LccMessage);
-      SendMessageCallback(LccMessage, True);
-      {$IFDEF LOG_MAPPING}DebugLn('Mapping Request Sent via LoadVerifyNodeIDAddressed: 0x' + IntToHex(AnAliasID, 4) + '; ' + NodeIDToString(ANodeID, True));{$ENDIF}
+      LccMessage.iTag := 1;
+      LccMessage.CopyToTarget(WorkerMessage);
+      Synchronize(@SendMessageThroughSyncronize);
     end else
-    if not NullNodeID(ANodeID) then  // If we have the NodeID use it to send us the Alias
+    if MappingRequestMessage.iTag mod (VERIFYNODE_RETRY_TIME_MS div SLEEP_ALIAS_SERVER_THREAD_MS) = 0 then
+    begin
+      MappingRequestMessage.CopyToTarget(WorkerMessage);
+      Synchronize(@SendMessageThroughSyncronize);
+      MappingRequestMessage.iTag := MappingRequestMessage.iTag + 1;
+    end else
+    begin
+      MappingRequestMessage.iTag := MappingRequestMessage.iTag + 1;
+      if MappingRequestMessage.iTag > VERIFYNODE_ABANDON_TIME_MS then
+      begin
+        WaitingForMappingMessageList.Remove(MappingRequestMessage);
+        MappingRequestMessage.Free;
+      end;
+    end;
+  end else
+  if not NullNodeID(ANodeID) then  // If we have the NodeID use it to send us the Alias
+  begin
+    if not Assigned(MappingRequestMessage) then
     begin
       LccMessage := TLccMessage.Create;
       LccMessage.LoadVerifyNodeID(NULL_NODE_ID, 0, ANodeID);
       MappingRequestMessageList.Add(LccMessage);
-      SendMessageCallback(LccMessage, True);
-      {$IFDEF LOG_MAPPING}DebugLn('Mapping Request Sent via LoadVerifyNodeID: 0x' + IntToHex(AnAliasID, 4) + '; ' + NodeIDToString(ANodeID, True));{$ENDIF}
+      LccMessage.iTag := 1;
+      LccMessage.CopyToTarget(WorkerMessage);
+      Synchronize(@SendMessageThroughSyncronize);
+    end else
+    if MappingRequestMessage.iTag mod VERIFYNODE_RETRY_TIME_MS div SLEEP_ALIAS_SERVER_THREAD_MS = 0 then
+    begin
+      MappingRequestMessage.CopyToTarget(WorkerMessage);
+      Synchronize(@SendMessageThroughSyncronize);
+      MappingRequestMessage.iTag := MappingRequestMessage.iTag + 1;
     end else
     begin
-      {$IFDEF LOG_MAPPING}DebugLn('Mapping Request requsted but failed: 0x' + IntToHex(AnAliasID, 4) + '; ' + NodeIDToString(ANodeID, True));{$ENDIF}
+      MappingRequestMessage.iTag := MappingRequestMessage.iTag + 1;
+      if MappingRequestMessage.iTag > VERIFYNODE_ABANDON_TIME_MS then
+      begin
+        WaitingForMappingMessageList.Remove(MappingRequestMessage);
+        MappingRequestMessage.Free;
+      end;
     end;
+  end else
+  begin
+    {$IFDEF LOG_MAPPING}DebugLn('Mapping Request requsted but failed: 0x' + IntToHex(AnAliasID, 4) + '; ' + NodeIDToString(ANodeID, True));{$ENDIF}
   end;
 end;
 
-function TReceiveMessageAliasServerThread.MappingRequestExists(ANodeID: TNodeID; AnAliasID: Word): Boolean;
+function TReceiveMessageAliasServerThread.MappingRequest(ANodeID: TNodeID;
+  AnAliasID: Word): TLccMessage;
 var
   List: TList;
   i: Integer;
   LccMessage: TLccMessage;
 begin
-  Result := False;
+  Result := nil;
   List := MappingRequestMessageList.LockList;
   try
     for i := 0 to List.Count - 1 do
@@ -260,7 +304,7 @@ begin
       LccMessage := TLccMessage( List[i]);
       if (LccMessage.DestAlias = AnAliasID) or EqualNodeID(ANodeID, LccMessage.DestID, False) then
       begin
-        Result := True;
+        Result := LccMessage;
         Break;
       end;
     end;
@@ -292,6 +336,13 @@ begin
   end;
 end;
 
+procedure TReceiveMessageAliasServerThread.SendMessageThroughSyncronize;
+begin
+  if Assigned(SendMessageCallback) then
+    SendMessageCallback(WorkerMessage, True);
+  {$IFDEF LOG_MAPPING}DebugLn('Mapping Request Sent via LoadVerifyNodeIDAddressed: 0x' + IntToHex(WorkerMessage.SourceAlias, 4) + '; ' + NodeIDToString(WorkerMessage.SourceID, True));{$ENDIF}
+end;
+
 constructor TReceiveMessageAliasServerThread.Create(CreateSuspended: Boolean; const StackSize: SizeUInt);
 begin
   inherited Create(CreateSuspended, StackSize);
@@ -299,6 +350,7 @@ begin
   FIncomingMessageList := TThreadList.Create;
   FWaitingForMappingMessageList := TThreadList.Create;
   FMappingRequestMessageList := TThreadList.Create;
+  FWorkerMessage := TLccMessage.Create;
 end;
 
 destructor TReceiveMessageAliasServerThread.Destroy;
@@ -311,6 +363,7 @@ begin
   FreeAndNil(FIncomingMessageList);
   FreeAndNil(FWaitingForMappingMessageList);
   FreeAndNil(FMappingRequestMessageList);
+  FreeAndNil(FWorkerMessage);
   inherited Destroy;
 end;
 

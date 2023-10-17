@@ -37,16 +37,17 @@ type
 
   TLccAliasMapping = class(TObject)
   private
-    FAbandonCount: Integer;
     FInternalNode: Boolean;
     FNodeAlias: Word;
     FNodeID: TNodeID;
-  protected
-    property AbandonCount: Integer read FAbandonCount write FAbandonCount;
+    FRetryCount: Integer;
+    FTimeTick: Integer;
   public
     property NodeID: TNodeID read FNodeID write FNodeID;
     property NodeAlias: Word read FNodeAlias write FNodeAlias;
     property InternalNode: Boolean read FInternalNode write FInternalNode;
+    property RetryCount: Integer read FRetryCount write FRetryCount;
+    property TimeTick: Integer read FTimeTick write FTimeTick;
 
     procedure AssignID(ANodeID: TNodeID; AnAlias: Word);
     function Clone: TLccAliasMapping;
@@ -72,7 +73,7 @@ type
     FMappingList: TThreadList;          // Valid Mappings
 
   protected
-    procedure FlushOldMappingWithAlias(AnAlias: Word);
+    procedure FlushOldMapping(ANodeID: TNodeID; AnAlias: Word);
 
   public
     property MappingList: TThreadList read FMappingList write FMappingList;
@@ -110,7 +111,8 @@ function TLccAliasMapping.Clone: TLccAliasMapping;
 begin
   Result := TLccAliasMapping.Create;
   Result.AssignID(NodeID, NodeAlias);
-  Result.AbandonCount := 0;
+  Result.FRetryCount := 0;
+  Result.FTimeTick := 0;
 end;
 
 function TLccAliasMapping.Compare(TestMapping: TLccAliasMapping): Boolean;
@@ -125,7 +127,7 @@ end;
 
 { TLccAliasServer }
 
-procedure TLccAliasServer.FlushOldMappingWithAlias(AnAlias: Word);
+procedure TLccAliasServer.FlushOldMapping(ANodeID: TNodeID; AnAlias: Word);
 var
   i: Integer;
   List: TList;
@@ -135,7 +137,7 @@ begin
   try
     for i := List.Count - 1 downto 0 do
     begin
-      if TLccAliasMapping(List[i]).NodeAlias = AnAlias then
+      if (TLccAliasMapping(List[i]).NodeAlias = AnAlias) or EqualNodeID(ANodeID, TLccAliasMapping(List[i]).NodeID, False) then
       begin
         TObject(List[i]).Free;
         List.Delete(i);
@@ -271,7 +273,7 @@ begin
     Result := FindMapping(AnAlias);
     if not Assigned(Result) then
     begin
-      FlushOldMappingWithAlias(AnAlias);
+      FlushOldMapping(ANodeID, AnAlias);
       Result := TLccAliasMapping.Create;
       Result.NodeID := ANodeID;
       Result.NodeAlias := AnAlias;
