@@ -40,28 +40,16 @@ type
     FInternalNode: Boolean;
     FNodeAlias: Word;
     FNodeID: TNodeID;
-    FRetryCount: Integer;
-    FTimeTick: Integer;
   public
     property NodeID: TNodeID read FNodeID write FNodeID;
     property NodeAlias: Word read FNodeAlias write FNodeAlias;
+    // True if this node is managed by the NodeManager else it is some node on the network
     property InternalNode: Boolean read FInternalNode write FInternalNode;
-    property RetryCount: Integer read FRetryCount write FRetryCount;
-    property TimeTick: Integer read FTimeTick write FTimeTick;
 
     procedure AssignID(ANodeID: TNodeID; AnAlias: Word);
     function Clone: TLccAliasMapping;
     function Compare(TestMapping: TLccAliasMapping): Boolean;
     function CompareEitherOr(TestMapping: TLccAliasMapping): Boolean;
-  end;
-
-
-  // List of TLccAliasMapping objects that define all the mappings for any node referenced
-  // within a LccMessage (Source, Destination, any NodeID's carried in payload
-  { TLccMessageAliasMappingList }
-
-  TLccMessageAliasMappingList = class(TList)
-
   end;
 
 
@@ -73,21 +61,27 @@ type
     FMappingList: TThreadList;          // Valid Mappings
 
   protected
-    procedure FlushOldMapping(ANodeID: TNodeID; AnAlias: Word);
+    property MappingList: TThreadList read FMappingList write FMappingList;
 
   public
-    property MappingList: TThreadList read FMappingList write FMappingList;
 
     constructor Create;
     destructor Destroy; override;
 
+    // Clears the mapping, can choose if you want to keep the internal nodes (owned by the Node Manager)
     procedure Clear(ForceInternalNodes: Boolean);
+    // How many mappings there are
     function Count: Integer;
+    // Find a mapping based on an ID or Alias
     function FindMapping(AnAliasID: Word): TLccAliasMapping; overload;
     function FindMapping(ANodeID: TNodeID): TLccAliasMapping; overload;
-    function FindMapping(ANodeID: TNodeID; AnAliasID: Word): TLccAliasMapping; overload;
+    // Finds either the ID or Alias associated with mappings and deletes them if found
+    procedure FlushOldMapping(ANodeID: TNodeID; AnAlias: Word);
+    // Add a new mapping
     function AddMapping(ANodeID: TNodeID; AnAlias: Word; AnInternalNode: Boolean): TLccAliasMapping;
+    // Remove a mapping, can choose if you want to keep the internal nodes (owned by the Node Manager)
     procedure RemoveMapping(AnAliasID: Word; ForceInternalNodes: Boolean);
+    // For debug or other interest
     procedure ReadMappingsToStringList(AStringList: TStringList);
   end;
 
@@ -96,8 +90,6 @@ var
 
 implementation
 
-uses
-  lcc_base_classes;
 
 { TLccAliasMapping }
 
@@ -111,8 +103,6 @@ function TLccAliasMapping.Clone: TLccAliasMapping;
 begin
   Result := TLccAliasMapping.Create;
   Result.AssignID(NodeID, NodeAlias);
-  Result.FRetryCount := 0;
-  Result.FTimeTick := 0;
 end;
 
 function TLccAliasMapping.Compare(TestMapping: TLccAliasMapping): Boolean;
@@ -170,7 +160,7 @@ begin
   try
   for i := List.Count - 1 downto 0 do
   begin
-    if not TLccAliasMapping( List[i]).InternalNode then
+    if not TLccAliasMapping( List[i]).InternalNode or ForceInternalNodes then
     begin
       TObject(List[i]).Free;
       List.Delete(i);
@@ -232,29 +222,6 @@ begin
   end;
 end;
 
-function TLccAliasServer.FindMapping(ANodeID: TNodeID; AnAliasID: Word): TLccAliasMapping;
-var
-  i: Integer;
-  TestMapping: TLccAliasMapping;
-  List: TList;
-begin
-  Result := nil;                      // Needs to Sort then do a binary search here eventually
-  List := MappingList.LockList;
-  try
-    for i := 0 to List.Count - 1 do
-    begin
-      TestMapping := TLccAliasMapping(List.Items[i]);
-      if EqualNodeID(TestMapping.NodeID, ANodeID, False) or (TestMapping.NodeAlias = AnAliasID) then
-      begin
-        Result := TestMapping;
-        Break;
-      end;
-    end;
-  finally
-     MappingList.UnlockList;
-  end;
-end;
-
 function TLccAliasServer.AddMapping(ANodeID: TNodeID; AnAlias: Word;
   AnInternalNode: Boolean): TLccAliasMapping;
 begin
@@ -292,7 +259,7 @@ begin
       Mapping := TLccAliasMapping( List[i]);
       if AnAliasID = Mapping.NodeAlias then
       begin
-        if not Mapping.InternalNode or (Mapping.InternalNode and ForceInternalNodes) then
+        if not Mapping.InternalNode or ForceInternalNodes then
         begin
           {$IFDEF LOG_MAPPING}DebugLn('Mapping Deleted: 0x' + IntToHex(Mapping.NodeAlias, 4) + '; ' + NodeIDToString(Mapping.NodeID, True));{$ENDIF}
           Mapping.Free;

@@ -1,4 +1,4 @@
-unit lcc_common_classes;
+unit lcc_connection_common;
 
 
 {$I ..\lcc_compilers.inc}

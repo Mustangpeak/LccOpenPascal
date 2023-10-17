@@ -39,7 +39,8 @@ uses
   function IsPrintableChar(C: Char): Boolean;
   function ThreadListCount(AThreadedList: TThreadList): Int64;
   procedure ThreadListClearObjects(AThreadList: TThreadList);
-  procedure ListClearObject(AList: TList);
+  procedure ListClearObjects(AList: TList);
+  procedure ListClearNilObjects(AList: TList);
 
 
   function StreamReadByte(AStream: TStream): Byte;
@@ -861,7 +862,7 @@ end;
     end;
   end;
 
-  procedure ListClearObject(AList: TList);
+  procedure ListClearObjects(AList: TList);
   var
     i: Integer;
   begin
@@ -871,6 +872,15 @@ end;
     finally
       AList.Clear;
     end;
+  end;
+
+  procedure ListClearNilObjects(AList: TList);
+  var
+    i: Integer;
+  begin
+    for i := AList.Count - 1 downto 0 do
+      if AList[i] = nil then
+        AList.Delete(i);
   end;
 
 end.

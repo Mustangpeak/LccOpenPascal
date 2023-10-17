@@ -68,10 +68,14 @@ TReceiveMessageAliasServerThread = class(TThread)
 
     procedure Execute; override;
 
+    // Checks for messages that will create a mapping (CAN or Lcc) and flushes the mappings if a message is sent that will cause all nodes to respond with AMD or VerifyNodeID to refresh it
     procedure ProcessAliasAndNodeIDMappingMessages(AMessage: TLccMessage);
+    // When a message is asked to validate all node references it carries (Destination, payload NodeID, etc) it may need to send a VerifyNodeID or AME and it does so through this callback
     procedure RequestMappingMessageSentCallback(ANodeID: TNodeID; AnAliasID: Word);
+    // Locates the TLccMessage in the Mapping Request List that matches EITHER OR of these IDs
     function FindMessageWithMappingRequest(ANodeID: TNodeID; AnAliasID: Word): TLccMessage;
-    procedure IncrementMappingRequestMessagesAnCheckForAbandonment;
+    // Mapping Request messages are time coded so they can be resent if the VerifiedNode or AMD does not come and then be deleted after some time
+    procedure IncrementMappingRequestMessageTagAnCheckForAbandonment;
 
     // Methods called through Syncronize() to utilize the callbacks within the main threads context
     procedure DispatchMessageThroughSyncronize;
@@ -154,13 +158,11 @@ begin
         end;
       end;
     finally
-      for i := List.Count - 1 downto 0 do
-        if List[i] = nil then List.Delete(i);
-
+      ListClearNilObjects(List);
       WaitingForMappingMessageList.UnlockList;
     end;
 
-    IncrementMappingRequestMessagesAnCheckForAbandonment;
+    IncrementMappingRequestMessageTagAnCheckForAbandonment;
     Synchronize({$IFNDEF LCC_DELPHI}@{$ENDIF}DispatchMessageThroughSyncronize);
 
     Sleep(SLEEP_ALIAS_SERVER_THREAD_MS);
@@ -276,7 +278,7 @@ begin
   end;
 end;
 
-procedure TReceiveMessageAliasServerThread.IncrementMappingRequestMessagesAnCheckForAbandonment;
+procedure TReceiveMessageAliasServerThread.IncrementMappingRequestMessageTagAnCheckForAbandonment;
 var
   List: TList;
   i: Integer;
@@ -295,9 +297,7 @@ begin
       end;
     end;
   finally
-    for i := List.Count - 1 downto 0 do
-      if List[i] = nil then List.Delete(i);
-
+    ListClearNilObjects(List);
     MappingRequestMessageList.UnlockList;
   end;
 end;

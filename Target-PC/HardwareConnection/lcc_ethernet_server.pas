@@ -174,6 +174,9 @@ type
     property HashSHA1: TIdHashSHA1 read FHashSHA1 write FHashSHA1;
     property SendMessageTemp: TMemoryStream read FSendMessageTemp write FSendMessageTemp;
 
+    // TODO
+    // Old WebSocket functions that used arrays once the stream versions here are functional these can be deleted
+
   {  function ReceiveContextDataAsString(AContext: TIdContext): string; override;
     function ReceiveContextDataAsBytes(AContext: TIdContext): TIdBytes; override;
     procedure SendContextDataAsString(AContext: TIdContext; AString: string); override;
@@ -281,6 +284,10 @@ begin
   FreeAndNil(FHashSHA1);
   inherited Destroy;
 end;
+
+
+// TODO
+   // Old WebSocket functions that used arrays once the stream versions here are functional these can be deleted
 
 {
 function TLccWebSocketServerThread.ReceiveContextDataAsString(AContext: TIdContext): string;
@@ -682,28 +689,18 @@ var
   LocalDataArray: TLccDynamicByteArray;
   GridConnectStrPtr: PGridConnectString;
   MessageStr: String;
-  B: Byte;
-
-  StartSize: Int64;
 begin
+  AStream.Position := 0;
 
   if OwnerConnectionContextList.OwnerConnectionThread.OwnerConnectionManager.EmulateCanBus then
   begin
-    AStream.Position := 0;
-
-    StartSize := AStream.Size;
 
     for iData := 0 to AStream.Size - 1 do
     begin
       // Take the incoming characters and try to make a valid gridconnect message
       GridConnectStrPtr := nil;
 
-      if AStream.Position < AStream.Size then
-        B := AStream.ReadByte
-      else
-        beep;
-
-      if GridConnectDecodeStateMachine.GridConnect_DecodeMachine(B, GridConnectStrPtr) then
+      if GridConnectDecodeStateMachine.GridConnect_DecodeMachine(AStream.ReadByte, GridConnectStrPtr) then
       begin     // Have a valid gridconnect message
         MessageStr := GridConnectBufferToString(GridConnectStrPtr^);
         WorkerMessage.LoadByGridConnectStr(MessageStr);

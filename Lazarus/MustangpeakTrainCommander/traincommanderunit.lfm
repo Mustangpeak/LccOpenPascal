@@ -256,11 +256,20 @@ object FormTrainCommander: TFormTrainCommander
       object ButtonGridConnectStrClear: TButton
         Left = 24
         Height = 25
-        Top = 8
+        Top = 40
         Width = 75
         Caption = 'Clear'
         OnClick = ButtonGridConnectStrClearClick
         TabOrder = 1
+      end
+      object ButtonRawGridConnectLogEnable: TButton
+        Left = 24
+        Height = 25
+        Top = 8
+        Width = 75
+        Caption = 'Disable'
+        OnClick = ButtonRawGridConnectLogEnableClick
+        TabOrder = 2
       end
     end
   end

@@ -38,6 +38,7 @@ type
 
   TFormTrainCommander = class(TForm)
     Button1: TButton;
+    ButtonRawGridConnectLogEnable: TButton;
     ButtonMsgAssemberlDatagramMsg: TButton;
     ButtonLiveMessages: TButton;
     ButtonDatagramQueue: TButton;
@@ -82,6 +83,7 @@ type
     procedure ButtonGridConnectStrClearClick(Sender: TObject);
     procedure ButtonHTTPServerClick(Sender: TObject);
     procedure ButtonMsgAssemberlDatagramMsgClick(Sender: TObject);
+    procedure ButtonRawGridConnectLogEnableClick(Sender: TObject);
     procedure ButtonWebserverConnectClick(Sender: TObject);
     procedure ButtonManualConnectComPortClick(Sender: TObject);
     procedure ButtonClearClick(Sender: TObject);
@@ -167,6 +169,19 @@ end;
 procedure TFormTrainCommander.ButtonMsgAssemberlDatagramMsgClick(Sender: TObject);
 begin
   ButtonMsgAssemberlDatagramMsg.Caption := 'Msg Assember Datagram: ' + IntToStr(AllocatedDatagrams);
+end;
+
+procedure TFormTrainCommander.ButtonRawGridConnectLogEnableClick(Sender: TObject);
+begin
+  if Assigned(ConnectionFactory.OnLccGridConnectStrReceive) then
+  begin
+    ConnectionFactory.OnLccGridConnectStrReceive := nil;   // Allows threads to not have to use Syncronize
+    ButtonRawGridConnectLogEnable.Caption := 'Enable';
+  end else
+  begin
+    ConnectionFactory.OnLccGridConnectStrReceive := @OnServerManagerReceiveGridConnectStr;
+    ButtonRawGridConnectLogEnable.Caption := 'Disable';
+  end;
 end;
 
 procedure TFormTrainCommander.Button1Click(Sender: TObject);
