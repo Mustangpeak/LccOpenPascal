@@ -17,6 +17,7 @@ uses
   lcc_node_manager,
   lcc_ethernet_server,
   lcc_ethernet_client,
+  lcc_connection_common,
   lcc_node_controller,
   lcc_ethernet_common,
   lcc_defines,
@@ -68,7 +69,7 @@ type
     TextSettingsNodeID: TText;
     TextSettingsPort: TText;
     EditSettingsPort: TEdit;
-    EditSettingsIpAddress: TEdit;
+    EditSettingsIP: TEdit;
     TextSettingsIpAddress: TText;
     TimerLogin: TTimer;
     LabelSystemDocumentsPath: TLabel;
@@ -161,6 +162,7 @@ type
     ToolBarLog: TToolBar;
     SpeedButtonLogClear: TSpeedButton;
     SpeedButtonLogEnable: TSpeedButton;
+    LabelErrorMsg: TText;
     procedure GestureDone(Sender: TObject; const EventInfo: TGestureEventInfo; var Handled: Boolean);
     procedure FormCreate(Sender: TObject);
     procedure FormKeyUp(Sender: TObject; var Key: Word; var KeyChar: Char; Shift: TShiftState);
@@ -170,10 +172,10 @@ type
     procedure FormCloseQuery(Sender: TObject; var CanClose: Boolean);
     procedure FormDestroy(Sender: TObject);
     procedure MenuItemSettingsLabelPathClick(Sender: TObject);
-    procedure EditSettingsIpAddressKeyDown(Sender: TObject; var Key: Word; var KeyChar: Char; Shift: TShiftState);
+    procedure EditSettingsIPKeyDown(Sender: TObject; var Key: Word; var KeyChar: Char; Shift: TShiftState);
     procedure EditSettingsPortKeyDown(Sender: TObject; var Key: Word; var KeyChar: Char; Shift: TShiftState);
     procedure EditSettingsNodeIDKeyDown(Sender: TObject; var Key: Word; var KeyChar: Char; Shift: TShiftState);
-    procedure EditSettingsIpAddressExit(Sender: TObject);
+    procedure EditSettingsIPExit(Sender: TObject);
     procedure EditSettingsPortExit(Sender: TObject);
     procedure EditSettingsNodeIDExit(Sender: TObject);
     procedure ButtonSettingsDeleteSettingsFileClick(Sender: TObject);
@@ -207,9 +209,12 @@ type
     FActiveTrainObject: TListViewItem;
     FCdiData: TLccCdiRoot;
     FNodeEditor: TFrameNodeEditorControl;
+    FEmulateCanBus: Boolean;
     { Private declarations }
 
   protected
+
+    property EmulateCanBus: Boolean read FEmulateCanBus write FEmulateCanBus;
 
     procedure XmlLoadSettingsFromFile;
     procedure XmlWriteDefaultFile;
@@ -240,20 +245,20 @@ type
     procedure OnTrainSNIPChange(TractionObject: TLccTractionObject);
     procedure OnRegisterChange(TractionObject: TLccTractionObject; IsRegistered: Boolean);
 
-    procedure OnSendMessage(Sender: TObject; LccMessage: TLccMessage);
-    procedure OnReceiveMessage(Sender: TObject; LccMessage: TLccMessage);
+
+    procedure OnConnectionConnectionState(Sender: TObject; Manager: TLccConnectionThreadManager; Thread: TLccConnectionThread; Info: TLccConnectionInfo);
+    procedure OnConnectionErrorMessage(Sender: TObject; Manager: TLccConnectionThreadManager; Thread: TLccConnectionThread; Info: TLccConnectionInfo);
+    procedure OnConnectionManagerReceiveMessage(Sender: TObject; ALccMessage: TLccMessage);
+    procedure OnConnectionManagerSendMessage(Sender: TObject; ALccMessage: TLccMessage);
 
     procedure OnNodeIDChanged(Sender: TObject; ALccNode: TLccNode);
     procedure OnNodeAliasChanged(Sender: TObject; ALccNode: TLccNode);
-
- //   procedure OnClientServerConnectionChange(Sender: TObject; Info: TLccHardwareConnectionInfo);
- //   procedure OnClientServerErrorMessage(Sender: TObject; Info: TLccHardwareConnectionInfo);
 
     procedure OnEngineMemorySpaceAccessCallback(MemorySpaceAccessEngine: TLccEngineMemorySpaceAccess);
     procedure OnEngineMemorySpaceAccessProgressCallback(AEngineMemorySpaceAccess: TLccEngineMemorySpaceAccess);
 
     function ValidEditBoxKey(Key: Word): Boolean;
-    function ConnectionLogin: Boolean;
+ //   function ConnectionLogin: Boolean;
     function FindListviewItemByTagTractionObject(AListview: TListView; ATagObject: TObject): TListviewItem;
     function SelectedRosterEqualsTractionObject(TractionObject: TLccTractionObject): Boolean;
     procedure TrainTabDetailsClear;
@@ -272,6 +277,7 @@ implementation
 
 {$R *.fmx}
 
+{
 function TLccThrottleAppForm.ConnectionLogin: Boolean;
 var
   LocalInfo: TLccEthernetConnectionInfo;
@@ -293,14 +299,15 @@ begin
     LocalInfo.Free;
   end;
 end;
+     }
 
-procedure TLccThrottleAppForm.EditSettingsIpAddressExit(Sender: TObject);
+procedure TLccThrottleAppForm.EditSettingsIPExit(Sender: TObject);
 begin
-  if ValidateIPString(EditSettingsIpAddress.Text) then
-    XmlNodeSetFirstLevelTextContent(PathSettingsFile, 'settings', 'ipaddress', EditSettingsIpAddress.Text, True);
+  if ValidateIPString(EditSettingsIp.Text) then
+    XmlNodeSetFirstLevelTextContent(PathSettingsFile, 'settings', 'ipaddress', EditSettingsIp.Text, True);
 end;
 
-procedure TLccThrottleAppForm.EditSettingsIpAddressKeyDown(Sender: TObject;
+procedure TLccThrottleAppForm.EditSettingsIPKeyDown(Sender: TObject;
   var Key: Word; var KeyChar: Char; Shift: TShiftState);
 begin
   if not( CharInSet(KeyChar, ['0'..'9', '.']) or ValidEditBoxKey(Key) ) then
@@ -308,8 +315,8 @@ begin
     Key := 0;
     KeyChar := #0;
   end;
-  if (Key = vkReturn) and ValidateIPString(EditSettingsIpAddress.Text) then
-    XmlNodeSetFirstLevelTextContent(PathSettingsFile, 'settings', 'ipaddress', EditSettingsIpAddress.Text, True);
+  if (Key = vkReturn) and ValidateIPString(EditSettingsIp.Text) then
+    XmlNodeSetFirstLevelTextContent(PathSettingsFile, 'settings', 'ipaddress', EditSettingsIp.Text, True);
 end;
 
 procedure TLccThrottleAppForm.EditSettingsNodeIDExit(Sender: TObject);
@@ -404,8 +411,48 @@ begin
 end;
 
 procedure TLccThrottleAppForm.ButtonSettingsResetConnectionClick(Sender: TObject);
+var
+  ConnectionInfo: TLccEthernetConnectionInfo;
+  LocalPort: LongInt;
+  LocalPortStr: String;
+  LocalIPStr: String;
+  LocalNodeIDStr: String;
 begin
-  if not ValidateIPString(EditSettingsIpAddress.Text) then
+
+  if EditSettingsNodeID.Text = '' then
+    EditSettingsNodeID.Text := '08.09.0A.0B.0C.0D';
+
+  LocalPortStr := EditSettingsPort.Text;
+  LocalIPStr := EditSettingsIP.Text;
+  LocalNodeIDStr := EditSettingsNodeID.Text;
+
+  LabelErrorMsg.Text := '';
+
+  if TryStrToInt(LocalPortStr, LocalPort) then
+  begin
+    if ValidateIPString(LocalIPStr) then
+    begin
+      if ValidateNodeIDString(LocalNodeIDStr) then
+      begin
+        ConnectionInfo := TLccEthernetConnectionInfo.Create;
+        ConnectionFactory.DestroyConnection(EthernetClient);
+        ConnectionInfo.ListenerIP := LocalIPStr;
+        ConnectionInfo.ListenerPort := LocalPort;
+        ConnectionInfo.SuppressErrorMessages := False;
+        EthernetClient := ConnectionFactory.CreateLccMessageConnection(TLccEthernetClientThreadManager, ConnectionInfo, EmulateCanBus) as TLccEthernetClientThreadManager;
+        EthernetClient.OpenConnection;
+      end else
+        LabelErrorMsg.Text := 'Invalid NodeID: ' + LocalNodeIDStr;
+    end else
+      LabelErrorMsg.Text := 'Invalid Ip address: ' + LocalIPStr;
+  end else
+    LabelErrorMsg.Text := 'Invalid Port number: ' + LocalPortStr;
+
+
+
+
+
+{  if not ValidateIPString(EditSettingsIpAddress.Text) then
   begin
     TextSettingsConnectionStatus.Text := 'Invalid IP Address';
     TextSettingsConnectionStatus.TextSettings.FontColor := TAlphaColors.Red;
@@ -435,7 +482,7 @@ begin
   CurrentPort := StrToInt(EditSettingsPort.Text);
   CurrentNodeID := StrToNodeID(EditSettingsNodeID.Text, True);
 
-  ConnectionLogin
+  ConnectionLogin   }
 end;
 
 function TLccThrottleAppForm.FindListviewItemByTagTractionObject(AListview: TListView; ATagObject: TObject): TListviewItem;
@@ -456,32 +503,36 @@ end;
 procedure TLccThrottleAppForm.FormCloseQuery(Sender: TObject; var CanClose: Boolean);
 begin
   TrainTabCDIClear;
-  TimerLogin.Enabled := False;
+  TimerLogin.Enabled := False; // Stop trying to log in
+  ConnectionFactory.DestroyConnection(EthernetClient);
+  EthernetClient := nil;
   NodeManager.ReleaseAliasAll;
-  EthernetClient.CloseConnection;
 end;
 
 procedure TLccThrottleAppForm.FormCreate(Sender: TObject);
 begin
   // Local field setup
+  EmulateCanBus := True;
+
+  FCdiData := TLccCdiRoot.Create(nil);
 
   // Lcc library setup
   FNodeManager := TLccNodeManager.Create(nil);
-//  FEthernetClient := TLccEthernetClient.Create(nil, NodeManager);
-  FCdiData := TLccCdiRoot.Create(nil);
+  NodeManager.OnNodeAliasIDChanged := OnNodeAliasChanged;
+  NodeManager.OnNodeIDChanged := OnNodeIdChanged;
+  NodeManager.OnNodeLogin := OnNodeLogin;
+  NodeManager.EmulateCanNetworkLogin := EmulateCanBus;
+
   FNodeEditor := TFrameNodeEditorControl.Create(Self);
   NodeEditor.Align := TAlignLayout.Client;
   NodeEditor.Parent := LabelTrainRosterEditContainer;
   NodeEditor.Visible := False;
 
-//  EthernetClient.OnConnectionStateChange := OnClientServerConnectionChange;
- // EthernetClient.OnErrorMessage := OnClientServerErrorMessage;
- // EthernetClient.OnLccMessageReceive := OnReceiveMessage;
- // EthernetClient.OnLccMessageSend := OnSendMessage;
+  ConnectionFactory.OnStateChange := OnConnectionConnectionState;
+  ConnectionFactory.OnError := OnConnectionErrorMessage;
+  ConnectionFactory.OnLccMessageReceive := OnConnectionManagerReceiveMessage;
+  ConnectionFactory.OnLccMessageSend := OnConnectionManagerSendMessage;
 
-  NodeManager.OnNodeAliasIDChanged := OnNodeAliasChanged;
-  NodeManager.OnNodeIDChanged := OnNodeIdChanged;
-  NodeManager.OnNodeLogin := OnNodeLogin;
 
   // Default values to the settings
   CurrentIpAddress := DEFAULT_IP_ADDRESS;
@@ -571,7 +622,7 @@ begin
     else
       XmlWriteDefaultFile;
 
-    EditSettingsIpAddress.Text := CurrentIpAddress;
+    EditSettingsIp.Text := CurrentIpAddress;
     EditSettingsPort.Text := IntToStr( CurrentPort);
     EditSettingsNodeID.Text := NodeIDToString(CurrentNodeID, True);
 
@@ -692,6 +743,80 @@ begin
 
 end;
 
+procedure TLccThrottleAppForm.OnConnectionConnectionState(Sender: TObject;
+  Manager: TLccConnectionThreadManager; Thread: TLccConnectionThread;
+  Info: TLccConnectionInfo);
+begin
+  if Manager = EthernetClient then
+  begin
+
+    case TLccEthernetConnectionInfo(Info).ConnectionState of
+      lcsDisconnected :
+        begin
+          TextSettingsConnectionStatus.Text := 'Waiting for Connection';
+        end;
+      lcsConnecting :
+        begin
+          TextSettingsConnectionStatus.Text := 'Connecting';
+        end;
+      lcsConnected :
+        begin
+          TextSettingsConnectionStatus.Text := 'Connected';
+          if NodeManager.Nodes.Count = 0 then
+          begin
+            Controller := NodeManager.AddNodeByClass('', TLccTrainController, True, NULL_NODE_ID) as TLccTrainController;
+            Controller.TractionServer.OnSNIPChange := OnSNIPChange;
+            Controller.TractionServer.OnTrainSNIPChange := OnTrainSNIPChange;
+            Controller.TractionServer.OnRegisterChange := OnRegisterChange;
+          //  Controller.TractionServer.OnEmergencyStopChange := OnEmergencyStopChange;
+          //  Controller.TractionServer.OnFunctionChange := OnFunctionChange;
+          //  Controller.TractionServer.OnSpeedChange := OnSpeedChange;
+          //  Controller.OnControllerAssignChange := OnControllerAssignChange;
+            Controller.TractionServer.Enabled := True;
+          end;
+        end;
+      lcsDisconnecting :
+        begin
+          TextSettingsConnectionStatus.Text := 'Disconnecting';
+        end;
+    end;
+  end;
+end;
+
+procedure TLccThrottleAppForm.OnConnectionErrorMessage(Sender: TObject;
+  Manager: TLccConnectionThreadManager; Thread: TLccConnectionThread;
+  Info: TLccConnectionInfo);
+begin
+  TextSettingsConnectionStatus.Text := Info.ErrorMessage;
+  TimerLogin.Interval := 500;  // Fire immediatly once this Syncronize call returns
+end;
+
+procedure TLccThrottleAppForm.OnConnectionManagerReceiveMessage(Sender: TObject; ALccMessage: TLccMessage);
+begin
+   if SpeedButtonLogEnable.IsPressed then
+  begin
+    MemoLog.Lines.BeginUpdate;
+    try
+      MemoLog.Lines.Add('R: ' + MessageToDetailedMessage(ALccMessage))
+    finally
+      MemoLog.Lines.EndUpdate;
+    end;
+  end;
+end;
+
+procedure TLccThrottleAppForm.OnConnectionManagerSendMessage(Sender: TObject; ALccMessage: TLccMessage);
+begin
+  if SpeedButtonLogEnable.IsPressed then
+  begin
+    MemoLog.Lines.BeginUpdate;
+    try
+      MemoLog.Lines.Add('S: ' + MessageToDetailedMessage(ALccMessage))
+    finally
+      MemoLog.Lines.EndUpdate;
+    end;
+  end;
+end;
+
 {
 procedure TLccThrottleAppForm.OnCdiParserProcessCallback(ACdiParser: TLccCdiParser; ProgressInfo: string);
 begin
@@ -700,53 +825,6 @@ begin
   LabelTrainRosterEdit.EndUpdate;
   Application.ProcessMessages;
 end;  }
-
-
-{
-procedure TLccThrottleAppForm.OnClientServerConnectionChange(Sender: TObject; Info: TLccHardwareConnectionInfo);
-begin
-  if Sender is TLccConnectionThread then
-  begin
-    ConnectionState := Info.ConnectionState;
-
-    case Info.ConnectionState of
-      lcsConnecting :
-        begin
-          TextSettingsConnectionStatus.Text := 'connecting';
-        end;
-     lcsConnected :
-        begin
-          TextSettingsConnectionStatus.Text := 'connected';
-          if NodeManager.Nodes.Count = 0 then
-          begin
-            Controller := NodeManager.AddNodeByClass('', TLccTrainController, True, NULL_NODE_ID) as TLccTrainController;
-            Controller.TractionServer.OnSNIPChange := OnSNIPChange;
-            Controller.TractionServer.OnTrainSNIPChange := OnTrainSNIPChange;
-            Controller.TractionServer.OnRegisterChange := OnRegisterChange;
-        //    Controller.TractionServer.OnEmergencyStopChange := OnEmergencyStopChange;
-       //     Controller.TractionServer.OnFunctionChange := OnFunctionChange;
-       //     Controller.TractionServer.OnSpeedChange := OnSpeedChange;
-       //     Controller.OnControllerAssignChange := OnControllerAssignChange;
-          end;
-        end;
-      lcsDisconnecting :
-        begin
-          TextSettingsConnectionStatus.Text := 'disconnecting';
-        end;
-      lcsDisconnected :
-        begin
-          TextSettingsConnectionStatus.Text := 'disconnected';
-        end;
-    end;
-  end;
-end;
-}
-
-{
-procedure TLccThrottleAppForm.OnClientServerErrorMessage(Sender: TObject; Info: TLccHardwareConnectionInfo);
-begin
-end;
-}
 
 procedure TLccThrottleAppForm.OnEngineMemorySpaceAccessProgressCallback(AEngineMemorySpaceAccess: TLccEngineMemorySpaceAccess);
 begin
@@ -816,32 +894,6 @@ procedure TLccThrottleAppForm.OnNodeLogin(Sender: TObject; LccSourceNode: TLccNo
 begin
   if LccSourceNode = Controller then
     Controller.FindAllTrains;
-end;
-
-procedure TLccThrottleAppForm.OnReceiveMessage(Sender: TObject; LccMessage: TLccMessage);
-begin
- if SpeedButtonLogEnable.IsPressed then
-  begin
-    MemoLog.Lines.BeginUpdate;
-    try
-      MemoLog.Lines.Add('R: ' + MessageToDetailedMessage(LccMessage))
-    finally
-      MemoLog.Lines.EndUpdate;
-    end;
-  end;
-end;
-
-procedure TLccThrottleAppForm.OnSendMessage(Sender: TObject;  LccMessage: TLccMessage);
-begin
-  if SpeedButtonLogEnable.IsPressed then
-  begin
-    MemoLog.Lines.BeginUpdate;
-    try
-      MemoLog.Lines.Add('S: ' + MessageToDetailedMessage(LccMessage))
-    finally
-      MemoLog.Lines.EndUpdate;
-    end;
-  end;
 end;
 
 procedure TLccThrottleAppForm.OnRegisterChange(TractionObject: TLccTractionObject; IsRegistered: Boolean);
@@ -927,8 +979,14 @@ end;
 
 procedure TLccThrottleAppForm.TimerLoginTimer(Sender: TObject);
 begin
-  if not (EthernetClient.Connected or EthernetClient.Connecting) then
-    ButtonSettingsResetConnectionClick(Self)
+  if TimerLogin.Interval <> 5000 then
+    TimerLogin.Interval := 5000;
+
+  if Assigned(EthernetClient) then
+  begin
+    if not (EthernetClient.Connected or EthernetClient.Connecting) then
+      ButtonSettingsResetConnectionClick(Self)
+  end
 end;
 
 procedure TLccThrottleAppForm.TrackBarTrainsThrottleLeverChange(Sender: TObject);

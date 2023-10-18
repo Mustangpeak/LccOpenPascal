@@ -44,10 +44,6 @@
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="unitMainForm"/>
       </Unit>
-      <Unit>
-        <Filename Value="../../Target-Common/lcc_tasks_traction.pas"/>
-        <IsPartOfProject Value="True"/>
-      </Unit>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
@@ -57,7 +53,7 @@
     </Target>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir)"/>
-      <OtherUnitFiles Value="../../Target-Common;../../Target-PC;../../Target-PC/HardwareConnection;../../Target-PC/HardwareConnection/Indy_Lcc/Protocols;../../Target-PC/HardwareConnection/Indy_Lcc/Core;../../Target-PC/HardwareConnection/Indy_Lcc/System;../../Target-PC/HardwareConnection/TLazSerial"/>
+      <OtherUnitFiles Value="../../Target-PC;../../Target-Common;../../Target-PC/HardwareConnection;../../Target-PC/HardwareConnection/Indy_Lcc/Protocols;../../Target-PC/HardwareConnection/Indy_Lcc/Core;../../Target-PC/HardwareConnection/Indy_Lcc/System;../../Target-PC/HardwareConnection/TLazSerial"/>
       <UnitOutputDirectory Value="lib/$(TargetCPU)-$(TargetOS)"/>
     </SearchPaths>
     <Parsing>

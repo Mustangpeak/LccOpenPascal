@@ -276,8 +276,6 @@ var
   LocalIPStr: String;
   LocalNodeIDStr: String;
 begin
-  ConnectionInfo := TLccEthernetConnectionInfo.Create;
-
   if EditSettingsNodeID.Text = '' then
     EditSettingsNodeID.Text := '08.09.0A.0B.0C.0D';
 
@@ -296,6 +294,7 @@ begin
       if ValidateNodeIDString(LocalNodeIDStr) then
       begin
         ConnectionFactory.DestroyConnection(EthernetClient);
+        ConnectionInfo := TLccEthernetConnectionInfo.Create;
         ConnectionInfo.ListenerIP := LocalIPStr;
         ConnectionInfo.ListenerPort := LocalPort;
         ConnectionInfo.SuppressErrorMessages := False;

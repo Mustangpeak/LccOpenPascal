@@ -618,7 +618,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
             Size.Width = 359.000000000000000000
             Size.Height = 530.000000000000000000
             Size.PlatformDefault = False
-            TabIndex = 2
+            TabIndex = 0
             TabOrder = 0
             TabPosition = PlatformDefault
             OnChange = TabControlTrainRosterChange
@@ -633,7 +633,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
               CustomIcon = <
                 item
                 end>
-              IsSelected = False
+              IsSelected = True
               Size.Width = 54.000000000000000000
               Size.Height = 26.000000000000000000
               Size.PlatformDefault = False
@@ -790,7 +790,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
               CustomIcon = <
                 item
                 end>
-              IsSelected = True
+              IsSelected = False
               Size.Width = 41.000000000000000000
               Size.Height = 26.000000000000000000
               Size.PlatformDefault = False
@@ -1143,7 +1143,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
           OnKeyDown = EditSettingsPortKeyDown
           OnExit = EditSettingsPortExit
         end
-        object EditSettingsIpAddress: TEdit
+        object EditSettingsIP: TEdit
           Touch.InteractiveGestures = [LongTap, DoubleTap]
           Anchors = [akLeft, akTop, akRight]
           TabOrder = 2
@@ -1153,8 +1153,8 @@ object LccThrottleAppForm: TLccThrottleAppForm
           Size.Width = 200.000000000000000000
           Size.Height = 32.000000000000000000
           Size.PlatformDefault = False
-          OnKeyDown = EditSettingsIpAddressKeyDown
-          OnExit = EditSettingsIpAddressExit
+          OnKeyDown = EditSettingsIPKeyDown
+          OnExit = EditSettingsIPExit
         end
         object TextSettingsIpAddress: TText
           Position.X = 8.000000000000000000
@@ -1171,7 +1171,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
           HitTest = True
           PopupMenu = PopupMenuLabelPath
           Position.X = 8.000000000000000000
-          Position.Y = 340.000000000000000000
+          Position.Y = 356.000000000000000000
           Size.Width = 400.000000000000000000
           Size.Height = 16.000000000000000000
           Size.PlatformDefault = False
@@ -1189,7 +1189,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
         object ButtonSettingsDeleteSettingsFile: TButton
           Anchors = [akLeft, akTop, akRight]
           Position.X = 8.000000000000000000
-          Position.Y = 272.000000000000000000
+          Position.Y = 288.000000000000000000
           Size.Width = 400.000000000000000000
           Size.Height = 22.000000000000000000
           Size.PlatformDefault = False
@@ -1200,7 +1200,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
         object ButtonSettingsDeleteAppFolder: TButton
           Anchors = [akLeft, akTop, akRight]
           Position.X = 8.000000000000000000
-          Position.Y = 293.000000000000000000
+          Position.Y = 309.000000000000000000
           Size.Width = 400.000000000000000000
           Size.Height = 22.000000000000000000
           Size.PlatformDefault = False
@@ -1213,7 +1213,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
           HitTest = True
           PopupMenu = PopupMenuLabelPath
           Position.X = 8.000000000000000000
-          Position.Y = 323.000000000000000000
+          Position.Y = 339.000000000000000000
           Size.Width = 400.000000000000000000
           Size.Height = 17.000000000000000000
           Size.PlatformDefault = False
@@ -1247,8 +1247,8 @@ object LccThrottleAppForm: TLccThrottleAppForm
         end
         object TextSettingsDebugHeader: TText
           Position.X = 8.000000000000000000
-          Position.Y = 257.000000000000000000
-          Size.Width = 389.000000000000000000
+          Position.Y = 273.000000000000000000
+          Size.Width = 400.000000000000000000
           Size.Height = 15.000000000000000000
           Size.PlatformDefault = False
           Text = 'Useful stuff for debugging File Storage'
@@ -1269,6 +1269,16 @@ object LccThrottleAppForm: TLccThrottleAppForm
           Size.Height = 32.000000000000000000
           Size.PlatformDefault = False
           TextSettings.HorzAlign = Leading
+        end
+        object LabelErrorMsg: TText
+          Anchors = [akLeft, akTop, akRight]
+          Position.X = 8.000000000000000000
+          Position.Y = 239.000000000000000000
+          Size.Width = 400.000000000000000000
+          Size.Height = 25.000000000000000000
+          Size.PlatformDefault = False
+          TextSettings.Font.StyleExt = {00070000000000000004000000}
+          TextSettings.FontColor = claRed
         end
       end
     end

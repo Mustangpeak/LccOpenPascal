@@ -214,7 +214,7 @@ if TargetOS = &apos;linux&apos; then
     </Target>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir)"/>
-      <OtherUnitFiles Value="..\..\Target-PC;..\..\Target-PC\HardwareConnection;..\..\Target-Common;..\..\Target-PC\HardwareConnection\Indy_Lcc\Core;..\..\Target-PC\HardwareConnection\Indy_Lcc\Protocols;..\..\Target-PC\HardwareConnection\Indy_Lcc\System;..\..\Target-PC\HardwareConnection\TLazSerial;..\..\Target-PC\HardwareConnection\Synapse"/>
+      <OtherUnitFiles Value="..\..\Target-PC;..\..\Target-PC\HardwareConnection;..\..\Target-Common;..\..\Target-PC\HardwareConnection\Indy_Lcc\Core;..\..\Target-PC\HardwareConnection\Indy_Lcc\Protocols;..\..\Target-PC\HardwareConnection\Indy_Lcc\System;..\..\Target-PC\HardwareConnection\TLazSerial"/>
       <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
     </SearchPaths>
     <Conditionals Value="if TargetOS = &apos;darwin&apos; then
@@ -245,8 +245,6 @@ if TargetOS = &apos;linux&apos; then
         <StackChecks Value="True"/>
       </Checks>
       <VerifyObjMethodCallValidity Value="True"/>
-      <TargetCPU Value="x86_64"/>
-      <TargetOS Value="darwin"/>
       <Optimizations>
         <OptimizationLevel Value="0"/>
       </Optimizations>
