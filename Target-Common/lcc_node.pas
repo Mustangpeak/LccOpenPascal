@@ -2445,6 +2445,11 @@ begin
     end else
     begin
       // Typically due to an alias conflict to create a new one
+
+   //   AliasMapping seems to try to send a Verify from the new Alias to the Old... I think
+
+      finally
+      end;
       Temp := FSeedNodeID;
       GenerateNewSeed(Temp);
       FSeedNodeID := Temp;

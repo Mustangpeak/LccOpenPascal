@@ -170,14 +170,6 @@ type
     property SendMessageWithoutWSHeader: TMemoryStream read FSendMessageWithoutWSHeader write FSendMessageWithoutWSHeader;
     property ReceiveStreamWithWSHeader: TMemoryStream read FReceiveStreamWithWSHeader write FReceiveStreamWithWSHeader;
 
-    // TODO
-    // Old WebSocket functions that used arrays once the stream versions here are verified these can be deleted
-
-  {  function ReceiveContextDataAsString(AContext: TIdContext): string; override;
-    function ReceiveContextDataAsBytes(AContext: TIdContext): TIdBytes; override;
-    procedure SendContextDataAsString(AContext: TIdContext; AString: string); override;
-    procedure SendContextDataAsBytes(AContext: TIdContext; ABytes: TIdBytes); override;
-  }
     procedure IdTCPServerExecute(AContext: TIdContext); override;
 
     function ParseHeader(const msg: string): TDictionary<string, string>;
@@ -221,123 +213,6 @@ begin
   inherited Destroy;
 end;
 
-
-// TODO
-   // Old WebSocket functions that used arrays once the stream versions here are functional these can be deleted
-
-{
-function TLccWebSocketServerThread.ReceiveContextDataAsString(AContext: TIdContext): string;
-begin
-  Result := string( IndyTextEncoding_UTF8.GetString(ReceiveContextDataAsBytes(AContext)));
-end;  }
-
-{
-
-function TLccWebSocketServerThread.ReceiveContextDataAsBytes(AContext: TIdContext): TIdBytes;
-var
-  l: byte;
-  b: array [0..7] of byte;
-  i, DecodedSize: int64;
-  Mask: array [0..3] of byte;
-  io: TIdIOHandler;
-begin
-  // https://stackoverflow.com/questions/8125507/how-can-i-send-and-receive-websocket-messages-on-the-server-side
-
-  // Strip off the header from the data
-  try
-    io := AContext.Connection.IOHandler;
-    if io.ReadByte = $81 then
-    begin
-      l := io.ReadByte;
-      case l of
-        $FE:
-          begin
-            b[1] := io.ReadByte; b[0] := io.ReadByte;
-            b[2] := 0; b[3] := 0; b[4] := 0; b[5] := 0; b[6] := 0; b[7] := 0;
-            DecodedSize := Int64(b);
-          end;
-        $FF:
-          begin
-            b[7] := io.ReadByte; b[6] := io.ReadByte; b[5] := io.ReadByte; b[4] := io.ReadByte;
-            b[3] := io.ReadByte; b[2] := io.ReadByte; b[1] := io.ReadByte; b[0] := io.ReadByte;
-            DecodedSize := Int64(b);
-          end;
-        else
-          DecodedSize := l - 128;
-      end;
-      Mask[0] := io.ReadByte; Mask[1] := io.ReadByte; Mask[2] := io.ReadByte; Mask[3] := io.ReadByte;
-
-      if DecodedSize < 1 then
-      begin
-        Result := [];
-        exit;
-      end;
-
-      SetLength(Result, DecodedSize);
-      io.ReadBytes(TIdBytes(Result), DecodedSize, False);
-      for i := 0 to DecodedSize - 1 do
-        Result[i] := Result[i] xor Mask[i mod 4];
-    end;
-  except
-  end;
-end;
-      }
-
-      {
-procedure TLccWebSocketServerThread.SendContextDataAsString(AContext: TIdContext; AString: string);
-begin
-  SendContextDataAsBytes(AContext, IndyTextEncoding_UTF8.GetBytes( UnicodeString( AString)));
-end;
-
-  }
-
-  {
-procedure TLccWebSocketServerThread.SendContextDataAsBytes(AContext: TIdContext; ABytes: TIdBytes);
-var
-  Msg: TIdBytes;
-begin
-  // https://stackoverflow.com/questions/8125507/how-can-i-send-and-receive-websocket-messages-on-the-server-side
-
-  // Add the header to the data
-
-  // No mask from Server to Client
-  if Length(ABytes) <= 125 then
-  begin
-    SetLength(Msg, 2);
-    Msg[0] := $81;
-    Msg[1] := Length(ABytes)
-  end else if (Length(ABytes) >= 126) and (Length(ABytes) <= 65535) then
-  begin
-    SetLength(Msg, 4);
-    Msg[0] := $81;
-    Msg[1] := 126;
-    Msg[2] := (Length(ABytes) shr 8) and 255;
-    Msg[3] := Length(ABytes) and 255;
-  end else
-  begin
-    SetLength(Msg, 10);
-    Msg[0] := $81;
-    Msg[1] := 127;
-    Msg[2] := (int64(Length(ABytes)) shr 56) and 255;
-    Msg[3] := (int64(Length(ABytes)) shr 48) and 255;
-    Msg[4] := (int64(Length(ABytes)) shr 40) and 255;
-    Msg[5] := (int64(Length(ABytes)) shr 32) and 255;
-    Msg[6] := (Length(ABytes) shr 24) and 255;
-    Msg[7] := (Length(ABytes) shr 16) and 255;
-    Msg[8] := (Length(ABytes) shr 8) and 255;
-    Msg[9] :=  Length(ABytes) and 255
-  end;
-
-  Msg := Msg + ABytes;     // Works because we are in Delphi mode in this unit
-
-  try
-    inherited SendContextDataAsBytes(AContext, Msg);
-  except
-  end;
-end;
-
-}
-
 procedure TLccWebSocketServerThread.IdTCPServerExecute(AContext: TIdContext);
 var
   // HTTP Upgrade
@@ -348,11 +223,13 @@ var
 
   // Normal Payload
   i: Int64;
-  l: byte;
+  l, StartByte: byte;
   b: array [0..7] of byte;
   PayloadSize: int64; // Size of the incoming Data - the Header size which is variable depending on the length of the payload
   Mask: array [0..3] of byte;
 begin
+
+  // https://stackoverflow.com/questions/8125507/how-can-i-send-and-receive-websocket-messages-on-the-server-side
 
   Bytes := [];
 
@@ -413,26 +290,50 @@ begin
 
       ReceiveStreamWithWSHeader.Position := 0;
 
-      if ReceiveStreamWithWSHeader.ReadByte = $81 then     // Read the WebSocket header from the data
+      while ReceiveStreamWithWSHeader.Position < ReceiveStreamWithWSHeader.Size do
       begin
+        // Incase of white space or junk at the beginning of the frame
+        StartByte := ReceiveStreamWithWSHeader.ReadByte;     // Read the WebSocket header from the data
+        while StartByte <> $81 do
+        begin
+          StartByte := ReceiveStreamWithWSHeader.ReadByte;
+          if ReceiveStreamWithWSHeader.Position >= ReceiveStreamWithWSHeader.Size then
+            Exit;
+        end;
+
         l := ReceiveStreamWithWSHeader.ReadByte;
         case l of
           $FE:
             begin
-              b[1] := ReceiveStreamWithWSHeader.ReadByte; b[0] := ReceiveStreamWithWSHeader.ReadByte;
-              b[2] := 0; b[3] := 0; b[4] := 0; b[5] := 0; b[6] := 0; b[7] := 0;
+              b[1] := ReceiveStreamWithWSHeader.ReadByte;
+              b[0] := ReceiveStreamWithWSHeader.ReadByte;
+              b[2] := 0;
+              b[3] := 0;
+              b[4] := 0;
+              b[5] := 0;
+              b[6] := 0;
+              b[7] := 0;
               PayloadSize := Int64(b);
             end;
           $FF:
             begin
-              b[7] := ReceiveStreamWithWSHeader.ReadByte; b[6] := ReceiveStreamWithWSHeader.ReadByte; b[5] := ReceiveStreamWithWSHeader.ReadByte; b[4] := ReceiveStreamWithWSHeader.ReadByte;
-              b[3] := ReceiveStreamWithWSHeader.ReadByte; b[2] := ReceiveStreamWithWSHeader.ReadByte; b[1] := ReceiveStreamWithWSHeader.ReadByte; b[0] := ReceiveStreamWithWSHeader.ReadByte;
+              b[7] := ReceiveStreamWithWSHeader.ReadByte;
+              b[6] := ReceiveStreamWithWSHeader.ReadByte;
+              b[5] := ReceiveStreamWithWSHeader.ReadByte;
+              b[4] := ReceiveStreamWithWSHeader.ReadByte;
+              b[3] := ReceiveStreamWithWSHeader.ReadByte;
+              b[2] := ReceiveStreamWithWSHeader.ReadByte;
+              b[1] := ReceiveStreamWithWSHeader.ReadByte;
+              b[0] := ReceiveStreamWithWSHeader.ReadByte;
               PayloadSize := Int64(b);
             end;
           else
-            PayloadSize := l - 128;
+            PayloadSize := l and $7F;   // Strip the top bit, always one
         end;
-        Mask[0] := ReceiveStreamWithWSHeader.ReadByte; Mask[1] := ReceiveStreamWithWSHeader.ReadByte; Mask[2] := ReceiveStreamWithWSHeader.ReadByte; Mask[3] := ReceiveStreamWithWSHeader.ReadByte;
+        Mask[0] := ReceiveStreamWithWSHeader.ReadByte;
+        Mask[1] := ReceiveStreamWithWSHeader.ReadByte;
+        Mask[2] := ReceiveStreamWithWSHeader.ReadByte;
+        Mask[3] := ReceiveStreamWithWSHeader.ReadByte;
 
         if PayloadSize > 0 then
         begin
@@ -824,13 +725,11 @@ begin
     except  // idTCPServer uses exceptions to throw faults, trap them so the users does not see them
       on E: EIdException do
       begin
-        OwnerConnectionManager.CriticalSectionEnter;
-        try
-          OwnerConnectionManager.ConnectionInfo.ErrorMessage := E.Message;
-        finally
-          OwnerConnectionManager.CriticalSectionLeave;
-        end;
-     //   ErrorOnExit := True;
+        OwnerConnectionManager.ConnectionInfo.ErrorMessage := E.Message;
+        // Order important here to help with applications and auto connect timers and such... make
+        // sure it is signaled disconnected before the Error comes so it can trigger a retry
+        HandleSendConnectionChangeNotify(lcsDisconnected, True);
+        HandleErrorAndDisconnect(OwnerConnectionManager.ConnectionInfo.SuppressErrorMessages, True);
       end;
     end;
   finally
