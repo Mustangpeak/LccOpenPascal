@@ -6,7 +6,6 @@ unit lcc_ethernet_client;
 {$mode objfpc}{$H+}
 {$ENDIF}
 
-{$I ..\..\lcc_compilers.inc}
 interface
 uses
   Classes, SysUtils,

@@ -60,7 +60,7 @@ TReceiveMessageAliasServerThread = class(TThread)
     property WaitingForMappingMessageList: TThreadList read FWaitingForMappingMessageList write FWaitingForMappingMessageList;
     // Messages that have valid mappings and can be dispatched to the system
     property OutgoingProcessedMessageList: TThreadList read FOutgoingProcessedMessageList;
-    // Mapping Requests, TLccMessages filled in to request the mappings the Alias Server needs.. These need to picked up and sent by the Node Manager
+    // Mapping Requests, TLccMessages filled in to request the mappings the Alias Server needs.. Sent by the Node Manager to pick up a NodeID and sent to the network
     property MappingRequestMessageList: TThreadList read FMappingRequestMessageList write FMappingRequestMessageList;
 
     // General use message
@@ -122,6 +122,8 @@ begin
       for i := 0 to List.Count -1 do
       begin
         LocalMessage := TLccMessage( List[i]);
+        LocalMessage.iTag := 0;  // Used to decide if a message is abandon and to give up on it
+
         // Process any mapping definition messages.  If they are mapping messages then we know the mapping exisits and can skip any more checking.
         ProcessAliasAndNodeIDMappingMessages(LocalMessage);
 
@@ -155,6 +157,14 @@ begin
         begin
           List[i] := nil;
           OutgoingProcessedMessageList.Add(LocalMessage);
+        end else
+        begin
+          LocalMessage.iTag := LocalMessage.iTag + 1;
+          if LocalMessage.iTag > (VERIFYNODE_ABANDON_TIME_MS div SLEEP_ALIAS_SERVER_THREAD_MS) then
+          begin
+            LocalMessage.Free;
+            List[i] := nil;
+          end;
         end;
       end;
     finally
@@ -290,7 +300,7 @@ begin
     begin
       LccMessage := TLccMessage( List[i]);
       LccMessage.iTag := LccMessage.iTag + 1;
-      if LccMessage.iTag > VERIFYNODE_ABANDON_TIME_MS then
+      if LccMessage.iTag > (VERIFYNODE_ABANDON_TIME_MS div SLEEP_ALIAS_SERVER_THREAD_MS) then
       begin
         List[i] := nil;
         LccMessage.Free;

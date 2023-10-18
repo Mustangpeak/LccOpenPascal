@@ -44,6 +44,10 @@
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="unitMainForm"/>
       </Unit>
+      <Unit>
+        <Filename Value="../../Target-Common/lcc_tasks_traction.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
