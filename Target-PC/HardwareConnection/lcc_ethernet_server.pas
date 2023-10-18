@@ -148,17 +148,11 @@ type
 
   TLccWebsocketConnectionContext = class(TLccConnectionContext)
   private
-    FWebSocketHeaderStrippedReceiveStream: TMemoryStream;
     FUpgraded: Boolean;
   public
     property Upgraded: Boolean read FUpgraded write FUpgraded;
-    property WebSocketHeaderStrippedReceiveStream: TMemoryStream read FWebSocketHeaderStrippedReceiveStream write FWebSocketHeaderStrippedReceiveStream;
-
-    constructor Create(AnOwner: TLccConnectionContextList; AContext: TIdContext); override;
-    destructor Destroy; override;
-
-    procedure IncomingRawData(AStream: TStream); override;
   end;
+
   TLccWebsocketConnectionContextClass = class of TLccWebsocketConnectionContext;
 
 
@@ -168,11 +162,13 @@ type
   private
     FHashSHA1: TIdHashSHA1;
     FIdServerIOHandlerSSLOpenSSL: TIdServerIOHandlerSSLOpenSSL;
-    FSendMessageTemp: TMemoryStream;
+    FSendMessageWithoutWSHeader: TMemoryStream;
+    FReceiveStreamWithWSHeader: TMemoryStream;
   protected
     property IdServerIOHandlerSSLOpenSSL: TIdServerIOHandlerSSLOpenSSL read FIdServerIOHandlerSSLOpenSSL write FIdServerIOHandlerSSLOpenSSL;
     property HashSHA1: TIdHashSHA1 read FHashSHA1 write FHashSHA1;
-    property SendMessageTemp: TMemoryStream read FSendMessageTemp write FSendMessageTemp;
+    property SendMessageWithoutWSHeader: TMemoryStream read FSendMessageWithoutWSHeader write FSendMessageWithoutWSHeader;
+    property ReceiveStreamWithWSHeader: TMemoryStream read FReceiveStreamWithWSHeader write FReceiveStreamWithWSHeader;
 
     // TODO
     // Old WebSocket functions that used arrays once the stream versions here are verified these can be deleted
@@ -205,68 +201,6 @@ type
 
 implementation
 
-{ TLccWebsocketConnectionContext }
-
-constructor TLccWebsocketConnectionContext.Create(AnOwner: TLccConnectionContextList; AContext: TIdContext);
-begin
-  inherited Create(AnOwner, AContext);
-  WebSocketHeaderStrippedReceiveStream := TMemoryStream.Create;
-end;
-
-destructor TLccWebsocketConnectionContext.Destroy;
-begin
-  FreeAndNil(FWebSocketHeaderStrippedReceiveStream);
-  inherited Destroy;
-end;
-
-procedure TLccWebsocketConnectionContext.IncomingRawData(AStream: TStream);
-var
-  l: byte;
-  b: array [0..7] of byte;
-  DecodedSize: int64;
-  Mask: array [0..3] of byte;
-begin
-  // https://stackoverflow.com/questions/8125507/how-can-i-send-and-receive-websocket-messages-on-the-server-side
-
-  // UPDATE THIS TO WORK WITH THE ARRAY
-
-  AStream.Position := 0;
-  // Strip off the header from the data
-  try
-    if AStream.ReadByte = $81 then
-    begin
-      l := AStream.ReadByte;
-      case l of
-        $FE:
-          begin
-            b[1] := AStream.ReadByte; b[0] := AStream.ReadByte;
-            b[2] := 0; b[3] := 0; b[4] := 0; b[5] := 0; b[6] := 0; b[7] := 0;
-            DecodedSize := Int64(b);
-          end;
-        $FF:
-          begin
-            b[7] := AStream.ReadByte; b[6] := AStream.ReadByte; b[5] := AStream.ReadByte; b[4] := AStream.ReadByte;
-            b[3] := AStream.ReadByte; b[2] := AStream.ReadByte; b[1] := AStream.ReadByte; b[0] := AStream.ReadByte;
-            DecodedSize := Int64(b);
-          end;
-        else
-          DecodedSize := l - 128;
-      end;
-      Mask[0] := AStream.ReadByte; Mask[1] := AStream.ReadByte; Mask[2] := AStream.ReadByte; Mask[3] := AStream.ReadByte;
-
-      if DecodedSize > 0 then
-      begin
-        // Client To Server has the data Masked
-        WebSocketHeaderStrippedReceiveStream.Size := DecodedSize;
-        WebSocketHeaderStrippedReceiveStream.Position := 0;
-        WebSocketHeaderStrippedReceiveStream.WriteByte( AStream.ReadByte xor Mask[WebSocketHeaderStrippedReceiveStream.Position mod 4]);
-        inherited IncomingRawData(WebSocketHeaderStrippedReceiveStream);
-      end;
-    end;
-  except
-  end;
-end;
-
 { TLccWebSocketServerThread }
 
 constructor TLccWebSocketServerThread.Create(CreateSuspended: Boolean; AnOwner: TLccConnectionThreadManager);
@@ -275,12 +209,14 @@ begin
 
   HashSHA1 := TIdHashSHA1.Create;
   IdServerIOHandlerSSLOpenSSL := nil;
-  SendMessageTemp := TMemoryStream.Create;
+  SendMessageWithoutWSHeader := TMemoryStream.Create;
+  ReceiveStreamWithWSHeader := TMemoryStream.Create;
 end;
 
 destructor TLccWebSocketServerThread.Destroy;
 begin
-  FreeAndNil(FSendMessageTemp);
+  FreeAndNil(FReceiveStreamWithWSHeader);
+  FreeAndNil(FSendMessageWithoutWSHeader);
   FreeAndNil(FHashSHA1);
   inherited Destroy;
 end;
@@ -404,10 +340,18 @@ end;
 
 procedure TLccWebSocketServerThread.IdTCPServerExecute(AContext: TIdContext);
 var
+  // HTTP Upgrade
   Bytes: TIdBytes;
   msg, SecWebSocketKey, Hash: string;
   ParsedHeaders: TDictionary<string, string>;
   ConnectionContext: TLccWebsocketConnectionContext;
+
+  // Normal Payload
+  i: Int64;
+  l: byte;
+  b: array [0..7] of byte;
+  PayloadSize: int64; // Size of the incoming Data - the Header size which is variable depending on the length of the payload
+  Mask: array [0..3] of byte;
 begin
 
   Bytes := [];
@@ -454,56 +398,108 @@ begin
       ParsedHeaders.Free;
     end;
   end else
-    inherited IdTCPServerExecute(AContext);
+  begin
+      // Messages serialized here from all the Connections (Contexts)
+
+    if not AContext.Connection.IOHandler.InputBufferIsEmpty then
+    begin
+      ReceiveStreamWithWSHeader.Position := 0;
+      ReceiveStreamWithWSHeader.Size := 0;
+      AContext.Connection.IOHandler.ReadStream(ReceiveStreamWithWSHeader, AContext.Connection.IOHandler.InputBuffer.Size);
+
+      // Need to strip the WebSocket Header info off here so we can send just the GridConnect Data to the other Contexts, can't use inherited
+
+      // https://stackoverflow.com/questions/8125507/how-can-i-send-and-receive-websocket-messages-on-the-server-side
+
+      ReceiveStreamWithWSHeader.Position := 0;
+
+      if ReceiveStreamWithWSHeader.ReadByte = $81 then     // Read the WebSocket header from the data
+      begin
+        l := ReceiveStreamWithWSHeader.ReadByte;
+        case l of
+          $FE:
+            begin
+              b[1] := ReceiveStreamWithWSHeader.ReadByte; b[0] := ReceiveStreamWithWSHeader.ReadByte;
+              b[2] := 0; b[3] := 0; b[4] := 0; b[5] := 0; b[6] := 0; b[7] := 0;
+              PayloadSize := Int64(b);
+            end;
+          $FF:
+            begin
+              b[7] := ReceiveStreamWithWSHeader.ReadByte; b[6] := ReceiveStreamWithWSHeader.ReadByte; b[5] := ReceiveStreamWithWSHeader.ReadByte; b[4] := ReceiveStreamWithWSHeader.ReadByte;
+              b[3] := ReceiveStreamWithWSHeader.ReadByte; b[2] := ReceiveStreamWithWSHeader.ReadByte; b[1] := ReceiveStreamWithWSHeader.ReadByte; b[0] := ReceiveStreamWithWSHeader.ReadByte;
+              PayloadSize := Int64(b);
+            end;
+          else
+            PayloadSize := l - 128;
+        end;
+        Mask[0] := ReceiveStreamWithWSHeader.ReadByte; Mask[1] := ReceiveStreamWithWSHeader.ReadByte; Mask[2] := ReceiveStreamWithWSHeader.ReadByte; Mask[3] := ReceiveStreamWithWSHeader.ReadByte;
+
+        if PayloadSize > 0 then
+        begin
+          ReceiveStreamConnectionThread.Position := 0;
+          ReceiveStreamConnectionThread.Size := 0;
+
+          // Client To Server has the data Masked
+          for i := 0 to PayloadSize - 1 do
+            ReceiveStreamConnectionThread.WriteByte( ReceiveStreamWithWSHeader.ReadByte xor Mask[i mod 4]);
+
+          // Now ReceiveStreamConnectionThread has normally formated GridConnect Strings, Unmasked and Header stripped
+          ConnectionContextList.IncomingRawDataForContext(AContext, ReceiveStreamConnectionThread);
+          RelayToOtherConnections(AContext, ReceiveStreamConnectionThread);
+        end;
+      end;
+    end;
+  end;
+
+  // https://stackoverflow.com/questions/64593756/delphi-rio-indy-tcpserver-high-cpu-usage
+  // There is another way to do this but with this simple program this is fine
+  IndySleep(THREAD_SLEEP_TIME);
 end;
 
 function TLccWebSocketServerThread.LoadStreamFromMessageBuffer(AStream: TStream; ALccMessageList: Classes.TThreadList;
   ClearBuffer: Boolean = True): Boolean;
 var
-  StreamDataLen, i: Int64;
+  i, PayloadLen: Int64;
 begin
   // https://stackoverflow.com/questions/8125507/how-can-i-send-and-receive-websocket-messages-on-the-server-side
 
-  // Add the header to the data
-  // No mask from Server to Client
+  Result := inherited LoadStreamFromMessageBuffer(SendMessageWithoutWSHeader, ALccMessageList, ClearBuffer);
+  PayloadLen := SendMessageWithoutWSHeader.Size;
 
-  SendMessageTemp.Position := 0;
-  Result := inherited LoadStreamFromMessageBuffer(SendMessageTemp, ALccMessageList, ClearBuffer);
-
-  if Result then
+  if Result and (PayloadLen > 0) then
   begin
-
-    StreamDataLen := SendMessageTemp.Size;
-
     AStream.Position:= 0;
-    if StreamDataLen <= 125 then
+    AStream.Size := 0;
+    // Write in the WebSocket Header to the real SendBuffer
+    if PayloadLen <= 125 then
     begin
       AStream.WriteByte($81);
-      AStream.WriteByte(StreamDataLen);
-    end else if (StreamDataLen >= 126) and (StreamDataLen <= 65535) then
+      AStream.WriteByte(PayloadLen);
+    end else if (PayloadLen >= 126) and (PayloadLen <= 65535) then
     begin
       AStream.WriteByte($81);
       AStream.WriteByte(126);
-      AStream.WriteByte((StreamDataLen shr 8) and 255);
-      AStream.WriteByte(StreamDataLen and 255);
+      AStream.WriteByte((PayloadLen shr 8) and 255);
+      AStream.WriteByte(PayloadLen and 255);
     end else
     begin
       AStream.WriteByte($81);
       AStream.WriteByte(127);
-      AStream.WriteByte((int64(StreamDataLen) shr 56) and 255);
-      AStream.WriteByte((int64(StreamDataLen) shr 48) and 255);
-      AStream.WriteByte((int64(StreamDataLen) shr 40) and 255);
-      AStream.WriteByte((int64(StreamDataLen) shr 32) and 255);
-      AStream.WriteByte((StreamDataLen shr 24) and 255);
-      AStream.WriteByte((StreamDataLen shr 16) and 255);
-      AStream.WriteByte((StreamDataLen shr 8) and 255);
-      AStream.WriteByte(StreamDataLen and 255);
+      AStream.WriteByte((int64(PayloadLen) shr 56) and 255);
+      AStream.WriteByte((int64(PayloadLen) shr 48) and 255);
+      AStream.WriteByte((int64(PayloadLen) shr 40) and 255);
+      AStream.WriteByte((int64(PayloadLen) shr 32) and 255);
+      AStream.WriteByte((PayloadLen shr 24) and 255);
+      AStream.WriteByte((PayloadLen shr 16) and 255);
+      AStream.WriteByte((PayloadLen shr 8) and 255);
+      AStream.WriteByte(PayloadLen and 255);
     end;
 
-    AStream.Size := AStream.Size + SendMessageTemp.Size;
-
-    for i := 0 to SendMessageTemp.Size - 1 do
-      AStream.WriteByte( SendMessageTemp.ReadByte);
+    // No mask from Server to Client
+    // Now append the real payload to the header
+    SendMessageWithoutWSHeader.Position := 0;
+    for i := 0 to SendMessageWithoutWSHeader.Size - 1 do
+      AStream.WriteByte( SendMessageWithoutWSHeader.ReadByte);
   end;
 end;
 

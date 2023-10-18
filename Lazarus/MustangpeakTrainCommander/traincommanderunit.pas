@@ -320,7 +320,7 @@ begin
       Preamble := 'TCP:R: '
     else
     if ConnectionManager = LccWebsocketServer then
-      Preamble := 'WebSocket:R: '
+      Preamble := 'WS:R: '
   {  else
     if Manager = LccHTTPServer then
       Preamble := 'HTTP:R: '   }

@@ -263,7 +263,7 @@ if TargetOS = &apos;linux&apos; then
       </Options>
     </Linking>
     <Other>
-      <CustomOptions Value="-dPYTHON_SCRIPT_COMPATIBLE"/>
+      <CustomOptions Value="//-dPYTHON_SCRIPT_COMPATIBLE"/>
       <OtherDefines Count="1">
         <Define0 Value="PYTHON_SCRIPT_COMPATIBLE"/>
       </OtherDefines>
