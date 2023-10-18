@@ -97,6 +97,7 @@ begin
   Result := TLccEthernetClientThread.Create(True, Self);
   ClientThread := Result as TLccEthernetClientThread;
   ClientThread.OwnerConnectionManager := Self;
+  ConnectionThreadList.Add(ClientThread);
   ClientThread.Suspended := False;
 end;
 
@@ -108,6 +109,7 @@ begin
   if Assigned(ClientThread) then
   begin
     try
+      ConnectionThreadList.Remove(ClientThread);
       TimeCount := 0;
       ClientThread.HandleSendConnectionChangeNotify(lcsDisconnecting, False);
       ClientThread.Terminate;
@@ -154,7 +156,7 @@ begin
     HandleSendConnectionChangeNotify(lcsConnecting, True);
     try
       idTCPClient.IPVersion := Id_IPv4;
-      idTCPClient.ConnectTimeout := 5000;  // Default 0 mean forever
+      idTCPClient.ConnectTimeout := 4000;  // Default 0 mean forever
       idTCPClient.OnConnected     := {$IFDEF LCC_FPC}@{$ENDIF}OnClientConnected;
       idTCPClient.OnDisconnected  := {$IFDEF LCC_FPC}@{$ENDIF}OnClientDisconnected;
       idThreadComponent.OnRun := {$IFDEF LCC_FPC}@{$ENDIF}OnThreadComponentRun;
@@ -179,8 +181,11 @@ begin
       try
         while not IsTerminated and idTCPClient.Connected do
         begin
-          if LoadStreamFromMessageBuffer(SendStreamConnectionThread, SendMessageLccMessageBuffer) and idTCPClient.IOHandler.Connected then
+          if LoadStreamFromMessageBuffer(SendStreamConnectionThread, SendMessageLccMessageBuffer) then
+          begin
+            SendStreamConnectionThread.Position := 0;
             idTCPClient.IOHandler.Write(SendStreamConnectionThread, SendStreamConnectionThread.Size);
+          end;
 
           Sleep(THREAD_SLEEP_TIME);
         end;

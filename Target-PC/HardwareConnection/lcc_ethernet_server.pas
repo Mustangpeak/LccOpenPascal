@@ -834,7 +834,7 @@ begin
         finally
           OwnerConnectionManager.CriticalSectionLeave;
         end;
-        ErrorOnExit := True;
+     //   ErrorOnExit := True;
       end;
     end;
   finally
@@ -972,8 +972,6 @@ begin
           Break // Something went really wrong
         end;
       end;
-      if ServerListener.ErrorOnExit then
-        ServerListener.ErrorMessage;
       ServerListener.HandleSendConnectionChangeNotify(lcsDisconnected, False);
     finally
       FreeAndNil(FServerListener);

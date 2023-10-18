@@ -754,7 +754,7 @@ object FormTrainController: TFormTrainController
           Alignment = taCenter
           Anchors = [akTop, akLeft, akRight]
           TabOrder = 0
-          Text = '10.0.3.141'
+          Text = '192.168.1.208'
         end
       end
       object LabelSettings2: TLabel
@@ -877,6 +877,19 @@ object FormTrainController: TFormTrainController
         Align = alTop
         Alignment = taCenter
         Caption = '[none]'
+        ParentColor = False
+      end
+      object LabelErrorMsg: TLabel
+        Left = 32
+        Height = 16
+        Top = 383
+        Width = 379
+        Align = alTop
+        Alignment = taCenter
+        AutoSize = False
+        BorderSpacing.Left = 32
+        BorderSpacing.Top = 16
+        BorderSpacing.Right = 32
         ParentColor = False
       end
     end

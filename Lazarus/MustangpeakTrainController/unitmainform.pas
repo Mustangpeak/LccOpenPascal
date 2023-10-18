@@ -19,8 +19,6 @@ uses
   LCLType,
   ActnList,
   Buttons,
-  CheckLst,
-  strutils,
   lcc_ethernet_client,
   lcc_node_manager,
   lcc_train_server,
@@ -81,6 +79,7 @@ type
     ImageScrollRight: TImage;
     Label1: TLabel;
     Label2: TLabel;
+    LabelErrorMsg: TLabel;
     LabelSettingsAliasID: TLabel;
     LabelSettings1: TLabel;
     LabelSettings2: TLabel;
@@ -177,6 +176,7 @@ type
     FConsistPanelShown: Boolean;
     FController: TLccTrainController;
     FDetailsTractionObject: TLccTractionObject;
+    FEmulateCanBus: Boolean;
     FEthernetClient: TLccEthernetClientThreadManager;
     FNodeManager: TLccNodeManager;
     FShownOnce: Boolean;
@@ -188,12 +188,12 @@ type
     property DetailsTractionObject: TLccTractionObject read FDetailsTractionObject write FDetailsTractionObject;
 
     property ShownOnce: Boolean read FShownOnce write FShownOnce;
+    property EmulateCanBus: Boolean read FEmulateCanBus write FEmulateCanBus;
 
-    procedure OnConnectionFactoryConnectionState(Sender: TObject; Manager: TLccConnectionThreadManager; Thread: TLccConnectionThread; Info: TLccConnectionInfo);
+    procedure OnConnectionConnectionState(Sender: TObject; Manager: TLccConnectionThreadManager; Thread: TLccConnectionThread; Info: TLccConnectionInfo);
     procedure OnConnectionErrorMessage(Sender: TObject; Manager: TLccConnectionThreadManager; Thread: TLccConnectionThread; Info: TLccConnectionInfo);
-
-    procedure OnMessageReceive(Sender: TObject; LccMessage: TLccMessage);
-    procedure OnMessageSend(Sender: TObject; LccMessage: TLccMessage);
+    procedure OnConnectionManagerReceiveMessage(Sender: TObject; ALccMessage: TLccMessage);
+    procedure OnConnectionManagerSendMessage(Sender: TObject; ALccMessage: TLccMessage);
 
     procedure OnSNIPChange(TractionObject: TLccTractionObject);
     procedure OnTrainSNIPChange(TractionObject: TLccTractionObject);
@@ -240,13 +240,18 @@ implementation
 
 procedure TFormTrainController.FormCreate(Sender: TObject);
 begin
+  EmulateCanBus := True;
+
   NodeManager := TLccNodeManager.Create(nil);
+  NodeManager.EmulateCanNetworkLogin := EmulateCanBus;
   BitmapDetails := TBitmap.Create;
   CDIParser := TLccCdiParser.Create(nil);
   ImageListMain.GetBitmap(ICON_MORE_DOTS_IMAGE_INDEX, BitmapDetails);
 
-  ConnectionFactory.OnStateChange := @OnConnectionFactoryConnectionState;
+  ConnectionFactory.OnStateChange := @OnConnectionConnectionState;
   ConnectionFactory.OnError := @OnConnectionErrorMessage;
+  ConnectionFactory.OnLccMessageReceive := @OnConnectionManagerReceiveMessage;
+  ConnectionFactory.OnLccMessageSend := @OnConnectionManagerSendMessage;
 
   NodeManager.OnNodeAliasIDChanged := @OnNodeAliasChanged;
   NodeManager.OnNodeIDChanged := @OnNodeIdChanged;
@@ -266,15 +271,42 @@ end;
 procedure TFormTrainController.ButtonSettingsRestartConnectionClick(Sender: TObject);
 var
   ConnectionInfo: TLccEthernetConnectionInfo;
+  LocalPort: LongInt;
+  LocalPortStr: String;
+  LocalIPStr: String;
+  LocalNodeIDStr: String;
 begin
-  ConnectionFactory.DestroyConnection(EthernetClient);
   ConnectionInfo := TLccEthernetConnectionInfo.Create;
-  ConnectionInfo.ListenerIP := EditSettingsIP.Text;
-  ConnectionInfo.ListenerPort := StrToInt(EditSettingsPort.Text);
-  ConnectionInfo.SuppressErrorMessages := False;
-  EthernetClient := ConnectionFactory.CreateConnection(TLccEthernetClientThreadManager, ConnectionInfo) as TLccEthernetClientThreadManager;
 
-  EthernetClient.OpenConnection;
+  if EditSettingsNodeID.Text = '' then
+    EditSettingsNodeID.Text := '08.09.0A.0B.0C.0D';
+
+  LocalPortStr := EditSettingsPort.Text;
+  LocalIPStr := EditSettingsIP.Text;
+  LocalNodeIDStr := EditSettingsNodeID.Text;
+
+  LabelErrorMsg.Caption := '';
+  LabelErrorMsg.Font.Color := clRed;
+  LabelErrorMsg.Font.Style := [fsBold];
+
+  if TryStrToInt(LocalPortStr, LocalPort) then
+  begin
+    if ValidateIPString(LocalIPStr) then
+    begin
+      if ValidateNodeIDString(LocalNodeIDStr) then
+      begin
+        ConnectionFactory.DestroyConnection(EthernetClient);
+        ConnectionInfo.ListenerIP := LocalIPStr;
+        ConnectionInfo.ListenerPort := LocalPort;
+        ConnectionInfo.SuppressErrorMessages := False;
+        EthernetClient := ConnectionFactory.CreateLccMessageConnection(TLccEthernetClientThreadManager, ConnectionInfo, EmulateCanBus) as TLccEthernetClientThreadManager;
+        EthernetClient.OpenConnection;
+      end else
+        LabelErrorMsg.Caption := 'Invalid NodeID: ' + LocalNodeIDStr;
+    end else
+      LabelErrorMsg.Caption := 'Invalid Ip address: ' + LocalIPStr;
+  end else
+    LabelErrorMsg.Caption := 'Invalid Port number: ' + LocalPortStr;
 end;
 
 procedure TFormTrainController.ActionRosterRefreshExecute(Sender: TObject);
@@ -614,9 +646,14 @@ end;
 
 procedure TFormTrainController.TimerMainTimer(Sender: TObject);
 begin
-  TimerMain.Interval := 5000;
-  if not (EthernetClient.Connected or EthernetClient.Connecting) then
-    ButtonSettingsRestartConnectionClick(Self)
+  if TimerMain.Interval <> 5000 then
+    TimerMain.Interval := 5000;
+
+  if Assigned(EthernetClient) then
+  begin
+    if not (EthernetClient.Connected or EthernetClient.Connecting) then
+      ButtonSettingsRestartConnectionClick(Self)
+  end
 end;
 
 procedure TFormTrainController.ToggleBoxFunctionChange(Sender: TObject);
@@ -647,9 +684,9 @@ begin
 end;
 
 
-procedure TFormTrainController.OnConnectionFactoryConnectionState(
-  Sender: TObject; Manager: TLccConnectionThreadManager;
-  Thread: TLccConnectionThread; Info: TLccConnectionInfo);
+procedure TFormTrainController.OnConnectionConnectionState(Sender: TObject;
+  Manager: TLccConnectionThreadManager; Thread: TLccConnectionThread;
+  Info: TLccConnectionInfo);
 begin
 
   if Manager = EthernetClient then
@@ -696,24 +733,25 @@ begin
   TimerMain.Interval := 500;  // Fire immediatly once this Syncronize call returns
 end;
 
-procedure TFormTrainController.OnMessageReceive(Sender: TObject; LccMessage: TLccMessage);
-var
+procedure TFormTrainController.OnConnectionManagerReceiveMessage(
+  Sender: TObject; ALccMessage: TLccMessage);
+ var
   ByteArray: TLccDynamicByteArray;
 begin
   if ToggleBoxLogEnable.Checked then
   begin
     MemoLog.Lines.BeginUpdate;
     try
-      if IS_GRIDCONNECT then
+      if EmulateCanBus then
       begin
         if ToggleBoxLogDetailed.Checked then
-          MemoLog.Lines.Add('R: ' + MessageToDetailedMessage(LccMessage))
+          MemoLog.Lines.Add('R: ' + MessageToDetailedMessage(ALccMessage))
         else
-          MemoLog.Lines.Add('R: ' + LccMessage.ConvertToGridConnectStr('', False));
+          MemoLog.Lines.Add('R: ' + ALccMessage.ConvertToGridConnectStr('', False));
       end else
       begin
-        LccMessage.ConvertToLccTcp(ByteArray);
-        MemoLog.Lines.Add('R: ' + LccMessage.ConvertToLccTcpString(ByteArray));
+        ALccMessage.ConvertToLccTcp(ByteArray);
+        MemoLog.Lines.Add('R: ' + ALccMessage.ConvertToLccTcpString(ByteArray));
       end;
 
       MemoLog.SelStart := Length(MemoLog.Lines.Text);
@@ -723,30 +761,31 @@ begin
   end;
 end;
 
-procedure TFormTrainController.OnMessageSend(Sender: TObject; LccMessage: TLccMessage);
-var
-  ByteArray: TLccDynamicByteArray;
-begin
-  if ToggleBoxLogEnable.Checked then
-  begin
-    MemoLog.Lines.BeginUpdate;
-    try
-      if IS_GRIDCONNECT then
-      begin
-        if ToggleBoxLogDetailed.Checked then
-          MemoLog.Lines.Add('S: ' + MessageToDetailedMessage(LccMessage))
-        else
-          MemoLog.Lines.Add('S: ' + LccMessage.ConvertToGridConnectStr('', False));
-      end else
-      begin
-        LccMessage.ConvertToLccTcp(ByteArray);
-        MemoLog.Lines.Add('S: ' + LccMessage.ConvertToLccTcpString(ByteArray));
-      end;
-      MemoLog.SelStart := Length(MemoLog.Lines.Text);
-    finally
-      MemoLog.Lines.EndUpdate;
-    end;
-  end;
+procedure TFormTrainController.OnConnectionManagerSendMessage(Sender: TObject;
+  ALccMessage: TLccMessage);
+ var
+   ByteArray: TLccDynamicByteArray;
+ begin
+   if ToggleBoxLogEnable.Checked then
+   begin
+     MemoLog.Lines.BeginUpdate;
+     try
+       if EmulateCanBus then
+       begin
+         if ToggleBoxLogDetailed.Checked then
+           MemoLog.Lines.Add('S: ' + MessageToDetailedMessage(ALccMessage))
+         else
+           MemoLog.Lines.Add('S: ' + ALccMessage.ConvertToGridConnectStr('', False));
+       end else
+       begin
+         ALccMessage.ConvertToLccTcp(ByteArray);
+         MemoLog.Lines.Add('S: ' + ALccMessage.ConvertToLccTcpString(ByteArray));
+       end;
+       MemoLog.SelStart := Length(MemoLog.Lines.Text);
+     finally
+       MemoLog.Lines.EndUpdate;
+     end;
+   end;
 end;
 
 procedure TFormTrainController.OnSNIPChange(TractionObject: TLccTractionObject);

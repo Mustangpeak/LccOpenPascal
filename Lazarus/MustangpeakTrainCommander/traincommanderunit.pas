@@ -609,7 +609,7 @@ begin
   {$ENDIF}
 
   NodeManager := TLccNodeManager.Create(nil);
-  NodeManager.EmulateCanNetworkLogin := True;
+  NodeManager.EmulateCanNetworkLogin := CheckBoxGridConnect.Checked;
   NodeManager.OnNodeAliasIDChanged := @OnNodeManagerAliasIDChanged;
   NodeManager.OnNodeIDChanged := @OnNodeManagerIDChanged;
   NodeManager.OnNodeLogin := @OnNodeManagerNodeLogin;

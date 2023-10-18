@@ -1153,6 +1153,12 @@ begin
 end;
 
 function TLccMessage.ConvertToGridConnectStr(Delimiter: String; Details: Boolean): String;
+//
+// NOTE:  For internal nodes the CAN Alias messages work as expected because the Source NodeID is already
+//        known.  For new nodes on the network coming online the CID messages will have "000" for the 3 bytes
+//        of the NodeID because we don't have it all yet.  This because I am converting the GridConnect directly to
+//        TLccMessage on recipt then trying to back create it into a GridConnect string here.  That fails for a few
+//        CAN messages where I need the NodeID before I have it.
 var
   i, iFrameCount, Offset: Integer;
   LocalMTI: DWord;
@@ -1222,10 +1228,10 @@ begin
     begin
       LocalMTI := CAN_MTI or SourceAlias or $10000000;
       case CAN_MTI of
-        MTI_CAN_CID0 : LocalMTI := LocalMTI {or (SourceID[1] and $00FFF000)};
-        MTI_CAN_CID1 : LocalMTI := LocalMTI {or ((SourceID[1] shl 12) and $00FFF000)};
-        MTI_CAN_CID2 : LocalMTI := LocalMTI {or (SourceID[0] and $00FFF000)};
-        MTI_CAN_CID3 : LocalMTI := LocalMTI {or ((SourceID[0] shl 12) and $00FFF000)};
+        MTI_CAN_CID0 : LocalMTI := LocalMTI or (SourceID[1] and $00FFF000);
+        MTI_CAN_CID1 : LocalMTI := LocalMTI or ((SourceID[1] shl 12) and $00FFF000);
+        MTI_CAN_CID2 : LocalMTI := LocalMTI or (SourceID[0] and $00FFF000);
+        MTI_CAN_CID3 : LocalMTI := LocalMTI or ((SourceID[0] shl 12) and $00FFF000);
       end;
     end else
       LocalMTI := DWord(( MTI shl 12) or SourceAlias or MTI_CAN_FRAME_TYPE_GENERAL or $10000000);

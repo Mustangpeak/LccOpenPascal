@@ -159,6 +159,7 @@ type
     property Connecting: Boolean read GetConnecting;
     property OwnerConnectionFactory: TLccConnectionFactory read FOwnerConnectionFactory write FOwnerConnectionFactory;
     property EmulateCanBus: Boolean read FEmulateCanBus write FEmulateCanBus;
+    // True if the Manager does not handle GridConnect or LccMessages, this would be for sending something to a serial or I2C in a custom format
     property CustomConnection: Boolean read FCustomConnection write FCustomConnection;
 
     // Holds the information that was copied in from the thread so the main thread can access it through a Syncronize call from the thread

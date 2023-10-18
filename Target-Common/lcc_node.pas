@@ -2440,8 +2440,8 @@ begin
         CreateNodeID(ANodeID);
       SeedNodeID := ANodeID;
       Temp := FSeedNodeID;
-      ((Owner as TLccNodeManager) as INodeManagerCallbacks).DoNodeIDChanged(Self);
       FNodeID := ANodeID;
+      ((Owner as TLccNodeManager) as INodeManagerCallbacks).DoNodeIDChanged(Self);
     end else
     begin
       // Typically due to an alias conflict to create a new one
@@ -2535,7 +2535,6 @@ begin
       end else  // Is Permitted
       begin
         DatagramResendQueue.TickTimeout;
-   //     NotifyAndUpdateMappingChanges;
       end;
     end
   end else  // Is not GridConnect
