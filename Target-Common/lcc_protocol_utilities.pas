@@ -392,7 +392,6 @@ function TNodeProtocolBase.DatagramReadRequest(LccMessage: TLccMessage; OutMessa
 // Assumes the Source and Destination have already been set up
 //
 var
-  OldStreamSize: Int64;
   FirstDataByte, BytesToRead: Integer;
   AddressStart: DWord;
   B: Byte;

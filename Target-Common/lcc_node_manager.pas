@@ -554,7 +554,7 @@ begin
   _100msTimer.Enabled := True;
 
   // Setup the links to allow the Connections from the Connection Factory to the NodeManager
-  ConnectionFactory.RegisterReceiveMessageCallback(@ReceiveLccMessageNodeManager, True);
+  ConnectionFactory.RegisterReceiveMessageCallback({$IFDEF LCC_FPC}@{$ENDIF}ReceiveLccMessageNodeManager, True);
   // AliasServerThread needs to request NodeIDs but is not a Node and thus does have have its own ID to request them so the NodeManager must handle that
   AliasServerThread.SendMessageCallback := {$IFNDEF LCC_DELPHI}@{$ENDIF}SendLccMessageNodeManager;
 end;
@@ -628,7 +628,7 @@ end;
 
 destructor TLccNodeManager.Destroy;
 begin
-  ConnectionFactory.UnregisterReceiveMessageCallback(@ReceiveLccMessageNodeManager);
+  ConnectionFactory.UnregisterReceiveMessageCallback({$IFDEF LCC_FPC}@{$ENDIF}ReceiveLccMessageNodeManager);
   AliasServerThread.SendMessageCallback := nil;
   Clear;
   _100msTimer.Enabled := False;

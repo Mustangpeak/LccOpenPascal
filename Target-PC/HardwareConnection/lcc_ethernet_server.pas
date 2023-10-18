@@ -46,6 +46,7 @@ uses
   lcc_gridconnect,
   lcc_ethernet_tcp,
   lcc_node,
+  lcc_utilities,
   lcc_alias_server_thread;
 
 type
@@ -293,20 +294,20 @@ begin
       while ReceiveStreamWithWSHeader.Position < ReceiveStreamWithWSHeader.Size do
       begin
         // Incase of white space or junk at the beginning of the frame
-        StartByte := ReceiveStreamWithWSHeader.ReadByte;     // Read the WebSocket header from the data
+        StartByte := StreamReadByte(ReceiveStreamWithWSHeader);     // Read the WebSocket header from the data
         while StartByte <> $81 do
         begin
-          StartByte := ReceiveStreamWithWSHeader.ReadByte;
+          StartByte := StreamReadByte(ReceiveStreamWithWSHeader);
           if ReceiveStreamWithWSHeader.Position >= ReceiveStreamWithWSHeader.Size then
             Exit;
         end;
 
-        l := ReceiveStreamWithWSHeader.ReadByte;
+        l := StreamReadByte(ReceiveStreamWithWSHeader);
         case l of
           $FE:
             begin
-              b[1] := ReceiveStreamWithWSHeader.ReadByte;
-              b[0] := ReceiveStreamWithWSHeader.ReadByte;
+              b[1] := StreamReadByte(ReceiveStreamWithWSHeader);
+              b[0] := StreamReadByte(ReceiveStreamWithWSHeader);
               b[2] := 0;
               b[3] := 0;
               b[4] := 0;
@@ -317,23 +318,23 @@ begin
             end;
           $FF:
             begin
-              b[7] := ReceiveStreamWithWSHeader.ReadByte;
-              b[6] := ReceiveStreamWithWSHeader.ReadByte;
-              b[5] := ReceiveStreamWithWSHeader.ReadByte;
-              b[4] := ReceiveStreamWithWSHeader.ReadByte;
-              b[3] := ReceiveStreamWithWSHeader.ReadByte;
-              b[2] := ReceiveStreamWithWSHeader.ReadByte;
-              b[1] := ReceiveStreamWithWSHeader.ReadByte;
-              b[0] := ReceiveStreamWithWSHeader.ReadByte;
+              b[7] := StreamReadByte(ReceiveStreamWithWSHeader);
+              b[6] := StreamReadByte(ReceiveStreamWithWSHeader);
+              b[5] := StreamReadByte(ReceiveStreamWithWSHeader);
+              b[4] := StreamReadByte(ReceiveStreamWithWSHeader);
+              b[3] := StreamReadByte(ReceiveStreamWithWSHeader);
+              b[2] := StreamReadByte(ReceiveStreamWithWSHeader);
+              b[1] := StreamReadByte(ReceiveStreamWithWSHeader);
+              b[0] := StreamReadByte(ReceiveStreamWithWSHeader);
               PayloadSize := Int64(b);
             end;
           else
             PayloadSize := l and $7F;   // Strip the top bit, always one
         end;
-        Mask[0] := ReceiveStreamWithWSHeader.ReadByte;
-        Mask[1] := ReceiveStreamWithWSHeader.ReadByte;
-        Mask[2] := ReceiveStreamWithWSHeader.ReadByte;
-        Mask[3] := ReceiveStreamWithWSHeader.ReadByte;
+        Mask[0] := StreamReadByte(ReceiveStreamWithWSHeader);
+        Mask[1] := StreamReadByte(ReceiveStreamWithWSHeader);
+        Mask[2] := StreamReadByte(ReceiveStreamWithWSHeader);
+        Mask[3] := StreamReadByte(ReceiveStreamWithWSHeader);
 
         if PayloadSize > 0 then
         begin
@@ -342,7 +343,7 @@ begin
 
           // Client To Server has the data Masked
           for i := 0 to PayloadSize - 1 do
-            ReceiveStreamConnectionThread.WriteByte( ReceiveStreamWithWSHeader.ReadByte xor Mask[i mod 4]);
+            StreamWriteByte(ReceiveStreamConnectionThread, StreamReadByte(ReceiveStreamWithWSHeader) xor Mask[i mod 4]);
 
           // Now ReceiveStreamConnectionThread has normally formated GridConnect Strings, Unmasked and Header stripped
           ConnectionContextList.IncomingRawDataForContext(AContext, ReceiveStreamConnectionThread);
@@ -374,33 +375,33 @@ begin
     // Write in the WebSocket Header to the real SendBuffer
     if PayloadLen <= 125 then
     begin
-      AStream.WriteByte($81);
-      AStream.WriteByte(PayloadLen);
+      StreamWriteByte(AStream, $81);
+      StreamWriteByte(AStream, PayloadLen);
     end else if (PayloadLen >= 126) and (PayloadLen <= 65535) then
     begin
-      AStream.WriteByte($81);
-      AStream.WriteByte(126);
-      AStream.WriteByte((PayloadLen shr 8) and 255);
-      AStream.WriteByte(PayloadLen and 255);
+      StreamWriteByte(AStream, $81);
+      StreamWriteByte(AStream, 126);
+      StreamWriteByte(AStream, (PayloadLen shr 8) and 255);
+      StreamWriteByte(AStream, PayloadLen and 255);
     end else
     begin
-      AStream.WriteByte($81);
-      AStream.WriteByte(127);
-      AStream.WriteByte((int64(PayloadLen) shr 56) and 255);
-      AStream.WriteByte((int64(PayloadLen) shr 48) and 255);
-      AStream.WriteByte((int64(PayloadLen) shr 40) and 255);
-      AStream.WriteByte((int64(PayloadLen) shr 32) and 255);
-      AStream.WriteByte((PayloadLen shr 24) and 255);
-      AStream.WriteByte((PayloadLen shr 16) and 255);
-      AStream.WriteByte((PayloadLen shr 8) and 255);
-      AStream.WriteByte(PayloadLen and 255);
+      StreamWriteByte(AStream, $81);
+      StreamWriteByte(AStream, 127);
+      StreamWriteByte(AStream, (int64(PayloadLen) shr 56) and 255);
+      StreamWriteByte(AStream, (int64(PayloadLen) shr 48) and 255);
+      StreamWriteByte(AStream, (int64(PayloadLen) shr 40) and 255);
+      StreamWriteByte(AStream, (int64(PayloadLen) shr 32) and 255);
+      StreamWriteByte(AStream, (PayloadLen shr 24) and 255);
+      StreamWriteByte(AStream, (PayloadLen shr 16) and 255);
+      StreamWriteByte(AStream, (PayloadLen shr 8) and 255);
+      StreamWriteByte(AStream, PayloadLen and 255);
     end;
 
     // No mask from Server to Client
     // Now append the real payload to the header
     SendMessageWithoutWSHeader.Position := 0;
     for i := 0 to SendMessageWithoutWSHeader.Size - 1 do
-      AStream.WriteByte( SendMessageWithoutWSHeader.ReadByte);
+      StreamWriteByte(AStream, StreamReadByte(SendMessageWithoutWSHeader));
   end;
 end;
 
@@ -597,7 +598,7 @@ begin
       // Take the incoming characters and try to make a valid gridconnect message
       GridConnectStrPtr := nil;
 
-      if GridConnectDecodeStateMachine.GridConnect_DecodeMachine(AStream.ReadByte, GridConnectStrPtr) then
+      if GridConnectDecodeStateMachine.GridConnect_DecodeMachine(StreamReadByte(AStream), GridConnectStrPtr) then
       begin     // Have a valid gridconnect message
         MessageStr := GridConnectBufferToString(GridConnectStrPtr^);
         WorkerMessage.LoadByGridConnectStr(MessageStr);
@@ -632,7 +633,7 @@ begin
     LocalDataArray := [];
     for iData := 0 to AStream.Size - 1 do
     begin
-      if TcpDecodeStateMachine.OPStackcoreTcp_DecodeMachine(AStream.ReadByte, LocalDataArray) then
+      if TcpDecodeStateMachine.OPStackcoreTcp_DecodeMachine(StreamReadByte(AStream), LocalDataArray) then
       begin
         if WorkerMessage.LoadByLccTcp(LocalDataArray) then
           AliasServerThread.AddIncomingLccMessage(WorkerMessage, False);
@@ -672,7 +673,7 @@ begin
           if (OwnerConnectionManager.ConnectionInfo as TLccEthernetConnectionInfo).AutoResolveIP then
           begin
             {$IFDEF LCC_WINDOWS}
-            (OwnerConnectionManager.DefaultConnectionInfo as TLccEthernetConnectionInfo).ListenerIP := ResolveWindowsIp
+            (OwnerConnectionManager.ConnectionInfo as TLccEthernetConnectionInfo).ListenerIP := ResolveWindowsIp
             {$ELSE}
             (OwnerConnectionManager.ConnectionInfo as TLccEthernetConnectionInfo).ListenerIP := ResolveUnixIp;
             {$ENDIF}

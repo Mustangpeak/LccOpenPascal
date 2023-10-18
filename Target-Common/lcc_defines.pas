@@ -61,6 +61,9 @@ const
   type
     DWord = Cardinal;
     QWord = UInt64;
+    SizeUInt = NativeUInt;
+  const
+    DefaultStackSize = 4*102 *1024;
     {$IFDEF LCC_MOBILE}
  //     AnsiChar = Char;
  //     AnsiString = string;

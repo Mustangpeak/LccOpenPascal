@@ -331,11 +331,13 @@ end;
 function TLccConnectionFactory.IsDuplicateCallback(ACallback: TLccAliasServerDispatchProcessedMessageFunc): Boolean;
 var
   i: Integer;
+  x: TReceiveMessageCallbackObject;
 begin
   Result := False;
   for i := 0 to ReceiveMessageCallbackList.Count - 1 do
   begin
-    if TReceiveMessageCallbackObject( ReceiveMessageCallbackList[i]).Callback = ACallback then
+    x := TReceiveMessageCallbackObject( ReceiveMessageCallbackList[i]);
+    if {$IFDEF LCC_DELPHI}@{$ENDIF}TReceiveMessageCallbackObject( ReceiveMessageCallbackList[i]).Callback = {$IFDEF LCC_DELPHI}@{$ENDIF}ACallback then
     begin
       Result := True;
       Break
@@ -450,7 +452,7 @@ var
 begin
   for i := 0 to  ReceiveMessageCallbackList.Count - 1 do
   begin
-    if (TReceiveMessageCallbackObject( ReceiveMessageCallbackList[i]).Callback = ACallback) or (ACallback = nil) then
+    if ({$IFDEF LCC_DELPHI}@{$ENDIF}TReceiveMessageCallbackObject( ReceiveMessageCallbackList[i]).Callback = {$IFDEF LCC_DELPHI}@{$ENDIF}ACallback) or ({$IFDEF LCC_DELPHI}@{$ENDIF}ACallback = nil) then
     begin
       TObject( ReceiveMessageCallbackList[i]).Free;
       ReceiveMessageCallbackList.Delete(i);
@@ -691,6 +693,9 @@ var
   DynamicByteArray: TLccDynamicByteArray;
   iString: Integer;
   GridConnectStr: string;
+  {$IFDEF LCC_DELPHI}
+  AByte: Byte;
+  {$ENDIF}
 begin
   AStream.Position := 0;
   AStream.Size := 0;
@@ -703,7 +708,7 @@ begin
       begin
         GridConnectStr := TLccMessage( MessageList[iMessage]).ConvertToGridConnectStr(#10, False) + #10;
         for iString := 1 to Length(GridConnectStr) do
-          AStream.WriteByte( Ord(GridConnectStr[iString]));
+          StreamWriteByte(AStream, Ord(GridConnectStr[iString]));
       end;
     end else
     begin
@@ -734,7 +739,7 @@ end;
 initialization
   ConnectionFactory := TLccConnectionFactory.Create(nil);
   if Assigned(AliasServerThread) then
-    AliasServerThread.ReceiveMessageCallback := @ConnectionFactory.ReceiveMessageConnectinFactory;
+    AliasServerThread.ReceiveMessageCallback := {$IFDEF LCC_FPC}@{$ENDIF}ConnectionFactory.ReceiveMessageConnectinFactory;
 
 finalization
   if Assigned(AliasServerThread) then

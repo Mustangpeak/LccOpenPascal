@@ -2306,47 +2306,6 @@ begin
   Seed[0] := Seed[0] and $00FFFFFF;
 end;
 
-{
-procedure TLccNode.NotifyAndUpdateMappingChanges;
-var
-  LocalMapping: TLccAliasMapping;
-  MappingList: TList;
-  i: Integer;
-begin
-  // First look in the valid mappings and see if any are ready to be deleted or need an event fired
-  MappingList := AliasServer.MappingList.LockList;
-  try
-    for i := MappingList.Count - 1 downto 0 do
-    begin
-      LocalMapping := TLccAliasMapping(MappingList[i]);
-      if LocalMapping.MarkedForInsertion then
-      begin
-        ((Owner as TLccNodeManager) as INodeManagerCallbacks).DoAliasMappingChange(Self, LocalMapping, True);
-        LocalMapping.MarkedForInsertion := False;  // Handled
-      end;
-      if LocalMapping.MarkedForDeletion then
-      begin
-        ((Owner as TLccNodeManager) as INodeManagerCallbacks).DoAliasMappingChange(Self, LocalMapping, False);
-        {$IFDEF LOG_MAPPING}DebugLn('Mapping Deleted: 0x' + IntToHex(LocalMapping.NodeAlias, 4) + '; ' + NodeIDToString(LocalMapping.NodeID, True));{$ENDIF}
-        LocalMapping.Free;
-        MappingList.Delete(i);
-
-
-
-        DOES NOT WORK>>> ONLY ONE NODE WILL GET AN EVENT.........
-
-        IS THERE EVEN A REASON TO HAVE EVENTS?  IT WAS NICE FOR DEBUGGING BUT IF IT IS NOT SOLID AND EASY TO DEBUG THIS IS A LOT OF COMPLICATION
-
-
-
-      end;
-    end;
-  finally
-    AliasServer.MappingList.UnlockList;
-  end;
-end;
- }
-
 procedure TLccNode.CreateNodeID(var Seed: TNodeID);
 begin
   Seed[1] := StrToInt('0x020112');
