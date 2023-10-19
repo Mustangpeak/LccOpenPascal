@@ -335,12 +335,10 @@ end;
 function TLccConnectionFactory.IsDuplicateCallback(ACallback: TLccAliasServerDispatchProcessedMessageFunc): Boolean;
 var
   i: Integer;
-  x: TReceiveMessageCallbackObject;
 begin
   Result := False;
   for i := 0 to ReceiveMessageCallbackList.Count - 1 do
   begin
-    x := TReceiveMessageCallbackObject( ReceiveMessageCallbackList[i]);
     if {$IFDEF LCC_DELPHI}@{$ENDIF}TReceiveMessageCallbackObject( ReceiveMessageCallbackList[i]).Callback = {$IFDEF LCC_DELPHI}@{$ENDIF}ACallback then
     begin
       Result := True;
@@ -699,9 +697,6 @@ var
   DynamicByteArray: TLccDynamicByteArray;
   iString: Integer;
   GridConnectStr: string;
-  {$IFDEF LCC_DELPHI}
-  AByte: Byte;
-  {$ENDIF}
 begin
   AStream.Position := 0;
   AStream.Size := 0;

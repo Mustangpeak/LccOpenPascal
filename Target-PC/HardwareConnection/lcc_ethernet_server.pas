@@ -717,7 +717,7 @@ begin
                     // Only doing it this way works...  I don'g get it....
                     for j := 0 to SendStreamConnectionThread.Size - 1 do
                     begin
-                      B := SendStreamConnectionThread.ReadByte;
+                      B := StreamReadByte(SendStreamConnectionThread);
                       TIdContext( ContextList[i]).Connection.IOHandler.Write(B );
                     end;
 
