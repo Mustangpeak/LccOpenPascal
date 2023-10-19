@@ -26,7 +26,6 @@ uses
   lcc_defines,
   lcc_base_classes,
   lcc_alias_server,
-  lcc_train_server,
   lcc_node_traindatabase,
   lcc_node_messages;
 
