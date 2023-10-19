@@ -25,7 +25,7 @@ object FormTrainCommander: TFormTrainCommander
       Left = 192
       Height = 18
       Top = 8
-      Width = 156
+      Width = 160
       Caption = 'AutoConnect at Startup'
       TabOrder = 0
     end
@@ -51,7 +51,7 @@ object FormTrainCommander: TFormTrainCommander
       Left = 376
       Height = 18
       Top = 8
-      Width = 67
+      Width = 71
       Caption = 'Local IP'
       TabOrder = 3
     end
@@ -93,7 +93,7 @@ object FormTrainCommander: TFormTrainCommander
       Left = 496
       Height = 18
       Top = 56
-      Width = 104
+      Width = 108
       Caption = 'Log Messages'
       Checked = True
       State = cbChecked
@@ -122,7 +122,7 @@ object FormTrainCommander: TFormTrainCommander
       Left = 496
       Height = 18
       Top = 72
-      Width = 94
+      Width = 98
       Caption = 'Detailed Log'
       ParentShowHint = False
       ShowHint = True
@@ -195,7 +195,7 @@ object FormTrainCommander: TFormTrainCommander
       Left = 496
       Height = 18
       Top = 37
-      Width = 119
+      Width = 123
       Caption = 'GridConnect Bus'
       Checked = True
       State = cbChecked

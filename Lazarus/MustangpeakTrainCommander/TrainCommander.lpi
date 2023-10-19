@@ -270,7 +270,7 @@ if TargetOS = &apos;linux&apos; then
     </Other>
   </CompilerOptions>
   <Debugging>
-    <Exceptions Count="5">
+    <Exceptions Count="6">
       <Item1>
         <Name Value="EAbort"/>
       </Item1>
@@ -290,6 +290,9 @@ if TargetOS = &apos;linux&apos; then
         <Name Value="EIdSocketError"/>
         <Enabled Value="False"/>
       </Item5>
+      <Item6>
+        <Name Value="00000006EAbort"/>
+      </Item6>
     </Exceptions>
   </Debugging>
 </CONFIG>

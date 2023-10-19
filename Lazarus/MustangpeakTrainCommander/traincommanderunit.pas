@@ -156,6 +156,7 @@ begin
  { if Assigned(LccHTTPServer) then
   begin
     LccHTTPServer := ConnectionFactory.DestroyConnection(LccHTTPServer);
+    LccHTTPServer := nil;
   end else
   begin
     ConnectionInfo := TLccEthernetConnectionInfo.Create;
@@ -226,6 +227,7 @@ begin
   if Assigned(LccWebsocketServer) then
   begin
     ConnectionFactory.DestroyConnection(FLccWebsocketServer);
+    LccWebsocketServer := nil;
   end else
   begin
     ConnectionInfo := TLccEthernetConnectionInfo.Create;
