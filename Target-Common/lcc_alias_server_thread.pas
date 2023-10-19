@@ -398,7 +398,7 @@ initialization
   AliasServerThread := TReceiveMessageAliasServerThread.Create(False);
   AliasServerThread.FreeOnTerminate := True;
   if Assigned(ConnectionFactory) then
-    AliasServerThread.ReceiveMessageCallback := @ConnectionFactory.ReceiveMessageConnectinFactory;
+    AliasServerThread.ReceiveMessageCallback := {$IFDEF FPC}@{$ENDIF}ConnectionFactory.ReceiveMessageConnectinFactory;
 
 finalization
   AliasServerThread.ReceiveMessageCallback := nil;
