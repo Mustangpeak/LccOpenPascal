@@ -6,7 +6,8 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, ComCtrls,
-  lcc_alias_server, lcc_train_server, lcc_utilities;
+  lcc_alias_server
+, lcc_utilities;
 
 type
 

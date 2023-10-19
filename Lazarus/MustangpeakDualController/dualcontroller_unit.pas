@@ -9,7 +9,8 @@ uses
   StdCtrls, Buttons, lcc_node_manager, lcc_ethernet_client, lcc_node,
   lcc_node_controller, lcc_node_messages, lcc_defines, lcc_node_train, lcc_math_float16,
   throttle_takeover_request_form, lcc_common_classes, lcc_ethernet_common,
-  Contnrs, form_logging, form_visual_server, lcc_alias_server, lcc_train_server,
+  Contnrs, form_logging, form_visual_server, lcc_alias_server
+,
   lcc_utilities;
 
 type

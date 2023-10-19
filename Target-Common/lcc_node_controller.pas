@@ -24,10 +24,8 @@ uses
   lcc_utilities,
   lcc_node,
   lcc_defines,
-  lcc_base_classes,
   lcc_alias_server,
-  lcc_train_server,
-  lcc_node_traindatabase,
+
   lcc_node_messages;
 
 const
@@ -62,20 +60,18 @@ type
 
   TLccTrainController = class;
 
-  TOnLccTrainControllerAssignChange = procedure(Sender: TObject; TractionServer: TLccTractionServer; TractionObject: TLccTractionObject; IsAssigned: Boolean) of object;
-
   { TAssignedTrainState }
 
   TAssignedTrainState = class
   private
     FOwner: TLccTrainController;
     FSearchCriteriaPending: DWORD;
-    FTrain: TNodeIdentification;
+    FTrain: TAliasMappingRec;
     FSearchCriteria: DWORD;
     FWorkerMessage: TLccMessage;
   public
     property Owner: TLccTrainController read FOwner write FOwner;
-    property Train: TNodeIdentification read FTrain write FTrain;
+    property Train: TAliasMappingRec read FTrain write FTrain;
     property SearchCriteriaPending: DWORD read FSearchCriteriaPending write FSearchCriteriaPending;
   //  property SearchCriteria: DWORD read FSearchCriteria write FSearchCriteria;
     property WorkerMessage: TLccMessage read FWorkerMessage write FWorkerMessage;
@@ -83,7 +79,6 @@ type
     constructor Create;
     destructor Destroy; override;
 
-    procedure AssignTrain(ANodeID: TNodeId; AnAlias: Word);
     procedure AcceptSearchCriteriaPending;
     procedure ClearTrain;
     function IsAssigned: Boolean;
@@ -96,17 +91,13 @@ type
 
   { TLccTrainController }
 
-  TLccTrainController = class(TLccTractionServerNode)
+  TLccTrainController = class(TLccNode)
   private
     FAssignedTrain: TAssignedTrainState;
-    FOnControllerAssignChange: TOnLccTrainControllerAssignChange;
 
   protected
     function GetCdiFile: string; override;
     procedure BeforeLogin; override;
-
-    procedure DoControllerChangingNotify(Controller: TLccNodeIdentificationObject);
-    procedure DoControllerAssignChange(ATractionServer: TLccTractionServer; ATractionObject: TLccTractionObject; IsAssigned: Boolean);
 
     procedure HandleProducerIdentifiedAll(var SourceMessage: TLccMessage);
     procedure HandleProducerIdentifiedClear(var SourceMessage: TLccMessage); override;
@@ -120,7 +111,7 @@ type
 
     property AssignedTrain: TAssignedTrainState read FAssignedTrain write FAssignedTrain;
 
-    property OnControllerAssignChange: TOnLccTrainControllerAssignChange read FOnControllerAssignChange write FOnControllerAssignChange;
+
 
     constructor Create(AOwner: TComponent; CdiXML: string); override;
     destructor Destroy; override;
@@ -130,8 +121,6 @@ type
     procedure AssignTrainByDccTrain(SearchString: string; IsLongAddress: Boolean; SpeedSteps: TLccDccSpeedStep);
     procedure AssignTrainByOpenLCB(SearchString: string; TrackProtocolFlags: Word);
 
-    procedure ListenerAttach(TrainObject: TLccTractionObject);
-    procedure ListenerDetach(TrainObject: TLccTractionObject);
     procedure ListenerDetachFromAssignedTrain;
 
     procedure FindAllTrains;
@@ -158,12 +147,6 @@ begin
   inherited Destroy;
 end;
 
-procedure TAssignedTrainState.AssignTrain(ANodeID: TNodeId; AnAlias: Word);
-begin
-  FTrain.NodeID := ANodeID;
-  FTrain.Alias := AnAlias;
-  Owner.DoControllerAssignChange(Owner.TractionServer, Owner.TractionServer.Find(Train.NodeID), True);
-end;
 
 procedure TAssignedTrainState.AcceptSearchCriteriaPending;
 begin
@@ -173,8 +156,6 @@ end;
 
 procedure TAssignedTrainState.ClearTrain;
 begin
-  if IsAssigned then
-    Owner.DoControllerAssignChange(Owner.TractionServer, Owner.TractionServer.Find(Train.NodeID), False);
   FTrain.NodeID := NULL_NODE_ID;
   FTrain.Alias := 0;
   FSearchCriteria := 0;
@@ -244,16 +225,6 @@ begin
   ProtocolMemoryOptions.LowSpace := MSI_TRACTION_FUNCTION_CONFIG;
 end;
 
-procedure TLccTrainController.DoControllerChangingNotify(Controller: TLccNodeIdentificationObject);
-begin
-
-end;
-
-procedure TLccTrainController.DoControllerAssignChange(ATractionServer: TLccTractionServer; ATractionObject: TLccTractionObject; IsAssigned: Boolean);
-begin
-  if Assigned(OnControllerAssignChange) then
-    OnControllerAssignChange(Self, ATractionServer, ATractionObject, IsAssigned);
-end;
 
 procedure TLccTrainController.HandleProducerIdentifiedAll(var SourceMessage: TLccMessage);
 var
@@ -294,7 +265,7 @@ begin
   case SourceMessage.TractionExtractControllerAssignResult of
     TRACTION_CONTROLLER_CONFIG_REPLY_OK :
       begin
-        AssignedTrain.AssignTrain(SourceMessage.SourceID, SourceMessage.SourceAlias);
+ //       AssignedTrain.AssignTrain(SourceMessage.SourceID, SourceMessage.SourceAlias);
       end;
 {    TRACTION_CONTROLLER_CONFIG_ASSIGN_REPLY_REFUSE_ASSIGNED_CONTROLLER :      // Depreciated bad idea
       begin
@@ -346,7 +317,6 @@ end;
 constructor TLccTrainController.Create(AOwner: TComponent; CdiXML: string);
 begin
   inherited Create(AOwner, CdiXML);
-  TractionServer.Enabled := True;
   FAssignedTrain := TAssignedTrainState.Create;
   AssignedTrain.Owner := Self;
 end;
@@ -404,17 +374,6 @@ begin
   SendMessage(WorkerMessage);
 end;
 
-procedure TLccTrainController.ListenerAttach(TrainObject: TLccTractionObject);
-begin
-  WorkerMessage.LoadTractionListenerAttach(NodeID, AliasID, TrainObject.NodeID, TrainObject.NodeAlias, TRACTION_LISTENER_FLAG_HIDDEN, NodeID);
-  SendMessage(WorkerMessage);
-end;
-
-procedure TLccTrainController.ListenerDetach(TrainObject: TLccTractionObject);
-begin
-  WorkerMessage.LoadTractionListenerDetach(NodeID, AliasID, TrainObject.NodeID, TrainObject.NodeAlias, 0, NodeID);
-  SendMessage(WorkerMessage);
-end;
 
 procedure TLccTrainController.ListenerDetachFromAssignedTrain;
 begin

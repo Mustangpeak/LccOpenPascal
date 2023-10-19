@@ -1842,9 +1842,6 @@ begin
   FEnginesRegisteredList := TList.Create;
   RegisterEngine(EngineMemorySpaceAccess);
 
- // FMessageIdentificationList := TLccMessageWithNodeIdentificationList.Create;
- // FMessageDestinationsWaitingForReply := TLccNodeIdentificationObjectList.Create(False);
-
   if CdiXML = '' then
     CdiXML := GetCdiFile;
 

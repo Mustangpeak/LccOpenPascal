@@ -14,7 +14,6 @@ uses
   lcc_math_float16,
   lcc_defines,
   lcc_utilities,
-  lcc_base_classes,
   lcc_alias_server;
 
 type
@@ -84,10 +83,6 @@ type
     property Implemented: Boolean read FImplemented write FImplemented;
     property Valid: Boolean read GetValid;
   end;
-
-
-  TNodeIdentificationCallback = procedure(ANodeIdentification: TLccNodeIdentificationObject) of object;
-
 
 { TLccMessage }
 

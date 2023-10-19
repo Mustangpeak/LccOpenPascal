@@ -21,7 +21,6 @@ uses
   lcc_connection_common,
   lcc_ethernet_common,
   servervisualunit,
-  lcc_train_server,
   lcc_node_messages_can_assembler_disassembler,
   lcc_alias_server_thread;
 
@@ -119,8 +118,6 @@ type
     procedure OnNodeTractionListenerQuery(Sender: TObject; LccNode: TLccNode; AMessage: TLccMessage; var DoDefault: Boolean);
 
     // Other
-    procedure OnTractionRegisterNotify(TractionObject: TLccTractionObject; IsRegistered: Boolean);
-    procedure OnTractionNotify(TractionObject: TLccTractionObject);
 
     function TrainNodeToCaption(ATrainNode: TLccTrainDccNode): string;
     function FindSingleLevelNodeWithData(ParentNode: TTreeNode; const NodeData: Pointer): TTreeNode;
@@ -423,12 +420,7 @@ begin
             CommandStationNode := NodeManager.AddNodeByClass('', TLccCommandStationNode, True, NULL_NODE_ID) as TLccCommandStationNode;
           if Assigned(CommandStationNode) then
           begin
-            CommandStationNode.TractionServer.OnSpeedChange := @OnTractionNotify;
-            CommandStationNode.TractionServer.OnEmergencyStopChange := @OnTractionNotify;
-            CommandStationNode.TractionServer.OnFunctionChange := @OnTractionNotify;
-            CommandStationNode.TractionServer.OnSNIPChange := @OnTractionNotify;
-            CommandStationNode.TractionServer.OnTrainSNIPChange := @OnTractionNotify;
-            CommandStationNode.TractionServer.OnRegisterChange := @OnTractionRegisterNotify;
+
           end;
         end;
       lcsDisconnecting :
@@ -702,21 +694,6 @@ procedure TFormTrainCommander.OnNodeTractionListenerQuery(Sender: TObject;
   LccNode: TLccNode; AMessage: TLccMessage; var DoDefault: Boolean);
 begin
   RebuildTrainTreeview;
-end;
-
-procedure TFormTrainCommander.OnTractionRegisterNotify(
-  TractionObject: TLccTractionObject; IsRegistered: Boolean);
-begin
-  if IsRegistered then
-    FormServerInfo.AddTrainObject(TractionObject)
-  else
-    FormServerInfo.RemoveTrainObject(TractionObject);
-end;
-
-procedure TFormTrainCommander.OnTractionNotify(
-  TractionObject: TLccTractionObject);
-begin
-
 end;
 
 function TFormTrainCommander.TrainNodeToCaption(ATrainNode: TLccTrainDccNode): string;

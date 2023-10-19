@@ -108,7 +108,7 @@ type
 
   TMultiFrameArray = array[0..MAX_MULTIFRAME_LEN-1] of Byte;
 
-  TNodeIdentification = record
+  TAliasMappingRec = record
     NodeID: TNodeID;
     Alias: Word;
   end;

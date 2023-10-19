@@ -20,8 +20,8 @@ uses
   lcc_defines,
   lcc_node_messages,
   lcc_node,
-  lcc_node_train,
-  lcc_node_traindatabase,
+  lcc_node_train
+,
   lcc_utilities;
 
 const
@@ -56,13 +56,12 @@ type
 
   { TLccCommandStationNode }
 
-  TLccCommandStationNode = class(TLccTractionServerNode)
+  TLccCommandStationNode = class(TLccNode)
   protected
     function GetCdiFile: string; override;
     procedure BeforeLogin; override;
 
   public
-    property TractionServer;
 
     constructor Create(AOwner: TComponent; CdiXML: string); override;
     function AddTrain(CdiXML: string; ADccAddress: Word; ALongAddress: Boolean; ASpeedStep: TLccDccSpeedStep): TLccTrainDccNode;  // Null CDI for default train node CDI
@@ -127,7 +126,6 @@ end;
 constructor TLccCommandStationNode.Create(AOwner: TComponent; CdiXML: string);
 begin
   inherited Create(AOwner, CdiXML);
-  TractionServer.Enabled := True;
 end;
 
 procedure TLccCommandStationNode.ClearTrains;

@@ -25,7 +25,6 @@ uses
   lcc_utilities,
   lcc_node,
   lcc_node_messages,
-  lcc_train_server,
   lcc_alias_server,
   lcc_cdi_xml_reader,
   Frame_LccNodeEditorControl,

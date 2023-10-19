@@ -7,8 +7,7 @@ uses
   cthreads,
   {$ENDIF}{$ENDIF}
   Interfaces, // this includes the LCL widgetset
-  Forms, memdslaz, TrainCommanderUnit, servervisualunit, 
-lcc_alias_server_thread;
+  Forms, memdslaz, TrainCommanderUnit, servervisualunit;
 
 {$R *.res}
 
