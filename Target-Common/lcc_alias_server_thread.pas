@@ -66,6 +66,7 @@ TReceiveMessageAliasServerThread = class(TThread)
     // General use message
     property WorkerMessage: TLccMessage read FWorkerMessage write FWorkerMessage;
 
+    // Overridden thread Execution method
     procedure Execute; override;
 
     // Checks for messages that will create a mapping (CAN or Lcc) and flushes the mappings if a message is sent that will cause all nodes to respond with AMD or VerifyNodeID to refresh it
@@ -195,12 +196,12 @@ begin
     try
       for i := 0 to List.Count - 1 do
       begin
-        LccMessage := TLccMessage( List[i]);
-        LccMessage.iTag := LccMessage.iTag + 1;
-        if LccMessage.iTag > (VERIFYNODE_ABANDON_TIME_MS div SLEEP_ALIAS_SERVER_THREAD_MS) then
+        LocalMessage := TLccMessage( List[i]);
+        LocalMessage.iTag := LocalMessage.iTag + 1;
+        if LocalMessage.iTag > (VERIFYNODE_ABANDON_TIME_MS div SLEEP_ALIAS_SERVER_THREAD_MS) then
         begin
           List[i] := nil;
-          LccMessage.Free;
+          LocalMessage.Free;
         end;
       end;
     finally
@@ -239,7 +240,7 @@ begin
     MTI_CAN_AME :
       begin
         if AMessage.DataCount = 0 then      // A global AME will repoplulate the entire database so this will flush invalid mappings as well since they won't respond anymore
-          AliasServer.Clear(False);                // BUT be aware that the node sending this message will not be restored as it won't send out an AME message
+          AliasServer.Clear(False);         // BUT be aware that the node sending this message will not be restored as it won't send out an AME message
       end;
   end;
 
@@ -253,7 +254,7 @@ begin
     MTI_VERIFY_NODE_ID_NUMBER :
       begin
         if AMessage.DataCount = 0 then     // A global Verify Node ID will repoplulate the entire database so this will flush invalid mappings as well since they won't respond anymore
-          AliasServer.Clear(False);               // BUT be aware that the node sending this message will not be restored as it won't send out an MTI_VERIFIED_NODE_ID_NUMBER message
+          AliasServer.Clear(False);        // BUT be aware that the node sending this message will not be restored as it won't send out an MTI_VERIFIED_NODE_ID_NUMBER message
       end;
   end;
 end;
@@ -280,12 +281,12 @@ begin
       MappingRequestsSentMessageList.Add(LccMessage);
       LccMessage.iTag := 1;
       LccMessage.CopyToTarget(WorkerMessage);
-      Synchronize({$IFDEF LCC_FPC}@{$ENDIF}SendMessageThroughSyncronize);
+      Synchronize(@SendMessageThroughSyncronize);
     end else
     if MappingRequestMessage.iTag mod (VERIFYNODE_RETRY_TIME_MS div SLEEP_ALIAS_SERVER_THREAD_MS) = 0 then
     begin  // Every VERIFYNODE_RETRY_TIME_MS seconds try again if it still has not cleared
       MappingRequestMessage.CopyToTarget(WorkerMessage);
-      Synchronize({$IFDEF LCC_FPC}@{$ENDIF}SendMessageThroughSyncronize);
+      Synchronize(@SendMessageThroughSyncronize);
     end
   end else
   if not NullNodeID(ANodeID) then  // If we have the NodeID use it to send us the Alias
@@ -297,12 +298,12 @@ begin
       MappingRequestsSentMessageList.Add(LccMessage);
       LccMessage.iTag := 1;
       LccMessage.CopyToTarget(WorkerMessage);
-      Synchronize({$IFDEF LCC_FPC}@{$ENDIF}SendMessageThroughSyncronize);
+      Synchronize(@SendMessageThroughSyncronize);
     end else // Every VERIFYNODE_RETRY_TIME_MS seconds try again if it still has not cleared
     if MappingRequestMessage.iTag mod VERIFYNODE_RETRY_TIME_MS div SLEEP_ALIAS_SERVER_THREAD_MS = 0 then
     begin
       MappingRequestMessage.CopyToTarget(WorkerMessage);
-      Synchronize({$IFDEF LCC_FPC}@{$ENDIF}SendMessageThroughSyncronize);
+      Synchronize(@SendMessageThroughSyncronize);
     end
   end
 end;
@@ -397,7 +398,7 @@ initialization
   AliasServerThread := TReceiveMessageAliasServerThread.Create(False);
   AliasServerThread.FreeOnTerminate := True;
   if Assigned(ConnectionFactory) then
-    AliasServerThread.ReceiveMessageCallback := {$IFDEF LCC_FPC}@{$ENDIF}ConnectionFactory.ReceiveMessageConnectinFactory;
+    AliasServerThread.ReceiveMessageCallback := @ConnectionFactory.ReceiveMessageConnectinFactory;
 
 finalization
   AliasServerThread.ReceiveMessageCallback := nil;
