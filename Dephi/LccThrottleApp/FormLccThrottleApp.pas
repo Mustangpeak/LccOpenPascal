@@ -16,10 +16,9 @@ uses
   FMX.TreeView, FMX.Colors, FMX.Effects, FMX.SearchBox,
   lcc_node_manager,
   lcc_ethernet_server,
-  lcc_node_controller,
   lcc_ethernet_client,
+  lcc_node_controller,
   lcc_ethernet_common,
-  lcc_common_classes,
   lcc_defines,
   lcc_xmlutilities,
   lcc_utilities,
@@ -194,7 +193,7 @@ type
     procedure ListViewTrainRosterSearchChange(Sender: TObject);
   private
     FNodeManager: TLccNodeManager;
-    FEthernetClient: TLccEthernetClient;
+    FEthernetClient: TLccEthernetClientThreadManager;
     FControllerNode: TLccTrainController;
     FConnectionState: TLccConnectionState;
     FShownOnce: Boolean;
@@ -218,7 +217,7 @@ type
 
   public
     { Public declarations }
-    property EthernetClient: TLccEthernetClient read FEthernetClient write FEthernetClient;
+    property EthernetClient: TLccEthernetClientThreadManager read FEthernetClient write FEthernetClient;
     property NodeManager: TLccNodeManager read FNodeManager write FNodeManager;
     property Controller: TLccTrainController read FControllerNode write FControllerNode;
     property ConnectionState: TLccConnectionState read FConnectionState write FConnectionState;
@@ -247,8 +246,8 @@ type
     procedure OnNodeIDChanged(Sender: TObject; ALccNode: TLccNode);
     procedure OnNodeAliasChanged(Sender: TObject; ALccNode: TLccNode);
 
-    procedure OnClientServerConnectionChange(Sender: TObject; Info: TLccHardwareConnectionInfo);
-    procedure OnClientServerErrorMessage(Sender: TObject; Info: TLccHardwareConnectionInfo);
+ //   procedure OnClientServerConnectionChange(Sender: TObject; Info: TLccHardwareConnectionInfo);
+ //   procedure OnClientServerErrorMessage(Sender: TObject; Info: TLccHardwareConnectionInfo);
 
     procedure OnEngineMemorySpaceAccessCallback(MemorySpaceAccessEngine: TLccEngineMemorySpaceAccess);
     procedure OnEngineMemorySpaceAccessProgressCallback(AEngineMemorySpaceAccess: TLccEngineMemorySpaceAccess);
@@ -287,9 +286,9 @@ begin
     LocalInfo.AutoResolveIP := False;
     LocalInfo.ListenerPort := CurrentPort;
     LocalInfo.ListenerIP := CurrentIpAddress;
-    LocalInfo.GridConnect := not CheckBoxSettingsRawTCP.IsChecked;
+  //  LocalInfo.GridConnect := not CheckBoxSettingsRawTCP.IsChecked;
 
-    EthernetClient.OpenConnection(LocalInfo);
+  //  EthernetClient.OpenConnection(LocalInfo);
   finally
     LocalInfo.Free;
   end;
@@ -467,18 +466,18 @@ begin
   // Local field setup
 
   // Lcc library setup
-  FNodeManager := TLccNodeManager.Create(nil, True);
-  FEthernetClient := TLccEthernetClient.Create(nil, NodeManager);
+  FNodeManager := TLccNodeManager.Create(nil);
+//  FEthernetClient := TLccEthernetClient.Create(nil, NodeManager);
   FCdiData := TLccCdiRoot.Create(nil);
   FNodeEditor := TFrameNodeEditorControl.Create(Self);
   NodeEditor.Align := TAlignLayout.Client;
   NodeEditor.Parent := LabelTrainRosterEditContainer;
   NodeEditor.Visible := False;
 
-  EthernetClient.OnConnectionStateChange := OnClientServerConnectionChange;
-  EthernetClient.OnErrorMessage := OnClientServerErrorMessage;
-  EthernetClient.OnLccMessageReceive := OnReceiveMessage;
-  EthernetClient.OnLccMessageSend := OnSendMessage;
+//  EthernetClient.OnConnectionStateChange := OnClientServerConnectionChange;
+ // EthernetClient.OnErrorMessage := OnClientServerErrorMessage;
+ // EthernetClient.OnLccMessageReceive := OnReceiveMessage;
+ // EthernetClient.OnLccMessageSend := OnSendMessage;
 
   NodeManager.OnNodeAliasIDChanged := OnNodeAliasChanged;
   NodeManager.OnNodeIDChanged := OnNodeIdChanged;
@@ -702,6 +701,8 @@ begin
   Application.ProcessMessages;
 end;  }
 
+
+{
 procedure TLccThrottleAppForm.OnClientServerConnectionChange(Sender: TObject; Info: TLccHardwareConnectionInfo);
 begin
   if Sender is TLccConnectionThread then
@@ -739,10 +740,13 @@ begin
     end;
   end;
 end;
+}
 
+{
 procedure TLccThrottleAppForm.OnClientServerErrorMessage(Sender: TObject; Info: TLccHardwareConnectionInfo);
 begin
 end;
+}
 
 procedure TLccThrottleAppForm.OnEngineMemorySpaceAccessProgressCallback(AEngineMemorySpaceAccess: TLccEngineMemorySpaceAccess);
 begin

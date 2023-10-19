@@ -536,8 +536,12 @@ end;
 
 function StreamReadByte(AStream: TStream): Byte;
 begin
-  Result := 0;
-  AStream.Read(Result, 1);
+  {$IFDEF LCC_FPC}
+    Result := AStream.ReadByte;
+  {$ELSE}
+    Result := 0;
+    AStream.Read(Result, 1);
+  {$ENDIF}
 end;
 
 procedure StreamWriteByte(AStream: TStream; AByte: Byte);
