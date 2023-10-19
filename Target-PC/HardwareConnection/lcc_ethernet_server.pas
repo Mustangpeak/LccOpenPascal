@@ -647,9 +647,10 @@ end;
 procedure TLccEthernetServerThread.Execute;
 // Receiving messages are handled in the IdTCPServerExecute handler and dispatched directly to each LccNode
 var
-  i: Integer;
+  i, j: Integer;
   ContextList: TList;
   IdSocketHandle: TIdSocketHandle;
+  B: Byte;
 begin
   Running := True;
   try
@@ -710,7 +711,20 @@ begin
                 begin
                   SendStreamConnectionThread.Position := 0;
                   if TIdContext( ContextList[i]).Connection.Connected then
-                    TIdContext( ContextList[i]).Connection.IOHandler.Write(SendStreamConnectionThread, SendStreamConnectionThread.Size);
+                  begin
+                  // TIdContext( ContextList[i]).Connection.IOHandler.Write(SendStreamConnectionThread, SendStreamConnectionThread.Size);
+
+                    // Only doing it this way works...  I don'g get it....
+                    for j := 0 to SendStreamConnectionThread.Size - 1 do
+                    begin
+                      B := SendStreamConnectionThread.ReadByte;
+                      TIdContext( ContextList[i]).Connection.IOHandler.Write(B );
+                    end;
+
+                  //  for j := 0 to SendStreamConnectionThread.Size - 1 do
+                  //    TIdContext( ContextList[i]).Connection.IOHandler.Write(SendStreamConnectionThread.ReadByte);
+
+                  end;
                 end;
               end;
             finally

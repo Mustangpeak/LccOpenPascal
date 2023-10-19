@@ -102,6 +102,12 @@
       <Item>
         <Name Value="EIdConnectTimeout"/>
       </Item>
+      <Item>
+        <Name Value="0000000eEIdSocketError"/>
+      </Item>
+      <Item>
+        <Name Value="00000011EIdConnectTimeout"/>
+      </Item>
     </Exceptions>
   </Debugging>
 </CONFIG>

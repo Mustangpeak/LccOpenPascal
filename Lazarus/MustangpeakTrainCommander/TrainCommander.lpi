@@ -271,6 +271,7 @@ if TargetOS = &apos;linux&apos; then
     <Exceptions Count="6">
       <Item1>
         <Name Value="EAbort"/>
+        <Enabled Value="False"/>
       </Item1>
       <Item2>
         <Name Value="ECodetoolError"/>

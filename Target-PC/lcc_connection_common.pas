@@ -85,6 +85,8 @@ type
     FSendMessageLccMessageBuffer: Classes.TThreadList;
     FSendMessageStream: TMemoryStream;
     FSendStreamConnectionThread: TMemoryStream;
+    FWorkerMessage: TLccMessage;
+
     function GetIsTerminated: Boolean;
 
   protected
@@ -96,6 +98,8 @@ type
     property SendMessageLccMessageBuffer: Classes.TThreadList read FSendMessageLccMessageBuffer write FSendMessageLccMessageBuffer;
     // Flag to say the thread Execute method is still running
     property Running: Boolean read FRunning write FRunning;
+    // GP Message
+    property WorkerMessage: TLccMessage read FWorkerMessage write FWorkerMessage;
 
     // Calls the actual event handler back through the Connection Factory
     procedure ConnectionStateChangePossiblyThroughSyncronize; virtual;
@@ -617,6 +621,7 @@ begin
   FSendMessageStream := TMemoryStream.Create;
   FReceiveStreamConnectionThread := TMemoryStream.Create;
   FSendStreamConnectionThread := TMemoryStream.Create;
+  FWorkerMessage := TLccMessage.Create;
 end;
 
 destructor TLccConnectionThread.Destroy;
@@ -626,6 +631,7 @@ begin
   FreeAndNil(FSendMessageStream);
   FreeAndNil(FReceiveStreamConnectionThread);
   FreeAndNil(FSendStreamConnectionThread);
+  FreeAndNil(FWorkerMessage);
   inherited Destroy;
 end;
 

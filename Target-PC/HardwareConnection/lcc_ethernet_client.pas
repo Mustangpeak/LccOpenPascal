@@ -39,6 +39,7 @@ uses
   lcc_app_common_settings,
   lcc_connection_common,
   lcc_ethernet_common,
+  lcc_alias_server_thread,
   lcc_alias_server;
 
 type
@@ -47,13 +48,16 @@ type
   { TLccEthernetClientThread }
   TLccEthernetClientThread =  class(TLccConnectionThread)
   private
-    FGridConnectHelper: TGridConnectDecodeStateMachine;
+    FGridConnectDecodeStateMachine: TGridConnectDecodeStateMachine;
+    FGridConnectMessageAssembler: TLccGridConnectMessageAssembler;
     FidTCPClient: TIdTCPClient;
     FidThreadComponent: TIdThreadComponent;
-    FOwnerConnectionManager: TLccEthernetClientThreadManager;
+    FTcpDecodeStateMachine: TTcpDecodeStateMachine;
     protected
-      property GridConnectHelper: TGridConnectDecodeStateMachine read FGridConnectHelper write FGridConnectHelper;
-      property OwnerConnectionManager: TLccEthernetClientThreadManager read FOwnerConnectionManager write FOwnerConnectionManager;
+      property GridConnectDecodeStateMachine: TGridConnectDecodeStateMachine read FGridConnectDecodeStateMachine write FGridConnectDecodeStateMachine;
+      property GridConnectMessageAssembler: TLccGridConnectMessageAssembler read FGridConnectMessageAssembler write FGridConnectMessageAssembler;
+      property TcpDecodeStateMachine: TTcpDecodeStateMachine read FTcpDecodeStateMachine write FTcpDecodeStateMachine;
+
       procedure Execute; override;
       procedure OnClientConnected(Sender: TObject);
       procedure OnClientDisconnected(Sender: TObject);
@@ -61,6 +65,7 @@ type
     public
       property idTCPClient: TIdTCPClient read FidTCPClient write FidTCPClient;
       property idThreadComponent: TIdThreadComponent read FidThreadComponent write FidThreadComponent;
+
       constructor Create(CreateSuspended: Boolean; AnOwner: TLccConnectionThreadManager); override;
       destructor Destroy; override;
   end;
@@ -94,10 +99,12 @@ begin
   CloseConnection;
   inherited OpenConnection;
   Result := TLccEthernetClientThread.Create(True, Self);
-  ClientThread := Result as TLccEthernetClientThread;
-  ClientThread.OwnerConnectionManager := Self;
-  ConnectionThreadList.Add(ClientThread);
-  ClientThread.Suspended := False;
+  if Assigned(Result) then
+  begin
+    ClientThread := Result as TLccEthernetClientThread;
+    ConnectionThreadList.Add(ClientThread);  // Add to the Internal List
+    ClientThread.Suspended := False;
+  end;
 end;
 
 procedure TLccEthernetClientThreadManager.CloseConnection;
@@ -132,7 +139,9 @@ end;
 constructor TLccEthernetClientThread.Create(CreateSuspended: Boolean; AnOwner: TLccConnectionThreadManager);
 begin
   inherited Create(CreateSuspended, AnOwner);
-  GridConnectHelper := TGridConnectDecodeStateMachine.Create;
+  GridConnectDecodeStateMachine := TGridConnectDecodeStateMachine.Create;
+  FGridConnectMessageAssembler := TLccGridConnectMessageAssembler.Create;
+  FTcpDecodeStateMachine := TTcpDecodeStateMachine.Create;
   idTCPClient := TIdTCPClient.Create();
   idThreadComponent := TIdThreadComponent.Create();
 end;
@@ -141,7 +150,9 @@ destructor TLccEthernetClientThread.Destroy;
 begin
   FreeAndNil(FidTCPClient);
   FreeAndNil(FidThreadComponent);
-  FreeAndNil(FGridConnectHelper);
+  FreeAndNil(FGridConnectDecodeStateMachine);
+  FreeAndNil(FGridConnectMessageAssembler);
+  FreeAndNil(FTcpDecodeStateMachine);
   inherited;
 end;
 
@@ -185,9 +196,9 @@ begin
             SendStreamConnectionThread.Position := 0;
             idTCPClient.IOHandler.Write(SendStreamConnectionThread, SendStreamConnectionThread.Size);
           end;
-
-          Sleep(THREAD_SLEEP_TIME);
         end;
+
+        IndySleep(THREAD_SLEEP_TIME);
       finally
         idThreadComponent.Active := False;
         idTCPClient.Disconnect;
@@ -220,6 +231,11 @@ begin
 end;
 
 procedure TLccEthernetClientThread.OnThreadComponentRun(Sender: TIdThreadComponent);
+var
+  iData: Integer;
+  LocalDataArray: TLccDynamicByteArray;
+  GridConnectStrPtr: PGridConnectString;
+  MessageStr: String;
 begin
 
   if not IdTCPClient.IOHandler.InputBufferIsEmpty then
@@ -227,6 +243,61 @@ begin
     ReceiveStreamConnectionThread.Position := 0;
     ReceiveStreamConnectionThread.Size := 0;    // Would this set Postion too?
     idTCPClient.IOHandler.ReadStream(ReceiveStreamConnectionThread, idTCPClient.IOHandler.InputBuffer.Size);
+
+
+
+    ReceiveStreamConnectionThread.Position := 0;
+
+    if OwnerConnectionManager.EmulateCanBus then
+    begin
+
+      for iData := 0 to ReceiveStreamConnectionThread.Size - 1 do
+      begin
+        // Take the incoming characters and try to make a valid gridconnect message
+        GridConnectStrPtr := nil;
+
+        if GridConnectDecodeStateMachine.GridConnect_DecodeMachine(StreamReadByte(ReceiveStreamConnectionThread), GridConnectStrPtr) then
+        begin     // Have a valid gridconnect message
+          MessageStr := GridConnectBufferToString(GridConnectStrPtr^);
+          WorkerMessage.LoadByGridConnectStr(MessageStr);
+          WorkerMessage.ConnectionThread := Self;
+
+          // Not a fan of having it here to block the main connection thread but need to hook into the raw individual messages.
+          // after the next call to GridConnectMessageAssembler split up CAN messages will be recombined into a single LCC message
+          if Assigned(OwnerConnectionManager.OwnerConnectionFactory.OnLccMessageReceive) then
+          begin
+            OwnerConnectionManager.ReceiveGridConnectStringSyncronize := MessageStr;
+            Synchronize({$IFDEF LCC_FPC}@{$ENDIF}OwnerConnectionManager.ReceiveGridConnectStrThoughSyncronize);
+          end;
+
+          // Message may only be part of a larger string of messages to make up a full LCC message.
+          // This call will concatinate these partial Lcc message and return with a fully qualified
+          // Lcc message.
+          case GridConnectMessageAssembler.IncomingMessageGridConnect(WorkerMessage) of
+            imgcr_True         : AliasServerThread.AddIncomingLccMessage(WorkerMessage, True);
+            imgcr_ErrorToSend  : begin
+                                   WorkerMessage.CheckNodeIDsBeforeDelivery := True;  // We just swapped Souce/Dest NodeID, make sure we don't feed the message back into our nodes as a received message with ourthese Alias/NodeID or we will trigger a duplicate Node/Alias
+                                   WorkerMessage.CopyToTarget(OwnerConnectionManager.SendMessageWorkerMessageSyncronize);
+                                   Synchronize({$IFDEF LCC_FPC}@{$ENDIF}OwnerConnectionManager.SendMessageThroughSyncronize);
+                                 end;
+            imgcr_False,
+            imgcr_UnknownError : begin end;
+          end;
+        end;
+
+      end;
+    end else
+    begin
+      LocalDataArray := [];
+      for iData := 0 to ReceiveStreamConnectionThread.Size - 1 do
+      begin
+        if TcpDecodeStateMachine.OPStackcoreTcp_DecodeMachine(StreamReadByte(ReceiveStreamConnectionThread), LocalDataArray) then
+        begin
+          if WorkerMessage.LoadByLccTcp(LocalDataArray) then
+            AliasServerThread.AddIncomingLccMessage(WorkerMessage, False);
+        end;
+      end;
+    end;
   end;
 
     // https://stackoverflow.com/questions/64593756/delphi-rio-indy-tcpserver-high-cpu-usage
