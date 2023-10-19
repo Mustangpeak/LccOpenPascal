@@ -24,13 +24,10 @@ uses
   lcc_ethernet_common,
   lcc_node_messages,
   lcc_node_train,
-
-,
   lcc_node_controller,
   lcc_connection_common,
   lcc_node,
   lcc_defines,
-  lcc_base_classes,
   lcc_utilities,
   lcc_cdi_parser;
 
@@ -175,7 +172,7 @@ type
     FCDIParser: TLccCdiParser;
     FConsistPanelShown: Boolean;
     FController: TLccTrainController;
-    FDetailsTractionObject: TLccTractionObject;
+ //   FDetailsTractionObject: TLccTractionObject;
     FEmulateCanBus: Boolean;
     FEthernetClient: TLccEthernetClientThreadManager;
     FNodeManager: TLccNodeManager;
@@ -185,7 +182,7 @@ type
   protected
     property CDIParser: TLccCdiParser read FCDIParser write FCDIParser;
     property ConsistPanelShown: Boolean read FConsistPanelShown;
-    property DetailsTractionObject: TLccTractionObject read FDetailsTractionObject write FDetailsTractionObject;
+ //   property DetailsTractionObject: TLccTractionObject read FDetailsTractionObject write FDetailsTractionObject;
 
     property ShownOnce: Boolean read FShownOnce write FShownOnce;
     property EmulateCanBus: Boolean read FEmulateCanBus write FEmulateCanBus;
@@ -195,20 +192,20 @@ type
     procedure OnConnectionManagerReceiveMessage(Sender: TObject; ALccMessage: TLccMessage);
     procedure OnConnectionManagerSendMessage(Sender: TObject; ALccMessage: TLccMessage);
 
-    procedure OnSNIPChange(TractionObject: TLccTractionObject);
+ {   procedure OnSNIPChange(TractionObject: TLccTractionObject);
     procedure OnTrainSNIPChange(TractionObject: TLccTractionObject);
     procedure OnEmergencyStopChange(TractionObject: TLccTractionObject);
     procedure OnFunctionChange(TractionObject: TLccTractionObject);
     procedure OnSpeedChange(TractionObject: TLccTractionObject);
-    procedure OnRegisterChange(TractionObject: TLccTractionObject; IsRegistered: Boolean);
+    procedure OnRegisterChange(TractionObject: TLccTractionObject; IsRegistered: Boolean);    }
 
     procedure OnNodeIDChanged(Sender: TObject; ALccNode: TLccNode);
     procedure OnNodeAliasChanged(Sender: TObject; ALccNode: TLccNode);
     procedure OnNodeLogin(Sender: TObject; ALccNode: TLccNode);
 
-    procedure OnControllerAssignChange(Sender: TObject; ATractionServer: TLccTractionServer; ATractionObject: TLccTractionObject; IsAssigned: Boolean);
+ //   procedure OnControllerAssignChange(Sender: TObject; ATractionServer: TLccTractionServer; ATractionObject: TLccTractionObject; IsAssigned: Boolean);
 
-    procedure AllocateTrainCallback(EngineAllocateTrain: TLccEngineSearchAndAllocateTrain; AEngineSearchTrain: TLccEngineSearchTrain);
+  //  procedure AllocateTrainCallback(EngineAllocateTrain: TLccEngineSearchAndAllocateTrain; AEngineSearchTrain: TLccEngineSearchTrain);
 
     procedure OnCDIReadCallback(MemorySpaceReadEnging: TLccEngineMemorySpaceAccess);
 
@@ -339,9 +336,9 @@ begin
     AddressWord := AddressInt;
     if Assigned(Controller) then
     begin
-      Controller.EngineSearchAndAllocateTrain.Reset;
-      Controller.EngineSearchAndAllocateTrain.Assign(AddressWord, IsLong, TLccDccSpeedStep( ComboBoxThrottleSpeedSteps.ItemIndex), @AllocateTrainCallback);
-      Controller.EngineSearchAndAllocateTrain.Start;
+ //     Controller.EngineSearchAndAllocateTrain.Reset;
+ //     Controller.EngineSearchAndAllocateTrain.Assign(AddressWord, IsLong, TLccDccSpeedStep( ComboBoxThrottleSpeedSteps.ItemIndex), @AllocateTrainCallback);
+ //     Controller.EngineSearchAndAllocateTrain.Start;
 
    //   Controller.AssignTrainByDccAddress(AddressWord, IsLong, TLccDccSpeedStep( ComboBoxThrottleSpeedSteps.ItemIndex));
     end;
@@ -436,7 +433,7 @@ begin
   ListBoxRosterDetails.Canvas.TextRect(TextRect, 2, TextRect.Top+2, ListBoxRosterDetails.Items[Index]);  //Draw Itemtext
 
   DetailsText := 'Unknown...';
-  if Assigned(DetailsTractionObject) then
+ { if Assigned(DetailsTractionObject) then
   begin
     if DetailsTractionObject.SNIP.Valid then
     begin
@@ -449,7 +446,7 @@ begin
         5 : DetailsText := DetailsTractionObject.SNIP.UserDescription;
       end;
     end
-  end;
+  end;  }
   ListBoxRosterDetails.Canvas.Font.Bold := False;
   ListBoxRosterDetails.Canvas.TextOut(TextRect.Left + 20, TextRect.Top + (TextRect.Height div 2), DetailsText);
 
@@ -492,7 +489,7 @@ begin
       if PtInRect(DetailsRect, Point) then
       begin
         UpdateRosterHeaderScrolledRight;
-        if Assigned(DetailsTractionObject) then
+      {  if Assigned(DetailsTractionObject) then
         begin
           if not DetailsTractionObject.NodeCDI.Valid then
           begin
@@ -502,7 +499,7 @@ begin
             Controller.EngineMemorySpaceAccess.Start;
           end else
             LoadCDIUserInterface;
-        end;
+        end;   }
       end;
     end;
   end;
@@ -563,7 +560,7 @@ begin
 
       if PtInRect(DetailsRect, Point) then
       begin
-        DetailsTractionObject := ListBoxRoster.Items.Objects[HitItemIndex] as TLccTractionObject;
+//        DetailsTractionObject := ListBoxRoster.Items.Objects[HitItemIndex] as TLccTractionObject;
         UpdateRosterHeaderScrolledRight;
       end;
     end;
@@ -706,14 +703,14 @@ begin
           if NodeManager.Nodes.Count = 0 then
           begin
             Controller := NodeManager.AddNodeByClass('', TLccTrainController, True, NULL_NODE_ID) as TLccTrainController;
-            Controller.TractionServer.OnSNIPChange := @OnSNIPChange;
+       {     Controller.TractionServer.OnSNIPChange := @OnSNIPChange;
             Controller.TractionServer.OnTrainSNIPChange := @OnTrainSNIPChange;
             Controller.TractionServer.OnRegisterChange := @OnRegisterChange;
             Controller.TractionServer.OnEmergencyStopChange := @OnEmergencyStopChange;
             Controller.TractionServer.OnFunctionChange := @OnFunctionChange;
             Controller.TractionServer.OnSpeedChange := @OnSpeedChange;
             Controller.OnControllerAssignChange := @OnControllerAssignChange;
-            Controller.TractionServer.Enabled := True;
+            Controller.TractionServer.Enabled := True;          }
           end;
         end;
       lcsDisconnecting :
@@ -787,6 +784,7 @@ procedure TFormTrainController.OnConnectionManagerSendMessage(Sender: TObject;
    end;
 end;
 
+{
 procedure TFormTrainController.OnSNIPChange(TractionObject: TLccTractionObject);
 var
   ItemIndex: Integer;
@@ -854,7 +852,7 @@ begin
   finally
     ListBoxRoster.Items.EndUpdate;
   end;
-end;
+end;      }
 
 procedure TFormTrainController.OnNodeIDChanged(Sender: TObject; ALccNode: TLccNode);
 begin
@@ -872,6 +870,7 @@ begin
     Controller.FindAllTrains;
 end;
 
+{
 procedure TFormTrainController.OnControllerAssignChange(Sender: TObject; ATractionServer: TLccTractionServer; ATractionObject: TLccTractionObject; IsAssigned: Boolean);
 begin
   EnableControls(IsAssigned);
@@ -892,6 +891,7 @@ procedure TFormTrainController.AllocateTrainCallback(
 begin
   Controller.TractionServer.Find(AEngineSearchTrain.SearchTrain.NodeIdentification.NodeID);
 end;
+   }
 
 procedure TFormTrainController.OnCDIReadCallback(MemorySpaceReadEnging: TLccEngineMemorySpaceAccess);
 begin
@@ -920,10 +920,10 @@ begin
     ComboBoxTrainSelect.Items.BeginUpdate;
     try
       ComboBoxTrainSelect.Items.Clear;
-      for i := 0 to Controller.TractionServer.List.Count - 1 do
-      begin
-        ComboBoxTrainSelect.Items.Add(Controller.TractionServer.Item[i].SNIP.UserName);
-      end;
+ //     for i := 0 to Controller.TractionServer.List.Count - 1 do
+ //     begin
+  //      ComboBoxTrainSelect.Items.Add(Controller.TractionServer.Item[i].SNIP.UserName);
+  //    end;
 
     finally
       ComboBoxTrainSelect.Items.EndUpdate;
@@ -985,7 +985,7 @@ begin
     PageControlRoster.PageIndex := PageControlRoster.PageIndex - 1 ;
     if PageControlRoster.PageIndex = 0 then
     begin
-      DetailsTractionObject := nil;
+ //     DetailsTractionObject := nil;
       ListBoxRosterDetails.ClearSelection;
     end;
   end;
@@ -1001,12 +1001,12 @@ begin
 
   if PageControlRoster.PageIndex = 1 then
   begin
-    if Assigned(DetailsTractionObject) then
+  //  if Assigned(DetailsTractionObject) then
     begin
-      if not DetailsTractionObject.SNIP.Valid then
-        Controller.SendSNIPRequest(DetailsTractionObject.NodeID, DetailsTractionObject.NodeAlias);
-      if not DetailsTractionObject.TrainSNIP.Valid then
-        Controller.SendTrainSNIPRequest(DetailsTractionObject.NodeID, DetailsTractionObject.NodeAlias);
+//      if not DetailsTractionObject.SNIP.Valid then
+  //      Controller.SendSNIPRequest(DetailsTractionObject.NodeID, DetailsTractionObject.NodeAlias);
+  //    if not DetailsTractionObject.TrainSNIP.Valid then
+  //      Controller.SendTrainSNIPRequest(DetailsTractionObject.NodeID, DetailsTractionObject.NodeAlias);
     end;
   end;
 
@@ -1017,13 +1017,12 @@ end;
 
 procedure TFormTrainController.LoadCDIUserInterface;
 var
-  ATargetNode: TLccNodeIdentificationObject;
+  ATargetNode: TLccAliasMappingRec;
 begin
-  if Assigned(DetailsTractionObject) then
+ { if Assigned(DetailsTractionObject) then
   begin
-    ATargetNode := TLccNodeIdentificationObject.Create;
     try
-      ATargetNode.AssignID(DetailsTractionObject.NodeID, DetailsTractionObject.NodeAlias);
+      ATargetNode := DetailsTractionObject;
       PanelRosterEditorConfigurationBkGnd.Caption := 'Building User Interface......';
       CDIParser.Build_CDI_Interface(Controller, ATargetNode, PanelRosterEditorConfigurationBkGnd, DetailsTractionObject.NodeCDI.CDI);
       PanelRosterEditorConfigurationBkGnd.Caption := '';
@@ -1031,7 +1030,7 @@ begin
     finally
       ATargetNode.Free;
     end;
-  end;
+  end;     }
 end;
 
 

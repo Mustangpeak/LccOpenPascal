@@ -46,8 +46,6 @@ uses
   lcc_node_messages,
   lcc_node,
   lcc_app_common_settings,
-  lcc_threaded_circulararray,
-  lcc_threaded_stringlist,
   lcc_defines,
   lcc_connection_common,
   lcc_node_messages_can_assembler_disassembler;
@@ -56,10 +54,6 @@ const
   THREAD_SLEEP_TIME = 50;
 
 type
-
-  TLccEthernetConnectionInfo = class;
-
-  TOnEthernetEvent = procedure(Sender: TObject; ConnectionInfo: TLccConnectionInfo) of object;
 
   { TLccEthernetConnectionInfo }
 
@@ -76,9 +70,6 @@ type
     property ClientPort: word read FClientPort write FClientPort;
     property ListenerIP: string read FListenerIP write FListenerIP;
     property ListenerPort: word read FListenerPort write FListenerPort;
-
-    constructor Create;
-    function Clone: TLccConnectionInfo; override;
   end;
 
 
@@ -311,24 +302,6 @@ implementation
   end;
   {$ENDIF}
 {$ENDIF}
-
-
-{ TLccEthernetConnectionInfo }
-
-constructor TLccEthernetConnectionInfo.Create;
-begin
-  inherited;
-end;
-
-function TLccEthernetConnectionInfo.Clone: TLccConnectionInfo;
-begin
-  Result := inherited Clone;
-  (Result as TLccEthernetConnectionInfo).AutoResolveIP := (Self as TLccEthernetConnectionInfo).AutoResolveIP;
-  (Result as TLccEthernetConnectionInfo).ClientIP  := (Self as TLccEthernetConnectionInfo).ClientIP;
-  (Result as TLccEthernetConnectionInfo).ClientPort := (Self as TLccEthernetConnectionInfo).ClientPort;
-  (Result as TLccEthernetConnectionInfo).ListenerIP := (Self as TLccEthernetConnectionInfo).ListenerIP;
-  (Result as TLccEthernetConnectionInfo).ListenerPort := (Self as TLccEthernetConnectionInfo).ListenerPort;
-end;
 
 
 end.

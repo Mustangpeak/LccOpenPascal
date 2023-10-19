@@ -50,7 +50,6 @@ uses
   lcc_node_manager,
   lcc_utilities,
   lcc_node,
-  lcc_base_classes,
   lcc_xmlutilities;
 
 
@@ -323,7 +322,7 @@ type
     FShowWriteBtn: Boolean;
     FSuppressNameAndDescription: Boolean;
     FTabControl: TLccTabControl;
-    FTargetNodeIdentification: TLccNodeIdentificationObject;
+    FTargetNodeIdentification: TLccAliasMappingRec;
     FWorkerMessage: TLccMessage;
     FProgressCallback: TOnCdiParserProgressCallback;
     function GetCVBlockRead: Word;
@@ -408,7 +407,7 @@ type
     property GlobalButtonBkGnd: TLccPanel read FGlobalButtonBkGnd write FGlobalButtonBkGnd; // alBottom aligned to the Parser Frame
     property TabControl: TLccTabControl read FTabControl write FTabControl; // alClient aligned in the Parser Frame, sibling to the GlobalButtonBkgnd
     property EngineMemorySpaceAccess: TLccEngineMemorySpaceAccess read FEngineMemorySpaceAccess write FEngineMemorySpaceAccess;  // Engine that runs all the Config Mem Read Write interchanges
-    property TargetNodeIdentification: TLccNodeIdentificationObject read FTargetNodeIdentification write FTargetNodeIdentification; // The Node we interfacing with the Configuration Memory with
+    property TargetNodeIdentification: TLccAliasMappingRec read FTargetNodeIdentification write FTargetNodeIdentification; // The Node we interfacing with the Configuration Memory with
     property WorkerMessage: TLccMessage read FWorkerMessage write FWorkerMessage;
 
 
@@ -420,8 +419,8 @@ type
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
-    function Build_CDI_Interface(AnLccNode: TLccNode; ATargetNode: TLccNodeIdentificationObject; ParentControl: TLccTextBox; CDI: TLccXmlDocument; AProgressCallback: TOnCdiParserProgressCallback = nil; SupressIdentificationTab: Boolean = True): TLccPanel; overload;
-    function Build_CDI_Interface(AnLccNode: TLccNode; ATargetNode: TLccNodeIdentificationObject; ParentControl: TLccTextBox; CDI: String; AProgressCallback: TOnCdiParserProgressCallback = nil; SupressIdentificationTab: Boolean = True): TLccPanel; overload;
+    function Build_CDI_Interface(AnLccNode: TLccNode; ATargetNode: TLccAliasMappingRec; ParentControl: TLccTextBox; CDI: TLccXmlDocument; AProgressCallback: TOnCdiParserProgressCallback = nil; SupressIdentificationTab: Boolean = True): TLccPanel; overload;
+    function Build_CDI_Interface(AnLccNode: TLccNode; ATargetNode: TLccAliasMappingRec; ParentControl: TLccTextBox; CDI: String; AProgressCallback: TOnCdiParserProgressCallback = nil; SupressIdentificationTab: Boolean = True): TLccPanel; overload;
     procedure Clear_CDI_Interface(ClearLccNode: Boolean);
     procedure DoConfigMemReadReply(ANode: TObject); override;
     procedure DoConfigMemWriteReply(ANode: TObject); override;
@@ -1853,7 +1852,6 @@ begin
   FSuppressNameAndDescription := False;
   FPrintMemOffset := False;
   FWorkerMessage := TLccMessage.Create;
-  FTargetNodeIdentification := TLccNodeIdentificationObject.Create;
   CVBlockRead := 1;
 end;
 
@@ -1863,11 +1861,10 @@ begin
  //   NodeManager.CdiParser := nil;
   FreeAndNil(FWorkerMessage);
   FreeAndNil(FEngineMemorySpaceAccess);
-  FreeAndNil(FTargetNodeIdentification);
   inherited Destroy;
 end;
 
-function TLccCdiParser.Build_CDI_Interface(AnLccNode: TLccNode; ATargetNode: TLccNodeIdentificationObject; ParentControl: TLccTextBox; CDI: TLccXmlDocument; AProgressCallback: TOnCdiParserProgressCallback = nil; SupressIdentificationTab: Boolean = True): TLccPanel;
+function TLccCdiParser.Build_CDI_Interface(AnLccNode: TLccNode; ATargetNode: TLccAliasMappingRec; ParentControl: TLccTextBox; CDI: TLccXmlDocument; AProgressCallback: TOnCdiParserProgressCallback = nil; SupressIdentificationTab: Boolean = True): TLccPanel;
 const
   BUTTON_HEIGHT = 40;
 var
@@ -1893,7 +1890,7 @@ begin
 
   Clear_CDI_Interface(False);
   FLccNode := AnLccNode;
-  TargetNodeIdentification.AssignID(ATargetNode);
+  TargetNodeIdentification := ATargetNode;
   // So we can read write the memory spaces
   FEngineMemorySpaceAccess := TLccEngineMemorySpaceAccess.Create(LccNode);
   LccNode.RegisterEngine(EngineMemorySpaceAccess);
@@ -1962,7 +1959,7 @@ begin
   DoBuildInterfaceComplete;
 end;
 
-function TLccCdiParser.Build_CDI_Interface(AnLccNode: TLccNode; ATargetNode: TLccNodeIdentificationObject; ParentControl: TLccTextBox; CDI: String; AProgressCallback: TOnCdiParserProgressCallback = nil; SupressIdentificationTab: Boolean = True): TLccPanel;
+function TLccCdiParser.Build_CDI_Interface(AnLccNode: TLccNode; ATargetNode: TLccAliasMappingRec; ParentControl: TLccTextBox; CDI: String; AProgressCallback: TOnCdiParserProgressCallback = nil; SupressIdentificationTab: Boolean = True): TLccPanel;
 var
   XML: TLccXmlDocument;
 begin

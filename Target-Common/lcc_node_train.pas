@@ -245,13 +245,13 @@ type
 
   TControllerState = class
   private
-    FAttachedController: TAliasMappingRec;
-    FRequestingController: TAliasMappingRec;
+    FAttachedController: TLccAliasMappingRec;
+    FRequestingController: TLccAliasMappingRec;
     FWaitingForNotifyReply: Boolean;
     FWaitingForNotifyReplyTimer: Integer;
   public
-    property AttachedController: TAliasMappingRec read FAttachedController write FAttachedController;
-    property RequestingController: TAliasMappingRec read FRequestingController write FRequestingController;
+    property AttachedController: TLccAliasMappingRec read FAttachedController write FAttachedController;
+    property RequestingController: TLccAliasMappingRec read FRequestingController write FRequestingController;
     property WaitingForNotifyReply: Boolean read FWaitingForNotifyReply;
     property WaitingForNotifyReplyTimer: Integer read FWaitingForNotifyReplyTimer write FWaitingForNotifyReplyTimer;
 
@@ -272,9 +272,9 @@ type
 
   TReservationState = class
   private
-    FReservedNode: TAliasMappingRec;
+    FReservedNode: TLccAliasMappingRec;
   public
-    property ReservedNode: TAliasMappingRec read FReservedNode write FReservedNode;
+    property ReservedNode: TLccAliasMappingRec read FReservedNode write FReservedNode;
 
     procedure AssignReservedNode(ANodeID: TNodeId; AnAlias: Word);
     procedure ClearReservedNode;

@@ -37,12 +37,14 @@ uses
   function _Highest1(Data: QWord): Byte;
   function _Highest2(Data: QWord): Byte;
   function IsPrintableChar(C: Char): Boolean;
+
   function ThreadListCount(AThreadedList: TThreadList): Int64;
   procedure ThreadListClearObjects(AThreadList: TThreadList);
+
   procedure ListClearObjects(AList: TList);
   procedure ListClearNilObjects(AList: TList);
 
-
+  // Delphi stream methods are different than Lazarus
   function StreamReadByte(AStream: TStream): Byte;
   procedure StreamWriteByte(AStream: TStream; AByte: Byte);
 

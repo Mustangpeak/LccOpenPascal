@@ -66,12 +66,12 @@ type
   private
     FOwner: TLccTrainController;
     FSearchCriteriaPending: DWORD;
-    FTrain: TAliasMappingRec;
+    FTrain: TLccAliasMappingRec;
     FSearchCriteria: DWORD;
     FWorkerMessage: TLccMessage;
   public
     property Owner: TLccTrainController read FOwner write FOwner;
-    property Train: TAliasMappingRec read FTrain write FTrain;
+    property Train: TLccAliasMappingRec read FTrain write FTrain;
     property SearchCriteriaPending: DWORD read FSearchCriteriaPending write FSearchCriteriaPending;
   //  property SearchCriteria: DWORD read FSearchCriteria write FSearchCriteria;
     property WorkerMessage: TLccMessage read FWorkerMessage write FWorkerMessage;
