@@ -215,7 +215,7 @@ begin
     // Dispatch any messages that are ready to be passed on to anyone who cares,
     // at this point the AliasMapping database contains mappings for any node referenced
     // in this message.  Do it in the context of the main thread to make things safer
-    Synchronize({$IFNDEF LCC_DELPHI}@{$ENDIF}DispatchMessageThroughSyncronize);
+    Synchronize({$IFDEF FPC}@{$ENDIF}DispatchMessageThroughSyncronize);
     // *************************************************************************
 
     Sleep(SLEEP_ALIAS_SERVER_THREAD_MS);
@@ -281,12 +281,12 @@ begin
       MappingRequestsSentMessageList.Add(LccMessage);
       LccMessage.iTag := 1;
       LccMessage.CopyToTarget(WorkerMessage);
-      Synchronize(@SendMessageThroughSyncronize);
+      Synchronize({$IFDEF FPC}@{$ENDIF}SendMessageThroughSyncronize);
     end else
     if MappingRequestMessage.iTag mod (VERIFYNODE_RETRY_TIME_MS div SLEEP_ALIAS_SERVER_THREAD_MS) = 0 then
     begin  // Every VERIFYNODE_RETRY_TIME_MS seconds try again if it still has not cleared
       MappingRequestMessage.CopyToTarget(WorkerMessage);
-      Synchronize(@SendMessageThroughSyncronize);
+      Synchronize({$IFDEF FPC}@{$ENDIF}SendMessageThroughSyncronize);
     end
   end else
   if not NullNodeID(ANodeID) then  // If we have the NodeID use it to send us the Alias
@@ -298,12 +298,12 @@ begin
       MappingRequestsSentMessageList.Add(LccMessage);
       LccMessage.iTag := 1;
       LccMessage.CopyToTarget(WorkerMessage);
-      Synchronize(@SendMessageThroughSyncronize);
+      Synchronize({$IFDEF FPC}@{$ENDIF}SendMessageThroughSyncronize);
     end else // Every VERIFYNODE_RETRY_TIME_MS seconds try again if it still has not cleared
     if MappingRequestMessage.iTag mod VERIFYNODE_RETRY_TIME_MS div SLEEP_ALIAS_SERVER_THREAD_MS = 0 then
     begin
       MappingRequestMessage.CopyToTarget(WorkerMessage);
-      Synchronize(@SendMessageThroughSyncronize);
+      Synchronize({$IFDEF FPC}@{$ENDIF}SendMessageThroughSyncronize);
     end
   end
 end;
