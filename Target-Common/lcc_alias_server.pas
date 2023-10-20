@@ -1,5 +1,12 @@
 unit lcc_alias_server;
 
+
+// NOTE FOR USAGE .... ALWAYS GUARD BAND REPLIES FROM FINDALIAS()... it is possible
+// that a node reset has come in right after the the message you are handling (recall
+// that is all done in the thread) and may remove that mapping before you try to
+// access it.. this is the way it has to be because the requirement is that you can't
+// send any messages to a node that sent an AMR after 50ms.
+
 {$I ..\lcc_compilers.inc}
 
 {$IFDEF LCC_FPC}
@@ -75,6 +82,7 @@ type
     // Find a mapping based on an ID or Alias
     function FindMapping(AnAliasID: Word): TLccAliasMapping; overload;
     function FindMapping(ANodeID: TNodeID): TLccAliasMapping; overload;
+    function FindAlias(ANodeID: TNodeID): Word; overload;  // Returns the Alias or 0
     // Finds either the ID or Alias associated with mappings and deletes them if found
     procedure FlushOldMapping(ANodeID: TNodeID; AnAlias: Word);
     // Add a new mapping
@@ -220,6 +228,16 @@ begin
   finally
      MappingList.UnlockList;
   end;
+end;
+
+function TLccAliasServer.FindAlias(ANodeID: TNodeID): Word;
+var
+  Mapping: TLccAliasMapping;
+begin
+  Result := 0;
+  Mapping := FindMapping(ANodeID);
+  if Assigned(Mapping) then
+    Result := Mapping.NodeAlias;
 end;
 
 function TLccAliasServer.AddMapping(ANodeID: TNodeID; AnAlias: Word;

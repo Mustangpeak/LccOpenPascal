@@ -423,8 +423,7 @@ begin
     OnNodeTractionTrainSNIP(Self, LccNode, ALccMessage, DoDefault);
 end;
 
-procedure TLccNodeManager.ReceiveLccMessageNodeManager(ALccMessage: TLccMessage
-  );
+procedure TLccNodeManager.ReceiveLccMessageNodeManager(ALccMessage: TLccMessage);
 var
   i: Integer;
 begin
@@ -441,7 +440,8 @@ begin
   // would cause a duplicate NodeID error because we are using the nodes IDs without it know about it and able to set the
   // AssociatedNode field.  Would could search and find the right node and set it but that is complex).
   //
-  for i := 0 to Nodes.Count - 1 do
+  // Run these backwards as a message may force a new node to be created.  This way we don't start dispatching message to it yet.
+  for i := Nodes.Count - 1 downto 0  do
   begin
     if Assigned(ALccMessage.AssociatedNode) then
     begin

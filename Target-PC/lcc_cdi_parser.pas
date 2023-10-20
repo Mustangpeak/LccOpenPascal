@@ -66,6 +66,8 @@ const
   LABEL_DELTA_INDENT = 8;
   LABEL_DELTA_INDENT_DOUBLE = LABEL_DELTA_INDENT + LABEL_DELTA_INDENT;
 
+  TASK_TIMEOUT = 500;
+
 type
   TLccOpenPascalSpeedButton = class;
   {$IFDEF LCC_FPC}
@@ -280,8 +282,6 @@ type
     property EditObject: TObject read FEditObject write FEditObject;
   end;
 
-  TOnCdiParserProgressCallback = procedure(ACdiParser: TLccCdiParser; ProgressInfo: string) of object;
-
   // - Application Form
   //   - ..... Controls
   //     - CDI Background Control (Passed to CDI Parser)
@@ -302,7 +302,7 @@ type
   private
     FAutoReadOnTabChange: Boolean;
     FEditorElementCount: Integer;
-    FEngineMemorySpaceAccess: TLccEngineMemorySpaceAccess;
+    FTaskMemorySpaceAccess: TLccTaskMemorySpaceAccess;
     FGlobalButtonReadPage: TLccOpenPascalSpeedButton;
     FGlobalButtonStop: TLccOpenPascalSpeedButton;
     FGlobalButtonWritePage: TLccOpenPascalSpeedButton;
@@ -324,7 +324,7 @@ type
     FTabControl: TLccTabControl;
     FTargetNodeIdentification: TLccAliasMappingRec;
     FWorkerMessage: TLccMessage;
-    FProgressCallback: TOnCdiParserProgressCallback;
+    FProgressCallback: TOnTaskCallback;
     function GetCVBlockRead: Word;
     procedure SetCVBlockRead(AValue: Word);
   protected
@@ -373,10 +373,8 @@ type
     procedure UpdateToolbarLabel(Info: string);
     procedure UpdateApplicationProgressCallback(Info: string);
     // Callbacks...
-    // Called back on ever read/write stroke of the engine
-    procedure OnEngineMemorySpaceAccessCallback(AnEngineMemorySpaceAccess: TLccEngineMemorySpaceAccess);
-    // Called during the building of the UI
-    procedure OnEngineMemorySpaceAccessProgressCallback(AnEngineMemorySpaceAccess: TLccEngineMemorySpaceAccess);
+    // Called back on every read/write stroke of the task
+    procedure OnEngineMemorySpaceAccessCallback(AnEngineMemorySpaceAccess: TLccTaskBase);
 
     // Control Event Handler
     procedure OnPageControlChange(Sender: TObject);
@@ -406,7 +404,7 @@ type
     property ParserFrame: TLccPanel read FParserFrame write FParserFrame;  // alClient aligned to the Application Panel used as our drawing canvas
     property GlobalButtonBkGnd: TLccPanel read FGlobalButtonBkGnd write FGlobalButtonBkGnd; // alBottom aligned to the Parser Frame
     property TabControl: TLccTabControl read FTabControl write FTabControl; // alClient aligned in the Parser Frame, sibling to the GlobalButtonBkgnd
-    property EngineMemorySpaceAccess: TLccEngineMemorySpaceAccess read FEngineMemorySpaceAccess write FEngineMemorySpaceAccess;  // Engine that runs all the Config Mem Read Write interchanges
+    property TaskMemorySpaceAccess: TLccTaskMemorySpaceAccess read FTaskMemorySpaceAccess write FTaskMemorySpaceAccess;  // Engine that runs all the Config Mem Read Write interchanges
     property TargetNodeIdentification: TLccAliasMappingRec read FTargetNodeIdentification write FTargetNodeIdentification; // The Node we interfacing with the Configuration Memory with
     property WorkerMessage: TLccMessage read FWorkerMessage write FWorkerMessage;
 
@@ -419,8 +417,8 @@ type
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
-    function Build_CDI_Interface(AnLccNode: TLccNode; ATargetNode: TLccAliasMappingRec; ParentControl: TLccTextBox; CDI: TLccXmlDocument; AProgressCallback: TOnCdiParserProgressCallback = nil; SupressIdentificationTab: Boolean = True): TLccPanel; overload;
-    function Build_CDI_Interface(AnLccNode: TLccNode; ATargetNode: TLccAliasMappingRec; ParentControl: TLccTextBox; CDI: String; AProgressCallback: TOnCdiParserProgressCallback = nil; SupressIdentificationTab: Boolean = True): TLccPanel; overload;
+    function Build_CDI_Interface(AnLccNode: TLccNode; ATargetNode: TLccAliasMappingRec; ParentControl: TLccTextBox; CDI: TLccXmlDocument; AProgressCallback: TOnTaskCallback = nil; SupressIdentificationTab: Boolean = True): TLccPanel; overload;
+    function Build_CDI_Interface(AnLccNode: TLccNode; ATargetNode: TLccAliasMappingRec; ParentControl: TLccTextBox; CDI: String; AProgressCallback: TOnTaskCallback = nil; SupressIdentificationTab: Boolean = True): TLccPanel; overload;
     procedure Clear_CDI_Interface(ClearLccNode: Boolean);
     procedure DoConfigMemReadReply(ANode: TObject); override;
     procedure DoConfigMemWriteReply(ANode: TObject); override;
@@ -441,7 +439,7 @@ type
     property OnAfterReadPage: TNotifyEvent read FOnAfterReadPage write FOnAfterReadPage;
     property OnClearInterface: TNotifyEvent read FOnClearInterface write FOnClearInterface;
     property OnBuildInterfaceComplete: TNotifyEvent read FOnBuildInterfaceComplete write FOnBuildInterfaceComplete;
-    property ProgressCallback: TOnCdiParserProgressCallback read FProgressCallback;
+    property ProgressCallback: TOnTaskCallback read FProgressCallback;
   end;
 
 implementation
@@ -1055,14 +1053,14 @@ begin
   Info :=  ButtonToDataElementInformation(Sender);
   if Assigned(Info) then
   begin
-    EngineMemorySpaceAccess.Reset;
+    TaskMemorySpaceAccess.Reset;
     case Info.DataType of
-      cdt_String   : EngineMemorySpaceAccess.Assign(lems_Read, MSI_CONFIG, True, Info.MemoryAddressPointer, Info.MemoryAddressPointerHi, True, TargetNodeIdentification.NodeID, TargetNodeIdentification.Alias, {$IFNDEF LCC_DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessCallback, {$IFNDEF DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessProgressCallback);
-      cdt_Int      : EngineMemorySpaceAccess.Assign(lems_Read, MSI_CONFIG, False, Info.MemoryAddressPointer, Info.MemoryAddressPointerHi, True, TargetNodeIdentification.NodeID, TargetNodeIdentification.Alias, {$IFNDEF LCC_DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessCallback, {$IFNDEF DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessProgressCallback);
-      cdt_EventID  : EngineMemorySpaceAccess.Assign(lems_Read, MSI_CONFIG, False, Info.MemoryAddressPointer, Info.MemoryAddressPointerHi, True, TargetNodeIdentification.NodeID, TargetNodeIdentification.Alias, {$IFNDEF LCC_DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessCallback, {$IFNDEF DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessProgressCallback);
+      cdt_String   : TaskMemorySpaceAccess.Assign(lems_Read, MSI_CONFIG, True, Info.MemoryAddressPointer, Info.MemoryAddressPointerHi, True, TargetNodeIdentification.NodeID, TargetNodeIdentification.Alias, {$IFNDEF LCC_DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessCallback);
+      cdt_Int      : TaskMemorySpaceAccess.Assign(lems_Read, MSI_CONFIG, False, Info.MemoryAddressPointer, Info.MemoryAddressPointerHi, True, TargetNodeIdentification.NodeID, TargetNodeIdentification.Alias, {$IFNDEF LCC_DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessCallback);
+      cdt_EventID  : TaskMemorySpaceAccess.Assign(lems_Read, MSI_CONFIG, False, Info.MemoryAddressPointer, Info.MemoryAddressPointerHi, True, TargetNodeIdentification.NodeID, TargetNodeIdentification.Alias, {$IFNDEF LCC_DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessCallback);
       cdt_Bit      : begin end;
     end;
-    EngineMemorySpaceAccess.Start;
+    TaskMemorySpaceAccess.Start(TASK_TIMEOUT);
   end;
 end;
 
@@ -1072,19 +1070,19 @@ var
   AString: String;
   AnInteger: Integer;
   AnEventID: TEventID;
-  EngineMemorySpaceObject: TLccEngineMemorySpaceObject;
+  EngineMemorySpaceObject: TLccTaskMemorySpaceObject;
 begin
   Info :=  ButtonToDataElementInformation(Sender);
   if Assigned(Info) then
   begin
-    EngineMemorySpaceAccess.Reset;
+    TaskMemorySpaceAccess.Reset;
     case Info.DataType of
       cdt_String   : begin
                        AString := '';
                        if ExtractStringFromElementUIToStoreInConfigMem(Info, AString) then
                        begin
                          // Need to queue up the data we want to write to the memory space
-                         EngineMemorySpaceObject := EngineMemorySpaceAccess.Assign(lems_Write, MSI_CONFIG, True, Info.MemoryAddressPointer, Info.MemoryAddressPointerHi, True, TargetNodeIdentification.NodeID, TargetNodeIdentification.Alias, {$IFNDEF LCC_DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessCallback, {$IFNDEF DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessProgressCallback);
+                         EngineMemorySpaceObject := TaskMemorySpaceAccess.Assign(lems_Write, MSI_CONFIG, True, Info.MemoryAddressPointer, Info.MemoryAddressPointerHi, True, TargetNodeIdentification.NodeID, TargetNodeIdentification.Alias, {$IFNDEF LCC_DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessCallback);
                          EngineMemorySpaceObject.WriteString := AString;
                        end;
                      end;
@@ -1093,7 +1091,7 @@ begin
                        if ExtractIntFromElementUIToStoreInConfigMem(Info, AnInteger) then
                        begin
                          // Need to queue up the data we want to write to the memory space
-                         EngineMemorySpaceObject := EngineMemorySpaceAccess.Assign(lems_Write, MSI_CONFIG, False, Info.MemoryAddressPointer, Info.MemoryAddressPointerHi, True, TargetNodeIdentification.NodeID, TargetNodeIdentification.Alias, {$IFNDEF LCC_DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessCallback, {$IFNDEF DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessProgressCallback);
+                         EngineMemorySpaceObject := TaskMemorySpaceAccess.Assign(lems_Write, MSI_CONFIG, False, Info.MemoryAddressPointer, Info.MemoryAddressPointerHi, True, TargetNodeIdentification.NodeID, TargetNodeIdentification.Alias, {$IFNDEF LCC_DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessCallback);
                          EngineMemorySpaceObject.WriteInteger := AnInteger;
                        end;
                      end;
@@ -1102,13 +1100,13 @@ begin
                        if ExtractEventIDFromElementUIToStoreInConfigMem(Info, AnEventID) then
                        begin
                          // Need to queue up the data we want to write to the memory space
-                         EngineMemorySpaceObject := EngineMemorySpaceAccess.Assign(lems_Write, MSI_CONFIG, False, Info.MemoryAddressPointer, Info.MemoryAddressPointerHi, True, TargetNodeIdentification.NodeID, TargetNodeIdentification.Alias, {$IFNDEF LCC_DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessCallback, {$IFNDEF DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessProgressCallback);
+                         EngineMemorySpaceObject := TaskMemorySpaceAccess.Assign(lems_Write, MSI_CONFIG, False, Info.MemoryAddressPointer, Info.MemoryAddressPointerHi, True, TargetNodeIdentification.NodeID, TargetNodeIdentification.Alias, {$IFNDEF LCC_DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessCallback);
                          EngineMemorySpaceObject.WriteEventID := AnEventID;
                        end;
                      end;
       cdt_Bit      : begin end;
     end;
-    EngineMemorySpaceAccess.Start;
+    TaskMemorySpaceAccess.Start(TASK_TIMEOUT);
   end;
 end;
 
@@ -1126,9 +1124,9 @@ procedure TLccCdiParser.DoButtonReadPageClick(Sender: TObject);
     if Assigned(Info) then
     begin
       case Info.DataType of
-        cdt_String   : EngineMemorySpaceAccess.Assign(lems_Read, MSI_CONFIG, True, Info.MemoryAddressPointer, Info.MemoryAddressPointerHi, True, TargetNodeIdentification.NodeID, TargetNodeIdentification.Alias, {$IFNDEF LCC_DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessCallback, {$IFNDEF DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessProgressCallback);
-        cdt_Int      : EngineMemorySpaceAccess.Assign(lems_Read, MSI_CONFIG, False, Info.MemoryAddressPointer, Info.MemoryAddressPointerHi, True, TargetNodeIdentification.NodeID, TargetNodeIdentification.Alias, {$IFNDEF LCC_DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessCallback, {$IFNDEF DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessProgressCallback);
-        cdt_EventID  : EngineMemorySpaceAccess.Assign(lems_Read, MSI_CONFIG, False, Info.MemoryAddressPointer, Info.MemoryAddressPointerHi, True, TargetNodeIdentification.NodeID, TargetNodeIdentification.Alias, {$IFNDEF LCC_DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessCallback, {$IFNDEF DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessProgressCallback);
+        cdt_String   : TaskMemorySpaceAccess.Assign(lems_Read, MSI_CONFIG, True, Info.MemoryAddressPointer, Info.MemoryAddressPointerHi, True, TargetNodeIdentification.NodeID, TargetNodeIdentification.Alias, {$IFNDEF LCC_DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessCallback);
+        cdt_Int      : TaskMemorySpaceAccess.Assign(lems_Read, MSI_CONFIG, False, Info.MemoryAddressPointer, Info.MemoryAddressPointerHi, True, TargetNodeIdentification.NodeID, TargetNodeIdentification.Alias, {$IFNDEF LCC_DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessCallback);
+        cdt_EventID  : TaskMemorySpaceAccess.Assign(lems_Read, MSI_CONFIG, False, Info.MemoryAddressPointer, Info.MemoryAddressPointerHi, True, TargetNodeIdentification.NodeID, TargetNodeIdentification.Alias, {$IFNDEF LCC_DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessCallback);
         cdt_Bit      : begin end;
       end;
     end;
@@ -1159,16 +1157,16 @@ begin
   TabSheet := FindActivePage;
   if Assigned(TabSheet) then
   begin
-    EngineMemorySpaceAccess.Reset;
+    TaskMemorySpaceAccess.Reset;
     RunSheet(TabSheet);
-    if EngineMemorySpaceAccess.QueuedRequests > 0 then
-      EngineMemorySpaceAccess.Start;
+    if TaskMemorySpaceAccess.QueuedRequests > 0 then
+      TaskMemorySpaceAccess.Start(TASK_TIMEOUT);
   end;
 end;
 
 procedure TLccCdiParser.DoButtonStopClick(Sender: TObject);
 begin
-  EngineMemorySpaceAccess.Reset;
+  TaskMemorySpaceAccess.Reset;
   UpdateToolbarLabel('Stopped')
 end;
 
@@ -1179,28 +1177,31 @@ end;
 
 procedure TLccCdiParser.UpdateApplicationProgressCallback(Info: string);
 begin
-  if Assigned(FProgressCallback) then
-    ProgressCallback(Self, Info);
+ // if Assigned(FProgressCallback) then
+ //   ProgressCallback(Self, Info);
 end;
 
-procedure TLccCdiParser.OnEngineMemorySpaceAccessCallback(AnEngineMemorySpaceAccess: TLccEngineMemorySpaceAccess);
+procedure TLccCdiParser.OnEngineMemorySpaceAccessCallback(AnEngineMemorySpaceAccess: TLccTaskBase);
 var
   Edit: TLccOpenPascalEdit;
   SpinEdit: TLccOpenPascalSpinEdit;
   ComboBox: TLccOpenPascalComboBox;
   Control: TObject;
+  LocalTask: TLccTaskMemorySpaceAccess;
 begin
-  if AnEngineMemorySpaceAccess.ReadWrite = lems_Read then
+  LocalTask := AnEngineMemorySpaceAccess as TLccTaskMemorySpaceAccess;
+
+  if LocalTask.ReadWrite = lems_Read then
   begin // Read completed
-    Control := FindControlByMemoryAddressPointer(AnEngineMemorySpaceAccess.AddressLo);
+    Control := FindControlByMemoryAddressPointer(LocalTask.AddressLo);
     if Control is TLccOpenPascalEdit then
     begin
       Edit := Control as TLccOpenPascalEdit;
 
       case Edit.DataElementInformation.DataType of
-        cdt_String  : Edit.Text := string( AnEngineMemorySpaceAccess.StreamAsString);
-        cdt_Int     : Edit.Text := IntToStr(AnEngineMemorySpaceAccess.StreamAsInt);
-        cdt_EventID : Edit.Text := EventIDToString(AnEngineMemorySpaceAccess.StreamAsEventID, True);
+        cdt_String  : Edit.Text := string( LocalTask.StreamAsString);
+        cdt_Int     : Edit.Text := IntToStr(LocalTask.StreamAsInt);
+        cdt_EventID : Edit.Text := EventIDToString(LocalTask.StreamAsEventID, True);
         cdt_Bit     : begin end;
       end;
      end else
@@ -1210,31 +1211,31 @@ begin
 
       case SpinEdit.DataElementInformation.DataType of
         cdt_String  : begin end;
-        cdt_Int     : SpinEdit.Text := IntToStr(AnEngineMemorySpaceAccess.StreamAsInt);
+        cdt_Int     : SpinEdit.Text := IntToStr(LocalTask.StreamAsInt);
         cdt_EventID : begin end;
         cdt_Bit     : begin end;
       end;
 
-      SpinEdit.Value := AnEngineMemorySpaceAccess.StreamAsInt;
+      SpinEdit.Value := LocalTask.StreamAsInt;
     end else
     if Control is TLccOpenPascalComboBox then
     begin
       ComboBox := Control as TLccOpenPascalComboBox;
 
       case ComboBox.DataElementInformation.DataType of
-        cdt_String  : ComboBox.ItemIndex := ComboBox.DataElementInformation.FindMapIndexForProperty(LccDOMString( AnEngineMemorySpaceAccess.StreamAsString));
-        cdt_Int     : ComboBox.ItemIndex := ComboBox.DataElementInformation.FindMapIndexForProperty(AnEngineMemorySpaceAccess.StreamAsInt);
-        cdt_EventID : ComboBox.ItemIndex := ComboBox.DataElementInformation.FindMapIndexForProperty(AnEngineMemorySpaceAccess.StreamAsEventID);
+        cdt_String  : ComboBox.ItemIndex := ComboBox.DataElementInformation.FindMapIndexForProperty(LccDOMString( LocalTask.StreamAsString));
+        cdt_Int     : ComboBox.ItemIndex := ComboBox.DataElementInformation.FindMapIndexForProperty(LocalTask.StreamAsInt);
+        cdt_EventID : ComboBox.ItemIndex := ComboBox.DataElementInformation.FindMapIndexForProperty(LocalTask.StreamAsEventID);
         cdt_Bit     : begin end;
       end;
     end;
 
     DoAfterReadPage(Self);
-    UpdateToolbarLabel('Reading: ' + IntToStr(AnEngineMemorySpaceAccess.QueuedRequests));
+    UpdateToolbarLabel('Reading: ' + IntToStr(LocalTask.QueuedRequests));
   end else
   begin // Write completed
 
-    Control := FindControlByMemoryAddressPointer(AnEngineMemorySpaceAccess.AddressLo);
+    Control := FindControlByMemoryAddressPointer(LocalTask.AddressLo);
     if Control is TLccOpenPascalEdit then
     begin
       Edit := Control as TLccOpenPascalEdit;
@@ -1257,7 +1258,7 @@ begin
         cdt_Bit     : begin end;
       end;
 
-      SpinEdit.Value := AnEngineMemorySpaceAccess.StreamAsInt;
+      SpinEdit.Value := LocalTask.StreamAsInt;
     end else
     if Control is TLccOpenPascalComboBox then
     begin
@@ -1273,13 +1274,8 @@ begin
 
      // do something interesting here.....
     DoAfterWritePage(Self);
-    UpdateToolbarLabel('Writing: ' + IntToStr(AnEngineMemorySpaceAccess.QueuedRequests));
+    UpdateToolbarLabel('Writing: ' + IntToStr(LocalTask.QueuedRequests));
   end;
-end;
-
-procedure TLccCdiParser.OnEngineMemorySpaceAccessProgressCallback(AnEngineMemorySpaceAccess: TLccEngineMemorySpaceAccess);
-begin
-
 end;
 
 procedure TLccCdiParser.DoButtonWritePageClick(Sender: TObject);
@@ -1289,7 +1285,7 @@ procedure TLccCdiParser.DoButtonWritePageClick(Sender: TObject);
     AString: String;
     AnInteger: Integer;
     AnEventID: TEventID;
-    EngineMemorySpaceObject: TLccEngineMemorySpaceObject;
+    EngineMemorySpaceObject: TLccTaskMemorySpaceObject;
   begin
     if Assigned(Info) then
     begin
@@ -1299,7 +1295,7 @@ procedure TLccCdiParser.DoButtonWritePageClick(Sender: TObject);
                          if ExtractStringFromElementUIToStoreInConfigMem(Info, AString) then
                          begin
                            // Need to queue up the data we want to write to the memory space
-                           EngineMemorySpaceObject := EngineMemorySpaceAccess.Assign(lems_Write, MSI_CONFIG, True, Info.MemoryAddressPointer, Info.MemoryAddressPointerHi, True, TargetNodeIdentification.NodeID, TargetNodeIdentification.Alias, {$IFNDEF LCC_DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessCallback, {$IFNDEF DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessProgressCallback);
+                           EngineMemorySpaceObject := TaskMemorySpaceAccess.Assign(lems_Write, MSI_CONFIG, True, Info.MemoryAddressPointer, Info.MemoryAddressPointerHi, True, TargetNodeIdentification.NodeID, TargetNodeIdentification.Alias, {$IFNDEF LCC_DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessCallback);
                            EngineMemorySpaceObject.WriteString := AString;
                          end;
                        end;
@@ -1308,7 +1304,7 @@ procedure TLccCdiParser.DoButtonWritePageClick(Sender: TObject);
                          if ExtractIntFromElementUIToStoreInConfigMem(Info, AnInteger) then
                          begin
                            // Need to queue up the data we want to write to the memory space
-                           EngineMemorySpaceObject := EngineMemorySpaceAccess.Assign(lems_Write, MSI_CONFIG, False, Info.MemoryAddressPointer, Info.MemoryAddressPointerHi, True, TargetNodeIdentification.NodeID, TargetNodeIdentification.Alias, {$IFNDEF LCC_DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessCallback, {$IFNDEF DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessProgressCallback);
+                           EngineMemorySpaceObject := TaskMemorySpaceAccess.Assign(lems_Write, MSI_CONFIG, False, Info.MemoryAddressPointer, Info.MemoryAddressPointerHi, True, TargetNodeIdentification.NodeID, TargetNodeIdentification.Alias, {$IFNDEF LCC_DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessCallback);
                            EngineMemorySpaceObject.WriteInteger := AnInteger;
                          end;
                        end;
@@ -1317,7 +1313,7 @@ procedure TLccCdiParser.DoButtonWritePageClick(Sender: TObject);
                          if ExtractEventIDFromElementUIToStoreInConfigMem(Info, AnEventID) then
                          begin
                            // Need to queue up the data we want to write to the memory space
-                           EngineMemorySpaceObject := EngineMemorySpaceAccess.Assign(lems_Write, MSI_CONFIG, False, Info.MemoryAddressPointer, Info.MemoryAddressPointerHi, True, TargetNodeIdentification.NodeID, TargetNodeIdentification.Alias, {$IFNDEF LCC_DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessCallback, {$IFNDEF DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessProgressCallback);
+                           EngineMemorySpaceObject := TaskMemorySpaceAccess.Assign(lems_Write, MSI_CONFIG, False, Info.MemoryAddressPointer, Info.MemoryAddressPointerHi, True, TargetNodeIdentification.NodeID, TargetNodeIdentification.Alias, {$IFNDEF LCC_DELPHI}@{$ENDIF}OnEngineMemorySpaceAccessCallback);
                            EngineMemorySpaceObject.WriteEventID := AnEventID;
                          end;
                        end;
@@ -1350,10 +1346,10 @@ begin
   TabSheet := FindActivePage;
   if Assigned(TabSheet) then
   begin
-    EngineMemorySpaceAccess.Reset;
+    TaskMemorySpaceAccess.Reset;
     RunSheet(TabSheet);
-    if EngineMemorySpaceAccess.QueuedRequests > 0 then
-      EngineMemorySpaceAccess.Start;
+    if TaskMemorySpaceAccess.QueuedRequests > 0 then
+      TaskMemorySpaceAccess.Start(TASK_TIMEOUT);
   end;
 end;
 
@@ -1860,11 +1856,11 @@ begin
  // if Assigned(NodeManager) then
  //   NodeManager.CdiParser := nil;
   FreeAndNil(FWorkerMessage);
-  FreeAndNil(FEngineMemorySpaceAccess);
+  FreeAndNil(FTaskMemorySpaceAccess);
   inherited Destroy;
 end;
 
-function TLccCdiParser.Build_CDI_Interface(AnLccNode: TLccNode; ATargetNode: TLccAliasMappingRec; ParentControl: TLccTextBox; CDI: TLccXmlDocument; AProgressCallback: TOnCdiParserProgressCallback = nil; SupressIdentificationTab: Boolean = True): TLccPanel;
+function TLccCdiParser.Build_CDI_Interface(AnLccNode: TLccNode; ATargetNode: TLccAliasMappingRec; ParentControl: TLccTextBox; CDI: TLccXmlDocument; AProgressCallback: TOnTaskCallback = nil; SupressIdentificationTab: Boolean = True): TLccPanel;
 const
   BUTTON_HEIGHT = 40;
 var
@@ -1892,8 +1888,8 @@ begin
   FLccNode := AnLccNode;
   TargetNodeIdentification := ATargetNode;
   // So we can read write the memory spaces
-  FEngineMemorySpaceAccess := TLccEngineMemorySpaceAccess.Create(LccNode);
-  LccNode.RegisterEngine(EngineMemorySpaceAccess);
+  FTaskMemorySpaceAccess := TLccTaskMemorySpaceAccess.Create(LccNode);
+  LccNode.RegisterTask(TaskMemorySpaceAccess);
   FApplicationPanel := ParentControl;
 
   UpdateApplicationProgressCallback('Rendering User Interface...');
@@ -1959,7 +1955,7 @@ begin
   DoBuildInterfaceComplete;
 end;
 
-function TLccCdiParser.Build_CDI_Interface(AnLccNode: TLccNode; ATargetNode: TLccAliasMappingRec; ParentControl: TLccTextBox; CDI: String; AProgressCallback: TOnCdiParserProgressCallback = nil; SupressIdentificationTab: Boolean = True): TLccPanel;
+function TLccCdiParser.Build_CDI_Interface(AnLccNode: TLccNode; ATargetNode: TLccAliasMappingRec; ParentControl: TLccTextBox; CDI: String; AProgressCallback: TOnTaskCallback = nil; SupressIdentificationTab: Boolean = True): TLccPanel;
 var
   XML: TLccXmlDocument;
 begin
@@ -1979,11 +1975,11 @@ procedure TLccCdiParser.Clear_CDI_Interface(ClearLccNode: Boolean);
 begin
   FEditorElementCount := 0;
 
-  if Assigned(LccNode) and Assigned(EngineMemorySpaceAccess) then
+  if Assigned(LccNode) and Assigned(TaskMemorySpaceAccess) then
   begin
-    EngineMemorySpaceAccess.Reset;
-    LccNode.UnRegisterEngine(EngineMemorySpaceAccess);
-    FreeAndNil(FEngineMemorySpaceAccess);
+    TaskMemorySpaceAccess.Reset;
+    LccNode.UnRegisterTask(TaskMemorySpaceAccess);
+    FreeAndNil(FTaskMemorySpaceAccess);
   end;
   DoClearInterface;
   if Assigned(TabControl) then

@@ -18,9 +18,9 @@ object FormTrainController: TFormTrainController
     Height = 542
     Top = 0
     Width = 449
-    ActivePage = TabSheetSettings
+    ActivePage = TabSheetThrottle
     Align = alClient
-    TabIndex = 3
+    TabIndex = 0
     TabOrder = 0
     object TabSheetThrottle: TTabSheet
       Caption = 'Throttle'
@@ -55,7 +55,7 @@ object FormTrainController: TFormTrainController
             ItemHeight = 19
             OnKeyDown = ComboBoxTrainSelectKeyDown
             TabOrder = 0
-            Text = '[Select Train]'
+            Text = '455'
             TextHint = 'Type in a DCC Address or select from the Consist List'
           end
           object ButtonThrottleSelectGo: TButton
@@ -497,6 +497,7 @@ object FormTrainController: TFormTrainController
         Top = 64
         Width = 154
         Align = alLeft
+        Enabled = False
         TabOrder = 2
       end
     end
@@ -754,7 +755,7 @@ object FormTrainController: TFormTrainController
           Alignment = taCenter
           Anchors = [akTop, akLeft, akRight]
           TabOrder = 0
-          Text = '192.168.1.208'
+          Text = '10.0.3.145'
         end
       end
       object LabelSettings2: TLabel

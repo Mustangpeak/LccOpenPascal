@@ -328,7 +328,7 @@ type
     procedure HandleTractionControllerAssign(var SourceMessage: TLccMessage); override;
     procedure HandleTractionControllerRelease(var SourceMessage: TLccMessage); override;
     procedure HandleTractionControllerQuery(var SourceMessage: TLccMessage); override;
-    procedure HandleTractionControllerChangedNotify(var SourceMessage: TLccMessage); override;
+ //   procedure HandleTractionControllerChangedNotify(var SourceMessage: TLccMessage); override;
     procedure HandleTractionEStop(var SourceMessage: TLccMessage); override;
     procedure HandleTractionListenerAttach(var SourceMessage: TLccMessage); override;
     procedure HandleTractionListenerDetach(var SourceMessage: TLccMessage);override;
@@ -914,15 +914,15 @@ begin
       ControllerState.AssignRequestingController(SourceMessage.SourceID, SourceMessage.SourceAlias);
 
       // The train will call the currently attached node and tell it that it is loosing control
-      WorkerMessage.LoadTractionControllerChangedNotify(NodeID, AliasID, ControllerState.AttachedController.NodeID, ControllerState.AttachedController.Alias, ControllerState.RequestingController.NodeID);
-      SendMessage(WorkerMessage);
+  //    WorkerMessage.LoadTractionControllerChangedNotify(NodeID, AliasID, ControllerState.AttachedController.NodeID, ControllerState.AttachedController.Alias, ControllerState.RequestingController.NodeID);
+   //   SendMessage(WorkerMessage, Self);
       // Now need to wait for a Changing Notity Reply
     end else
     begin
       ControllerState.AssignController(SourceMessage.SourceID, SourceMessage.SourceAlias);
 
       WorkerMessage.LoadTractionControllerAssignReply(NodeID, AliasID, SourceMessage.SourceID, SourceMessage.SourceAlias, TRACTION_CONTROLLER_CONFIG_REPLY_OK);
-      SendMessage(WorkerMessage);
+      SendMessage(WorkerMessage, Self);
     end;
   end;
 end;
@@ -956,10 +956,11 @@ begin
       WorkerMessage.LoadTractionControllerQueryReply(NodeID, AliasID, SourceMessage.SourceID, SourceMessage.SourceAlias, ControllerState.AttachedController.NodeID);
     end else
       WorkerMessage.LoadTractionControllerQueryReply(NodeID, AliasID, SourceMessage.SourceID, SourceMessage.SourceAlias, NULL_NODE_ID);
-    SendMessage(WorkerMessage);
+    SendMessage(WorkerMessage, Self);
   end;
 end;
 
+{
 procedure TLccTrainDccNode.HandleTractionControllerChangedNotify(var SourceMessage: TLccMessage);
 var
   DoDefault: Boolean;
@@ -967,6 +968,7 @@ begin
   DoDefault := True;
   ((Owner as TLccNodeManager) as INodeManagerTractionCallbacks).DoTractionControllerChangedNotify(Self, SourceMessage, DoDefault);
 end;
+}
 
 procedure TLccTrainDccNode.HandleTractionManageReserve(var SourceMessage: TLccMessage);
 var
@@ -984,7 +986,7 @@ begin
       ReservedNodeState.AssignReservedNode(SourceMessage.DestID, SourceMessage.DestAlias);
       WorkerMessage.LoadTractionManageReply(SourceMessage.DestID, SourceMessage.DestAlias, SourceMessage.SourceID, SourceMessage.SourceAlias, True)
     end;
-    SendMessage(WorkerMessage);
+    SendMessage(WorkerMessage, Self);
   end;
 end;
 
@@ -1056,7 +1058,7 @@ begin
           WorkerMessage.LoadTractionListenerAttachReply(NodeID, AliasID, SourceMessage.SourceID, SourceMessage.SourceAlias, ListenerNodeID, ERROR_CODE_TEMPORARY_BUFFER_UNAVAILABLE)
       end;
     end;
-    SendMessage(WorkerMessage);
+    SendMessage(WorkerMessage, Self);
 
     ((Owner as TLccNodeManager) as INodeManagerTractionCallbacks).DoTractionListenerAttached(Self, SourceMessage);
   end
@@ -1078,7 +1080,7 @@ begin
       WorkerMessage.LoadTractionListenerDetachReply(NodeID, AliasID, SourceMessage.SourceID, SourceMessage.SourceAlias, ListenerNodeID, S_OK)
     else
       WorkerMessage.LoadTractionListenerDetachReply(NodeID, AliasID, SourceMessage.SourceID, SourceMessage.SourceAlias, ListenerNodeID, ERROR_CODE_PERMANENT_INVALID_ARGUMENTS);
-    SendMessage(WorkerMessage);
+    SendMessage(WorkerMessage, Self);
 
     ((Owner as TLccNodeManager) as INodeManagerTractionCallbacks).DoTractionListenerDetached(Self, SourceMessage);
   end;
@@ -1106,7 +1108,7 @@ begin
       end else
         WorkerMessage.LoadTractionListenerQueryReply(NodeID, AliasID, SourceMessage.SourceID, SourceMessage.SourceAlias, Listeners.Count, 0, NULL_NODE_ID, 0);   // Outside of range, bad index
     end;
-    SendMessage(WorkerMessage);
+    SendMessage(WorkerMessage, Self);
   end;
 end;
 
@@ -1164,7 +1166,7 @@ begin
   if DoDefault then
   begin
     WorkerMessage.LoadTractionQuerySpeedReply(NodeId, AliasID, SourceMessage.SourceID, SourceMessage.SourceAlias, GetSpeed(SourceMessage), 0, HalfNaN, HalfNaN);
-    SendMessage(WorkerMessage);
+    SendMessage(WorkerMessage, Self);
   end;
 end;
 
@@ -1180,7 +1182,7 @@ begin
   begin
     FunctionAddress := SourceMessage.TractionExtractFunctionAddress;
     WorkerMessage.LoadTractionQueryFunctionReply(NodeId, AliasID, SourceMessage.SourceID, SourceMessage.SourceAlias, FunctionAddress, Functions[FunctionAddress, nil]);
-    SendMessage(WorkerMessage);
+    SendMessage(WorkerMessage, Self);
   end;
 end;
 
@@ -1214,7 +1216,7 @@ begin
     begin
       ControllerState.AcceptRequestingController;
        WorkerMessage.LoadTractionControllerAssignReply(NodeID, AliasID, ControllerState.AttachedController.NodeID, ControllerState.AttachedController.Alias, TRACTION_CONTROLLER_CONFIG_REPLY_OK);
-      SendMessage(WorkerMessage);
+      SendMessage(WorkerMessage, Self);
     end;
 end;
 
@@ -1274,12 +1276,12 @@ begin
         if ListenerNode.LinkF0 and (Index = 0 ) then
         begin
           WorkerMessage.LoadTractionSetFunction(NodeID, AliasID, ListenerNode.NodeID, ListenerNode.AliasID, Index, AValue);
-          SendMessage(WorkerMessage);
+          SendMessage(WorkerMessage, Self);
         end else
         if ListenerNode.LinkFn and (Index > 0) then
         begin
           WorkerMessage.LoadTractionSetFunction(NodeID, AliasID, ListenerNode.NodeID, ListenerNode.AliasID, Index, AValue);
-          SendMessage(WorkerMessage);
+          SendMessage(WorkerMessage, Self);
         end;
       end;
     end;
@@ -1310,7 +1312,7 @@ begin
         WorkerMessage.LoadTractionSetSpeed(NodeID, AliasID, ListenerNode.NodeID, ListenerNode.AliasID, FlipHalfFloatSign(FSpeed))
       else
         WorkerMessage.LoadTractionSetSpeed(NodeID, AliasID, ListenerNode.NodeID, ListenerNode.AliasID, FSpeed);
-      SendMessage(WorkerMessage);
+      SendMessage(WorkerMessage, Self);
     end;
   end;
 end;

@@ -44,6 +44,10 @@
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="unitMainForm"/>
       </Unit>
+      <Unit>
+        <Filename Value="../../Target-Common/lcc_node_cache.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

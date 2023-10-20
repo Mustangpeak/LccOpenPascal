@@ -29,6 +29,7 @@ uses
   lcc_node,
   lcc_defines,
   lcc_utilities,
+  lcc_alias_server,
   lcc_cdi_parser;
 
 
@@ -168,6 +169,7 @@ type
     procedure ToggleBoxThrottleReverseChange(Sender: TObject);
     procedure TrackBarThrottleChange(Sender: TObject);
   private
+    FAssignedTrain: TNodeID;
     FBitmapDetails: TBitmap;
     FCDIParser: TLccCdiParser;
     FConsistPanelShown: Boolean;
@@ -203,13 +205,14 @@ type
     procedure OnNodeAliasChanged(Sender: TObject; ALccNode: TLccNode);
     procedure OnNodeLogin(Sender: TObject; ALccNode: TLccNode);
 
- //   procedure OnControllerAssignChange(Sender: TObject; ATractionServer: TLccTractionServer; ATractionObject: TLccTractionObject; IsAssigned: Boolean);
-
-  //  procedure AllocateTrainCallback(EngineAllocateTrain: TLccEngineSearchAndAllocateTrain; AEngineSearchTrain: TLccEngineSearchTrain);
-
-    procedure OnCDIReadCallback(MemorySpaceReadEnging: TLccEngineMemorySpaceAccess);
+    procedure OnCDIReadCallback(MemorySpaceReadEnging: TLccTaskMemorySpaceAccess);
 
     procedure EnableControls(DoEnable: Boolean);
+
+    procedure CallbackSearchByDccAddress(ATask: TLccTaskBase); // TLccTaskSearchTrain
+    procedure CallbackAssignToTrain(ATask: TLccTaskBase);      // TLccTaskControllerAttach
+    procedure CallbackQueryTrain(ATask: TLccTaskBase);         // TLccTaskControllerQuery
+
 
     procedure OnLEDClick(Sender: TObject);
     procedure UpdateRoster;
@@ -219,7 +222,10 @@ type
     procedure LoadCDIUserInterface;
 
   public
+    property AssignedTrain: TNodeID read FAssignedTrain write FAssignedTrain;
     property Controller: TLccTrainController read FController write FController;
+
+
     property EthernetClient: TLccEthernetClientThreadManager read FEthernetClient write FEthernetClient;
     property NodeManager: TLccNodeManager read FNodeManager write FNodeManager;
     property BitmapDetails: TBitmap read FBitmapDetails write FBitmapDetails;
@@ -335,13 +341,7 @@ begin
   begin
     AddressWord := AddressInt;
     if Assigned(Controller) then
-    begin
- //     Controller.EngineSearchAndAllocateTrain.Reset;
- //     Controller.EngineSearchAndAllocateTrain.Assign(AddressWord, IsLong, TLccDccSpeedStep( ComboBoxThrottleSpeedSteps.ItemIndex), @AllocateTrainCallback);
- //     Controller.EngineSearchAndAllocateTrain.Start;
-
-   //   Controller.AssignTrainByDccAddress(AddressWord, IsLong, TLccDccSpeedStep( ComboBoxThrottleSpeedSteps.ItemIndex));
-    end;
+      Controller.SearchByDccAddress(ComboBoxTrainSelect.Text, not ToggleBoxThrottleSelectShort.Checked, TLccDccSpeedStep( ComboBoxTrainSelect.ItemIndex), @CallbackSearchByDccAddress);
   end;
 end;
 
@@ -729,11 +729,11 @@ begin
   TimerMain.Interval := 500;  // Fire immediatly once this Syncronize call returns
 end;
 
-procedure TFormTrainController.OnConnectionManagerReceiveMessage(
-  Sender: TObject; ALccMessage: TLccMessage);
+procedure TFormTrainController.OnConnectionManagerReceiveMessage(Sender: TObject; ALccMessage: TLccMessage);
  var
   ByteArray: TLccDynamicByteArray;
 begin
+  ByteArray := nil;
   if ToggleBoxLogEnable.Checked then
   begin
     MemoLog.Lines.BeginUpdate;
@@ -757,11 +757,11 @@ begin
   end;
 end;
 
-procedure TFormTrainController.OnConnectionManagerSendMessage(Sender: TObject;
-  ALccMessage: TLccMessage);
+procedure TFormTrainController.OnConnectionManagerSendMessage(Sender: TObject; ALccMessage: TLccMessage);
  var
    ByteArray: TLccDynamicByteArray;
  begin
+   ByteArray := nil;
    if ToggleBoxLogEnable.Checked then
    begin
      MemoLog.Lines.BeginUpdate;
@@ -893,7 +893,7 @@ begin
 end;
    }
 
-procedure TFormTrainController.OnCDIReadCallback(MemorySpaceReadEnging: TLccEngineMemorySpaceAccess);
+procedure TFormTrainController.OnCDIReadCallback(MemorySpaceReadEnging: TLccTaskMemorySpaceAccess);
 begin
   LoadCDIUserInterface;
 
@@ -904,6 +904,66 @@ begin
   ScrollBoxFunctions.Enabled := DoEnable;
   PanelThrottleFooter.Enabled := DoEnable;
   PanelThrottleContainer.Enabled := DoEnable;
+end;
+
+procedure TFormTrainController.CallbackSearchByDccAddress(ATask: TLccTaskBase);
+var
+  LocalTask: TLccTaskSearchTrain;
+  Mapping: TLccAliasMapping;
+begin
+  LocalTask := ATask as TLccTaskSearchTrain;
+
+  Mapping := AliasServer.FindMapping(LocalTAsk.TrainNodeID);
+  if Assigned(Mapping) then
+  begin
+    case ATask.TaskState of
+      lesComplete :
+        begin
+          ShowMessage('Search for Train Completed: NodeID = ' + NodeIDToString(LocalTask.TrainNodeID, True) + 'Alias (through AliasMapping): ' + IntToStr(Mapping.NodeAlias));
+          AssignedTrain := LocalTask.TrainNodeID;
+          Controller.AssignToTrain(AssignedTrain, @CallbackAssignToTrain);
+        end;
+      lesAbort : ShowMessage('Search for Train: Aborted');
+      lesRunning : ShowMessage('Search for Train: Running: (In progress updates here');
+      lesTimeout : ShowMessage('Search for Train: Timed out unsuccessful (no reply?)');
+      lesIdle : ShowMessage('Idle: This should not have happended');
+    end;
+  end;
+end;
+
+procedure TFormTrainController.CallbackAssignToTrain(ATask: TLccTaskBase);
+var
+  LocalTask: TLccTaskControllerAttach;
+  Mapping: TLccAliasMapping;
+begin
+  LocalTask := ATask as TLccTaskControllerAttach;
+
+  Mapping := AliasServer.FindMapping(LocalTask.TrainNodeID);
+  if Assigned(Mapping) then
+  begin
+    case ATask.TaskState of
+      lesComplete :
+        begin
+          ShowMessage('Assigned to Train Completed: NodeID = ' + NodeIDToString(LocalTask.TrainNodeID, True) + 'Alias (through AliasMapping): ' + IntToStr(Mapping.NodeAlias));
+          AssignedTrain := LocalTask.TrainNodeID;
+
+          PanelRosterSlider.Enabled := True;;
+          // Do UI Updates
+
+        end;
+      lesAbort : ShowMessage('Assigned to Train: Aborted');
+      lesRunning : ShowMessage('Assigned to Train: Running: (In progress updates here');
+      lesTimeout : ShowMessage('Assigned to Train: Timed out unsuccessful (no reply?)');
+      lesIdle : ShowMessage('Idle: This should not have happended');
+    end;
+  end;
+end;
+
+procedure TFormTrainController.CallbackQueryTrain(ATask: TLccTaskBase);
+var
+  LocalTask: TLccTaskControllerQuery;
+begin
+  LocalTask := ATask as TLccTaskControllerQuery;
 end;
 
 procedure TFormTrainController.OnLEDClick(Sender: TObject);

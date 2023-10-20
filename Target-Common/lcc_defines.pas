@@ -26,20 +26,18 @@ uses
   SysUtils;
 
 const
-  ENGINE_ERROR_MEMORY_SPACE_UNSUPPORTED_PROTOCOL      = $0001;
-  ENGINE_ERROR_MEMORY_SPACE_UNSUPPORTED_MEMORYSPACE   = $0002;
-  ENGINE_ERROR_MEMORY_SPACE_READ_ERROR                = $0004;
-  ENGINE_ERROR_MEMORY_SPACE_WRITE_ERROR               = $0004;
-  ENGINE_ERROR_MEMORY_SPACE_WRITE_TO_READONLY_SPACE   = $0008;
+  TASK_ERROR_MEMORY_SPACE_UNSUPPORTED_PROTOCOL      = $0001;
+  TASK_ERROR_MEMORY_SPACE_UNSUPPORTED_MEMORYSPACE   = $0002;
+  TASK_ERROR_MEMORY_SPACE_READ_ERROR                = $0004;
+  TASK_ERROR_MEMORY_SPACE_WRITE_ERROR               = $0004;
+  TASK_ERROR_MEMORY_SPACE_WRITE_TO_READONLY_SPACE   = $0008;
 
   ENGINE_ERROR_TRACTION_CONTROLLER_CONFIG_ASSIGN_REPLY_REFUSE_TRAIN = $0001;
 
 const
   TIMEOUT_RECIEVE_THREAD = 20;             // 20ms sleep time
   TIMEOUT_CONTROLLER_NOTIFY_WAIT = 2000;   // milliseconds   How long we wait for the Notified message to come from the currently assigned Controller
-///  TIMEOUT_UNVALIDATED_MESSAGE_COUNT = 2000 div TIMEOUT_RECIEVE_THREAD;  // can Live 2 seconds before giving up
-//  TIMEOUT_NODE_IDENTIFICTION_OBJECT_COUNT = TIMEOUT_UNVALIDATED_MESSAGE_COUNT * 2; // These need to live longer than the messages that created them
- // TIMEOUT_VERIFYNODE_SENDMESSAGE_WAIT = (TIMOUT_UNVALIDATEED_MESSAGE_WAIT div 2) + 10; // milliseconds.  How long we hold the TLccNodeIdentificationObject to send another VerifyNode message; NOTE this gets reset to 0 at TIMOUT_UNVALIDATEED_MESSAGE_WAIT div 2 for a second message send attempt
+  TIMEOUT_TASK_MESSAGES = 5000;
 
 const
   PATH_OSX_RESOURCES = 'Contents/Resources/';
@@ -434,8 +432,6 @@ const
   MCWL_STREAM_WRITE_SUPPORTED        = $01;                                     // MemoryConfigurationWriteLength - Stream Write Supported
   MCWL_RESERVED                      = $0C;
 
-  TRACTION_FLAGS_ALIAS_INCLUDED =  $01;
-
   TRACTION_SET_SPEED_DIR              = $00;
   TRACTION_SET_FUNCTION               = $01;
   TRACTION_SET_E_STOP                 = $02;
@@ -450,7 +446,7 @@ const
   TRACTION_CONTROLLER_CONFIG_ASSIGN          = $01;
   TRACTION_CONTROLLER_CONFIG_RELEASE         = $02;
   TRACTION_CONTROLLER_CONFIG_QUERY           = $03;
-  TRACTION_CONTROLLER_CONFIG_CHANGED_NOTIFY  = $04;
+//  TRACTION_CONTROLLER_CONFIG_CHANGED_NOTIFY  = $04;   // Depreciated
 
   TRACTION_CONTROLLER_CONFIG_REPLY_OK = $00;
 //  TRACTION_CONTROLLER_CONFIG_ASSIGN_REPLY_REFUSE_ASSIGNED_CONTROLLER = $01;  // Bit 0     Depreciated... not a good idea
@@ -487,7 +483,6 @@ type
 
 const
 
-  TRACTION_SEARCH_QUERY = $090099FF00000000;
 
   TRACTION_SEARCH_TRACK_PROTOCOL_GROUP_MASK            = $18; // 0001 1000
 

@@ -246,7 +246,7 @@ begin
                 if ATrain.Permitted then  // Once it logs in and becomes permitted it will send this message if not permitted yet
                 begin
                   WorkerMessage.LoadProducerIdentified(ATrain.NodeID, ATrain.AliasID, ReturnEvent, evs_Valid);
-                  SendMessage(WorkerMessage);
+                  SendMessage(WorkerMessage, ATrain);
                 end;
               end else
               if SourceMessage.TractionSearchIsForceAllocate then

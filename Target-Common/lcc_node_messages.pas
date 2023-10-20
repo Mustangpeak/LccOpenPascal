@@ -201,10 +201,10 @@ public
   procedure LoadTractionQueryFunctionReply(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; Address: Word; Value: Word);
   procedure LoadTractionControllerAssign(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; AControllerNodeID: TNodeID);
   procedure LoadTractionControllerAssignReply(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; AResult: Byte);
-  procedure LoadTractionControllerRelease(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; ANodeID: TNodeID; AnAlias: Word);
+  procedure LoadTractionControllerRelease(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; ANodeID: TNodeID);
   procedure LoadTractionControllerQuery(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word);
   procedure LoadTractionControllerQueryReply(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; AControllerID: TNodeID);
-  procedure LoadTractionControllerChangedNotify(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; AControllerNodeID: TNodeID);
+//  procedure LoadTractionControllerChangedNotify(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; AControllerNodeID: TNodeID);
   procedure LoadTractionListenerAttach(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; ListenerFlags: Byte; AListenerNodeID: TNodeID);
   procedure LoadTractionListenerAttachReply(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; AListenerNodeID: TNodeID; ReplyCode: Word);
   procedure LoadTractionListenerDetach(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; ListenerFlags: Byte; AListenerNodeID: TNodeID);
@@ -619,30 +619,13 @@ begin
           begin;
             case AMessage.DataArray[1] of
               TRACTION_CONTROLLER_CONFIG_ASSIGN :
-                begin
-                  if AMessage.ExtractDataBytesAsInt(2, 2) and TRACTION_FLAGS_ALIAS_INCLUDED <> 0 then
-                    Result := Result + ' Controller Config Assign - Flags: ' + AMessage.ExtractDataBytesAsHex(2, 2) + ' Controller ID ' + AMessage.ExtractDataBytesAsHex(3, 6) + AMessage.ExtractDataBytesAsHex(7, 8) + ' [Alias: ' + AMessage.ExtractDataBytesAsHex(9, 10) + ']'
-                  else
-                    Result := Result + ' Controller Config Assign - Flags: ' + AMessage.ExtractDataBytesAsHex(2, 2) + ' Controller ID ' + AMessage.ExtractDataBytesAsHex(3, 6) + AMessage.ExtractDataBytesAsHex(7, 8) + ' Alias not included'
-                end;
+                  Result := Result + ' Controller Config Assign - Flags: ' + AMessage.ExtractDataBytesAsHex(2, 2) + ' Controller ID ' + AMessage.ExtractDataBytesAsHex(3, 6) + AMessage.ExtractDataBytesAsHex(7, 8) + ' Alias not included';
               TRACTION_CONTROLLER_CONFIG_RELEASE :
-                begin
-                  if AMessage.ExtractDataBytesAsInt(2, 2) and TRACTION_FLAGS_ALIAS_INCLUDED <> 0 then
-                    Result := Result + ' Controller Config Release - Flags: ' + AMessage.ExtractDataBytesAsHex(2, 2) + ' Controller ID ' + AMessage.ExtractDataBytesAsHex(3, 6) + AMessage.ExtractDataBytesAsHex(7, 8) + ' [Alias: ' + AMessage.ExtractDataBytesAsHex(9, 10) + ']'
-                  else
-                    Result := Result + ' Controller Config Release - Flags: ' + AMessage.ExtractDataBytesAsHex(2, 2) + ' Controller ID ' + AMessage.ExtractDataBytesAsHex(3, 6) + AMessage.ExtractDataBytesAsHex(7, 8) + ' Alias not included'
-                end;
+                Result := Result + ' Controller Config Release - Flags: ' + AMessage.ExtractDataBytesAsHex(2, 2) + ' Controller ID ' + AMessage.ExtractDataBytesAsHex(3, 6) + AMessage.ExtractDataBytesAsHex(7, 8) + ' Alias not included';
               TRACTION_CONTROLLER_CONFIG_QUERY :
-                begin
                   Result := Result + ' Controller Config Query';
-                end;
-              TRACTION_CONTROLLER_CONFIG_CHANGED_NOTIFY :
-                begin
-                  if AMessage.ExtractDataBytesAsInt(2, 2) and TRACTION_FLAGS_ALIAS_INCLUDED <> 0 then
-                    Result := Result + ' Controller Config Notify - Flags: ' + AMessage.ExtractDataBytesAsHex(2, 2) + ' Controller ID ' + AMessage.ExtractDataBytesAsHex(3, 6) + AMessage.ExtractDataBytesAsHex(7, 8) + ' [Alias: ' + AMessage.ExtractDataBytesAsHex(9, 10) + ']'
-                  else
-                    Result := Result + ' Controller Config Notify - Flags: ' + AMessage.ExtractDataBytesAsHex(2, 2) + ' Controller ID ' + AMessage.ExtractDataBytesAsHex(3, 6) + AMessage.ExtractDataBytesAsHex(7, 8) + ' Alias not included'
-                end
+     //         TRACTION_CONTROLLER_CONFIG_CHANGED_NOTIFY :          // Depreciated
+     //               Result := Result + ' Controller Config Notify - Flags: ' + AMessage.ExtractDataBytesAsHex(2, 2) + ' Controller ID ' + AMessage.ExtractDataBytesAsHex(3, 6) + AMessage.ExtractDataBytesAsHex(7, 8) + ' Alias not included';
             end
           end;
         TRACTION_LISTENER_CONFIG :
@@ -732,20 +715,11 @@ begin
           begin;
             case AMessage.DataArray[1] of
               TRACTION_CONTROLLER_CONFIG_ASSIGN :
-                begin
-                  Result := Result + 'Controller Config Assign Reply - Flags = ' + AMessage.ExtractDataBytesAsHex(2, 2)
-                end;
+                  Result := Result + 'Controller Config Assign Reply - Flags = ' + AMessage.ExtractDataBytesAsHex(2, 2);
               TRACTION_CONTROLLER_CONFIG_QUERY :
-                begin
-                  if AMessage.ExtractDataBytesAsInt(2, 2) and TRACTION_FLAGS_ALIAS_INCLUDED <> 0 then
-                    Result := Result + 'Controller Config Query Reply - Flags = ' + AMessage.ExtractDataBytesAsHex(2, 2) + ' Result = ' + AMessage.ExtractDataBytesAsHex(3, 3) + ' Active Controller = 0x' + IntToHex(AMessage.ExtractDataBytesAsInt(4, 9), 12) + ' Alias = 0x' + IntToHex(AMessage.ExtractDataBytesAsInt(10, 11), 4)
-                  else
-                    Result := Result + 'Controller Config Query Reply - Flags = ' + AMessage.ExtractDataBytesAsHex(2, 2) + ' Result = ' + AMessage.ExtractDataBytesAsHex(3, 3) + ' Active Controller = 0x' + IntToHex(AMessage.ExtractDataBytesAsInt(4, 9), 12);
-                end;
-              TRACTION_CONTROLLER_CONFIG_CHANGED_NOTIFY :
-                begin
-                  Result := Result + 'Controller Config Notify Reply - Result = ' + AMessage.ExtractDataBytesAsHex(2, 2)
-                end;
+                  Result := Result + 'Controller Config Query Reply - Flags = ' + AMessage.ExtractDataBytesAsHex(2, 2) + ' Result = ' + AMessage.ExtractDataBytesAsHex(3, 3) + ' Active Controller = 0x' + IntToHex(AMessage.ExtractDataBytesAsInt(4, 9), 12);
+       //       TRACTION_CONTROLLER_CONFIG_CHANGED_NOTIFY :  // Depreciated
+        //          Result := Result + 'Controller Config Notify Reply - Result = ' + AMessage.ExtractDataBytesAsHex(2, 2)
             end
           end;
         TRACTION_LISTENER_CONFIG :
@@ -1464,8 +1438,8 @@ begin
             begin
               case DataArray[1] of
                 TRACTION_CONTROLLER_CONFIG_ASSIGN,
-                TRACTION_CONTROLLER_CONFIG_RELEASE,
-                TRACTION_CONTROLLER_CONFIG_CHANGED_NOTIFY : if not Assigned(ValidateByNodeID(RequestMappingCallback, ExtractDataBytesAsNodeID(3, LocalNodeID))) then
+                TRACTION_CONTROLLER_CONFIG_RELEASE
+                {TRACTION_CONTROLLER_CONFIG_CHANGED_NOTIFY} : if not Assigned(ValidateByNodeID(RequestMappingCallback, ExtractDataBytesAsNodeID(3, LocalNodeID))) then
                                                     Result := False;
               end
             end;
@@ -2354,31 +2328,18 @@ begin
 end;
 
 procedure TLccMessage.LoadTractionControllerRelease(ASourceID: TNodeID;
-  ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; ANodeID: TNodeID;
-  AnAlias: Word);
+  ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; ANodeID: TNodeID);
 begin
   ZeroFields;
   SourceID := ASourceID;
   DestID := ADestID;
   SourceAlias := ASourceAlias;
   DestAlias := ADestAlias;
-  if AnAlias <> 0 then
-  begin
-    DataCount := 11;
-    FDataArray[0] := TRACTION_CONTROLLER_CONFIG;
-    FDataArray[1] := TRACTION_CONTROLLER_CONFIG_RELEASE;
-    FDataArray[2] := TRACTION_FLAGS_ALIAS_INCLUDED;
-    InsertNodeID(3, ANodeID);
-    FDataArray[9] := Hi( AnAlias);
-    FDataArray[10] := Lo( AnAlias);
-  end else
-  begin
-    DataCount := 9;
-    FDataArray[0] := TRACTION_CONTROLLER_CONFIG;
-    FDataArray[1] := TRACTION_CONTROLLER_CONFIG_RELEASE;
-    FDataArray[2] := 0;
-    InsertNodeID(3, ANodeID);
-  end;
+  DataCount := 9;
+  FDataArray[0] := TRACTION_CONTROLLER_CONFIG;
+  FDataArray[1] := TRACTION_CONTROLLER_CONFIG_RELEASE;
+  FDataArray[2] := 0;
+  InsertNodeID(3, ANodeID);
   MTI := MTI_TRACTION_REQUEST;
 end;
 
@@ -2414,6 +2375,7 @@ begin
   MTI := MTI_TRACTION_REPLY;
 end;
 
+{
 procedure TLccMessage.LoadTractionControllerChangedNotify(ASourceID: TNodeID;
   ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; AControllerNodeID: TNodeID);
 begin
@@ -2428,7 +2390,7 @@ begin
   FDataArray[2] := 0;
   InsertNodeID(3, AControllerNodeID);
   MTI := MTI_TRACTION_REQUEST;
-end;
+end;      }
 
 procedure TLccMessage.LoadTractionListenerAttach(ASourceID: TNodeID;
   ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; ListenerFlags: Byte;

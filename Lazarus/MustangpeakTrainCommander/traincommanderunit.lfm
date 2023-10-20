@@ -1,7 +1,7 @@
 object FormTrainCommander: TFormTrainCommander
-  Left = 117
+  Left = 179
   Height = 563
-  Top = 226
+  Top = 459
   Width = 1289
   Align = alBottom
   Caption = 'Train Commander [LccOpenPascal]'
