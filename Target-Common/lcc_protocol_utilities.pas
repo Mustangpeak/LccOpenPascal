@@ -22,7 +22,12 @@ uses
   lcc_utilities,
   lcc_node_messages;
 
+const
+  MAX_SNIP_MANUFACTURER_STRINGS = 4;
+  TSnipManufacturerStrings: array[0..MAX_SNIP_MANUFACTURER_STRINGS-1] of String = ('', '', '', '');
+
 type
+
   { TNodeProtocolBase }
 
   TNodeProtocolBase = class(TObject)
@@ -95,6 +100,7 @@ type
     property SimpleNode: Boolean read FSimpleNode write FSimpleNode;
 
     procedure LoadFromLccMessage(SourceLccMessage: TLccMessage);
+    function SupportedToStr: String;
   end;
 
 
@@ -248,9 +254,9 @@ type
     procedure LoadReply(LccMessage, OutMessage: TLccMessage);
   end;
 
-  { TLccSNIPObject }
+  { TProtocolSimpleNodeInfo }
 
-  TLccSNIPObject = class
+  TProtocolSimpleNodeInfo = class(TNodeProtocolBase)
   private
     FHardwareVersion: string;
     FManufacturer: string;
@@ -259,7 +265,6 @@ type
     FUserDescription: string;
     FUserName: string;
     FUserVersion: Byte;
-    FValid: Boolean;
     FVersion: Byte;
   public
     property Version: Byte read FVersion write FVersion;
@@ -271,13 +276,9 @@ type
     property UserName: string read FUserName write FUserName;
     property UserDescription: string read FUserDescription write FUserDescription;
     property Valid: Boolean read FValid write FValid;
-  end;
 
-  { TProtocolSimpleNodeInfo }
-
-  TProtocolSimpleNodeInfo = class(TNodeProtocolBase)
-  public
     function PackedFormat(StreamManufacturerInfo, StreamConfiguration: TStream): TLccDynamicByteArray;
+    procedure LoadFromLccMessage(SourceLccMessage: TLccMessage);
   end;
 
 
@@ -551,6 +552,30 @@ begin
   Flags[5] := SourceLccMessage.DataArrayIndexer[0];
 
   DecodeFlags;
+end;
+
+function TProtocolSupportedProtocols.SupportedToStr: String;
+begin
+  Result := '';
+  if Datagram then Result := Result + 'Datagrams Supported; ';
+  if Stream then Result := Result + 'Stream Supported; ';
+  if MemConfig then Result := Result + 'Memory Configuration Supported; ';
+  if Reservation then Result := Result + 'Reservation Supported; ';
+  if EventExchange then Result := Result + 'Events Supported; ';
+  if Identification then Result := Result + 'Identification Supported; ';
+  if Teach_Learn then Result := Result + 'Teach-Learn Supported; ';
+  if RemoteButton then Result := Result + 'Remote Button Supported; ';
+  if AbbreviatedConfigurationDefinitionInfo then Result := Result + 'ACDI Supported; ';
+  if Display then Result := Result + 'Display Supported; ';
+  if SimpleNodeInfo then Result := Result + 'SNIP Supported; ';
+  if ConfigurationDefinitionInfo then Result := Result + 'CDI Supported; ';
+  if TractionControl then Result := Result + 'Traction Control Supported; ';
+  if TractionSimpleTrainNodeInfo then Result := Result + 'Train SNIP Supported; ';
+  if TractionFunctionDefinitionInfo then Result := Result + 'FDI Supported; ';
+  if TractionFunctionConfiguration then Result := Result + 'Function Config Mem Supported; ';
+  if FirmwareUpgrade then Result := Result + 'Firmware Upgrade Supported; ';
+  if FirmwareUpgradeActive then Result := Result + 'Firmware Upgrade Active Supported; ';
+  if SimpleNode then Result := Result + 'Simple Node Supported; ';
 end;
 
 { TLccEvent }
@@ -942,6 +967,53 @@ begin
     Inc(i);
   end;
   Result[i] :=  Ord(#0);  // null terminate string
+end;
+
+procedure TProtocolSimpleNodeInfo.LoadFromLccMessage(SourceLccMessage: TLccMessage);
+var
+  VersionStringCount: Byte;
+  iArray, i: Integer;
+  Str: String;
+  StrLen: Integer;
+begin
+  iArray := 0;
+  VersionStringCount := SourceLccMessage.DataArray[iArray];
+  if VersionStringCount = 1 then
+    VersionStringCount := 4;
+  FVersion := VersionStringCount;
+  Inc(iArray);
+
+  for i := 0  to VersionStringCount - 1 do
+  begin
+    StrLen := 0;  // Read a null terminated string and return the StrLen
+    Str := SourceLccMessage.ExtractDataBytesAsString(iArray, StrLen);
+    case i of
+      0 : FManufacturer := Str;
+      1 : FModel := Str;
+      2 : FHardwareVersion := Str;
+      3 : FSoftwareVersion := Str;
+    end;
+    iArray := iArray + StrLen + 1 // Skip over the null
+  end;
+
+  VersionStringCount := SourceLccMessage.DataArray[iArray];
+  if VersionStringCount = 1 then
+    VersionStringCount := 2;
+  FUserVersion := VersionStringCount;
+  Inc(iArray);
+
+  for i := 0 to VersionStringCount - 1 do
+  begin
+    StrLen := 0;  // Read a null terminated string and return the StrLen
+    Str := SourceLccMessage.ExtractDataBytesAsString(iArray, StrLen);
+    case i of
+      0 : FUserName := Str;
+      1 : FUserDescription := Str;
+    end;
+    iArray := iArray + StrLen + 1 // Skip over the null
+  end;
+
+  FValid := True;
 end;
 
 

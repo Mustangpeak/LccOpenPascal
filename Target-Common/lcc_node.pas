@@ -119,6 +119,7 @@ type
     FCallback: TOnTaskCallback;
     FErrorMessage: String;
     FLiveTime: Int64;
+    FTarget: TNodeID;
     FTaskState: TLccTaskState;
     FErrorCode: Word;
     FOwnerNode: TLccNode;
@@ -138,6 +139,7 @@ type
 
   public
     property OwnerNode: TLccNode read FOwnerNode write FOwnerNode;
+    property Target: TNodeID read FTarget write FTarget;
     property Tag: Integer read FTag write FTag;
     property TagObject: TObject read FTagObject write FTagObject;
     property TaskState: TLccTaskState read FTaskState;
@@ -161,10 +163,16 @@ type
     procedure Timeout;
     procedure Reset; virtual;
     procedure _100msTimeTick;
-    procedure Process(SourceMessage: TLccMessage); virtual; abstract;
+    procedure Process(SourceMessage: TLccMessage); virtual;
   end;
 
   TLccTaskMemorySpaceReadWrite = (lems_Read, lems_Write);
+
+
+  // This class stores the information that is required to load into the TLccTaskMemorySpaceAccess
+  // to execute on.  This helps with reading a bunch of different memory addresses (think CV's)
+  // You can just load multiple memory space access tasks into the TLccTaskMemorySpaceAccess and
+  // it will just loop through them all
 
   { TLccTaskMemorySpaceObject }
 
@@ -281,6 +289,39 @@ type
     function Assign(AReadWrite: TLccTaskMemorySpaceReadWrite; AMemorySpace: Byte; AnIsString: Boolean; AnAddressLo, AnAddressHi: DWORD; AnUseAddresses: Boolean; ATargetNodeID: TNodeID; ATargetAliasID: Word; ACallback: TOnTaskCallback): TLccTaskMemorySpaceObject; // AMemorySpace = MSI_xxxx constants
   end;
 
+  { TTaskReadPIP }
+
+  TTaskReadPIP = class(TLccTaskBase)
+
+  private
+    FSupportedProtocols: TProtocolSupportedProtocols;
+  public
+
+    // Returns
+    property SupportedProtocols: TProtocolSupportedProtocols read FSupportedProtocols write FSupportedProtocols;
+
+    constructor Create(AnOwner: TLccNode); override;
+    destructor Destroy; override;
+
+    procedure Start(ATimeout: Integer); override;
+    procedure Process(SourceMessage: TLccMessage); override;
+  end;
+
+  { TTaskReadSNIP }
+
+  TTaskReadSNIP = class(TLccTaskBase)
+  private
+    FSimpleNodeInfo: TProtocolSimpleNodeInfo;
+  public
+    property SimpleNodeInfo: TProtocolSimpleNodeInfo read FSimpleNodeInfo write FSimpleNodeInfo;
+
+    constructor Create(AnOwner: TLccNode); override;
+    destructor Destroy; override;
+
+    procedure Start(ATimeout: Integer); override;
+    procedure Process(SourceMessage: TLccMessage); override;
+  end;
+
   { TLccNode }
 
   TLccNode = class(TComponent)
@@ -289,6 +330,8 @@ type
     FDatagramResendQueue: TDatagramQueue;
     FDuplicateAliasDetected: Boolean;
     FLogInEngineEnabled: Boolean;
+    FTaskReadPIP: TTaskReadPIP;
+    FTaskReadSNIP: TTaskReadSNIP;
     FTasksList: TList;
     FLoginTimoutCounter: Integer;
     FPermitted: Boolean;
@@ -320,7 +363,7 @@ type
     FStreamTractionConfig: TMemoryStream;          // Stream containing the writable configuration memory for a Traction node where the Address = Offset in the stream
     FStreamTractionFdi: TMemoryStream;             // Stream containing the XML string for the FDI (Function Definition Info)
     FWorkerMessage: TLccMessage;
-    FEngineMemorySpaceAccess: TLccTaskMemorySpaceAccess;
+    FTaskMemorySpaceAccess: TLccTaskMemorySpaceAccess;
 
     function GetAliasIDStr: String;
     function GetNodeIDStr(WithDots: Boolean): String;
@@ -413,14 +456,14 @@ type
     procedure HandleTractionControllerRelease(var SourceMessage: TLccMessage);  virtual;
     procedure HandleTractionControllerQuery(var SourceMessage: TLccMessage);  virtual;
   //  procedure HandleTractionControllerChangedNotify(var SourceMessage: TLccMessage);  virtual;  // Sent from Train To currently Assigned Controller if it has one
-    procedure HandleTractionEStop(var SourceMessage: TLccMessage);  virtual;
+    procedure HandleTractionEStop(var SourceMessage: TLccMessage; ListenerForwarded: Boolean);  virtual;
     procedure HandleTractionListenerAttach(var SourceMessage: TLccMessage); virtual;
     procedure HandleTractionListenerDetach(var SourceMessage: TLccMessage); virtual;
     procedure HandleTractionListenerQuery(var SourceMessage: TLccMessage); virtual;
     procedure HandleTractionManageReserve(var SourceMessage: TLccMessage); virtual;
     procedure HandleTractionManageRelease(var SourceMessage: TLccMessage); virtual;
-    procedure HandleTractionSetSpeed(var SourceMessage: TLccMessage); virtual;
-    procedure HandleTractionSetFunction(var SourceMessage: TLccMessage); virtual;
+    procedure HandleTractionSetSpeed(var SourceMessage: TLccMessage; ListenerForwarded: Boolean); virtual;
+    procedure HandleTractionSetFunction(var SourceMessage: TLccMessage; ListenerForwarded: Boolean); virtual;
     procedure HandleTractionSimpleTrainInfoReply(var SourceMessage: TLccMessage); virtual;
     procedure HandleTractionQuerySpeed(var SourceMessage: TLccMessage); virtual;
     procedure HandleTractionQueryFunction(var SourceMessage: TLccMessage); virtual;
@@ -442,6 +485,10 @@ type
     property StreamManufacturerData: TMemoryStream read FStreamManufacturerData write FStreamManufacturerData;
     property StreamTractionFdi: TMemoryStream read FStreamTractionFdi write FStreamTractionFdi;
     property StreamTractionConfig: TMemoryStream read FStreamTractionConfig write FStreamTractionConfig;
+
+    property TaskReadPIP: TTaskReadPIP read FTaskReadPIP write FTaskReadPIP;
+    property TaskReadSNIP: TTaskReadSNIP read FTaskReadSNIP write FTaskReadSNIP;
+    property TaskMemorySpaceAccess: TLccTaskMemorySpaceAccess read FTaskMemorySpaceAccess write FTaskMemorySpaceAccess;
 
     property TasksList: TList read FTasksList write FTasksList;
 
@@ -475,7 +522,6 @@ type
     property NodeIDStr[WithDots: Boolean]: String read GetNodeIDStr;
     property Initialized: Boolean read FInitialized;
 
-    property EngineMemorySpaceAccess: TLccTaskMemorySpaceAccess read FEngineMemorySpaceAccess write FEngineMemorySpaceAccess;
     property ProtocolSupportedProtocols: TProtocolSupportedProtocols read FProtocolSupportedProtocols write FProtocolSupportedProtocols;
     property ProtocolEventConsumed: TProtocolEvents read FProtocolEventConsumed write FProtocolEventConsumed;
     property ProtocolEventsProduced: TProtocolEvents read FProtocolEventsProduced write FProtocolEventsProduced;
@@ -516,6 +562,9 @@ type
     // This forces you to think about it....
     // This can be nil if the message is not using a NodeID and Alias associated with an internal node
     procedure SendMessage(ALccMessage: TLccMessage; AnAssociatedNode: TLccNode);
+
+    function RequestSNIP(ATarget: TNodeID; ACallback: TOnTaskCallback): Boolean;   // Callback: TTaskReadSNIP
+    function RequestPIP(ATarget: TNodeID; ACallback: TOnTaskCallback): Boolean;    // Callback: TTaskReadPIP
   end;
 
   TLccNodeClass = class of TLccNode;
@@ -524,6 +573,86 @@ implementation
 
 uses
   lcc_node_manager;
+
+{ TTaskReadPIP }
+
+constructor TTaskReadPIP.Create(AnOwner: TLccNode);
+begin
+  inherited Create(AnOwner);
+  FSupportedProtocols := TProtocolSupportedProtocols.Create;
+end;
+
+destructor TTaskReadPIP.Destroy;
+begin
+  FreeAndNil(FSupportedProtocols);
+  inherited Destroy;
+end;
+
+procedure TTaskReadPIP.Start(ATimeout: Integer);
+var
+  Alias: Word;
+begin
+  inherited Start(ATimeout);
+
+  Alias := AliasServer.FindAlias(Target);
+  if Alias <> 0 then
+  begin
+    WorkerMessage.LoadProtocolIdentifyInquiry(OwnerNode.NodeID, OwnerNode.AliasID, Target, Alias);
+    OwnerNode.SendMessage(WorkerMessage, OwnerNode);
+  end;
+end;
+
+procedure TTaskReadPIP.Process(SourceMessage: TLccMessage);
+begin
+  if SourceMessage.MTI = MTI_PROTOCOL_SUPPORT_REPLY then
+  begin
+    Complete;
+    SupportedProtocols.LoadFromLccMessage(SourceMessage);
+    if Assigned(Callback) then
+      Callback(Self);
+    Reset;
+  end;
+end;
+
+{ TTaskReadSNIP }
+
+constructor TTaskReadSNIP.Create(AnOwner: TLccNode);
+begin
+  inherited Create(AnOwner);
+  SimpleNodeInfo := TProtocolSimpleNodeInfo.Create;
+end;
+
+destructor TTaskReadSNIP.Destroy;
+begin
+  FreeAndNil(FSimpleNodeInfo);
+  inherited Destroy;
+end;
+
+procedure TTaskReadSNIP.Start(ATimeout: Integer);
+var
+  Alias: Word;
+begin
+  inherited Start(ATimeout);
+
+  Alias := AliasServer.FindAlias(Target);
+  if Alias <> 0 then
+  begin
+    WorkerMessage.LoadSimpleNodeIdentInfoRequest(OwnerNode.NodeID, OwnerNode.AliasID, Target, Alias);
+    OwnerNode.SendMessage(WorkerMessage, OwnerNode);
+  end;
+end;
+
+procedure TTaskReadSNIP.Process(SourceMessage: TLccMessage);
+begin
+  if SourceMessage.MTI = MTI_SIMPLE_NODE_INFO_REPLY then
+  begin
+    Complete;
+    SimpleNodeInfo.LoadFromLccMessage(SourceMessage);
+    if Assigned(Callback) then
+      Callback(Self);
+    Reset;
+  end;
+end;
 
 { TLccTaskMemorySpaceObject }
 
@@ -659,6 +788,11 @@ begin
     else
       Inc(FLiveTime)
   end;
+end;
+
+procedure TLccTaskBase.Process(SourceMessage: TLccMessage);
+begin
+  // override to do something useful
 end;
 
 { TLccTaskMemorySpaceAccess }
@@ -1438,6 +1572,30 @@ begin
   (Owner as TLccNodeManager).SendLccMessageNodeManager(ALccMessage);
 end;
 
+function TLccNode.RequestSNIP(ATarget: TNodeID; ACallback: TOnTaskCallback
+  ): Boolean;
+begin
+  Result := False;
+  if TaskReadSNIP.IsIdle then
+  begin
+    TaskReadSNIP.Target := ATarget;
+    TaskReadSNIP.Callback := ACallback;
+    TaskReadSNIP.Start(TIMEOUT_TASK_MESSAGES);
+  end;
+end;
+
+function TLccNode.RequestPIP(ATarget: TNodeID; ACallback: TOnTaskCallback
+  ): Boolean;
+begin
+  Result := False;
+  if TaskReadPIP.IsIdle then
+  begin
+    TaskReadPIP.Target := ATarget;
+    TaskReadPIP.Callback := ACallback;
+    TaskReadPIP.Start(TIMEOUT_TASK_MESSAGES);
+  end;
+end;
+
 procedure TLccNode.DoMemorySpaceReadEngineDone(MemoryReadEngine: TLccTaskMemorySpaceAccess);
 begin
 
@@ -1790,7 +1948,7 @@ procedure TLccNode.HandleTractionControllerQuery(var SourceMessage: TLccMessage)
 
 //procedure TLccNode.HandleTractionControllerChangedNotify(var SourceMessage: TLccMessage); begin end;
 
-procedure TLccNode.HandleTractionEStop(var SourceMessage: TLccMessage); begin end;
+procedure TLccNode.HandleTractionEStop(var SourceMessage: TLccMessage; ListenerForwarded: Boolean); begin end;
 
 procedure TLccNode.HandleTractionListenerAttach(var SourceMessage: TLccMessage); begin end;
 
@@ -1802,9 +1960,10 @@ procedure TLccNode.HandleTractionManageReserve(var SourceMessage: TLccMessage); 
 
 procedure TLccNode.HandleTractionManageRelease(var SourceMessage: TLccMessage); begin end;
 
-procedure TLccNode.HandleTractionSetSpeed(var SourceMessage: TLccMessage); begin end;
+procedure TLccNode.HandleTractionSetSpeed(var SourceMessage: TLccMessage;
+  ListenerForwarded: Boolean); begin end;
 
-procedure TLccNode.HandleTractionSetFunction(var SourceMessage: TLccMessage); begin end;
+procedure TLccNode.HandleTractionSetFunction(var SourceMessage: TLccMessage; ListenerForwarded: Boolean); begin end;
 
 procedure TLccNode.HandleTractionSimpleTrainInfoReply(var SourceMessage: TLccMessage); begin end;
 
@@ -1915,9 +2074,6 @@ begin
   DatagramResendQueue.OwnerNode := Self;
   FWorkerMessageForAckMessages := TLccMessage.Create;
   FWorkerMessage := TLccMessage.Create;
-  FEngineMemorySpaceAccess := TLccTaskMemorySpaceAccess.Create(Self);
-  FTasksList := TList.Create;
-  RegisterTask(EngineMemorySpaceAccess);
 
   if CdiXML = '' then
     CdiXML := GetCdiFile;
@@ -1947,6 +2103,17 @@ begin
   // Setup the Fdi Stream
 
   // Setup the Function Configuration Memory Stream
+
+   FTasksList := TList.Create;
+
+   FTaskMemorySpaceAccess := TLccTaskMemorySpaceAccess.Create(Self);
+   FTaskReadPIP := TTaskReadPIP.Create(Self);
+   FTaskReadSNIP := TTaskReadSNIP.Create(Self);
+
+   RegisterTask(TaskReadPIP);
+   RegisterTask(TaskReadSNIP);
+   RegisterTask(TaskMemorySpaceAccess);
+
 end;
 
 procedure TLccNode.AutoGenerateEvents;
@@ -2170,9 +2337,12 @@ begin
     MTI_TRACTION_REQUEST :
       begin
         case SourceMessage.DataArray[0] of
-          TRACTION_SET_SPEED_DIR       : HandleTractionSetSpeed(SourceMessage);
-          TRACTION_SET_FUNCTION        : HandleTractionSetFunction(SourceMessage);
-          TRACTION_SET_E_STOP          : HandleTractionEStop(SourceMessage);
+          TRACTION_SET_SPEED_DIR       : HandleTractionSetSpeed(SourceMessage, False);
+          TRACTION_SET_SPEED_DIR_LISTENER_FORWARDED : HandleTractionSetSpeed(SourceMessage, True);
+          TRACTION_SET_FUNCTION        : HandleTractionSetFunction(SourceMessage, False);
+          TRACTION_SET_FUNCTION_LISTENER_FORWARDED : HandleTractionSetFunction(SourceMessage, True);
+          TRACTION_SET_E_STOP          : HandleTractionEStop(SourceMessage, False);
+          TRACTION_SET_E_STOP_LISTENER_FORWARDED : HandleTractionEStop(SourceMessage, True);
           TRACTION_QUERY_SPEED         : HandleTractionQuerySpeed(SourceMessage);
           TRACTION_QUERY_FUNCTION      : HandleTractionQueryFunction(SourceMessage);
           TRACTION_CONTROLLER_CONFIG :
@@ -2390,7 +2560,11 @@ destructor TLccNode.Destroy;
 begin
 //  NotifyAndUpdateMappingChanges; // fire any eventfor Mapping changes are are marked for deletion in the Logout method
 
-  UnRegisterTask(EngineMemorySpaceAccess);
+  UnRegisterTask(TaskReadPIP);
+  UnRegisterTask(TaskReadSNIP);
+  UnRegisterTask(TaskMemorySpaceAccess);
+
+
 
   if AliasID <> 0 then
     ReleaseAlias(100);
@@ -2418,7 +2592,9 @@ begin
   FreeAndNil(FStreamTractionConfig);
   FreeAndNil(FStreamTractionFdi);
   FreeAndNil(FTasksList);
-  FreeAndNil(FEngineMemorySpaceAccess);
+  FreeAndNil(FTaskMemorySpaceAccess);
+  FreeAndNil(FTaskReadPIP);
+  FreeAndNil(FTaskReadSNIP);
   inherited;
 end;
 

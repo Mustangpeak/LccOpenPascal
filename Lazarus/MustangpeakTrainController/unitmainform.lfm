@@ -71,7 +71,7 @@ object FormTrainController: TFormTrainController
           object ToggleBoxThrottleSelectShort: TToggleBox
             Left = 160
             Height = 30
-            Top = 32
+            Top = 26
             Width = 128
             Caption = 'Short Address'
             TabOrder = 2

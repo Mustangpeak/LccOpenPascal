@@ -329,14 +329,14 @@ type
     procedure HandleTractionControllerRelease(var SourceMessage: TLccMessage); override;
     procedure HandleTractionControllerQuery(var SourceMessage: TLccMessage); override;
  //   procedure HandleTractionControllerChangedNotify(var SourceMessage: TLccMessage); override;
-    procedure HandleTractionEStop(var SourceMessage: TLccMessage); override;
+    procedure HandleTractionEStop(var SourceMessage: TLccMessage; ListenerForwarded: Boolean); override;
     procedure HandleTractionListenerAttach(var SourceMessage: TLccMessage); override;
     procedure HandleTractionListenerDetach(var SourceMessage: TLccMessage);override;
     procedure HandleTractionListenerQuery(var SourceMessage: TLccMessage); override;
     procedure HandleTractionManageReserve(var SourceMessage: TLccMessage); override;
     procedure HandleTractionManageRelease(var SourceMessage: TLccMessage); override;
-    procedure HandleTractionSetSpeed(var SourceMessage: TLccMessage); override;
-    procedure HandleTractionSetFunction(var SourceMessage: TLccMessage); override;
+    procedure HandleTractionSetSpeed(var SourceMessage: TLccMessage; ListenerForwarded: Boolean); override;
+    procedure HandleTractionSetFunction(var SourceMessage: TLccMessage; ListenerForwarded: Boolean); override;
     procedure HandleTractionQuerySpeed(var SourceMessage: TLccMessage); override;
     procedure HandleTractionQueryFunction(var SourceMessage: TLccMessage); override;
     procedure HandleTractionSimpleTrainInfoReply(var SourceMessage: TLccMessage); override;
@@ -1112,12 +1112,13 @@ begin
   end;
 end;
 
-procedure TLccTrainDccNode.HandleTractionSetSpeed(var SourceMessage: TLccMessage);
+procedure TLccTrainDccNode.HandleTractionSetSpeed(
+  var SourceMessage: TLccMessage; ListenerForwarded: Boolean);
 var
   DoDefault: Boolean;
 begin
   DoDefault := True;
-  ((Owner as TLccNodeManager) as INodeManagerTractionCallbacks).DoTractionSetSpeed(Self, SourceMessage, DoDefault);
+  ((Owner as TLccNodeManager) as INodeManagerTractionCallbacks).DoTractionSetSpeed(Self, SourceMessage, ListenerForwarded, DoDefault);
 
   if DoDefault then
   begin
@@ -1126,13 +1127,14 @@ begin
   end
 end;
 
-procedure TLccTrainDccNode.HandleTractionSetFunction(var SourceMessage: TLccMessage);
+procedure TLccTrainDccNode.HandleTractionSetFunction(
+  var SourceMessage: TLccMessage; ListenerForwarded: Boolean);
 var
   FunctionAddress: DWORD;
   DoDefault: Boolean;
 begin
   DoDefault := True;
-  ((Owner as TLccNodeManager) as INodeManagerTractionCallbacks).DoTractionSetFunction(Self, SourceMessage, DoDefault);
+  ((Owner as TLccNodeManager) as INodeManagerTractionCallbacks).DoTractionSetFunction(Self, SourceMessage, ListenerForwarded, DoDefault);
 
   if DoDefault then
   begin
@@ -1142,18 +1144,17 @@ begin
   end;
 end;
 
-procedure TLccTrainDccNode.HandleTractionEStop(var SourceMessage: TLccMessage);
+procedure TLccTrainDccNode.HandleTractionEStop(var SourceMessage: TLccMessage; ListenerForwarded: Boolean);
 var
   DoDefault: Boolean;
 begin
   DoDefault := True;
-  ((Owner as TLccNodeManager) as INodeManagerTractionCallbacks).DoTractionEmergencyStop(Self, SourceMessage, DoDefault);
+  ((Owner as TLccNodeManager) as INodeManagerTractionCallbacks).DoTractionEmergencyStop(Self, SourceMessage, ListenerForwarded, DoDefault);
 
   if DoDefault then
   begin
     SetSpeed(SourceMessage, 0);
   end;
-
 end;
 
 procedure TLccTrainDccNode.HandleTractionQuerySpeed(var SourceMessage: TLccMessage);
@@ -1275,12 +1276,12 @@ begin
       begin
         if ListenerNode.LinkF0 and (Index = 0 ) then
         begin
-          WorkerMessage.LoadTractionSetFunction(NodeID, AliasID, ListenerNode.NodeID, ListenerNode.AliasID, Index, AValue);
+          WorkerMessage.LoadTractionSetFunction(NodeID, AliasID, ListenerNode.NodeID, ListenerNode.AliasID, Index, AValue, True);
           SendMessage(WorkerMessage, Self);
         end else
         if ListenerNode.LinkFn and (Index > 0) then
         begin
-          WorkerMessage.LoadTractionSetFunction(NodeID, AliasID, ListenerNode.NodeID, ListenerNode.AliasID, Index, AValue);
+          WorkerMessage.LoadTractionSetFunction(NodeID, AliasID, ListenerNode.NodeID, ListenerNode.AliasID, Index, AValue, True);
           SendMessage(WorkerMessage, Self);
         end;
       end;
@@ -1309,9 +1310,9 @@ begin
     if not EqualNode(ListenerNode.NodeID, ListenerNode.AliasID, AMessage.SourceID, AMessage.SourceAlias, True) then
     begin
       if ListenerNode.ReverseDirection then
-        WorkerMessage.LoadTractionSetSpeed(NodeID, AliasID, ListenerNode.NodeID, ListenerNode.AliasID, FlipHalfFloatSign(FSpeed))
+        WorkerMessage.LoadTractionSetSpeed(NodeID, AliasID, ListenerNode.NodeID, ListenerNode.AliasID, FlipHalfFloatSign(FSpeed), True)
       else
-        WorkerMessage.LoadTractionSetSpeed(NodeID, AliasID, ListenerNode.NodeID, ListenerNode.AliasID, FSpeed);
+        WorkerMessage.LoadTractionSetSpeed(NodeID, AliasID, ListenerNode.NodeID, ListenerNode.AliasID, FSpeed, True);
       SendMessage(WorkerMessage, Self);
     end;
   end;

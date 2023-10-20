@@ -174,7 +174,6 @@ type
     FCDIParser: TLccCdiParser;
     FConsistPanelShown: Boolean;
     FController: TLccTrainController;
- //   FDetailsTractionObject: TLccTractionObject;
     FEmulateCanBus: Boolean;
     FEthernetClient: TLccEthernetClientThreadManager;
     FNodeManager: TLccNodeManager;
@@ -184,7 +183,6 @@ type
   protected
     property CDIParser: TLccCdiParser read FCDIParser write FCDIParser;
     property ConsistPanelShown: Boolean read FConsistPanelShown;
- //   property DetailsTractionObject: TLccTractionObject read FDetailsTractionObject write FDetailsTractionObject;
 
     property ShownOnce: Boolean read FShownOnce write FShownOnce;
     property EmulateCanBus: Boolean read FEmulateCanBus write FEmulateCanBus;
@@ -193,13 +191,6 @@ type
     procedure OnConnectionErrorMessage(Sender: TObject; Manager: TLccConnectionThreadManager; Thread: TLccConnectionThread; Info: TLccConnectionInfo);
     procedure OnConnectionManagerReceiveMessage(Sender: TObject; ALccMessage: TLccMessage);
     procedure OnConnectionManagerSendMessage(Sender: TObject; ALccMessage: TLccMessage);
-
- {   procedure OnSNIPChange(TractionObject: TLccTractionObject);
-    procedure OnTrainSNIPChange(TractionObject: TLccTractionObject);
-    procedure OnEmergencyStopChange(TractionObject: TLccTractionObject);
-    procedure OnFunctionChange(TractionObject: TLccTractionObject);
-    procedure OnSpeedChange(TractionObject: TLccTractionObject);
-    procedure OnRegisterChange(TractionObject: TLccTractionObject; IsRegistered: Boolean);    }
 
     procedure OnNodeIDChanged(Sender: TObject; ALccNode: TLccNode);
     procedure OnNodeAliasChanged(Sender: TObject; ALccNode: TLccNode);
@@ -213,6 +204,8 @@ type
     procedure CallbackAssignToTrain(ATask: TLccTaskBase);      // TLccTaskControllerAttach
     procedure CallbackQueryTrain(ATask: TLccTaskBase);         // TLccTaskControllerQuery
 
+    procedure CallbackSnip(ATask: TLccTaskBase);               // TTaskReadSNIP
+    procedure CallbackPip(ATask: TLccTaskBase);                // TTaskReadPIP
 
     procedure OnLEDClick(Sender: TObject);
     procedure UpdateRoster;
@@ -224,11 +217,11 @@ type
   public
     property AssignedTrain: TNodeID read FAssignedTrain write FAssignedTrain;
     property Controller: TLccTrainController read FController write FController;
-
-
     property EthernetClient: TLccEthernetClientThreadManager read FEthernetClient write FEthernetClient;
     property NodeManager: TLccNodeManager read FNodeManager write FNodeManager;
     property BitmapDetails: TBitmap read FBitmapDetails write FBitmapDetails;
+
+    function IsTrainAssigned: Boolean;
   end;
 
 var
@@ -494,9 +487,9 @@ begin
           if not DetailsTractionObject.NodeCDI.Valid then
           begin
             PanelRosterEditorConfigurationBkGnd.Caption := 'Reading Configuration Data......';
-            Controller.EngineMemorySpaceAccess.Reset;
-            Controller.EngineMemorySpaceAccess.Assign(lems_Read, MSI_CDI, True, 0, 0, False, DetailsTractionObject.NodeID, DetailsTractionObject.NodeAlias, @OnCDIReadCallback);
-            Controller.EngineMemorySpaceAccess.Start;
+            Controller.TaskMemorySpaceAccess.Reset;
+            Controller.TaskMemorySpaceAccess.Assign(lems_Read, MSI_CDI, True, 0, 0, False, DetailsTractionObject.NodeID, DetailsTractionObject.NodeAlias, @OnCDIReadCallback);
+            Controller.TaskMemorySpaceAccess.Start;
           end else
             LoadCDIUserInterface;
         end;   }
@@ -654,29 +647,28 @@ end;
 
 procedure TFormTrainController.ToggleBoxFunctionChange(Sender: TObject);
 begin
-  if Assigned(Controller) then
-    Controller.AssignedTrain.SetFunction( (Sender as TToggleBox).Tag, Word( (Sender as TToggleBox).Checked));
+  if Assigned(Controller) and IsTrainAssigned then
+    Controller.SetFunction(AssignedTrain, (Sender as TToggleBox).Tag, Word( (Sender as TToggleBox).Checked));
 end;
 
 procedure TFormTrainController.ToggleBoxThrottleForwardChange(Sender: TObject);
 begin
   ToggleBoxThrottleReverse.Checked := not ToggleBoxThrottleForward.Checked;
+  if Assigned(Controller) and IsTrainAssigned then
+    Controller.SetSpeedDir(AssignedTrain, TrackBarThrottle.Position, ToggleBoxThrottleForward.Checked);
 end;
 
 procedure TFormTrainController.ToggleBoxThrottleReverseChange(Sender: TObject);
 begin
   ToggleBoxThrottleForward.Checked := not ToggleBoxThrottleReverse.Checked;
+  if Assigned(Controller) and IsTrainAssigned then
+    Controller.SetSpeedDir(AssignedTrain, TrackBarThrottle.Position, ToggleBoxThrottleForward.Checked);
 end;
 
 procedure TFormTrainController.TrackBarThrottleChange(Sender: TObject);
 begin
-  if Assigned(Controller) then
-  begin
-    if ToggleBoxThrottleForward.Checked then
-      Controller.AssignedTrain.SetSpeed(TrackBarThrottle.Position)
-    else
-      Controller.AssignedTrain.SetSpeed(-TrackBarThrottle.Position)
-  end
+  if Assigned(Controller) and IsTrainAssigned then
+    Controller.SetSpeedDir(AssignedTrain, TrackBarThrottle.Position, ToggleBoxThrottleForward.Checked);
 end;
 
 
@@ -913,15 +905,15 @@ var
 begin
   LocalTask := ATask as TLccTaskSearchTrain;
 
-  Mapping := AliasServer.FindMapping(LocalTAsk.TrainNodeID);
+  Mapping := AliasServer.FindMapping(LocalTAsk.TrainNodeIDReply);
   if Assigned(Mapping) then
   begin
     case ATask.TaskState of
       lesComplete :
         begin
-          ShowMessage('Search for Train Completed: NodeID = ' + NodeIDToString(LocalTask.TrainNodeID, True) + 'Alias (through AliasMapping): ' + IntToStr(Mapping.NodeAlias));
-          AssignedTrain := LocalTask.TrainNodeID;
-          Controller.AssignToTrain(AssignedTrain, @CallbackAssignToTrain);
+      //    ShowMessage('Search for Train Completed: NodeID = ' + NodeIDToString(LocalTask.TrainNodeIDReply, True) + 'Alias (through AliasMapping): ' + IntToStr(Mapping.NodeAlias));
+          AssignedTrain := LocalTask.TrainNodeIDReply;
+          Controller.ControllerAssign(AssignedTrain, @CallbackAssignToTrain);
         end;
       lesAbort : ShowMessage('Search for Train: Aborted');
       lesRunning : ShowMessage('Search for Train: Running: (In progress updates here');
@@ -938,17 +930,20 @@ var
 begin
   LocalTask := ATask as TLccTaskControllerAttach;
 
-  Mapping := AliasServer.FindMapping(LocalTask.TrainNodeID);
+  Mapping := AliasServer.FindMapping(LocalTask.Target);
   if Assigned(Mapping) then
   begin
     case ATask.TaskState of
       lesComplete :
         begin
-          ShowMessage('Assigned to Train Completed: NodeID = ' + NodeIDToString(LocalTask.TrainNodeID, True) + 'Alias (through AliasMapping): ' + IntToStr(Mapping.NodeAlias));
-          AssignedTrain := LocalTask.TrainNodeID;
+     //     ShowMessage('Assigned to Train Completed: NodeID = ' + NodeIDToString(LocalTask.Target, True) + 'Alias (through AliasMapping): ' + IntToStr(Mapping.NodeAlias));
+          AssignedTrain := LocalTask.Target;
 
           PanelRosterSlider.Enabled := True;;
           // Do UI Updates
+
+          Controller.RequestSNIP(AssignedTrain, @CallbackSnip);
+          Controller.RequestPIP(AssignedTrain, @CallbackPIP);
 
         end;
       lesAbort : ShowMessage('Assigned to Train: Aborted');
@@ -964,6 +959,43 @@ var
   LocalTask: TLccTaskControllerQuery;
 begin
   LocalTask := ATask as TLccTaskControllerQuery;
+end;
+
+procedure TFormTrainController.CallbackSnip(ATask: TLccTaskBase);
+var
+  SNIP: TTaskReadSNIP;
+begin
+  SNIP := ATask as TTaskReadSNIP;
+  case ATask.TaskState of
+    lesComplete :
+      begin
+ //       ShowMessage('Manufacturer: ' + SNIP.SimpleNodeInfo.Manufacturer + ' Model: ' + SNIP.SimpleNodeInfo.Model + ' Hardware Version: ' + SNIP.SimpleNodeInfo.HardwareVersion + ' Software Version: ' + SNIP.SimpleNodeInfo.SoftwareVersion + ' User Name: ' + SNIP.SimpleNodeInfo.UserName + ' User Desc: ' + SNIP.SimpleNodeInfo.UserDescription);
+      end;
+    lesAbort : ShowMessage('CallbackSnip: Aborted');
+    lesRunning : ShowMessage('CallbackSnip: Running: (In progress updates here');
+    lesTimeout : ShowMessage('CallbackSnip: Timed out unsuccessful (no reply?)');
+    lesIdle : ShowMessage('CallbackSnip Idle: This should not have happended');
+  end;
+
+end;
+
+procedure TFormTrainController.CallbackPip(ATask: TLccTaskBase);
+var
+  PIP: TTaskReadPIP;
+begin
+  PIP := ATask as TTaskReadPIP;
+
+  case ATask.TaskState of
+    lesComplete :
+      begin
+  //      ShowMessage(PIP.SupportedProtocols.SupportedToStr);
+      end;
+    lesAbort : ShowMessage('CallbackSnip: Aborted');
+    lesRunning : ShowMessage('CallbackSnip: Running: (In progress updates here');
+    lesTimeout : ShowMessage('CallbackSnip: Timed out unsuccessful (no reply?)');
+    lesIdle : ShowMessage('CallbackSnip Idle: This should not have happended');
+  end;
+
 end;
 
 procedure TFormTrainController.OnLEDClick(Sender: TObject);
@@ -1091,6 +1123,11 @@ begin
       ATargetNode.Free;
     end;
   end;     }
+end;
+
+function TFormTrainController.IsTrainAssigned: Boolean;
+begin
+  Result := EqualNodeID(AssignedTrain, NULL_NODE_ID, False);
 end;
 
 

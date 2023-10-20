@@ -23,6 +23,7 @@ uses
   {$ENDIF}
   lcc_utilities,
   lcc_node,
+  lcc_math_float16,
   lcc_defines,
   lcc_alias_server,
 
@@ -84,8 +85,6 @@ type
     procedure ClearTrain;
     function IsAssigned: Boolean;
     function IsEqual(ATestNodeID: TNodeID; ATestNodeAlias: Word): Boolean;
-    procedure SetSpeed(NewSpeed: Single);
-    procedure SetFunction(AnAddress: DWord; AValue: Word);
   end;
 
 
@@ -99,14 +98,15 @@ type
     FIsLongAddress: Boolean;
     FSearchCriteria: DWord;
     FSpeedSteps: TLccDccSpeedStep;
-    FTrainNodeID: TNodeID;
+    FTrainNodeIDReply: TNodeID;
   public
     property SearchCriteria: DWord read FSearchCriteria write FSearchCriteria;
     property DccAddress: String read FDccAddress write FDccAddress;
     property IsLongAddress: Boolean read FIsLongAddress write FIsLongAddress;
     property SpeedSteps: TLccDccSpeedStep read FSpeedSteps write FSpeedSteps;
 
-    property TrainNodeID: TNodeID read FTrainNodeID;
+    // Reply
+    property TrainNodeIDReply: TNodeID read FTrainNodeIDReply;
 
     procedure Start(ATimeout: Integer); override;
     procedure Process(SourceMessage: TLccMessage); override;
@@ -115,10 +115,10 @@ type
   { TLccTaskControllerAttach }
 
   TLccTaskControllerAttach = class(TLccTaskBase)
-  private
-    FTrainNodeID: TNodeID;
   public
-    property TrainNodeID: TNodeID read FTrainNodeID write FTrainNodeID;
+
+    // Replies
+    //   Just possible error code
 
     procedure Start(ATimeout: Integer); override;
     procedure Process(SourceMessage: TLccMessage); override;
@@ -129,32 +129,221 @@ type
   TLccTaskControllerRelease = class(TLccTaskBase)
   private
     FControllerNode: TNodeID;
-    FTrainNodeID: TNodeID;
   public
-    property TrainNodeID: TNodeID read FTrainNodeID write FTrainNodeID;
     property ControllerNode: TNodeID read FControllerNode write FControllerNode;
 
+    // Replies
+    //   None
+
     procedure Start(ATimeout: Integer); override;
-    procedure Process(SourceMessage: TLccMessage); override;  // abstract must override
   end;
 
   { TLccTaskControllerQuery }
 
   TLccTaskControllerQuery = class(TLccTaskBase)
   private
-    FActiveController: TNodeID;
-    FFlags: Byte;
-    FTrainNodeID: TNodeID;
+    FActiveControllerReply: TNodeID;
+    FFlagsReply: Byte;
   public
-    property TrainNodeID: TNodeID read FTrainNodeID write FTrainNodeID;
 
-    property Flags: Byte read FFlags;
-    property ActiveController: TNodeID read FActiveController;
+    // Replies
+    property FlagsReply: Byte read FFlagsReply;
+    property ActiveControllerReply: TNodeID read FActiveControllerReply;
 
     procedure Start(ATimeout: Integer); override;
     procedure Process(SourceMessage: TLccMessage); override;
   end;
 
+  { TLccTaskListenerAttach }
+
+  TLccTaskListenerAttach = class(TLccTaskBase)
+  private
+    FHidden: Boolean;
+    FLinkFn: Boolean;
+    FListener: TNodeID;
+    FReplyCode: Byte;
+    FListenerNodeIDReply: TNodeID;
+    FReverseDir: Boolean;
+  public
+    property Listener: TNodeID read FListener write FListener;
+    property ReverseDir: Boolean read FReverseDir write FReverseDir;
+    property LinkF0: Boolean read FLinkFn write FLinkFn;
+    property Hidden: Boolean read FHidden write FHidden;
+
+    // Replies
+    property ReplyCode: Byte read FReplyCode;
+    property ListenerNodeIDReply: TNodeID read FListenerNodeIDReply;
+
+    procedure Start(ATimeout: Integer); override;
+    procedure Process(SourceMessage: TLccMessage); override;
+  end;
+
+  { TLccTaskListenerDetach }
+
+  TLccTaskListenerDetach = class(TLccTaskBase)
+  private
+    FListener: TNodeID;
+    FReplyCode: Byte;
+    FListenerNodeIDReply: TNodeID;
+  public
+    property Listener: TNodeID read FListener write FListener;
+
+    // Replies
+    property ReplyCode: Byte read FReplyCode;
+    property ListenerNodeIDReply: TNodeID read FListenerNodeIDReply;
+
+    procedure Start(ATimeout: Integer); override;
+    procedure Process(SourceMessage: TLccMessage); override;
+  end;
+
+  { TLccTaskListenerQueryAtIndex }
+
+  TLccTaskListenerQueryAtIndex = class(TLccTaskBase)
+  private
+    FQueryIndex: Byte;
+    FReplyCode: Byte;
+    FListenerNodeIDReply: TNodeID;
+  public
+    property QueryIndex: Byte read FQueryIndex write FQueryIndex;
+
+    // Replies
+    property ReplyCode: Byte read FReplyCode;
+    property ListenerNodeIDReply: TNodeID read FListenerNodeIDReply;
+
+    procedure Start(ATimeout: Integer); override;
+    procedure Process(SourceMessage: TLccMessage); override;
+  end;
+
+  { TLccTaskListenerQueryCount }
+
+  TLccTaskListenerQueryCount = class(TLccTaskBase)
+  private
+    FNodeCountReply: Byte;
+  public
+
+    // Replies
+    property NodeCountReply: Byte read FNodeCountReply;
+
+    procedure Start(ATimeout: Integer); override;
+    procedure Process(SourceMessage: TLccMessage); override;
+  end;
+
+  { TLccTaskManagementReserveTrain }
+
+  TLccTaskManagementReserveTrain = class(TLccTaskBase)
+
+  public
+
+    // Replies
+    //   None
+
+    procedure Start(ATimeout: Integer); override;
+    procedure Process(SourceMessage: TLccMessage); override;
+  end;
+
+  { TLccTaskManagementReleaseTrain }
+
+  TLccTaskManagementReleaseTrain = class(TLccTaskBase)
+  public
+
+    // Replies
+    //   None
+
+    procedure Start(ATimeout: Integer); override;
+  end;
+
+  { TLccTaskManagementNoOp }
+
+  TLccTaskManagementNoOp = class(TLccTaskBase)
+  private
+    FTimeoutSecondsReply: Byte;
+  public
+
+    // Replies
+    property TimeoutSecondsReply: Byte read FTimeoutSecondsReply write FTimeoutSecondsReply;
+
+    procedure Start(ATimeout: Integer); override;
+    procedure Process(SourceMessage: TLccMessage); override;
+  end;
+
+  { TLccTaskSetSpeedDir }
+
+  TLccTaskSetSpeedDir = class(TLccTaskBase)
+  private
+    FForwardedListenerMessage: Boolean;
+    FSpeed: single;
+  public
+    property Speed: single read FSpeed write FSpeed;
+    property ForwardedListenerMessage: Boolean read FForwardedListenerMessage write FForwardedListenerMessage;
+
+    // Replies
+    //   None
+
+    procedure Start(ATimeout: Integer); override;
+  end;
+
+  { TLccTaskSetFunction }
+
+  TLccTaskSetFunction = class(TLccTaskBase)
+  private
+    FAddress: DWord;
+    FForwardedListenerMessage: Boolean;
+    FValue: Word;
+  public
+    property Address: DWord read FAddress write FAddress;
+    property Value: Word read FValue write FValue;
+    property ForwardedListenerMessage: Boolean read FForwardedListenerMessage write FForwardedListenerMessage;
+
+    // Replies
+    //   None
+
+    procedure Start(ATimeout: Integer); override;
+  end;
+
+  { TLccTaskEmergencyStop }
+
+  TLccTaskEmergencyStop = class(TLccTaskBase)
+  public
+
+    // Replies
+      //   None
+
+    procedure Start(ATimeout: Integer); override;
+  end;
+
+  { TLccTaskQuerySpeed }
+
+  TLccTaskQuerySpeed = class(TLccTaskBase)
+  private
+    FActualSpeedReply: single;
+    FCommandedSpeedReply: single;
+    FSetSpeedReply: single;
+  public
+
+    // Replies
+    property ActualSpeedReply: single read FActualSpeedReply;
+    property SetSpeedReply: single read FSetSpeedReply;
+    property CommandedSpeedReply: single read FCommandedSpeedReply;
+
+    procedure Start(ATimeout: Integer); override;
+    procedure Process(SourceMessage: TLccMessage); override;
+  end;
+
+  { TLccTaskQueryFunction }
+
+  TLccTaskQueryFunction = class(TLccTaskBase)
+  private
+    FAddress: DWord;
+    FValueReply: Word;
+  public
+    property Address: DWord read FAddress write FAddress;
+
+    // Replies
+    property ValueReply: Word read FValueReply write FValueReply;
+
+    procedure Start(ATimeout: Integer); override;
+    procedure Process(SourceMessage: TLccMessage); override;
+  end;
 
   // ******************************************************************************
 
@@ -166,25 +355,41 @@ type
     FTaskControllerAttach: TLccTaskControllerAttach;
     FTaskControllerQuery: TLccTaskControllerQuery;
     FTaskControllerRelease: TLccTaskControllerRelease;
+    FTaskEmergencyStop: TLccTaskEmergencyStop;
+    FTaskListenerAttach: TLccTaskListenerAttach;
+    FTaskListenerDetach: TLccTaskListenerDetach;
+    FTaskListenerQueryAtIndex: TLccTaskListenerQueryAtIndex;
+    FTaskListenerQueryCount: TLccTaskListenerQueryCount;
+    FTaskManagementNoOp: TLccTaskManagementNoOp;
+    FTaskManagementReleaseTrain: TLccTaskManagementReleaseTrain;
+    FTaskManagementReserveTrain: TLccTaskManagementReserveTrain;
+    FTaskQueryFunction: TLccTaskQueryFunction;
+    FTaskQuerySpeed: TLccTaskQuerySpeed;
     FTaskSearchTrain: TLccTaskSearchTrain;
+    FTaskSetFunction: TLccTaskSetFunction;
+    FTaskSetSpeedDir: TLccTaskSetSpeedDir;
 
   protected
     property TaskSearchTrain: TLccTaskSearchTrain read FTaskSearchTrain write FTaskSearchTrain;
     property TaskControllerAttach: TLccTaskControllerAttach read FTaskControllerAttach write FTaskControllerAttach;
     property TaskControllerRelease: TLccTaskControllerRelease read FTaskControllerRelease write FTaskControllerRelease;
     property TaskControllerQuery: TLccTaskControllerQuery read FTaskControllerQuery write FTaskControllerQuery;
+    property TaskListenerAttach: TLccTaskListenerAttach read FTaskListenerAttach write FTaskListenerAttach;
+    property TaskListenerDetach: TLccTaskListenerDetach read FTaskListenerDetach write FTaskListenerDetach;
+    property TaskListenerQueryAtIndex: TLccTaskListenerQueryAtIndex read FTaskListenerQueryAtIndex write FTaskListenerQueryAtIndex;
+    property TaskListenerQueryCount: TLccTaskListenerQueryCount read FTaskListenerQueryCount write FTaskListenerQueryCount;
+    property TaskManagementReserveTrain: TLccTaskManagementReserveTrain read FTaskManagementReserveTrain write FTaskManagementReserveTrain;
+    property TaskManagementReleaseTrain: TLccTaskManagementReleaseTrain read FTaskManagementReleaseTrain write FTaskManagementReleaseTrain;
+    property TaskManagementNoOp: TLccTaskManagementNoOp read FTaskManagementNoOp write FTaskManagementNoOp;
+    property TaskSetSpeedDir: TLccTaskSetSpeedDir read FTaskSetSpeedDir write FTaskSetSpeedDir;
+    property TaskSetFunction: TLccTaskSetFunction read FTaskSetFunction write FTaskSetFunction;
+    property TaskEmergencyStop: TLccTaskEmergencyStop read FTaskEmergencyStop write FTaskEmergencyStop;
+    property TaskQuerySpeed:  TLccTaskQuerySpeed read FTaskQuerySpeed write FTaskQuerySpeed;
+    property TaskQueryFunction:  TLccTaskQueryFunction read FTaskQueryFunction write FTaskQueryFunction;
 
     function GetCdiFile: string; override;
     procedure BeforeLogin; override;
 
-    procedure HandleProducerIdentifiedAll(var SourceMessage: TLccMessage);
-    procedure HandleProducerIdentifiedClear(var SourceMessage: TLccMessage); override;
-    procedure HandleProducerIdentifiedSet(var SourceMessage: TLccMessage); override;
-    procedure HandleProducerIdentifiedUnknown(var SourceMessage: TLccMessage); override;
-    procedure HandleTractionControllerAssignReply(var SourceMessage: TLccMessage); override;
- //   procedure HandleTractionControllerChangedNotify(var SourceMessage: TLccMessage); override;
-
-    function MessageFromControlledTrain(ALccMessage: TLccMessage): Boolean;
   public
 
     property AssignedTrain: TAssignedTrainState read FAssignedTrain write FAssignedTrain;
@@ -196,15 +401,36 @@ type
 
     procedure AfterLogin; override;
 
-    function SearchByDccAddress(DccAddress: Word; IsLongAddress: Boolean; SpeedSteps: TLccDccSpeedStep; ACallback: TOnTaskCallback): Boolean;
-    function SearchByDccAddress(DccAddress: String; IsLongAddress: Boolean; SpeedSteps: TLccDccSpeedStep; ACallback: TOnTaskCallback): Boolean;
+    // Search Methods
+    function SearchByDccAddress(DccAddress: Word; IsLongAddress: Boolean; SpeedSteps: TLccDccSpeedStep; ACallback: TOnTaskCallback): Boolean;   // Callback -> TLccTaskSearchTrain
+    function SearchByDccAddress(DccAddress: String; IsLongAddress: Boolean; SpeedSteps: TLccDccSpeedStep; ACallback: TOnTaskCallback): Boolean; // Callback -> TLccTaskSearchTrain
 
-    function AssignToTrain(ATrainID: TNodeID; ACallback: TOnTaskCallback): Boolean;
-    function ReleaseFromTrain(ATrainID: TNodeID): Boolean;    // Messages expects no reply so no callback
-    function QueryActiveController(ACallback: TOnTaskCallback): Boolean;
+    // Controller Methods
+    function ControllerAssign(ATrainID: TNodeID; ACallback: TOnTaskCallback): Boolean;                            // Callback -> TLccTaskControllerAttach
+    function ControllerRelease(ATrainID: TNodeID): Boolean;                                                       // Callback -> None
+    function ControllerQueryActive(ACallback: TOnTaskCallback): Boolean;                                          // Callback -> TLccTaskControllerDetach
 
-    procedure ListenerDetachFromAssignedTrain;
+    // Listener Methods
+    function ListenerAttach(Listener, AListenerToAttach: TNodeID; ReverseDir, LinkF0, LinkFn, Hide: Boolean; ACallback: TOnTaskCallback): Boolean; // Callback -> TLccTaskListenerAttach
+    function ListenerDetach(Listener, AListenerToDetach: TNodeID): Boolean;                                     // Callback -> TLccTaskListenerDetach
+    function ListenerQueryAtIndex(Listener: TNodeID; ListenerIndex: Byte; ACallback: TOnTaskCallback): Boolean; // Callback -> TLccTaskListenerQueryAtIndex
+    function ListenerQueryCount(Listener: TNodeID; ACallback: TOnTaskCallback): Boolean;                        // Callback -> TLccTaskListenerQueryCount
 
+    // Management Methods
+    function ManagementReserveTrain(Listener: TNodeID; ACallback: TOnTaskCallback): Boolean;              // Callback -> TLccTaskManagementReserveTrain
+    function ManagementReleaseTrain(Listener: TNodeID): Boolean;                                          // Callback -> None
+    function ManagementNoOp(Listener: TNodeID; ACallback: TOnTaskCallback): Boolean;                      // Callback -> TLccTaskManagementNoOp
+
+    // Control Methods
+    function SetSpeedDir(Listener: TNodeID; Speed: single): Boolean; overload;                           // Callback -> None
+    function SetSpeedDir(Listener: TNodeID; Speed: Integer; Forward: Boolean): Boolean; overload;         // Callback -> None
+    function SetFunction(Listener: TNodeID; FunctionAddress: DWord; Value: Word): Boolean;                // Callback -> None
+    function EmergencyStop(Listener: TNodeID): Boolean;                                                   // Callback -> None
+
+    // Query Methods
+    function QuerySpeed(Listener: TNodeID; ACallback: TOnTaskCallback): Boolean;
+    function QueryFunction(Listener: TNodeID; FunctionAddress: DWord; ACallback: TOnTaskCallback): Boolean; // Callback -> TLccTaskQuerySpeed
+                                                                                                                  // Callback -> TLccTaskQueryFunction
     procedure FindAllTrains;
     procedure ReleaseTrain;
     function IsTrainAssigned: Boolean;
@@ -215,6 +441,353 @@ type
 
 implementation
 
+{ TLccTaskManagementReleaseTrain }
+
+procedure TLccTaskManagementReleaseTrain.Start(ATimeout: Integer);
+var
+  Alias: Word;
+begin
+  inherited Start(ATimeout);
+
+  Alias := AliasServer.FindAlias(Target);
+  if Alias <> 0 then
+  begin
+    WorkerMessage.LoadTractionManage(OwnerNode.NodeID, OwnerNode.AliasID, Target, Alias, False);
+    OwnerNode.SendMessage(WorkerMessage, OwnerNode);
+    Complete;
+    if Assigned(Callback) then
+      Callback(Self);
+    Reset;
+  end;
+end;
+
+{ TLccTaskEmergencyStop }
+
+procedure TLccTaskEmergencyStop.Start(ATimeout: Integer);
+var
+  Alias: Word;
+begin
+  inherited Start(ATimeout);
+
+  Alias := AliasServer.FindAlias(Target);
+  if Alias <> 0 then
+  begin
+    WorkerMessage.LoadTractionEStop(OwnerNode.NodeID, OwnerNode.AliasID, Target, Alias);
+    OwnerNode.SendMessage(WorkerMessage, OwnerNode);
+    Complete;
+    if Assigned(Callback) then
+      Callback(Self);
+    Reset;
+  end;
+end;
+
+{ TLccTaskSetFunction }
+
+procedure TLccTaskSetFunction.Start(ATimeout: Integer);
+var
+  Alias: Word;
+begin
+  inherited Start(ATimeout);
+
+  Alias := AliasServer.FindAlias(Target);
+  if Alias <> 0 then
+  begin
+    WorkerMessage.LoadTractionSetFunction(OwnerNode.NodeID, OwnerNode.AliasID, Target, Alias, Address, Value, ForwardedListenerMessage);
+    OwnerNode.SendMessage(WorkerMessage, OwnerNode);
+    Complete;
+    if Assigned(Callback) then
+      Callback(Self);
+    Reset;
+  end;
+end;
+
+{ TLccTaskSetSpeedDir }
+
+procedure TLccTaskSetSpeedDir.Start(ATimeout: Integer);
+var
+  Alias: Word;
+begin
+  inherited Start(ATimeout);
+
+  Alias := AliasServer.FindAlias(Target);
+  if Alias <> 0 then
+  begin
+    WorkerMessage.LoadTractionSetSpeed(OwnerNode.NodeID, OwnerNode.AliasID, Target, Alias, Speed, ForwardedListenerMessage);
+    OwnerNode.SendMessage(WorkerMessage, OwnerNode);
+    Complete;
+    if Assigned(Callback) then
+      Callback(Self);
+    Reset;
+  end;
+end;
+
+{ TLccTaskListenerQueryCount }
+
+procedure TLccTaskListenerQueryCount.Start(ATimeout: Integer);
+var
+  Alias: Word;
+begin
+  inherited Start(ATimeout);
+
+  Alias := AliasServer.FindAlias(Target);
+  if Alias <> 0 then
+  begin
+    WorkerMessage.LoadTractionListenerQueryCount(OwnerNode.NodeID, OwnerNode.AliasID, Target, Alias);
+    OwnerNode.SendMessage(WorkerMessage, OwnerNode);
+  end;
+end;
+
+procedure TLccTaskListenerQueryCount.Process(SourceMessage: TLccMessage);
+begin
+  if SourceMessage.MTI = MTI_TRACTION_REPLY then
+    if SourceMessage.DataArray[0] = TRACTION_LISTENER_CONFIG then
+      if SourceMessage.DataArray[1] = TRACTION_LISTENER_CONFIG_QUERY then
+      begin
+        FNodeCountReply := SourceMessage.TractionExtractListenerQueryNodeCountReply;
+        Complete;
+        if Assigned(Callback) then
+          Callback(Self);
+        Reset;
+      end;
+end;
+
+{ TLccTaskManagementNoOp }
+
+procedure TLccTaskManagementNoOp.Start(ATimeout: Integer);
+var
+  Alias: Word;
+begin
+  inherited Start(ATimeout);
+
+  Alias := AliasServer.FindAlias(Target);
+  if Alias <> 0 then
+  begin
+    WorkerMessage.LoadTractionManage(OwnerNode.NodeID, OwnerNode.AliasID, Target, Alias, False);
+    OwnerNode.SendMessage(WorkerMessage, OwnerNode);
+    Complete;
+    if Assigned(Callback) then
+      Callback(Self);
+    Reset;
+  end;
+end;
+
+procedure TLccTaskManagementNoOp.Process(SourceMessage: TLccMessage);
+begin
+  if SourceMessage.MTI = MTI_TRACTION_REPLY then
+    if SourceMessage.DataArray[0] = TRACTION_MANAGE then
+      if SourceMessage.DataArray[1] = TRACTION_MANAGE_HEARTBEAT then
+      begin
+        FTimeoutSecondsReply := SourceMessage.TractionExtractHeartBeatTimeoutReply;
+        Complete;
+         if Assigned(Callback) then
+           Callback(Self);
+         Reset;
+      end
+end;
+
+{ TLccTaskListenerDetach }
+
+procedure TLccTaskListenerDetach.Start(ATimeout: Integer);
+var
+  Alias: Word;
+  Flags: Byte;
+begin
+  inherited Start(ATimeout);
+
+  Alias := AliasServer.FindAlias(Target);
+  if Alias <> 0 then
+  begin
+    Flags := 0;
+    WorkerMessage.LoadTractionListenerDetach(OwnerNode.NodeID, OwnerNode.AliasID, Target, Alias, Flags, Listener);
+    OwnerNode.SendMessage(WorkerMessage, OwnerNode);
+  end;
+end;
+
+procedure TLccTaskListenerDetach.Process(SourceMessage: TLccMessage);
+begin
+  if SourceMessage.MTI = MTI_TRACTION_REPLY then
+    if SourceMessage.DataArray[0] = TRACTION_LISTENER_CONFIG then
+      if SourceMessage.DataArray[1] = TRACTION_LISTENER_CONFIG_DETACH then
+      begin
+        FReplyCode := SourceMessage.TractionExtractListenerCodeReply;
+        SourceMessage.ExtractDataBytesAsNodeID(3, FListenerNodeIDReply);
+        Complete;
+        if Assigned(Callback) then
+          Callback(Self);
+        Reset;
+      end;
+end;
+
+{ TLccTaskListenerQueryAtIndex }
+
+procedure TLccTaskListenerQueryAtIndex.Start(ATimeout: Integer);
+var
+  Alias: Word;
+begin
+  inherited Start(ATimeout);
+
+  Alias := AliasServer.FindAlias(Target);
+  if Alias <> 0 then
+  begin
+    WorkerMessage.LoadTractionListenerQuery(OwnerNode.NodeID, OwnerNode.AliasID, Target, Alias, QueryIndex);
+    OwnerNode.SendMessage(WorkerMessage, OwnerNode);
+  end;
+end;
+
+procedure TLccTaskListenerQueryAtIndex.Process(SourceMessage: TLccMessage);
+begin
+  if SourceMessage.MTI = MTI_TRACTION_REPLY then
+    if SourceMessage.DataArray[0] = TRACTION_LISTENER_CONFIG then
+      if SourceMessage.DataArray[1] = TRACTION_LISTENER_CONFIG_QUERY then
+      begin
+        FReplyCode := SourceMessage.TractionExtractListenerQueryNodeCountReply;
+        if SourceMessage.DataCount = 0 then
+        begin
+          // Index out of bounds
+          FListenerNodeIDReply := NULL_NODE_ID;
+        end else
+        begin
+          FListenerNodeIDReply := SourceMessage.TractionExtractListenerQueryNodeIDReply;
+        end;
+        Complete;
+          if Assigned(Callback) then
+            Callback(Self);
+        Reset;
+      end;
+end;
+
+{ TLccTaskManagementReserveTrain }
+
+procedure TLccTaskManagementReserveTrain.Start(ATimeout: Integer);
+var
+  Alias: Word;
+begin
+  inherited Start(ATimeout);
+
+  Alias := AliasServer.FindAlias(Target);
+  if Alias <> 0 then
+  begin
+    WorkerMessage.LoadTractionManage(OwnerNode.NodeID, OwnerNode.AliasID, Target, Alias, True);
+    OwnerNode.SendMessage(WorkerMessage, OwnerNode);
+  end;
+end;
+
+procedure TLccTaskManagementReserveTrain.Process(SourceMessage: TLccMessage);
+begin
+  if SourceMessage.MTI = MTI_TRACTION_REPLY then
+    if SourceMessage.DataArray[0] = TRACTION_MANAGE then
+      if SourceMessage.DataArray[1] = TRACTION_MANAGE_RESERVE then
+      begin
+        case SourceMessage.DataArray[2] of
+          S_OK : begin
+                   Complete;
+                   if Assigned(Callback) then
+                     Callback(Self);
+                   Reset;
+                 end
+          else begin
+             Error(1, 'Train Refused to be Reserved');
+             if Assigned(Callback) then
+               Callback(Self);
+             Reset;
+          end;
+      end
+  end;
+end;
+
+{ TLccTaskQuerySpeed }
+
+procedure TLccTaskQuerySpeed.Start(ATimeout: Integer);
+var
+  Alias: Word;
+begin
+  inherited Start(ATimeout);
+
+  Alias := AliasServer.FindAlias(Target);
+  if Alias <> 0 then
+  begin
+    WorkerMessage.LoadTractionQuerySpeed(OwnerNode.NodeID, OwnerNode.AliasID, Target, Alias);
+    OwnerNode.SendMessage(WorkerMessage, OwnerNode);
+  end;
+end;
+
+procedure TLccTaskQuerySpeed.Process(SourceMessage: TLccMessage);
+begin
+  if SourceMessage.MTI = MTI_TRACTION_REPLY then
+    if SourceMessage.DataArray[0] = TRACTION_QUERY_SPEED then
+    begin
+      FActualSpeedReply := HalfToFloat( SourceMessage.TractionExtractActualSpeed);
+      FSetSpeedReply := HalfToFloat(SourceMessage.TractionExtractSetSpeed);
+      FCommandedSpeedReply := HalfToFloat(SourceMessage.TractionExtractCommandedSpeed);
+      Complete;
+      if Assigned(Callback) then
+        Callback(Self);
+      Reset;
+    end;
+end;
+
+{ TLccTaskListenerAttach }
+
+procedure TLccTaskListenerAttach.Start(ATimeout: Integer);
+var
+  Alias: Word;
+  Flags: Byte;
+begin
+  inherited Start(ATimeout);
+
+  Alias := AliasServer.FindAlias(Target);
+  if Alias <> 0 then
+  begin
+    Flags := WorkerMessage.TractionEncodeListenerFlags(ReverseDir, LinkF0, FLinkFn, Hidden);
+    WorkerMessage.LoadTractionListenerAttach(OwnerNode.NodeID, OwnerNode.AliasID, Target, Alias, Flags, Listener);
+    OwnerNode.SendMessage(WorkerMessage, OwnerNode);
+  end;
+end;
+
+procedure TLccTaskListenerAttach.Process(SourceMessage: TLccMessage);
+begin
+  if SourceMessage.MTI = MTI_TRACTION_REPLY then
+    if SourceMessage.DataArray[0] = TRACTION_LISTENER_CONFIG then
+      if SourceMessage.DataArray[1] = TRACTION_LISTENER_CONFIG_ATTACH then
+      begin
+        FReplyCode := SourceMessage.TractionExtractListenerCodeReply;
+        SourceMessage.ExtractDataBytesAsNodeID(3, FListenerNodeIDReply);
+        Complete;
+        if Assigned(Callback) then
+          Callback(Self);
+        Reset;
+      end;
+end;
+
+{ TLccTaskQueryFunction }
+
+procedure TLccTaskQueryFunction.Start(ATimeout: Integer);
+var
+  Alias: Word;
+begin
+  inherited Start(ATimeout);
+
+  Alias := AliasServer.FindAlias(Target);
+  if Alias <> 0 then
+  begin
+    WorkerMessage.LoadTractionQueryFunction(OwnerNode.NodeID, OwnerNode.AliasID, Target, Alias, Address);
+    OwnerNode.SendMessage(WorkerMessage, OwnerNode);
+  end;
+end;
+
+procedure TLccTaskQueryFunction.Process(SourceMessage: TLccMessage);
+begin
+  if SourceMessage.MTI = MTI_TRACTION_REPLY then
+    if SourceMessage.DataArray[0] = TRACTION_QUERY_FUNCTION then
+    begin
+      FValueReply := SourceMessage.TractionExtractFunctionValue;
+      Complete;
+      if Assigned(Callback) then
+        Callback(Self);
+      Reset;
+    end;
+end;
+
 { TLccTaskControllerQuery }
 
 procedure TLccTaskControllerQuery.Start(ATimeout: Integer);
@@ -223,10 +796,10 @@ var
 begin
   inherited Start(ATimeout);
 
-  Alias := AliasServer.FindAlias(TrainNodeID);
+  Alias := AliasServer.FindAlias(Target);
   if Alias <> 0 then
   begin
-    WorkerMessage.LoadTractionControllerQuery(OwnerNode.NodeID, OwnerNode.AliasID, TrainNodeID, Alias);
+    WorkerMessage.LoadTractionControllerQuery(OwnerNode.NodeID, OwnerNode.AliasID, Target, Alias);
     OwnerNode.SendMessage(WorkerMessage, OwnerNode);  // There is no reply from this
     Complete;
     if Assigned(Callback) then
@@ -244,8 +817,8 @@ begin
     if SourceMessage.DataArray[0] = TRACTION_CONTROLLER_CONFIG_REPLY then
       if SourceMessage.DataArray[1] = TRACTION_CONTROLLER_CONFIG_QUERY then
       begin
-        FFlags := SourceMessage.DataArray[2];
-        SourceMessage.ExtractDataBytesAsNodeID(3, FActiveController);
+        FFlagsReply := SourceMessage.DataArray[2];
+        SourceMessage.ExtractDataBytesAsNodeID(3, FActiveControllerReply);
         Complete;
         if Assigned(Callback) then
           Callback(Self);
@@ -261,10 +834,10 @@ var
 begin
   inherited Start(ATimeout);
 
-  Alias := AliasServer.FindAlias(TrainNodeID);
+  Alias := AliasServer.FindAlias(Target);
   if Alias <> 0 then
   begin
-    WorkerMessage.LoadTractionControllerRelease(OwnerNode.NodeID, OwnerNode.AliasID, TrainNodeID, Alias, ControllerNode);
+    WorkerMessage.LoadTractionControllerRelease(OwnerNode.NodeID, OwnerNode.AliasID, Target, Alias, ControllerNode);
     OwnerNode.SendMessage(WorkerMessage, OwnerNode);  // There is no reply from this
     Complete;
     if Assigned(Callback) then
@@ -276,11 +849,6 @@ begin
   end;
 end;
 
-procedure TLccTaskControllerRelease.Process(SourceMessage: TLccMessage);
-begin
-  // abstract override
-end;
-
 { TLccTaskControllerAttach }
 
 procedure TLccTaskControllerAttach.Start(ATimeout: Integer);
@@ -289,10 +857,10 @@ var
 begin
   inherited Start(ATimeout);
 
-  Alias := AliasServer.FindAlias(TrainNodeID);
+  Alias := AliasServer.FindAlias(Target);
   if Alias <> 0 then
   begin
-    WorkerMessage.LoadTractionControllerAssign(OwnerNode.NodeID, OwnerNode.AliasID, TrainNodeID, Alias, OwnerNode.NodeID);
+    WorkerMessage.LoadTractionControllerAssign(OwnerNode.NodeID, OwnerNode.AliasID, Target, Alias, OwnerNode.NodeID);
     OwnerNode.SendMessage(WorkerMessage, OwnerNode);
   end;
 end;
@@ -330,7 +898,7 @@ begin
 
   inherited Start(ATimeout);
 
-  FTrainNodeID := NULL_NODE_ID;
+  FTrainNodeIDReply := NULL_NODE_ID;
 
   TrackProtocolFlags := TRACTION_SEARCH_TARGET_ADDRESS_MATCH or TRACTION_SEARCH_ALLOCATE_FORCE or TRACTION_SEARCH_TYPE_EXACT_MATCH or
                         TRACTION_SEARCH_TRACK_PROTOCOL_GROUP_DCC_ONLY;
@@ -359,6 +927,7 @@ begin
     Exit;
   if IsRunning then
   begin
+    // For now we just grab the first one... future state is multiple replys may come
     case SourceMessage.MTI of
        MTI_PRODUCER_IDENTIFIED_UNKNOWN,
        MTI_PRODUCER_IDENTIFIED_SET,
@@ -368,7 +937,7 @@ begin
             begin
               if SourceMessage.TractionSearchExtractSearchData = SearchCriteria then
               begin
-                FTrainNodeID := SourceMessage.SourceID;
+                FTrainNodeIDReply := SourceMessage.SourceID;
                 Complete;
                 if Assigned(Callback) then
                   Callback(Self);
@@ -419,24 +988,6 @@ begin
   Result := EqualNodeID(ATestNodeID, FTrain.NodeID, False) or (ATestNodeAlias = FTrain.Alias);
 end;
 
-procedure TAssignedTrainState.SetSpeed(NewSpeed: Single);
-begin
-  if IsAssigned then
-  begin
-    WorkerMessage.LoadTractionSetSpeed(Owner.NodeID, Owner.AliasID, Train.NodeID, Train.Alias, NewSpeed);
-    Owner.SendMessage(WorkerMessage, Owner);
-  end;
-end;
-
-procedure TAssignedTrainState.SetFunction(AnAddress: DWord; AValue: Word);
-begin
-if IsAssigned then
-  begin
-    WorkerMessage.LoadTractionSetFunction(Owner.NodeID, Owner.AliasID, Train.NodeID, Train.Alias, AnAddress, AValue);
-    Owner.SendMessage(WorkerMessage, Owner);
-  end;
-end;
-
 { TLccTrainController }
 
 procedure TLccTrainController.BeforeLogin;
@@ -473,74 +1024,6 @@ begin
 end;
 
 
-procedure TLccTrainController.HandleProducerIdentifiedAll(var SourceMessage: TLccMessage);
-var
-  AliasMapping: TLccAliasMapping;
-begin
-{  if SourceMessage.TractionIsSearchEvent and (SourceMessage.TractionSearchExtractSearchData = AssignedTrain.SearchCriteriaPending) then
-  begin
-    // Move from Pending the this is the Search Critera used.
-    AssignedTrain.AcceptSearchCriteriaPending;
-    if GridConnect then
-    begin
-      AliasMapping := AliasServer.FindMapping(SourceMessage.SourceAlias);
-      Assert(Assigned(AliasMapping), 'TLccTrainController.' +'ProcessMessageLCC: Alias Mapping was nil');
-      WorkerMessage.LoadTractionControllerAssign(NodeID, AliasID, AliasMapping.NodeID, AliasMapping.NodeAlias, NodeID);
-    end else
-      WorkerMessage.LoadTractionControllerAssign(NodeID, AliasID, SourceMessage.SourceID, SourceMessage.SourceAlias, NodeID);
-    SendMessage(WorkerMessage);    // The reply will fill in the assigned train if successful
-  end;  }
-end;
-
-procedure TLccTrainController.HandleProducerIdentifiedClear(var SourceMessage: TLccMessage);
-begin
-  HandleProducerIdentifiedAll(SourceMessage)
-end;
-
-procedure TLccTrainController.HandleProducerIdentifiedSet(var SourceMessage: TLccMessage);
-begin
-  HandleProducerIdentifiedAll(SourceMessage)
-end;
-
-procedure TLccTrainController.HandleProducerIdentifiedUnknown(var SourceMessage: TLccMessage);
-begin
-  HandleProducerIdentifiedAll(SourceMessage)
-end;
-
-procedure TLccTrainController.HandleTractionControllerAssignReply(var SourceMessage: TLccMessage);
-begin
-  case SourceMessage.TractionExtractControllerAssignResult of
-    TRACTION_CONTROLLER_CONFIG_REPLY_OK :
-      begin
- //       AssignedTrain.AssignTrain(SourceMessage.SourceID, SourceMessage.SourceAlias);
-      end;
-{    TRACTION_CONTROLLER_CONFIG_ASSIGN_REPLY_REFUSE_ASSIGNED_CONTROLLER :      // Depreciated bad idea
-      begin
-         AssignedTrain.ClearTrain;
-      end;        }
-    TRACTION_CONTROLLER_CONFIG_ASSIGN_REPLY_REFUSE_TRAIN :
-      begin
-         AssignedTrain.ClearTrain;
-      end
-    else
-      AssignedTrain.ClearTrain;
-  end;
-end;
-
-{
-procedure TLccTrainController.HandleTractionControllerChangedNotify(var SourceMessage: TLccMessage);
-begin
-  inherited HandleTractionControllerChangedNotify(SourceMessage);
-  // Controller is loosing the train
-end;
-}
-
-function TLccTrainController.MessageFromControlledTrain(ALccMessage: TLccMessage): Boolean;
-begin
-  Result := True;
-end;
-
-
 procedure TLccTrainController.FindAllTrains;
 begin
   // Send global Producer Identify.  When done the TrainServer property will have the trains and the information
@@ -565,27 +1048,74 @@ begin
   FAssignedTrain := TAssignedTrainState.Create;
   AssignedTrain.Owner := Self;
 
-  FTaskSearchTrain := TLccTaskSearchTrain.Create(Self);
   FTaskControllerAttach := TLccTaskControllerAttach.Create(Self);
-  FTaskControllerRelease := TLccTaskControllerRelease.Create(Self);
   FTaskControllerQuery := TLccTaskControllerQuery.Create(Self);
+  FTaskControllerRelease := TLccTaskControllerRelease.Create(Self);
+  FTaskEmergencyStop := TLccTaskEmergencyStop.Create(Self);
+  FTaskListenerAttach := TLccTaskListenerAttach.Create(Self);
+  FTaskListenerDetach := TLccTaskListenerDetach.Create(Self);
+  FTaskListenerQueryAtIndex := TLccTaskListenerQueryAtIndex.Create(Self);
+  FTaskListenerQueryCount := TLccTaskListenerQueryCount.Create(Self);
+  FTaskManagementNoOp := TLccTaskManagementNoOp.Create(Self);
+  FTaskManagementReleaseTrain := TLccTaskManagementReleaseTrain.Create(Self);
+  FTaskManagementReserveTrain := TLccTaskManagementReserveTrain.Create(Self);
+  FTaskQueryFunction := TLccTaskQueryFunction.Create(Self);
+  FTaskQuerySpeed := TLccTaskQuerySpeed.Create(Self);
+  FTaskSearchTrain := TLccTaskSearchTrain.Create(Self);
+  FTaskSetFunction := TLccTaskSetFunction.Create(Self);
+  FTaskSetSpeedDir := TLccTaskSetSpeedDir.Create(Self);
 
-  RegisterTask(TaskSearchTrain);
   RegisterTask(TaskControllerAttach);
-  RegisterTask(TaskControllerRelease);
   RegisterTask(TaskControllerQuery);
+  RegisterTask(TaskControllerRelease);
+  RegisterTask(TaskListenerAttach);
+  RegisterTask(TaskListenerDetach);
+  RegisterTask(TaskListenerQueryAtIndex);
+  RegisterTask(TaskListenerQueryCount);
+  RegisterTask(TaskManagementNoOp);
+  RegisterTask(TaskManagementReleaseTrain);
+  RegisterTask(TaskManagementReserveTrain);
+  RegisterTask(TaskQueryFunction);
+  RegisterTask(TaskQuerySpeed);
+  RegisterTask(TaskSearchTrain);
+  RegisterTask(TaskSetFunction);
+  RegisterTask(TaskSetSpeedDir);
 end;
 
 destructor TLccTrainController.Destroy;
 begin
-  UnRegisterTask(TaskSearchTrain);
   UnRegisterTask(TaskControllerAttach);
+  UnRegisterTask(TaskControllerQuery);
   UnRegisterTask(TaskControllerRelease);
+  UnRegisterTask(TaskListenerAttach);
+  UnRegisterTask(TaskListenerDetach);
+  UnRegisterTask(TaskListenerQueryAtIndex);
+  UnRegisterTask(TaskListenerQueryCount);
+  UnRegisterTask(TaskManagementNoOp);
+  UnRegisterTask(TaskManagementReleaseTrain);
+  UnRegisterTask(TaskManagementReserveTrain);
+  UnRegisterTask(TaskQueryFunction);
+  UnRegisterTask(TaskQuerySpeed);
+  UnRegisterTask(TaskSearchTrain);
+  UnRegisterTask(TaskSetFunction);
+  UnRegisterTask(TaskSetSpeedDir);
 
+  FreeAndNil(FTaskControllerAttach);
+  FreeAndNil(FTaskControllerQuery);
+  FreeAndNil(FTaskControllerRelease);
+  FreeAndNil(FTaskListenerAttach);
+  FreeAndNil(FTaskListenerDetach);
+  FreeAndNil(FTaskListenerQueryAtIndex);
+  FreeAndNil(FTaskListenerQueryCount);
+  FreeAndNil(FTaskManagementNoOp);
+  FreeAndNil(FTaskManagementReleaseTrain);
+  FreeAndNil(FTaskManagementReserveTrain);
+  FreeAndNil(FTaskQueryFunction);
+  FreeAndNil(FTaskQuerySpeed);
   FreeAndNil(FTaskSearchTrain);
-  FreeAndNil(FAssignedTrain);
-  FreeAndNil(FTaskControllerAttach);
-  FreeAndNil(FTaskControllerAttach);
+  FreeAndNil(FTaskSetFunction);
+  FreeAndNil(FTaskSetSpeedDir);
+
   inherited Destroy;
 end;
 
@@ -596,16 +1126,12 @@ begin
 end;
 
 
-function TLccTrainController.SearchByDccAddress(DccAddress: Word;
-  IsLongAddress: Boolean; SpeedSteps: TLccDccSpeedStep;
-  ACallback: TOnTaskCallback): Boolean;
+function TLccTrainController.SearchByDccAddress(DccAddress: Word; IsLongAddress: Boolean; SpeedSteps: TLccDccSpeedStep; ACallback: TOnTaskCallback): Boolean;
 begin
   Result := SearchByDccAddress(IntToStr( DccAddress), IsLongAddress, SpeedSteps, ACallback);
 end;
 
-function TLccTrainController.SearchByDccAddress(DccAddress: String;
-  IsLongAddress: Boolean; SpeedSteps: TLccDccSpeedStep;
-  ACallback: TOnTaskCallback): Boolean;
+function TLccTrainController.SearchByDccAddress(DccAddress: String; IsLongAddress: Boolean; SpeedSteps: TLccDccSpeedStep; ACallback: TOnTaskCallback): Boolean;
 begin
   Result := False;
   if TaskSearchTrain.IsIdle then
@@ -619,30 +1145,30 @@ begin
   end;
 end;
 
-function TLccTrainController.AssignToTrain(ATrainID: TNodeID; ACallback: TOnTaskCallback): Boolean;
+function TLccTrainController.ControllerAssign(ATrainID: TNodeID; ACallback: TOnTaskCallback): Boolean;
 begin
   Result := False;
   if TaskControllerAttach.IsIdle then
   begin
     TaskControllerAttach.Callback := ACallback;
-    TaskControllerAttach.TrainNodeID := ATrainID;
+    TaskControllerAttach.Target := ATrainID;
     TaskControllerAttach.Start(TIMEOUT_TASK_MESSAGES);
     Result := True;
   end;
 end;
 
-function TLccTrainController.ReleaseFromTrain(ATrainID: TNodeID): Boolean;
+function TLccTrainController.ControllerRelease(ATrainID: TNodeID): Boolean;
 begin
   Result := False;
-  if TaskControllerAttach.IsIdle then
+  if TaskControllerRelease.IsIdle then
   begin
-    TaskControllerRelease.TrainNodeID := ATrainID;
+    TaskControllerRelease.Target := ATrainID;
     TaskControllerRelease.Start(TIMEOUT_TASK_MESSAGES);
     Result := True;
   end;
 end;
 
-function TLccTrainController.QueryActiveController(ACallback: TOnTaskCallback): Boolean;
+function TLccTrainController.ControllerQueryActive(ACallback: TOnTaskCallback): Boolean;
 begin
    Result := False;
   if TaskControllerQuery.IsIdle then
@@ -653,13 +1179,159 @@ begin
   end;
 end;
 
-
-procedure TLccTrainController.ListenerDetachFromAssignedTrain;
+function TLccTrainController.ListenerAttach(Listener, AListenerToAttach: TNodeID; ReverseDir, LinkF0, LinkFn, Hide: Boolean; ACallback: TOnTaskCallback): Boolean;
 begin
-  if AssignedTrain.IsAssigned then
+  Result := False;
+  if TaskListenerAttach.IsIdle then
   begin
-    WorkerMessage.LoadTractionListenerDetach(NodeID, AliasID, AssignedTrain.Train.NodeID, AssignedTrain.Train.Alias, 0, NodeID);
-    SendMessage(WorkerMessage, Self);
+    TaskListenerAttach.ReverseDir := ReverseDir;
+    TaskListenerAttach.LinkF0 := LinkF0;
+    TaskListenerAttach.FLinkFn := LinkFn;
+    TaskListenerAttach.Hidden := Hide;
+    TaskListenerAttach.Listener := AListenerToAttach;
+    TaskListenerAttach.Target := Listener;
+    TaskListenerAttach.Callback := ACallback;
+    TaskListenerAttach.Start(TIMEOUT_TASK_MESSAGES);
+    Result := True;
+  end;
+end;
+
+function TLccTrainController.ListenerDetach(Listener, AListenerToDetach: TNodeID): Boolean;
+begin
+  Result := False;
+  if TaskListenerDetach.IsIdle then
+  begin
+    TaskListenerDetach.Listener := AListenerToDetach;
+    TaskListenerDetach.Target := Listener;
+    TaskListenerDetach.Start(TIMEOUT_TASK_MESSAGES);
+    Result := True;
+  end;
+end;
+
+function TLccTrainController.ListenerQueryAtIndex(Listener: TNodeID; ListenerIndex: Byte; ACallback: TOnTaskCallback): Boolean;
+begin
+  Result := False;
+  if TaskListenerQueryAtIndex.IsIdle then
+  begin
+    TaskListenerQueryAtIndex.Target := Listener;
+    TaskListenerQueryAtIndex.Callback := ACallback;
+    TaskListenerQueryAtIndex.Start(TIMEOUT_TASK_MESSAGES);
+    Result := True;
+  end;
+end;
+
+function TLccTrainController.ListenerQueryCount(Listener: TNodeID; ACallback: TOnTaskCallback): Boolean;
+begin
+  Result := False;
+  if TaskListenerQueryCount.IsIdle then
+  begin
+    TaskListenerQueryCount.Target := Listener;
+    TaskListenerQueryCount.Callback := ACallback;
+    TaskListenerQueryCount.Start(TIMEOUT_TASK_MESSAGES);
+    Result := True;
+  end;
+end;
+
+function TLccTrainController.ManagementReserveTrain(Listener: TNodeID; ACallback: TOnTaskCallback): Boolean;
+begin
+  Result := False;
+  if TaskManagementReserveTrain.IsIdle then
+  begin
+    TaskManagementReserveTrain.Target := Listener;
+    TaskManagementReserveTrain.Callback := ACallback;
+    TaskManagementReserveTrain.Start(TIMEOUT_TASK_MESSAGES);
+    Result := True;
+  end;
+end;
+
+function TLccTrainController.ManagementReleaseTrain(Listener: TNodeID): Boolean;
+begin
+  Result := False;
+  if TaskManagementReleaseTrain.IsIdle then
+  begin
+    TaskManagementReleaseTrain.Target := Listener;
+    TaskManagementReleaseTrain.Start(TIMEOUT_TASK_MESSAGES);
+    Result := True;
+  end;
+end;
+
+function TLccTrainController.ManagementNoOp(Listener: TNodeID; ACallback: TOnTaskCallback): Boolean;
+begin
+  Result := False;
+  if TaskManagementNoOp.IsIdle then
+  begin
+    TaskManagementNoOp.Target := Listener;
+    TaskManagementNoOp.Callback := ACallback;
+    TaskManagementNoOp.Start(TIMEOUT_TASK_MESSAGES);
+    Result := True;
+  end;
+end;
+
+function TLccTrainController.SetSpeedDir(Listener: TNodeID; Speed: single
+  ): Boolean;
+begin
+  Result := False;
+  if TaskSetSpeedDir.IsIdle then
+  begin
+    TaskSetSpeedDir.Target := Listener;
+    TaskSetSpeedDir.Speed := Speed;
+    TaskSetSpeedDir.Start(TIMEOUT_TASK_MESSAGES);
+    Result := True;
+  end;
+end;
+
+function TLccTrainController.SetSpeedDir(Listener: TNodeID; Speed: Integer; Forward: Boolean): Boolean;
+begin
+  if not Forward then Speed := -Speed;
+  SetSpeedDir(Listener, Speed, Forward);
+end;
+
+function TLccTrainController.SetFunction(Listener: TNodeID; FunctionAddress: DWord; Value: Word): Boolean;
+begin
+  Result := False;
+  if TaskSetFunction.IsIdle then
+  begin
+    TaskSetFunction.Address := FunctionAddress;
+    TaskSetFunction.Value := Value;
+    TaskSetFunction.Target := Listener;
+    TaskSetFunction.Start(TIMEOUT_TASK_MESSAGES);
+    Result := True;
+  end;
+end;
+
+function TLccTrainController.EmergencyStop(Listener: TNodeID): Boolean;
+begin
+  Result := False;
+  if TaskEmergencyStop.IsIdle then
+  begin
+    TaskEmergencyStop.Target := Listener;
+    TaskEmergencyStop.Start(TIMEOUT_TASK_MESSAGES);
+    Result := True;
+  end;
+end;
+
+function TLccTrainController.QuerySpeed(Listener: TNodeID; ACallback: TOnTaskCallback): Boolean;
+begin
+  Result := False;
+  if TaskQuerySpeed.IsIdle then
+  begin
+    TaskQuerySpeed.Target := Listener;
+    TaskQuerySpeed.Callback := ACallback;
+    TaskQuerySpeed.Start(TIMEOUT_TASK_MESSAGES);
+    Result := True;
+  end;
+end;
+
+function TLccTrainController.QueryFunction(Listener: TNodeID; FunctionAddress: DWord; ACallback: TOnTaskCallback): Boolean;
+begin
+  Result := False;
+  if TaskQueryFunction.IsIdle then
+  begin
+    TaskQueryFunction.Address := FunctionAddress;
+    TaskQueryFunction.Target := Listener;
+    TaskQueryFunction.Callback := ACallback;
+    TaskQueryFunction.Start(TIMEOUT_TASK_MESSAGES);
+    Result := True;
   end;
 end;
 

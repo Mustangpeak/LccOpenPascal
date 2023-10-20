@@ -22,31 +22,6 @@ type
   TOnMessageEvent = procedure(ALccMessage: TLccMessage) of object;
   TSearchEncodeStringError = (sese_ok, sese_TooLong, sese_InvalidCharacters);
 
-  { TLccSNIPObject }
-
-   TLccSNIPObject = class
-   private
-     FHardwareVersion: string;
-     FManufacturer: string;
-     FModel: string;
-     FSoftwareVersion: string;
-     FUserDescription: string;
-     FUserName: string;
-     FUserVersion: Byte;
-     FValid: Boolean;
-     FVersion: Byte;
-   public
-     property Version: Byte read FVersion write FVersion;
-     property Manufacturer: string read FManufacturer write FManufacturer;
-     property Model: string read FModel write FModel;
-     property HardwareVersion: string read FHardwareVersion write FHardwareVersion;
-     property SoftwareVersion: string read FSoftwareVersion write FSoftwareVersion;
-     property UserVersion: Byte read FUserVersion write FUserVersion;
-     property UserName: string read FUserName write FUserName;
-     property UserDescription: string read FUserDescription write FUserDescription;
-     property Valid: Boolean read FValid write FValid;
-   end;
-
   { TLccTrainSNIPObject }
 
   TLccTrainSNIPObject = class
@@ -149,7 +124,7 @@ public
   function ExtractDataBytesAsEventID(StartIndex: Integer): TEventID;
   function ExtractDataBytesAsInt(StartByteIndex, EndByteIndex: Integer): DWORD;
   function ExtractDataBytesAsNodeID(StartIndex: Integer; var ANodeID: TNodeID): TNodeID;
-  function ExtractDataBytesAsString(StartIndex, Count: Integer): String;
+  function ExtractDataBytesAsString(StartIndex: Integer; var Count: Integer): String;
   function ExtractDataBytesAsWord(StartIndex: Integer): Word;
   function ExtractDataBytesAsDWord(StartIndex: Integer): DWORD;
   function ExtractDataBytesAsHex(StartByteIndex, EndByteIndex: Integer): string;
@@ -191,9 +166,9 @@ public
   procedure LoadIdentifyEvents(ASourceID: TNodeID; ASourceAlias: Word);
   procedure LoadPCER(ASourceID: TNodeID; ASourceAlias: Word; AnEvent: TEventID);
   // Traction Control
-  procedure LoadTractionSetSpeed(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; ASpeed: single); overload;
-  procedure LoadTractionSetSpeed(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; ASpeed: THalfFloat); overload;
-  procedure LoadTractionSetFunction(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; AnAddress: DWord; AValue: Word);
+  procedure LoadTractionSetSpeed(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; ASpeed: single; IsForwardedListenerMessage: Boolean); overload;
+  procedure LoadTractionSetSpeed(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; ASpeed: THalfFloat; IsForwardedListenerMessage: Boolean); overload;
+  procedure LoadTractionSetFunction(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; AnAddress: DWord; AValue: Word; IsForwardedListenerMessage: Boolean);
   procedure LoadTractionEStop(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word);
   procedure LoadTractionQuerySpeed(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word);
   procedure LoadTractionQuerySpeedReply(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; SetSpeed: THalfFloat; Status: Byte; CommandedSpeed, ActualSpeed: THalfFloat);
@@ -214,8 +189,11 @@ public
   procedure LoadTractionListenerQueryReply(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; ListenerCount, ListenerNodeIndex: Byte; AListenerNodeID: TNodeID; ListenerFlags: Byte);
   procedure LoadTractionManage(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; Reserve: Boolean);
   procedure LoadTractionManageReply(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; Accepted: Boolean);
+  procedure LoadTractionManageNoOp(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word);
+  procedure LoadTractionManageHeartBeatReply(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; Timeout_Seconds: Byte);
   procedure LoadTractionIsTrainProducer(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word);
 
+  function TractionEncodeListenerFlags(ReverseDir, LinkF0, LinkFn, Hidden: Boolean): Byte;
   function TractionIsTrainEvent: Boolean;
   function TractionExtractSetSpeed: THalfFloat;
   function TractionExtractCommandedSpeed: THalfFloat;
@@ -235,6 +213,7 @@ public
   function TractionExtractListenerQueryNodeIDReply: TNodeID;
   function TractionExtractListenerIDReply: TNodeID;
   function TractionExtractListenerCodeReply: Byte;
+  function TractionExtractHeartBeatTimeoutReply: Byte;
 
   // Traction Search
   class function TractionSearchEncodeSearchString(SearchString: string; TrackProtocolFlags: Byte; var SearchData: DWORD): TSearchEncodeStringError;
@@ -926,18 +905,31 @@ begin
   Result := ANodeID;
 end;
 
-function TLccMessage.ExtractDataBytesAsString(StartIndex, Count: Integer): String;
+function TLccMessage.ExtractDataBytesAsString(StartIndex: Integer; var Count: Integer): String;
 var
   i: Integer;
 begin
   Result := '';
-  for i := StartIndex to Count - 1 do
+  if Count > 0 then
   begin
-    if DataArray[i] <> Ord(#0) then
-      Result := Result + Chr( DataArray[i])
-    else
-      Break
-  end;
+    for i := StartIndex to Count - 1 do
+    begin
+      if DataArray[i] <> Ord(#0) then
+        Result := Result + Chr( DataArray[i])
+      else
+        Break
+    end;
+  end else
+  begin
+    Count := 0;
+    i := StartIndex;
+    while Chr(DataArray[i]) <> #0 do
+    begin
+      Result := Result + Chr( DataArray[i]);
+      Inc(i);
+      Inc(Count);
+    end
+  end
 end;
 
 function TLccMessage.ExtractDataBytesAsWord(StartIndex: Integer): Word;
@@ -1752,6 +1744,11 @@ begin
   Result := DataArray[2];
 end;
 
+function TLccMessage.TractionExtractHeartBeatTimeoutReply: Byte;
+begin
+  Result := DataArray[2];
+end;
+
 function TLccMessage.TractionExtractSetSpeed: THalfFloat;
 var
   Speed: Word;
@@ -2112,25 +2109,15 @@ begin
 end;
 
 procedure TLccMessage.LoadTractionSetSpeed(ASourceID: TNodeID;
-  ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; ASpeed: single);
-var
-  HalfFloatSpeed: THalfFloat;
+  ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; ASpeed: single;
+  IsForwardedListenerMessage: Boolean);
 begin
-  HalfFloatSpeed := FloatToHalf(ASpeed);
-  ZeroFields;
-  SourceID := ASourceID;
-  DestID := ADestID;
-  SourceAlias := ASourceAlias;
-  DestAlias := ADestAlias;
-  DataCount := 3;
-  FDataArray[0] := TRACTION_SET_SPEED_DIR;
-  FDataArray[1] := Hi( HalfFloatSpeed);
-  FDataArray[2] := Lo( HalfFloatSpeed);
-  MTI := MTI_TRACTION_REQUEST;
+  LoadTractionSetSpeed(ASourceID, ASourceAlias, ADestID, ADestAlias, FloatToHalf(ASpeed), IsForwardedListenerMessage);
 end;
 
 procedure TLccMessage.LoadTractionSetSpeed(ASourceID: TNodeID;
-  ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; ASpeed: THalfFloat);
+  ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; ASpeed: THalfFloat;
+  IsForwardedListenerMessage: Boolean);
 begin
   ZeroFields;
   SourceID := ASourceID;
@@ -2138,6 +2125,10 @@ begin
   SourceAlias := ASourceAlias;
   DestAlias := ADestAlias;
   DataCount := 3;
+  if IsForwardedListenerMessage then
+    FDataArray[0] := TRACTION_SET_SPEED_DIR OR TRACTION_FORWARED_LISTENER_FLAG
+  else
+    FDataArray[0] := TRACTION_SET_SPEED_DIR;
   FDataArray[0] := TRACTION_SET_SPEED_DIR;
   FDataArray[1] := Hi( ASpeed);
   FDataArray[2] := Lo( ASpeed);
@@ -2156,7 +2147,7 @@ end;
 
 procedure TLccMessage.LoadTractionSetFunction(ASourceID: TNodeID;
   ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; AnAddress: DWord;
-  AValue: Word);
+  AValue: Word; IsForwardedListenerMessage: Boolean);
 begin
   ZeroFields;
   SourceID := ASourceID;
@@ -2164,7 +2155,10 @@ begin
   SourceAlias := ASourceAlias;
   DestAlias := ADestAlias;
   DataCount := 6;
-  FDataArray[0] := TRACTION_SET_FUNCTION;
+  if IsForwardedListenerMessage then
+    FDataArray[0] := TRACTION_SET_FUNCTION OR TRACTION_FORWARED_LISTENER_FLAG
+  else
+    FDataArray[0] := TRACTION_SET_FUNCTION;
   FDataArray[1] := Byte((AnAddress shr 16) and $0000FF);
   FDataArray[2] := Byte((AnAddress shr 8) and $0000FF);
   FDataArray[3] := Byte(AnAddress and $0000FF);
@@ -2204,6 +2198,16 @@ begin
   FDataArray[6] := EVENT_IS_TRAIN[6];
   FDataArray[7] := EVENT_IS_TRAIN[7];
   MTI := MTI_PRODUCER_IDENDIFY;
+end;
+
+function TLccMessage.TractionEncodeListenerFlags(ReverseDir, LinkF0, LinkFn,
+  Hidden: Boolean): Byte;
+begin
+  Result := 0;
+  if ReverseDir then Result := Result or TRACTION_LISTENER_FLAG_REVERSE_DIR;
+  if LinkF0 then Result := Result or TRACTION_LISTENER_FLAG_LINK_F0;
+  if LinkFn then Result := Result or TRACTION_LISTENER_FLAG_LINK_FN;
+  if Hidden then Result := Result or TRACTION_LISTENER_FLAG_HIDDEN;
 end;
 
 procedure TLccMessage.LoadTractionQuerySpeed(ASourceID: TNodeID;
@@ -2551,6 +2555,36 @@ begin
     FDataArray[2] := TRACTION_MANAGE_RESERVE_REPLY_OK
   else
     FDataArray[2] := TRACTION_MANAGE_RESERVE_REPLY_FAIL;
+  MTI := MTI_TRACTION_REPLY;
+end;
+
+procedure TLccMessage.LoadTractionManageNoOp(ASourceID: TNodeID;
+  ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word);
+begin
+  ZeroFields;
+  SourceID := ASourceID;
+  DestID := ADestID;
+  SourceAlias := ASourceAlias;
+  DestAlias := ADestAlias;
+  DataCount := 2;
+  FDataArray[0] := TRACTION_MANAGE;
+  FDataArray[1] := TRACTION_MANAGE_NO_OP;
+  MTI := MTI_TRACTION_REQUEST;
+end;
+
+procedure TLccMessage.LoadTractionManageHeartBeatReply(ASourceID: TNodeID;
+  ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; Timeout_Seconds: Byte
+  );
+begin
+  ZeroFields;
+  SourceID := ASourceID;
+  DestID := ADestID;
+  SourceAlias := ASourceAlias;
+  DestAlias := ADestAlias;
+  DataCount := 2;
+  FDataArray[0] := TRACTION_MANAGE;
+  FDataArray[1] := TRACTION_MANAGE_NO_OP;
+  FDataArray[2] := TimeOut_Seconds;
   MTI := MTI_TRACTION_REPLY;
 end;
 

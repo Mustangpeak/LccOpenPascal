@@ -65,7 +65,7 @@ type
     procedure DoTractionControllerRelease(LccNode: TLccNode; ALccMessage: TLccMessage; var DoDefault: Boolean);
     procedure DoTractionControllerQuery(LccNode: TLccNode; ALccMessage: TLccMessage; var DoDefault: Boolean);
     procedure DoTractionControllerChangedNotify(LccNode: TLccNode; ALccMessage: TLccMessage; var DoDefault: Boolean);
-    procedure DoTractionEmergencyStop(LccNode: TLccNode; ALccMessage: TLccMessage; var DoDefault: Boolean);
+    procedure DoTractionEmergencyStop(LccNode: TLccNode; ALccMessage: TLccMessage; ListenerForwarded: Boolean; var DoDefault: Boolean);
     procedure DoTractionListenerAttach(LccNode: TLccNode; ALccMessage: TLccMessage; var DoDefault: Boolean);
     procedure DoTractionListenerAttached(LccNode: TLccNode; ALccMessage: TLccMessage);
     procedure DoTractionListenerDetach(LccNode: TLccNode; ALccMessage: TLccMessage; var DoDefault: Boolean);
@@ -75,8 +75,8 @@ type
     procedure DoTractionManageRelease(LccNode: TLccNode; LccMessage: TLccMessage; var DoDefault: Boolean);
     procedure DoTractionQuerySpeed(LccNode: TLccNode; ALccMessage: TLccMessage; var DoDefault: Boolean);
     procedure DoTractionQueryFunction(LccNode: TLccNode; ALccMessage: TLccMessage; var DoDefault: Boolean);
-    procedure DoTractionSetFunction(LccNode: TLccNode; ALccMessage: TLccMessage; var DoDefault: Boolean);
-    procedure DoTractionSetSpeed(LccNode: TLccNode; ALccMessage: TLccMessage; var DoDefault: Boolean);
+    procedure DoTractionSetFunction(LccNode: TLccNode; ALccMessage: TLccMessage; ListenerForwarded: Boolean; var DoDefault: Boolean);
+    procedure DoTractionSetSpeed(LccNode: TLccNode; ALccMessage: TLccMessage; ListenerForwarded: Boolean; var DoDefault: Boolean);
     procedure DoTractionTrainSNIP(LccNode: TLccNode; ALccMessage: TLccMessage; var DoDefault: Boolean);
   end;
 
@@ -168,7 +168,7 @@ type
     procedure DoTractionControllerChangedNotify(LccNode: TLccNode; ALccMessage: TLccMessage; var DoDefault: Boolean);
     procedure DoTractionControllerRelease(LccNode: TLccNode; ALccMessage: TLccMessage; var DoDefault: Boolean);
     procedure DoTractionControllerQuery(LccNode: TLccNode; ALccMessage: TLccMessage; var DoDefault: Boolean);
-    procedure DoTractionEmergencyStop(LccNode: TLccNode; ALccMessage: TLccMessage; var DoDefault: Boolean);
+    procedure DoTractionEmergencyStop(LccNode: TLccNode; ALccMessage: TLccMessage; ListenerForwarded: Boolean; var DoDefault: Boolean);
     procedure DoTractionListenerAttach(LccNode: TLccNode; ALccMessage: TLccMessage; var DoDefault: Boolean);
     procedure DoTractionListenerAttached(LccNode: TLccNode; ALccMessage: TLccMessage);
     procedure DoTractionListenerDetach(LccNode: TLccNode; ALccMessage: TLccMessage; var DoDefault: Boolean);
@@ -178,8 +178,8 @@ type
     procedure DoTractionManageRelease(LccNode: TLccNode; LccMessage: TLccMessage; var DoDefault: Boolean);
     procedure DoTractionQuerySpeed(LccNode: TLccNode; ALccMessage: TLccMessage; var DoDefault: Boolean);
     procedure DoTractionQueryFunction(LccNode: TLccNode; ALccMessage: TLccMessage; var DoDefault: Boolean);
-    procedure DoTractionSetFunction(LccNode: TLccNode; ALccMessage: TLccMessage; var DoDefault: Boolean);
-    procedure DoTractionSetSpeed(LccNode: TLccNode; ALccMessage: TLccMessage; var DoDefault: Boolean);
+    procedure DoTractionSetFunction(LccNode: TLccNode; ALccMessage: TLccMessage; ListenerForwarded: Boolean; var DoDefault: Boolean);
+    procedure DoTractionSetSpeed(LccNode: TLccNode; ALccMessage: TLccMessage; ListenerForwarded: Boolean; var DoDefault: Boolean);
     procedure DoTractionTrainSNIP(LccNode: TLccNode; ALccMessage: TLccMessage; var DoDefault: Boolean);
 
    public
@@ -404,13 +404,15 @@ begin
     OnNodeTractionQueryFunction(Self, LccNode, ALccMessage, DoDefault);
 end;
 
-procedure TLccNodeManager.DoTractionSetFunction(LccNode: TLccNode; ALccMessage: TLccMessage; var DoDefault: Boolean);
+procedure TLccNodeManager.DoTractionSetFunction(LccNode: TLccNode;
+  ALccMessage: TLccMessage; ListenerForwarded: Boolean; var DoDefault: Boolean);
 begin
   if Assigned(OnNodeTractionSetFunction) then
     OnNodeTractionSetFunction(Self, LccNode, ALccMessage, DoDefault);
 end;
 
-procedure TLccNodeManager.DoTractionSetSpeed(LccNode: TLccNode; ALccMessage: TLccMessage; var DoDefault: Boolean);
+procedure TLccNodeManager.DoTractionSetSpeed(LccNode: TLccNode;
+  ALccMessage: TLccMessage; ListenerForwarded: Boolean; var DoDefault: Boolean);
 begin
   if Assigned(OnNodeTractionSetSpeed) then
     OnNodeTractionSetSpeed(Self, LccNode, ALccMessage, DoDefault);
@@ -482,7 +484,8 @@ begin
     OnNodeTractionControllerQuery(Self, LccNode, ALccMessage, DoDefault);
 end;
 
-procedure TLccNodeManager.DoTractionEmergencyStop(LccNode: TLccNode; ALccMessage: TLccMessage; var DoDefault: Boolean);
+procedure TLccNodeManager.DoTractionEmergencyStop(LccNode: TLccNode;
+  ALccMessage: TLccMessage; ListenerForwarded: Boolean; var DoDefault: Boolean);
 begin
   if Assigned(OnNodeTractionEmergencyStop) then
     OnNodeTractionEmergencyStop(Self, LccNode, ALccMessage, DoDefault);
