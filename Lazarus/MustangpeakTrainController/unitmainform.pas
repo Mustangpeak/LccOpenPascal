@@ -961,12 +961,8 @@ begin
     case ATask.TaskState of
       lesComplete :
         begin
-     //     ShowMessage('Assigned to Train Completed: NodeID = ' + NodeIDToString(LocalTask.Target, True) + 'Alias (through AliasMapping): ' + IntToStr(Mapping.NodeAlias));
           TrainInfo.NodeID := LocalTask.Target;
-
-          PanelRosterSlider.Enabled := True;;
           // Do UI Updates
-
           EnableControls(True);
 
           LabelStatus.Caption := 'Requesting Train Info...';
@@ -1012,7 +1008,6 @@ begin
     lesIdle : ShowMessage('CallbackSnip Idle: This should not have happended');
     lesError : ShowMessage('Error: Code: ' + IntToStr(ATask.ErrorCode) + ' ' + ATask.ErrorMessage);
   end;
-
 end;
 
 procedure TFormTrainController.CallbackPip(ATask: TLccTaskBase);

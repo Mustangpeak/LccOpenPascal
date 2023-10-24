@@ -75,7 +75,7 @@ type
     FMemorySpace: Byte;
     FAddressAbsolute: Int64;
     FLevel: Integer;
-    FEngineMemoryAccess: TLccEngineMemorySpaceAccess;
+    FEngineMemoryAccess: TLccTaskMemorySpaceAccess;
     FAutoLoadConfigMem: Boolean;
     FName: LccDOMString;
     FDescription: LccDOMString;
@@ -92,7 +92,7 @@ type
     property ChildElement[Index: Integer]: TLccCidCore read GetChildElement;
     property ChildElementCount: Integer read GetChildElementCount;
     property Level: Integer read FLevel;
-    property EngineMemoryAccess: TLccEngineMemorySpaceAccess read FEngineMemoryAccess write FEngineMemoryAccess;
+    property EngineMemoryAccess: TLccTaskMemorySpaceAccess read FEngineMemoryAccess write FEngineMemoryAccess;
 
     constructor Create; virtual;
     destructor Destroy; override;
@@ -107,8 +107,8 @@ type
   protected
     procedure EnumerateMapping(Node: TLccXmlNode);
     procedure EnumerateElement(Node: TLccXmlNode);
-    procedure CallbackReadConfigurationMemory(AnEngineMemorySpaceAccess: TLccEngineMemorySpaceAccess); virtual; abstract;
-    procedure CallbackWriteConfigurationMemory(AnEngineMemorySpaceAccess: TLccEngineMemorySpaceAccess); virtual; abstract;
+    procedure CallbackReadConfigurationMemory(ATask: TLccTaskBase); virtual; abstract;
+    procedure CallbackWriteConfigurationMemory(ATask: TLccTaskBase); virtual; abstract;
   public
     property AddressAbsolute;          // The Address to read/write in the configuration memory for this Element
     property MemorySpace;              // What Memeory Space to read/write to
@@ -182,8 +182,8 @@ type
     procedure SetValueAsStr(const Value: LccDOMString);
     procedure SetValueAsHex(const Value: LccDOMString);
   protected
-    procedure CallbackReadConfigurationMemory(AnEngineMemorySpaceAccess: TLccEngineMemorySpaceAccess); override;
-    procedure CallbackWriteConfigurationMemory(AnEngineMemorySpaceAccess: TLccEngineMemorySpaceAccess); override;
+    procedure CallbackReadConfigurationMemory(ATask: TLccTaskBase); override;
+    procedure CallbackWriteConfigurationMemory(ATask: TLccTaskBase); override;
   public
     property ElementInt: Integer read FElementInt write FElementInt;
     property Min: Integer read FMin write SetMin;
@@ -202,8 +202,8 @@ type
   private
     FElementStr: LccDOMString;
   protected
-    procedure CallbackReadConfigurationMemory(AnEngineMemorySpaceAccess: TLccEngineMemorySpaceAccess); override;
-    procedure CallbackWriteConfigurationMemory(AnEngineMemorySpaceAccess: TLccEngineMemorySpaceAccess); override;
+    procedure CallbackReadConfigurationMemory(ATask: TLccTaskBase); override;
+    procedure CallbackWriteConfigurationMemory(ATask: TLccTaskBase); override;
   public
     property ElementStr: LccDOMString read FElementStr write FElementStr;
   end;
@@ -216,8 +216,8 @@ type
     function GetElementEventIdAsStrWithDots: LccDOMString;
     procedure SetElementEventIDAsStr(const Value: LccDOMString);
   protected
-    procedure CallbackReadConfigurationMemory(AnEngineMemorySpaceAccess: TLccEngineMemorySpaceAccess); override;
-    procedure CallbackWriteConfigurationMemory(AnEngineMemorySpaceAccess: TLccEngineMemorySpaceAccess); override;
+    procedure CallbackReadConfigurationMemory(ATask: TLccTaskBase); override;
+    procedure CallbackWriteConfigurationMemory(ATask: TLccTaskBase); override;
   public
     property ElementEventId: TEventID read FElementEventId write FElementEventId;
     property ElementEventIdAsStr: LccDOMString read GetElementEventIdAsStr write SetElementEventIDAsStr;
@@ -318,8 +318,7 @@ begin
       True,
       EngineMemoryAccess.TargetNodeID,
       EngineMemoryAccess.TargetAlias,
-      {$IFNDEF LCC_DELPHI}@{$ENDIF}AnElementEventId.CallbackReadConfigurationMemory,
-      nil);
+      {$IFNDEF LCC_DELPHI}@{$ENDIF}AnElementEventId.CallbackReadConfigurationMemory);
 
   AnElementEventId.EnumerateElement(Node);   // no child can modify the address as "offset" is not defined for defined children
 end;
@@ -360,8 +359,7 @@ begin
       True,
       EngineMemoryAccess.TargetNodeID,
       EngineMemoryAccess.TargetAlias,
-      {$IFNDEF LCC_DELPHI}@{$ENDIF}AnElementInt.CallbackReadConfigurationMemory,
-      nil);
+      {$IFNDEF LCC_DELPHI}@{$ENDIF}AnElementInt.CallbackReadConfigurationMemory);
 
   AnElementInt.EnumerateElement(Node);   // no child can modify the address as "offset" is not defined for defined children
 end;
@@ -395,8 +393,7 @@ begin
       True,
       EngineMemoryAccess.TargetNodeID,
       EngineMemoryAccess.TargetAlias,
-      {$IFNDEF LCC_DELPHI}@{$ENDIF}AnElementStr.CallbackReadConfigurationMemory,
-      nil);
+      {$IFNDEF LCC_DELPHI}@{$ENDIF}AnElementStr.CallbackReadConfigurationMemory);
 
   AnElementStr.EnumerateElement(Node);   // no child can modify the address as "offset" is not defined for defined children
 end;
@@ -602,14 +599,14 @@ end;
 constructor TLccCdiRoot.Create(ANode: TLccNode);
 begin
   inherited Create;
-  EngineMemoryAccess := TLccEngineMemorySpaceAccess.Create(ANode)
+  EngineMemoryAccess := TLccTaskMemorySpaceAccess.Create(ANode)
 end;
 
 destructor TLccCdiRoot.Destroy;
 begin
   ClearChildElements;
   XmlFreeDocument(FXMLDocument);
-  EngineMemoryAccess.Stop;
+  EngineMemoryAccess.Abort;
   FreeAndNil(FEngineMemoryAccess);
   inherited;
 end;
@@ -693,13 +690,13 @@ end;
 
 { TLccCdiElementInt }
 
-procedure TLccCdiElementInt.CallbackReadConfigurationMemory(AnEngineMemorySpaceAccess: TLccEngineMemorySpaceAccess);
+procedure TLccCdiElementInt.CallbackReadConfigurationMemory(ATask: TLccTaskBase);
 begin
-  if AnEngineMemorySpaceAccess.EngineState = lesComplete then
-    ElementInt := AnEngineMemorySpaceAccess.StreamAsInt;
+  if ATask.TaskState = lesComplete then
+    ElementInt := (ATask as TLccTaskMemorySpaceAccess).StreamAsInt;
 end;
 
-procedure TLccCdiElementInt.CallbackWriteConfigurationMemory(AnEngineMemorySpaceAccess: TLccEngineMemorySpaceAccess);
+procedure TLccCdiElementInt.CallbackWriteConfigurationMemory(ATask: TLccTaskBase);
 begin
 
 end;
@@ -752,13 +749,13 @@ end;
 
 { TLccCdiElementEventId }
 
-procedure TLccCdiElementEventId.CallbackReadConfigurationMemory(AnEngineMemorySpaceAccess: TLccEngineMemorySpaceAccess);
+procedure TLccCdiElementEventId.CallbackReadConfigurationMemory(ATask: TLccTaskBase);
 begin
-  if AnEngineMemorySpaceAccess.EngineState = lesComplete then
-    ElementEventId := AnEngineMemorySpaceAccess.StreamAsEventID;
+  if ATask.TaskState = lesComplete then
+    ElementEventId := (ATask as TLccTaskMemorySpaceAccess).StreamAsEventID;
 end;
 
-procedure TLccCdiElementEventId.CallbackWriteConfigurationMemory(AnEngineMemorySpaceAccess: TLccEngineMemorySpaceAccess);
+procedure TLccCdiElementEventId.CallbackWriteConfigurationMemory(ATask: TLccTaskBase);
 begin
 
 end;
@@ -847,13 +844,13 @@ end;
 
 { TLccCdiElementStr }
 
-procedure TLccCdiElementStr.CallbackReadConfigurationMemory(AnEngineMemorySpaceAccess: TLccEngineMemorySpaceAccess);
+procedure TLccCdiElementStr.CallbackReadConfigurationMemory(ATask: TLccTaskBase);
 begin
-  if AnEngineMemorySpaceAccess.EngineState = lesComplete then
-    ElementStr := AnEngineMemorySpaceAccess.StreamAsString;
+  if ATask.TaskState = lesComplete then
+    ElementStr := (ATask as TLccTaskMemorySpaceAccess).StreamAsString;
 end;
 
-procedure TLccCdiElementStr.CallbackWriteConfigurationMemory(AnEngineMemorySpaceAccess: TLccEngineMemorySpaceAccess);
+procedure TLccCdiElementStr.CallbackWriteConfigurationMemory(ATask: TLccTaskBase);
 begin
 
 end;

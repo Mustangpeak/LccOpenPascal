@@ -144,12 +144,12 @@ type
   TProtocolEvents = class(TNodeProtocolBase)
   private
     FAutoGenerate: TLccEventAutoGenerate;
-    FEventList: TObjectList;
+    FEventList: TList;
     function GetCount: Integer;
     function GetEvent(Index: Integer): TLccEvent;
     function GetEventIDAsStr(Index: Integer): String;
   protected
-    property EventList: TObjectList read FEventList write FEventList;
+    property EventList: TList read FEventList write FEventList;
   public
     constructor Create; override;
     destructor Destroy; override;
@@ -675,9 +675,8 @@ end;
 constructor TProtocolEvents.Create;
 begin
   inherited Create;
-  FEventList := TObjectList.Create;
-  FAutoGenerate := TLccEventAutoGenerate.Create;
-  EventList.OwnsObjects := False;
+  FEventList := TList.Create;
+  FAutoGenerate := TLccEventAutoGenerate.Create;;
 end;
 
 destructor TProtocolEvents.Destroy;

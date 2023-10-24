@@ -406,8 +406,8 @@ type
     procedure AfterLogin; override;
 
     // Search Methods
-    function SearchByDccAddress(DccAddress: Word; IsLongAddress: Boolean; SpeedSteps: TLccDccSpeedStep; ACallback: TOnTaskCallback): Boolean;   // Callback -> TLccTaskSearchTrain
-    function SearchByDccAddress(DccAddress: String; IsLongAddress: Boolean; SpeedSteps: TLccDccSpeedStep; ACallback: TOnTaskCallback): Boolean; // Callback -> TLccTaskSearchTrain
+    function SearchByDccAddress(DccAddress: Word; IsLongAddress: Boolean; SpeedSteps: TLccDccSpeedStep; ACallback: TOnTaskCallback): Boolean; overload;  // Callback -> TLccTaskSearchTrain
+    function SearchByDccAddress(DccAddress: String; IsLongAddress: Boolean; SpeedSteps: TLccDccSpeedStep; ACallback: TOnTaskCallback): Boolean; overload; // Callback -> TLccTaskSearchTrain
 
     // Controller Methods
     function ControllerAssign(ATrainID: TNodeID; ACallback: TOnTaskCallback): Boolean;                            // Callback -> TLccTaskControllerAttach
@@ -427,7 +427,7 @@ type
 
     // Control Methods
     function SetSpeedDir(Listener: TNodeID; Speed: single): Boolean; overload;                            // Callback -> None
-    function SetSpeedDir(Listener: TNodeID; Speed: Integer; Forward: Boolean): Boolean; overload;         // Callback -> None
+    function SetSpeedDir(Listener: TNodeID; Speed: single; Forward: Boolean): Boolean; overload;         // Callback -> None
     function SetFunction(Listener: TNodeID; FunctionAddress: DWord; Value: Word): Boolean;                // Callback -> None
     function EmergencyStop(Listener: TNodeID): Boolean;                                                   // Callback -> None
 
@@ -1297,7 +1297,7 @@ begin
   end;
 end;
 
-function TLccTrainController.SetSpeedDir(Listener: TNodeID; Speed: Integer; Forward: Boolean): Boolean;
+function TLccTrainController.SetSpeedDir(Listener: TNodeID; Speed: Single; Forward: Boolean): Boolean;
 begin
   if not Forward then Speed := -Speed;
   Result := SetSpeedDir(Listener, Speed);
