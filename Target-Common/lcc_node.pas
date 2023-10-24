@@ -222,7 +222,7 @@ type
     FAddressHi: DWord;
     FAddressLo: DWord;
     FAddressSpaceValid: Boolean;
-    FCurrentAddress: DWord;
+    FAddressCurrent: DWord;
     FIsString: Boolean;
     FMemorySpace: Byte;
     FMemorySpaceQueue: TList;
@@ -241,7 +241,6 @@ type
     procedure SetStreamAsString(AValue: string);
     function GetQueuedRequests: Integer;
   protected
-    property CurrentAddress: DWord read FCurrentAddress write FCurrentAddress;
     property MemorySpaceQueue: TList read FMemorySpaceQueue write FMemorySpaceQueue;
     property WritingChunk: Boolean read FWritingChunk write FWritingChunk;
     property AddressSpaceValid: Boolean read FAddressSpaceValid write FAddressSpaceValid;
@@ -262,6 +261,7 @@ type
 
     property AddressLo: DWord read FAddressLo write FAddressLo;
     property AddressHi: DWord read FAddressHi write FAddressHi;
+    property AddressCurrent: DWord read FAddressCurrent;
     property IsString: Boolean read FIsString write FIsString;
     property MemoryStream: TMemoryStream read FMemoryStream;
     property MemorySpace: Byte read FMemorySpace write FMemorySpace;                               // MSI_xxxx constants
@@ -281,6 +281,7 @@ type
 
 
     constructor Create(AnOwner: TLccNode); override;
+    procedure CopyTo(ATaskMemorySpaceAccess: TLccTaskMemorySpaceAccess);
     destructor Destroy; override;
     procedure FlushMemorySpaceQueue(SendCallbacks: Boolean);
     procedure Start(ATimeout: Integer); override;
@@ -369,8 +370,6 @@ type
     function GetNodeIDStr(WithDots: Boolean): String;
   protected
     FNodeID: TNodeID;
-
-    procedure DoMemorySpaceReadEngineDone(MemoryReadEngine: TLccTaskMemorySpaceAccess); virtual;
 
     // Datagram Message Handlers
     //**************************************************************************
@@ -565,6 +564,7 @@ type
 
     function RequestSNIP(ATarget: TNodeID; ACallback: TOnTaskCallback): Boolean;   // Callback: TTaskReadSNIP
     function RequestPIP(ATarget: TNodeID; ACallback: TOnTaskCallback): Boolean;    // Callback: TTaskReadPIP
+    function RequestCDI(ATarget: TNodeID; ACallback: TOnTaskCallback): Boolean;
   end;
 
   TLccNodeClass = class of TLccNode;
@@ -816,7 +816,7 @@ begin
     for i := 0 to MemspaceDataSentCount - 1 do
     begin
       MemoryStream.Write(SourceMessage.DataArray[i + DataStartIndex], 1);
-      Inc(FCurrentAddress);  // Update the current address pointer
+      Inc(FAddressCurrent);  // Update the current address pointer
 
       if IsString then
       begin
@@ -825,13 +825,12 @@ begin
       end;
     end;
 
-    if not NullFound and (CurrentAddress < (AddressHi-AddressLo)) then
+    if not NullFound and (AddressCurrent < (AddressHi-AddressLo)) then
       ReadNextChunk
     else begin
       Complete;
-      // So this allows a hook in the Node to track reads of memoryspaces to cache them like in the TractionNode and TractionServer
-      OwnerNode.DoMemorySpaceReadEngineDone(Self);
       CallbackAndNextMemorySpace;
+      Reset;
     end;
   end
 end;
@@ -841,7 +840,8 @@ begin
   if MemoryStream.Position = MemoryStream.Size then
   begin
     Complete;
-    CallbackAndNextMemorySpace
+    CallbackAndNextMemorySpace;
+    Reset;
   end else
     WriteNextChunk;
 end;
@@ -853,19 +853,18 @@ begin
   if TaskState = lesRunning then
   begin
     // Calculate the number of bytes to read
-    if CurrentAddress + 64 > AddressHi then
-      NextCount := AddressHi - CurrentAddress
+    if AddressCurrent + 64 > AddressHi then
+      NextCount := AddressHi - AddressCurrent
     else
       NextCount := 64;
 
     // Request the read
-    WorkerMessage.LoadConfigMemRead(OwnerNode.NodeID, OwnerNode.AliasID, TargetNodeID, TargetAlias, MemorySpace, CurrentAddress, NextCount);
+    WorkerMessage.LoadConfigMemRead(OwnerNode.NodeID, OwnerNode.AliasID, TargetNodeID, TargetAlias, MemorySpace, AddressCurrent, NextCount);
     OwnerNode.SendMessage(WorkerMessage, OwnerNode);
 
     // Inprogress update
     if Assigned(CallBack) then
       CallBack(Self);
-
   end;
 end;
 
@@ -907,14 +906,15 @@ begin
       end;
 
       // Write the space
-      WorkerMessage.LoadConfigMemWrite(OwnerNode.NodeID, OwnerNode.AliasID, TargetNodeID, TargetAlias, MemorySpace, CurrentAddress, ByteArray);
+      WorkerMessage.LoadConfigMemWrite(OwnerNode.NodeID, OwnerNode.AliasID, TargetNodeID, TargetAlias, MemorySpace, AddressCurrent, ByteArray);
       OwnerNode.SendMessage(WorkerMessage, OwnerNode);
 
+      // Inprocess Update
       if Assigned(Callback) then
         Callback(Self);
 
       // Update the address pointer
-      Inc(FCurrentAddress, NextCount)
+      Inc(FAddressCurrent, NextCount)
     end;
   end;
 end;
@@ -1043,6 +1043,27 @@ begin
   FMemorySpaceQueue := TList.Create;
 end;
 
+procedure TLccTaskMemorySpaceAccess.CopyTo(ATaskMemorySpaceAccess: TLccTaskMemorySpaceAccess);
+begin
+
+
+  ATaskMemorySpaceAccess.FAddressHi := AddressHi;
+  ATaskMemorySpaceAccess.FAddressLo := AddressLo;
+  ATaskMemorySpaceAccess.FAddressSpaceValid := AddressSpaceValid;
+  ATaskMemorySpaceAccess.FAddressCurrent := AddressCurrent;
+  ATaskMemorySpaceAccess.FIsString := IsString;
+  ATaskMemorySpaceAccess.FMemorySpace := MemorySpace;
+  ATaskMemorySpaceAccess.FTargetAlias := TargetAlias;
+  ATaskMemorySpaceAccess.FTargetNodeID := TargetNodeID;
+  ATaskMemorySpaceAccess.FUseAddresses := UseAddresses;
+  ATaskMemorySpaceAccess.FWritingChunk := WritingChunk;
+  ATaskMemorySpaceAccess.FReadWrite := ReadWrite;
+
+  MemoryStream.Position := 0;
+  ATaskMemorySpaceAccess.MemoryStream.CopyFrom(MemoryStream, MemoryStream.Size);
+  PIPHelper.CopyTo(ATaskMemorySpaceAccess.PIPHelper);
+end;
+
 destructor TLccTaskMemorySpaceAccess.Destroy;
 begin
   FlushMemorySpaceQueue(False);
@@ -1061,7 +1082,10 @@ begin
   inherited Start(TimeoutLimit);
 
   if ReadWrite = lems_Read then
-      MemoryStream.Clear;
+  begin
+    MemoryStream.Position := 0;
+    MemoryStream.Size := 0;
+  end;
 
   if not AddressSpaceValid then
   begin
@@ -1208,7 +1232,7 @@ begin
       MemorySpace := EngineMemorySpaceObject.MemorySpace;
       IsString := EngineMemorySpaceObject.IsString;
       AddressLo := EngineMemorySpaceObject.AddressLo;
-      CurrentAddress := EngineMemorySpaceObject.AddressLo;
+      FAddressCurrent := EngineMemorySpaceObject.AddressLo;
       AddressHi := EngineMemorySpaceObject.AddressHi;
       UseAddresses := EngineMemorySpaceObject.UseAddresses;
       TargetNodeID := EngineMemorySpaceObject.TargetNodeID;
@@ -1228,7 +1252,8 @@ begin
       end else
       if ReadWrite = lems_Read then
       begin
-        MemoryStream.Clear;   // Waste of time?
+        MemoryStream.Position := 0;
+        MemoryStream.Size := 0;
       end;
 
     finally
@@ -1243,7 +1268,9 @@ end;
 procedure TLccTaskMemorySpaceAccess.CallbackAndNextMemorySpace;
 begin
   if Assigned(Callback) then
+  begin
     Callback(Self);
+  end;
   if NextMemorySpaceObjectFromQueue then
     InternalStart;
 end;
@@ -1251,7 +1278,7 @@ end;
 procedure TLccTaskMemorySpaceAccess.StartOperation;
 begin
   // Start off the current address
-  CurrentAddress := AddressLo;
+  FAddressCurrent := AddressLo;
 
   // Start the process
   case ReadWrite of
@@ -1303,10 +1330,14 @@ end;
 
 procedure TLccTaskMemorySpaceAccess.Start(ATimeout: Integer);
 begin
-  inherited Start(ATimeout);
-
   if NextMemorySpaceObjectFromQueue then
-    InternalStart;
+    InternalStart
+  else begin
+    Error(TASK_ERROR_MEMORY_SPACE_NO_JOB_ASSIGNED, 'No job was assigined, used the Assign() function to define a memory space to read/write');
+    if Assigned(Callback) then
+      Callback(Self);
+    Reset;
+  end;
 end;
 
 procedure TLccTaskMemorySpaceAccess.Reset;
@@ -1386,7 +1417,7 @@ begin
                        MSI_TRACTION_FUNCTION_CONFIG :
                          begin
                            MessageAddress := SourceMessage.ExtractDataBytesAsDWord(2);
-                            if (DecodedMemorySpace = MemorySpace) and (CurrentAddress = MessageAddress) then
+                            if (DecodedMemorySpace = MemorySpace) and (AddressCurrent = MessageAddress) then
                               HandleWriteReply(SourceMessage);
                          end;
                        MSI_TRACTION_FDI,
@@ -1420,7 +1451,7 @@ begin
                        MSI_TRACTION_FUNCTION_CONFIG :
                          begin
                            MessageAddress := SourceMessage.ExtractDataBytesAsDWord(2);
-                            if (DecodedMemorySpace = MemorySpace) and (CurrentAddress = MessageAddress) then
+                            if (DecodedMemorySpace = MemorySpace) and (AddressCurrent = MessageAddress) then
                               HandleReadReply(SourceMessage);
                          end;
                      end;
@@ -1463,8 +1494,8 @@ function TDatagramQueue.Add(LccMessage: TLccMessage): Boolean;
 begin
   Result := True;
   Queue.Add(LccMessage);
-  LccMessage.RetryAttemptsDatagram := 0;
-  LccMessage.AbandonCount := 0;
+  LccMessage.RetryAttempts := 0;
+  LccMessage.AbandonTickCount := 0;
 end;
 
 constructor TDatagramQueue.Create;
@@ -1539,11 +1570,11 @@ begin
   if iLocalMessage > -1 then
   begin
     LocalMessage := Queue[iLocalMessage] as TLccMessage;
-    if LocalMessage.RetryAttemptsDatagram < 5 then
+    if LocalMessage.RetryAttempts < 5 then
     begin
       LocalMessage := Queue[iLocalMessage] as TLccMessage;
       OwnerNode.SendMessage(LocalMessage, OwnerNode);
-      LocalMessage.RetryAttemptsDatagram := LocalMessage.RetryAttemptsDatagram + 1;
+      LocalMessage.RetryAttempts := LocalMessage.RetryAttempts + 1;
     end else
       Queue.Delete(iLocalMessage);
   end;
@@ -1557,8 +1588,8 @@ begin
   for i := Queue.Count - 1 downto 0 do
   begin
     LocalMessage := Queue[i] as TLccMessage;
-    if LocalMessage.AbandonCount < 6 then   // 800ms * 6
-      LocalMessage.AbandonCount := LocalMessage.AbandonCount + 1
+    if LocalMessage.AbandonTickCount < 6 then   // 800ms * 6
+      LocalMessage.AbandonTickCount := LocalMessage.AbandonTickCount + 1
     else
       Queue.Delete(i);
   end;
@@ -1584,8 +1615,7 @@ begin
   end;
 end;
 
-function TLccNode.RequestPIP(ATarget: TNodeID; ACallback: TOnTaskCallback
-  ): Boolean;
+function TLccNode.RequestPIP(ATarget: TNodeID; ACallback: TOnTaskCallback): Boolean;
 begin
   Result := False;
   if TaskReadPIP.IsIdle then
@@ -1596,9 +1626,20 @@ begin
   end;
 end;
 
-procedure TLccNode.DoMemorySpaceReadEngineDone(MemoryReadEngine: TLccTaskMemorySpaceAccess);
+function TLccNode.RequestCDI(ATarget: TNodeID; ACallback: TOnTaskCallback): Boolean;
+var
+  Alias: Word;
 begin
-
+  Result := False;
+  TaskMemorySpaceAccess.Callback := ACallback;
+  Alias := AliasServer.FindAlias(ATarget);
+  if Alias <> 0 then
+  begin
+    TaskMemorySpaceAccess.Callback := ACallback;
+    TaskMemorySpaceAccess.Assign(lems_Read, MSI_CDI, True, 0, 0, False, ATarget, Alias, ACallback);
+    TaskMemorySpaceAccess.Start(TIMEOUT_TASK_MESSAGES);
+    Result := True;
+  end;
 end;
 
 procedure TLccNode.HandleTractionFDI_MemorySpaceWrite(var SourceMessage: TLccMessage);

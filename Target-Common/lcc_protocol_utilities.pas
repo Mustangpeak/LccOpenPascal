@@ -47,6 +47,8 @@ type
 
     function DatagramReadRequest(LccMessage: TLccMessage; OutMessage: TLccMessage; AStream: TStream; {AutoGrow: Boolean;} MemOffset: Int64 = 0): Word; virtual;
     function DatagramWriteRequest(LccMessage: TLccMessage; AStream: TStream; AutoGrow: Boolean; MemOffset: Int64 = 0): Word; virtual;
+
+    procedure CopyTo(ANodeProtocol: TNodeProtocolBase); virtual;
   end;
 
   { TProtocolSupportedProtocols }
@@ -101,6 +103,8 @@ type
 
     procedure LoadFromLccMessage(SourceLccMessage: TLccMessage);
     function SupportedToStr: String;
+
+    procedure CopyTo(ANodeProtocol: TNodeProtocolBase); override;
   end;
 
 
@@ -140,20 +144,12 @@ type
   TProtocolEvents = class(TNodeProtocolBase)
   private
     FAutoGenerate: TLccEventAutoGenerate;
-    {$IFDEF LCC_DELPHI}
-    FEventList: TObjectList<TLccEvent>;
-    {$ELSE}
     FEventList: TObjectList;
-    {$ENDIF}
     function GetCount: Integer;
     function GetEvent(Index: Integer): TLccEvent;
     function GetEventIDAsStr(Index: Integer): String;
   protected
-    {$IFDEF LCC_DELPHI}
-    property EventList: TObjectList<TLccEvent> read FEventList write FEventList;
-    {$ELSE}
     property EventList: TObjectList read FEventList write FEventList;
-    {$ENDIF}
   public
     constructor Create; override;
     destructor Destroy; override;
@@ -185,25 +181,20 @@ type
     property ImpliedZeroLowAddress: Boolean read FImpliedZeroLowAddress;
     property LowAddress: DWord read FLowAddress;
     property HighAddress: DWord read FHighAddress;
+
+    procedure CopyTo(AnInfoObject: TConfigMemAddressSpaceInfoObject);
+    function Clone: TConfigMemAddressSpaceInfoObject;
   end;
 
   { TProtocolMemoryInfo }
 
   TProtocolMemoryInfo = class(TNodeProtocolBase)
   private
-    {$IFDEF LCC_DELPHI}
-    FList: TObjectList<TConfigMemAddressSpaceInfoObject>;
-    {$ELSE}
-    FList: TObjectList;
-    {$ENDIF}
+    FList: TList;
     function GetAddressSpace(Index: Integer): TConfigMemAddressSpaceInfoObject;
     function GetCount: Integer;
   protected
-    {$IFDEF LCC_DELPHI}
-     property List: TObjectList<TConfigMemAddressSpaceInfoObject> read FList write FList;
-    {$ELSE}
-     property List: TObjectList read FList write FList;
-    {$ENDIF}
+     property List: TList read FList write FList;
 
   public
     property AddressSpace[Index: Integer]: TConfigMemAddressSpaceInfoObject read GetAddressSpace; default;
@@ -215,6 +206,8 @@ type
     procedure Clear;
     function FindByAddressSpace(Space: Byte): TConfigMemAddressSpaceInfoObject;
     procedure LoadReply(LccMessage: TLccMessage; OutMessage: TLccMessage);
+
+    procedure CopyTo(ANodeProtocol: TNodeProtocolBase); override;
   end;
 
   { TProtocolMemoryOptions }
@@ -252,6 +245,8 @@ type
     property LowSpace: Byte read FLowSpace write FLowSpace;
 
     procedure LoadReply(LccMessage, OutMessage: TLccMessage);
+
+    procedure CopyTo(ANodeProtocol: TNodeProtocolBase); override;
   end;
 
   { TProtocolSimpleNodeInfo }
@@ -279,6 +274,8 @@ type
 
     function PackedFormat(StreamManufacturerInfo, StreamConfiguration: TStream): TLccDynamicByteArray;
     procedure LoadFromLccMessage(SourceLccMessage: TLccMessage);
+
+    procedure CopyTo(ANodeProtocol: TNodeProtocolBase); override;
   end;
 
 
@@ -290,6 +287,25 @@ type
 
 
 implementation
+
+{ TConfigMemAddressSpaceInfoObject }
+
+procedure TConfigMemAddressSpaceInfoObject.CopyTo(
+  AnInfoObject: TConfigMemAddressSpaceInfoObject);
+begin
+  AnInfoObject.FHighAddress := HighAddress;
+  AnInfoObject.FIsReadOnly := IsReadOnly;
+  AnInfoObject.FImpliedZeroLowAddress := ImpliedZeroLowAddress;
+  AnInfoObject.FLowAddress := LowAddress;
+  AnInfoObject.FIsPresent := IsPresent;
+  AnInfoObject.FAddressSpace := AddressSpace;
+end;
+
+function TConfigMemAddressSpaceInfoObject.Clone: TConfigMemAddressSpaceInfoObject;
+begin
+  Result := TConfigMemAddressSpaceInfoObject.Create;
+  CopyTo(Result);
+end;
 
 { TNodeProtocolBase }
 
@@ -374,6 +390,11 @@ begin
 
   // We don't need to send a WriteReply for this.. the Datagram OK is all that is needed...
   // Unless it will take a while then we can send a special Datagram OK and then send the WriteReply later.
+end;
+
+procedure TNodeProtocolBase.CopyTo(ANodeProtocol: TNodeProtocolBase);
+begin
+  ANodeProtocol.Valid := Valid;
 end;
 
 constructor TNodeProtocolBase.Create;
@@ -503,7 +524,7 @@ begin
     FTractionSimpleTrainNodeInfo := Flags[3] and PIP_SIMPLE_TRAIN_NODE_INFO <> 0;
     FTractionFunctionConfiguration := Flags[3] and PIP_FUNCTION_CONFIGURATION <> 0;
     FFirmwareUpgrade := Flags[3] and PIP_FIRMWARE_UPGRADE <> 0;
-    FirmwareUpgradeActive := Flags[3] and PIP_FIRMWARE_UPGRADE_ACTIVE <> 0;
+    FFirmwareUpgradeActive := Flags[3] and PIP_FIRMWARE_UPGRADE_ACTIVE <> 0;
 
     Valid := True;
   end;
@@ -578,6 +599,35 @@ begin
   if SimpleNode then Result := Result + 'Simple Node Supported; ';
 end;
 
+procedure TProtocolSupportedProtocols.CopyTo(ANodeProtocol: TNodeProtocolBase);
+var
+  Local: TProtocolSupportedProtocols;
+begin
+  inherited CopyTo(ANodeProtocol);
+
+  Local := ANodeProtocol as TProtocolSupportedProtocols;
+
+  Local.FAbbreviatedConfigurationDefinitionInfo := AbbreviatedConfigurationDefinitionInfo;
+  Local.FConfigurationDefinitionInfo :=  ConfigurationDefinitionInfo;
+  Local.FDatagram :=  Datagram;
+  Local.FDisplay :=  Display;
+  Local.FEventExchange :=  EventExchange;
+  Local.FSimpleNode :=  SimpleNode;
+  Local.FTractionFunctionDefinitionInfo :=  TractionFunctionDefinitionInfo;
+  Local.FIdentification :=  Identification;
+  Local.FMemConfig :=  MemConfig;
+  Local.FRemoteButton :=  RemoteButton;
+  Local.FReservation :=  Reservation;
+  Local.FSimpleNodeInfo :=  SimpleNodeInfo;
+  Local.FStream :=  Stream;
+  Local.FTeach_Learn :=  Teach_Learn;
+  Local.FTractionControl :=  TractionControl;
+  Local.FTractionSimpleTrainNodeInfo :=  TractionSimpleTrainNodeInfo;
+  Local.FTractionFunctionConfiguration := TractionFunctionConfiguration;
+  Local.FFirmwareUpgradeActive := FirmwareUpgradeActive;
+  Local.FFirmwareUpgrade :=  FirmwareUpgrade;
+end;
+
 { TLccEvent }
 
 procedure TLccEvent.SetID(AValue: TEventID);
@@ -625,11 +675,7 @@ end;
 constructor TProtocolEvents.Create;
 begin
   inherited Create;
-  {$IFDEF LCC_DELPHI}
-  FEventList := TObjectList<TLccEvent>.Create;
-  {$ELSE}
   FEventList := TObjectList.Create;
-  {$ENDIF}
   FAutoGenerate := TLccEventAutoGenerate.Create;
   EventList.OwnsObjects := False;
 end;
@@ -678,11 +724,7 @@ var
 begin
   try
     for i := 0 to EventList.Count - 1 do
-    {$IFDEF LCC_FPC}
       TObject( EventList[i]).Free;
-    {$ELSE}
-      EventList[i].Free;
-    {$ENDIF}
   finally
     EventList.Clear
   end;
@@ -733,12 +775,7 @@ end;
 constructor TProtocolMemoryInfo.Create;
 begin
   inherited Create;
-  {$IFDEF LCC_DELPHI}
-  List := TObjectList<TConfigMemAddressSpaceInfoObject>.Create;
-  {$ELSE}
-  List := TObjectList.Create;
-  {$ENDIF}
-  List.OwnsObjects := False;
+  List := TList.Create;
 end;
 
 destructor TProtocolMemoryInfo.Destroy;
@@ -818,6 +855,16 @@ begin
  end;
 end;
 
+procedure TProtocolMemoryInfo.CopyTo(ANodeProtocol: TNodeProtocolBase);
+var
+  i: Integer;
+begin
+  inherited CopyTo(ANodeProtocol);
+
+  for i := 0 to List.Count do
+    (ANodeProtocol as TProtocolMemoryInfo).List.Add( TConfigMemAddressSpaceInfoObject( List[i]).Clone);
+end;
+
 { TProtocolMemoryOptions }
 
 procedure TProtocolMemoryOptions.LoadReply(LccMessage, OutMessage: TLccMessage);
@@ -860,6 +907,31 @@ begin
   LccMessage.DataArrayIndexer[2] := _Hi(OpsMask);
   LccMessage.DataArrayIndexer[3] := _Lo(OpsMask);
   LccMessage.DataCount := 7;
+end;
+
+procedure TProtocolMemoryOptions.CopyTo(ANodeProtocol: TNodeProtocolBase);
+var
+  Local: TProtocolMemoryOptions;
+begin
+  inherited CopyTo(ANodeProtocol);
+
+  Local := ANodeProtocol as TProtocolMemoryOptions;
+
+  Local.FHighSpace := FHighSpace;
+  Local.FLowSpace :=  FLowSpace;
+  Local.FSupportACDIMfgRead :=  FSupportACDIMfgRead;
+  Local.FSupportACDIUserRead :=  FSupportACDIUserRead;
+  Local.FSupportACDIUserWrite :=  FSupportACDIUserWrite;
+  Local.FUnAlignedReads :=  FUnAlignedReads;
+  Local.FUnAlignedWrites :=  FUnAlignedWrites;
+  Local.FWriteArbitraryBytes :=  FWriteArbitraryBytes;
+  Local.FWriteLenFourBytes :=  FWriteLenFourBytes;
+  Local.FWriteLenOneByte:=  FWriteLenOneByte;
+  Local.FWriteLenSixyFourBytes :=  FWriteLenSixyFourBytes;
+  Local.FWriteLenTwoBytes :=  FWriteLenTwoBytes;
+  Local.FWriteStream :=  FWriteStream;
+  Local.FWriteUnderMask :=  FWriteUnderMask;
+
 end;
 
 { TProtocolSimpleNodeInfo }
@@ -1014,6 +1086,22 @@ begin
   end;
 
   FValid := True;
+end;
+
+procedure TProtocolSimpleNodeInfo.CopyTo(ANodeProtocol: TNodeProtocolBase);
+var
+  Local: TProtocolSimpleNodeInfo;
+begin
+  inherited CopyTo(ANodeProtocol);
+  Local := ANodeProtocol as TProtocolSimpleNodeInfo;
+  Local.FHardwareVersion := HardwareVersion;
+  Local.FManufacturer := Manufacturer;
+  Local.FModel := Model;
+  Local.FSoftwareVersion := SoftwareVersion;
+  Local.FUserDescription := UserDescription;
+  Local.FUserName := UserName;
+  Local.FUserVersion := UserVersion;
+  Local.FVersion := Version;
 end;
 
 

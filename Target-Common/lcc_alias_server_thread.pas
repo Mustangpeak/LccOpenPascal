@@ -34,7 +34,7 @@ uses
 
 const
   SLEEP_ALIAS_SERVER_THREAD_MS = 20;
-  VERIFYNODE_RETRY_TIME_MS = 500;     // must be greater than SLEEP_ALIAS_SERVER_THREAD_MS
+  VERIFYNODE_RETRY_TIME_MS = 2500;     // must be greater than SLEEP_ALIAS_SERVER_THREAD_MS
   VERIFYNODE_ABANDON_TIME_MS = 5000;  // must be greater than VERIFYNODE_RETRY_TIME_MS
 
 
@@ -107,8 +107,9 @@ uses
 procedure TReceiveMessageAliasServerThread.Execute;
 var
   List: TList;
-  i: Integer;
+  i, j: Integer;
   LocalMessage: TLccMessage;
+  ProblemArray: TLccAliasIDArray;
 begin
 
   while not Terminated do
@@ -129,7 +130,9 @@ begin
       for i := 0 to List.Count -1 do
       begin
         LocalMessage := TLccMessage( List[i]);
-        LocalMessage.iTag := 0;  // Used to decide if a message is abandon and to give up on it
+
+        LocalMessage.AbandonTickCount := 0;
+        LocalMessage.RetryAttempts := 0;
 
         // Process any mapping definition messages.  If they are mapping messages then we know the mapping exisits and can skip any more checking.
         ProcessAliasAndNodeIDMappingMessages(LocalMessage);
@@ -138,15 +141,11 @@ begin
         // reconciliation they must go through because the Alias is not valid yet and a CAN message only delivers
         // NodeIDs it never requires them to be used
 
-        if not LocalMessage.IsCAN then
-        begin
-          if LocalMessage.ValidateAndRequestIfNecessaryAliasMappings({$IFNDEF LCC_DELPHI}@{$ENDIF}RequestMappingMessageSentCallback) then
-            OutgoingProcessedMessageList.Add(LocalMessage)
-          else
-            WaitingForMappingValidationMessageList.Add(LocalMessage)
-        end else
+        ProblemArray := [];
+        if LocalMessage.ValidateAndRequestIfNecessaryAliasMappings(ProblemArray, {$IFNDEF LCC_DELPHI}@{$ENDIF}RequestMappingMessageSentCallback) then
           OutgoingProcessedMessageList.Add(LocalMessage)
-
+        else
+          WaitingForMappingValidationMessageList.Add(LocalMessage)
       end;
     finally
       List.Clear;
@@ -169,15 +168,18 @@ begin
       for i := 0 to List.Count -1 do
       begin
         LocalMessage := TLccMessage( List[i]);
-        if LocalMessage.ValidateAndRequestIfNecessaryAliasMappings({$IFNDEF LCC_DELPHI}@{$ENDIF}RequestMappingMessageSentCallback) then
+        if LocalMessage.ValidateAndRequestIfNecessaryAliasMappings(ProblemArray, {$IFNDEF LCC_DELPHI}@{$ENDIF}RequestMappingMessageSentCallback) then
         begin
           List[i] := nil;
           OutgoingProcessedMessageList.Add(LocalMessage);
         end else
         begin
-          LocalMessage.iTag := LocalMessage.iTag + 1;
-          if LocalMessage.iTag > (VERIFYNODE_ABANDON_TIME_MS div SLEEP_ALIAS_SERVER_THREAD_MS) then
+          LocalMessage.AbandonTickCount := LocalMessage.AbandonTickCount + 1;
+          LocalMessage.RetryAttempts := LocalMessage.RetryAttempts + 1;
+          if LocalMessage.AbandonTickCount > (VERIFYNODE_ABANDON_TIME_MS div SLEEP_ALIAS_SERVER_THREAD_MS) then
           begin
+            for j := 0 to Length(ProblemArray) - 1 do
+              AliasServer.RemoveMapping(ProblemArray[j], False);
             LocalMessage.Free;
             List[i] := nil;
           end;
@@ -197,8 +199,9 @@ begin
       for i := 0 to List.Count - 1 do
       begin
         LocalMessage := TLccMessage( List[i]);
-        LocalMessage.iTag := LocalMessage.iTag + 1;
-        if LocalMessage.iTag > (VERIFYNODE_ABANDON_TIME_MS div SLEEP_ALIAS_SERVER_THREAD_MS) then
+        LocalMessage.AbandonTickCount := LocalMessage.AbandonTickCount + 1;
+        LocalMessage.RetryAttempts := LocalMessage.RetryAttempts + 1;
+        if LocalMessage.AbandonTickCount > (VERIFYNODE_ABANDON_TIME_MS div SLEEP_ALIAS_SERVER_THREAD_MS) then
         begin
           List[i] := nil;
           LocalMessage.Free;
@@ -251,7 +254,7 @@ begin
         DummyNodeID := NULL_NODE_ID;
         AliasServer.AddMapping(AMessage.ExtractDataBytesAsNodeID(0, DummyNodeID), AMessage.SourceAlias, False);
       end;
-    MTI_VERIFY_NODE_ID_NUMBER :
+    MTI_VERIFY_NODE_ID_NUMBER:
       begin
         if AMessage.DataCount = 0 then     // A global Verify Node ID will repoplulate the entire database so this will flush invalid mappings as well since they won't respond anymore
           AliasServer.Clear(False);        // BUT be aware that the node sending this message will not be restored as it won't send out an MTI_VERIFIED_NODE_ID_NUMBER message
@@ -261,8 +264,8 @@ end;
 
 procedure TReceiveMessageAliasServerThread.RequestMappingMessageSentCallback(ANodeID: TNodeID; AnAliasID: Word);
 var
-  LccMessage: TLccMessage;
-  MappingRequestMessage: TLccMessage;
+  LocalLccMessage: TLccMessage;
+  CopyAndSend: Boolean;
 begin
   Assert(Assigned(SendMessageCallback), 'TReceiveMessageAliasServerThread,SendMessageCallback not assigned');
 
@@ -270,42 +273,50 @@ begin
   // may be trying to send a message to itself to VerifyNode and we need to use the first Node as the source
   // The nodes Add and Removing mapping directly as they are created to simplify this
 
-  MappingRequestMessage := FindMessageWithMappingRequest(ANodeID, AnAliasID);
+  CopyAndSend := False;
+
+  LocalLccMessage := FindMessageWithMappingRequest(ANodeID, AnAliasID);
 
   if AnAliasID <> 0 then   // If we have the Alias use the CAN messages to get the full Node ID
   begin
-    if not Assigned(MappingRequestMessage) then
+    if not Assigned(LocalLccMessage) then
     begin   // Did not find it so create it and send a Verify request
-      LccMessage := TLccMessage.Create;
-      LccMessage.LoadVerifyNodeIDAddressed(NULL_NODE_ID, 0, ANodeID, AnAliasID, NULL_NODE_ID);
-      MappingRequestsSentMessageList.Add(LccMessage);
-      LccMessage.iTag := 1;
-      LccMessage.CopyToTarget(WorkerMessage);
-      Synchronize({$IFDEF FPC}@{$ENDIF}SendMessageThroughSyncronize);
+      LocalLccMessage := TLccMessage.Create;
+      LocalLccMessage.LoadVerifyNodeIDAddressed(NULL_NODE_ID, 0, ANodeID, AnAliasID, NULL_NODE_ID);
+      MappingRequestsSentMessageList.Add(LocalLccMessage);
+      LocalLccMessage.RetryAttempts := 1;
+      CopyAndSend := True;
     end else
-    if MappingRequestMessage.iTag mod (VERIFYNODE_RETRY_TIME_MS div SLEEP_ALIAS_SERVER_THREAD_MS) = 0 then
+    if LocalLccMessage.AbandonTickCount mod (VERIFYNODE_RETRY_TIME_MS div SLEEP_ALIAS_SERVER_THREAD_MS) = 0 then
     begin  // Every VERIFYNODE_RETRY_TIME_MS seconds try again if it still has not cleared
-      MappingRequestMessage.CopyToTarget(WorkerMessage);
-      Synchronize({$IFDEF FPC}@{$ENDIF}SendMessageThroughSyncronize);
+      LocalLccMessage.RetryAttempts := LocalLccMessage.RetryAttempts + 1;
+      if LocalLccMessage.RetryAttempts < MAX_MESSAGE_RETRY_ATTEMPTS then
+        CopyAndSend := True;      // else it will timeout and be released
     end
   end else
   if not NullNodeID(ANodeID) then  // If we have the NodeID use it to send us the Alias
   begin
-    if not Assigned(MappingRequestMessage) then
+    if not Assigned(LocalLccMessage) then
     begin   // Did not find it so create it and send a Verify request
-      LccMessage := TLccMessage.Create;
-      LccMessage.LoadVerifyNodeID(NULL_NODE_ID, 0, ANodeID);
-      MappingRequestsSentMessageList.Add(LccMessage);
-      LccMessage.iTag := 1;
-      LccMessage.CopyToTarget(WorkerMessage);
-      Synchronize({$IFDEF FPC}@{$ENDIF}SendMessageThroughSyncronize);
+      LocalLccMessage := TLccMessage.Create;
+      LocalLccMessage.LoadVerifyNodeID(NULL_NODE_ID, 0, ANodeID);
+      MappingRequestsSentMessageList.Add(LocalLccMessage);
+      LocalLccMessage.RetryAttempts := 1;
+      CopyAndSend := True;;
     end else // Every VERIFYNODE_RETRY_TIME_MS seconds try again if it still has not cleared
-    if MappingRequestMessage.iTag mod VERIFYNODE_RETRY_TIME_MS div SLEEP_ALIAS_SERVER_THREAD_MS = 0 then
+    if LocalLccMessage.iTag mod VERIFYNODE_RETRY_TIME_MS div SLEEP_ALIAS_SERVER_THREAD_MS = 0 then
     begin
-      MappingRequestMessage.CopyToTarget(WorkerMessage);
-      Synchronize({$IFDEF FPC}@{$ENDIF}SendMessageThroughSyncronize);
+      LocalLccMessage.RetryAttempts := LocalLccMessage.RetryAttempts + 1;
+      if LocalLccMessage.RetryAttempts < MAX_MESSAGE_RETRY_ATTEMPTS then
+        CopyAndSend := True;      // else it will timeout and be released
     end
-  end
+  end;
+
+  if CopyAndSend then
+  begin
+    LocalLccMessage.CopyToTarget(WorkerMessage);
+    Synchronize({$IFDEF FPC}@{$ENDIF}SendMessageThroughSyncronize);
+  end;
 end;
 
 function TReceiveMessageAliasServerThread.FindMessageWithMappingRequest(ANodeID: TNodeID; AnAliasID: Word): TLccMessage;

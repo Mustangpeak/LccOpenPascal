@@ -59,11 +59,13 @@ type
     property Valid: Boolean read GetValid;
   end;
 
+  TLccAliasIDArray = array of Word;
+
 { TLccMessage }
 
 TLccMessage = class
 private
-  FAbandonCount: Integer;                   // If the message is being held for some reason (CAN multi frame assembly, waiting for AME to aquire the Alias, etc) this is used to see how long it has been alive and when to decide it has been abandon and should be freed
+  FAbandonTickCount: Integer;               // If the message is being held for some reason (CAN multi frame assembly, waiting for AME to aquire the Alias, etc) this is used to see how long it has been alive and when to decide it has been abandon and should be freed
   FAssociatedNode: TObject;
   FCAN_FramingBits: Byte;                   // Bottom 2 bits, upper nibble of the Destination alias
   FCAN_MTI: DWord;                          // WARNING:  This MTI is shifted Left by 2 Bytes where the Source Address Was!!!!!!  CAN encoded MTI
@@ -78,7 +80,7 @@ private
   FSourceAlias: Word;
   FSourceID: TNodeID;                       // NodeID of the Source of a message
   FMTI: Word;                               // The Actual MTI of the message IF it is not a CAN frame message, The full OpenLcb MTI
-  FRetryAttemptsDatagram: Integer;          // If a message returned "Temporary" (like no buffers) this holds how many time it has been retried and defines a give up time to stop resending
+  FRetryAttempts: Integer;          // If a message returned "Temporary" (like no buffers) this holds how many time it has been retried and defines a give up time to stop resending
 
   function GetHasDestination: Boolean;
   function GetHasDestNodeID: Boolean;
@@ -89,7 +91,7 @@ private
 protected
 
 public
-  property AbandonCount: Integer read FAbandonCount write FAbandonCount;
+  property AbandonTickCount: Integer read FAbandonTickCount write FAbandonTickCount;
   property CAN_MTI: DWord read FCAN_MTI write FCAN_MTI;
   property CAN_FramingBits: Byte read FCAN_FramingBits write FCAN_FramingBits;
   property DestAlias: Word read FDestAlias write FDestAlias;
@@ -103,7 +105,7 @@ public
   property IsCAN: Boolean read FIsCAN write FIsCAN;
   property iTag: Integer read FiTag write FiTag;
   property MTI: Word read FMTI write FMTI;
-  property RetryAttemptsDatagram: Integer read FRetryAttemptsDatagram write FRetryAttemptsDatagram;
+  property RetryAttempts: Integer read FRetryAttempts write FRetryAttempts;
   property SourceAlias: Word read FSourceAlias write FSourceAlias;
   property SourceID: TNodeID read FSourceID write FSourceID;
 
@@ -130,7 +132,7 @@ public
   function ExtractDataBytesAsHex(StartByteIndex, EndByteIndex: Integer): string;
   function DestinationMatchs(TestAliasID: Word; TestNodeID: TNodeID): Boolean;
 
-  function ValidateAndRequestIfNecessaryAliasMappings(RequestMappingCallback: TLccMessageRequestMappingCallback): Boolean;
+  function ValidateAndRequestIfNecessaryAliasMappings(var ProblemAliasArray: TLccAliasIDArray; RequestMappingCallback: TLccMessageRequestMappingCallback): Boolean;
   function ValidateByNodeID(RequestMappingCallback: TLccMessageRequestMappingCallback; ANodeID: TNodeID): TLccAliasMapping;
   function ValidateByAlias(RequestMappingCallback: TLccMessageRequestMappingCallback; AnAlias: Word): TLccAliasMapping;
 
@@ -768,8 +770,8 @@ begin
   Result.FSourceAlias := FSourceAlias;
   Result.FSourceID := FSourceID;
   Result.FMTI := FMTI;
-  Result.RetryAttemptsDatagram := 0;
-  Result.AbandonCount := 0;
+  Result.RetryAttempts := 0;
+  Result.AbandonTickCount := 0;
   Result.ConnectionThread := FConnectionThread;
   Result.CheckNodeIDsBeforeDelivery := FCheckNodeIDsBeforeDelivery;
 end;
@@ -1382,8 +1384,8 @@ begin
   TargetMessage.FDestAlias := FDestAlias;
   TargetMessage.FSourceAlias := FSourceAlias;
   TargetMessage.FiTag := 0;
-  TargetMessage.FAbandonCount := 0;
-  TargetMessage.FRetryAttemptsDatagram := 0;
+  TargetMessage.FAbandonTickCount := 0;
+  TargetMessage.FRetryAttempts := 0;
   TargetMessage.FConnectionThread := FConnectionThread;
   TargetMessage.FCheckNodeIDsBeforeDelivery := FCheckNodeIDsBeforeDelivery;
 end;
@@ -1396,28 +1398,41 @@ begin
     Result := (TestNodeID[0] = DestID[0]) and (TestNodeID[1] = DestID[1]);
 end;
 
-function TLccMessage.ValidateAndRequestIfNecessaryAliasMappings(RequestMappingCallback: TLccMessageRequestMappingCallback): Boolean;
+function TLccMessage.ValidateAndRequestIfNecessaryAliasMappings(
+  var ProblemAliasArray: TLccAliasIDArray;
+  RequestMappingCallback: TLccMessageRequestMappingCallback): Boolean;
 var
   AliasMapping: TLccAliasMapping;
   LocalNodeID: TNodeID;
 begin
   Result := True;
+  ProblemAliasArray := [];
 
   {$IFNDEF PYTHON_SCRIPT_COMPATIBLE}
+
+  // Don't get into an endless argument!
+  if IsCAN then Exit;
+  if (MTI = MTI_VERIFY_NODE_ID_NUMBER) or (MTI = MTI_VERIFY_NODE_ID_NUMBER_DEST) then Exit;
 
   AliasMapping := ValidateByAlias(RequestMappingCallback, SourceAlias);
   if Assigned(AliasMapping) then
     SourceID := AliasMapping.NodeID
-  else
+  else begin
+    SetLength(ProblemAliasArray, Length(ProblemAliasArray) + 1);
+    ProblemAliasArray[Length(ProblemAliasArray) - 1] := SourceAlias;
     Result := False;
+  end;
 
   if HasDestination then
   begin
     AliasMapping := ValidateByAlias(RequestMappingCallback, DestAlias);
     if Assigned(AliasMapping) then
       DestID := AliasMapping.NodeID
-    else
+    else begin
+      SetLength(ProblemAliasArray, Length(ProblemAliasArray) + 1);
+      ProblemAliasArray[Length(ProblemAliasArray) - 1] := SourceAlias;
       Result := False;
+    end;
   end;
 
   // Now for special cases where NodeID's are carried in payloads and such
@@ -1432,7 +1447,11 @@ begin
                 TRACTION_CONTROLLER_CONFIG_ASSIGN,
                 TRACTION_CONTROLLER_CONFIG_RELEASE
                 {TRACTION_CONTROLLER_CONFIG_CHANGED_NOTIFY} : if not Assigned(ValidateByNodeID(RequestMappingCallback, ExtractDataBytesAsNodeID(3, LocalNodeID))) then
-                                                    Result := False;
+                                                              begin
+                                                                SetLength(ProblemAliasArray, Length(ProblemAliasArray) + 1);
+                                                                ProblemAliasArray[Length(ProblemAliasArray) - 1] := SourceAlias;
+                                                                Result := False;
+                                                              end;
               end
             end;
           TRACTION_LISTENER_CONFIG :
@@ -1440,7 +1459,11 @@ begin
               case DataArray[1] of
                 TRACTION_LISTENER_CONFIG_ATTACH,
                 TRACTION_LISTENER_CONFIG_DETACH : if not Assigned(ValidateByNodeID(RequestMappingCallback, ExtractDataBytesAsNodeID(3, LocalNodeID))) then
+                                                  begin
+                                                    SetLength(ProblemAliasArray, Length(ProblemAliasArray) + 1);
+                                                    ProblemAliasArray[Length(ProblemAliasArray) - 1] := SourceAlias;
                                                     Result := False;
+                                                  end;
               end;
             end
         end
@@ -1452,7 +1475,11 @@ begin
             begin
               case DataArray[1] of
                 TRACTION_CONTROLLER_CONFIG_QUERY : if not Assigned(ValidateByNodeID(RequestMappingCallback, ExtractDataBytesAsNodeID(3, LocalNodeID))) then
-                                                    Result := False;
+                                                    begin
+                                                      SetLength(ProblemAliasArray, Length(ProblemAliasArray) + 1);
+                                                      ProblemAliasArray[Length(ProblemAliasArray) - 1] := SourceAlias;
+                                                      Result := False;
+                                                    end;
                 end
             end;
 
@@ -1460,7 +1487,11 @@ begin
              case DataArray[1] of
                 TRACTION_LISTENER_CONFIG_ATTACH,
                 TRACTION_LISTENER_CONFIG_DETACH : if not Assigned(ValidateByNodeID(RequestMappingCallback, ExtractDataBytesAsNodeID(2, LocalNodeID))) then
-                                                    Result := False;
+                                                    begin
+                                                      SetLength(ProblemAliasArray, Length(ProblemAliasArray) + 1);
+                                                      ProblemAliasArray[Length(ProblemAliasArray) - 1] := SourceAlias;
+                                                      Result := False;
+                                                    end;
               end;
         end;
       end;

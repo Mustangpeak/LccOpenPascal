@@ -17,6 +17,7 @@ uses
   lcc_node_train,
   lcc_comport,
   LazSynaSer,
+  lcc_alias_server,
  // lcc_ethernet_http,
   lcc_connection_common,
   lcc_ethernet_common,
@@ -30,6 +31,7 @@ type
   { TFormTrainCommander }
 
   TFormTrainCommander = class(TForm)
+    Button1: TButton;
     ButtonCreateTrains: TButton;
     ButtonRawGridConnectLogEnable: TButton;
     ButtonLiveMessages: TButton;
@@ -68,6 +70,7 @@ type
     StatusBarMain: TStatusBar;
     ToggleBoxServerForm: TToggleBox;
     TreeViewTrains: TTreeView;
+    procedure Button1Click(Sender: TObject);
     procedure ButtonCreateTrainsClick(Sender: TObject);
     procedure ButtonLiveMessagesClick(Sender: TObject);
     procedure ButtonCreateConsistClick(Sender: TObject);
@@ -190,6 +193,11 @@ begin
     Inc(FAutoCreateTrainAddress);
     Train.Login(NULL_NODE_ID);
   end;
+end;
+
+procedure TFormTrainCommander.Button1Click(Sender: TObject);
+begin
+  AliasServer.Clear(False);
 end;
 
 procedure TFormTrainCommander.ButtonLiveMessagesClick(Sender: TObject);

@@ -201,6 +201,15 @@ object FormTrainCommander: TFormTrainCommander
       State = cbChecked
       TabOrder = 15
     end
+    object Button1: TButton
+      Left = 872
+      Height = 25
+      Top = 56
+      Width = 128
+      Caption = 'Flush Alias Cache'
+      OnClick = Button1Click
+      TabOrder = 16
+    end
   end
   object PanelConnections: TPanel
     Left = 0

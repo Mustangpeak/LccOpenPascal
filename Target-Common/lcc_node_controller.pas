@@ -300,6 +300,8 @@ type
     procedure Start(ATimeout: Integer); override;
   end;
 
+  TLccTaskSetFunctionArray = array of TLccTaskSetFunction;
+
   { TLccTaskEmergencyStop }
 
   TLccTaskEmergencyStop = class(TLccTaskBase)
@@ -345,6 +347,8 @@ type
     procedure Process(SourceMessage: TLccMessage); override;
   end;
 
+  TLccTaskQueryFunctionArray = array of TLccTaskQueryFunction;
+
   // ******************************************************************************
 
   { TLccTrainController }
@@ -363,10 +367,10 @@ type
     FTaskManagementNoOp: TLccTaskManagementNoOp;
     FTaskManagementReleaseTrain: TLccTaskManagementReleaseTrain;
     FTaskManagementReserveTrain: TLccTaskManagementReserveTrain;
-    FTaskQueryFunction: TLccTaskQueryFunction;
+    FTaskQueryFunctions: TLccTaskQueryFunctionArray;
     FTaskQuerySpeed: TLccTaskQuerySpeed;
     FTaskSearchTrain: TLccTaskSearchTrain;
-    FTaskSetFunction: TLccTaskSetFunction;
+    FTaskSetFunctions: TLccTaskSetFunctionArray;
     FTaskSetSpeedDir: TLccTaskSetSpeedDir;
 
   protected
@@ -382,10 +386,10 @@ type
     property TaskManagementReleaseTrain: TLccTaskManagementReleaseTrain read FTaskManagementReleaseTrain write FTaskManagementReleaseTrain;
     property TaskManagementNoOp: TLccTaskManagementNoOp read FTaskManagementNoOp write FTaskManagementNoOp;
     property TaskSetSpeedDir: TLccTaskSetSpeedDir read FTaskSetSpeedDir write FTaskSetSpeedDir;
-    property TaskSetFunction: TLccTaskSetFunction read FTaskSetFunction write FTaskSetFunction;
+    property TaskSetFunctions: TLccTaskSetFunctionArray read FTaskSetFunctions write FTaskSetFunctions;
     property TaskEmergencyStop: TLccTaskEmergencyStop read FTaskEmergencyStop write FTaskEmergencyStop;
     property TaskQuerySpeed:  TLccTaskQuerySpeed read FTaskQuerySpeed write FTaskQuerySpeed;
-    property TaskQueryFunction:  TLccTaskQueryFunction read FTaskQueryFunction write FTaskQueryFunction;
+    property TaskQueryFunctions:  TLccTaskQueryFunctionArray read FTaskQueryFunctions write FTaskQueryFunctions;
 
     function GetCdiFile: string; override;
     procedure BeforeLogin; override;
@@ -422,15 +426,15 @@ type
     function ManagementNoOp(Listener: TNodeID; ACallback: TOnTaskCallback): Boolean;                      // Callback -> TLccTaskManagementNoOp
 
     // Control Methods
-    function SetSpeedDir(Listener: TNodeID; Speed: single): Boolean; overload;                           // Callback -> None
+    function SetSpeedDir(Listener: TNodeID; Speed: single): Boolean; overload;                            // Callback -> None
     function SetSpeedDir(Listener: TNodeID; Speed: Integer; Forward: Boolean): Boolean; overload;         // Callback -> None
     function SetFunction(Listener: TNodeID; FunctionAddress: DWord; Value: Word): Boolean;                // Callback -> None
     function EmergencyStop(Listener: TNodeID): Boolean;                                                   // Callback -> None
 
     // Query Methods
-    function QuerySpeed(Listener: TNodeID; ACallback: TOnTaskCallback): Boolean;
-    function QueryFunction(Listener: TNodeID; FunctionAddress: DWord; ACallback: TOnTaskCallback): Boolean; // Callback -> TLccTaskQuerySpeed
-                                                                                                                  // Callback -> TLccTaskQueryFunction
+    function QuerySpeedDir(Listener: TNodeID; ACallback: TOnTaskCallback): Boolean;                          // Callback -> TLccTaskQuerySpeed
+    function QueryFunction(Listener: TNodeID; FunctionAddress: DWord; ACallback: TOnTaskCallback): Boolean;  // Callback -> TLccTaskQueryFunction
+
     procedure FindAllTrains;
     procedure ReleaseTrain;
     function IsTrainAssigned: Boolean;
@@ -1042,6 +1046,8 @@ begin
 end;
 
 constructor TLccTrainController.Create(AOwner: TComponent; CdiXML: string);
+var
+  i: Integer;
 begin
   inherited Create(AOwner, CdiXML);
 
@@ -1059,10 +1065,14 @@ begin
   FTaskManagementNoOp := TLccTaskManagementNoOp.Create(Self);
   FTaskManagementReleaseTrain := TLccTaskManagementReleaseTrain.Create(Self);
   FTaskManagementReserveTrain := TLccTaskManagementReserveTrain.Create(Self);
-  FTaskQueryFunction := TLccTaskQueryFunction.Create(Self);
+  SetLength(FTaskQueryFunctions, MAX_FUNCTIONS);
+  for i := 0 to MAX_FUNCTIONS - 1 do
+    TaskQueryFunctions[i] := TLccTaskQueryFunction.Create(Self);
   FTaskQuerySpeed := TLccTaskQuerySpeed.Create(Self);
   FTaskSearchTrain := TLccTaskSearchTrain.Create(Self);
-  FTaskSetFunction := TLccTaskSetFunction.Create(Self);
+  SetLength(FTaskSetFunctions, MAX_FUNCTIONS);
+  for i := 0 to MAX_FUNCTIONS - 1 do
+    TaskSetFunctions[i] := TLccTaskSetFunction.Create(Self);
   FTaskSetSpeedDir := TLccTaskSetSpeedDir.Create(Self);
 
   RegisterTask(TaskControllerAttach);
@@ -1075,14 +1085,18 @@ begin
   RegisterTask(TaskManagementNoOp);
   RegisterTask(TaskManagementReleaseTrain);
   RegisterTask(TaskManagementReserveTrain);
-  RegisterTask(TaskQueryFunction);
+  for i := 0 to MAX_FUNCTIONS - 1 do
+    RegisterTask(TaskQueryFunctions[i]);
   RegisterTask(TaskQuerySpeed);
   RegisterTask(TaskSearchTrain);
-  RegisterTask(TaskSetFunction);
+  for i := 0 to MAX_FUNCTIONS - 1 do
+    RegisterTask(TaskSetFunctions[i]);
   RegisterTask(TaskSetSpeedDir);
 end;
 
 destructor TLccTrainController.Destroy;
+var
+  i: Integer;
 begin
   UnRegisterTask(TaskControllerAttach);
   UnRegisterTask(TaskControllerQuery);
@@ -1094,10 +1108,12 @@ begin
   UnRegisterTask(TaskManagementNoOp);
   UnRegisterTask(TaskManagementReleaseTrain);
   UnRegisterTask(TaskManagementReserveTrain);
-  UnRegisterTask(TaskQueryFunction);
+  for i := 0 to MAX_FUNCTIONS - 1 do
+    UnRegisterTask(TaskQueryFunctions[i]);
   UnRegisterTask(TaskQuerySpeed);
   UnRegisterTask(TaskSearchTrain);
-  UnRegisterTask(TaskSetFunction);
+  for i := 0 to MAX_FUNCTIONS - 1 do
+    UnRegisterTask(TaskSetFunctions[i]);
   UnRegisterTask(TaskSetSpeedDir);
 
   FreeAndNil(FTaskControllerAttach);
@@ -1110,10 +1126,12 @@ begin
   FreeAndNil(FTaskManagementNoOp);
   FreeAndNil(FTaskManagementReleaseTrain);
   FreeAndNil(FTaskManagementReserveTrain);
-  FreeAndNil(FTaskQueryFunction);
+  for i := 0 to MAX_FUNCTIONS - 1 do
+    FreeAndNil(TaskQueryFunctions[i]);
   FreeAndNil(FTaskQuerySpeed);
   FreeAndNil(FTaskSearchTrain);
-  FreeAndNil(FTaskSetFunction);
+  for i := 0 to MAX_FUNCTIONS - 1 do
+    FreeAndNil(FTaskSetFunctions[i]);
   FreeAndNil(FTaskSetSpeedDir);
 
   inherited Destroy;
@@ -1267,8 +1285,7 @@ begin
   end;
 end;
 
-function TLccTrainController.SetSpeedDir(Listener: TNodeID; Speed: single
-  ): Boolean;
+function TLccTrainController.SetSpeedDir(Listener: TNodeID; Speed: single): Boolean;
 begin
   Result := False;
   if TaskSetSpeedDir.IsIdle then
@@ -1283,18 +1300,18 @@ end;
 function TLccTrainController.SetSpeedDir(Listener: TNodeID; Speed: Integer; Forward: Boolean): Boolean;
 begin
   if not Forward then Speed := -Speed;
-  SetSpeedDir(Listener, Speed, Forward);
+  Result := SetSpeedDir(Listener, Speed);
 end;
 
 function TLccTrainController.SetFunction(Listener: TNodeID; FunctionAddress: DWord; Value: Word): Boolean;
 begin
   Result := False;
-  if TaskSetFunction.IsIdle then
+  if TaskSetFunctions[FunctionAddress].IsIdle then
   begin
-    TaskSetFunction.Address := FunctionAddress;
-    TaskSetFunction.Value := Value;
-    TaskSetFunction.Target := Listener;
-    TaskSetFunction.Start(TIMEOUT_TASK_MESSAGES);
+    TaskSetFunctions[FunctionAddress].Address := FunctionAddress;
+    TaskSetFunctions[FunctionAddress].Value := Value;
+    TaskSetFunctions[FunctionAddress].Target := Listener;
+    TaskSetFunctions[FunctionAddress].Start(TIMEOUT_TASK_MESSAGES);
     Result := True;
   end;
 end;
@@ -1310,7 +1327,8 @@ begin
   end;
 end;
 
-function TLccTrainController.QuerySpeed(Listener: TNodeID; ACallback: TOnTaskCallback): Boolean;
+function TLccTrainController.QuerySpeedDir(Listener: TNodeID;
+  ACallback: TOnTaskCallback): Boolean;
 begin
   Result := False;
   if TaskQuerySpeed.IsIdle then
@@ -1325,12 +1343,12 @@ end;
 function TLccTrainController.QueryFunction(Listener: TNodeID; FunctionAddress: DWord; ACallback: TOnTaskCallback): Boolean;
 begin
   Result := False;
-  if TaskQueryFunction.IsIdle then
+  if TaskQueryFunctions[FunctionAddress].IsIdle then
   begin
-    TaskQueryFunction.Address := FunctionAddress;
-    TaskQueryFunction.Target := Listener;
-    TaskQueryFunction.Callback := ACallback;
-    TaskQueryFunction.Start(TIMEOUT_TASK_MESSAGES);
+    TaskQueryFunctions[FunctionAddress].Address := FunctionAddress;
+    TaskQueryFunctions[FunctionAddress].Target := Listener;
+    TaskQueryFunctions[FunctionAddress].Callback := ACallback;
+    TaskQueryFunctions[FunctionAddress].Start(TIMEOUT_TASK_MESSAGES);
     Result := True;
   end;
 end;
