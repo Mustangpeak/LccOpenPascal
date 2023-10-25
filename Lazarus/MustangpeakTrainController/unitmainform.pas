@@ -938,7 +938,7 @@ begin
         // in the Roster loop to fill it in
         LocalTrainInfo := Controller.TrainRoster.ActivateTrain(TaskControllerAttach.Target);
         if not Assigned(LocalTrainInfo) then
-          Controller.TrainRoster.Add( TTrainInfo.Create(TaskControllerAttach.Target, 'Loading..'));
+          LocalTrainInfo := Controller.TrainRoster.Add( TTrainInfo.Create(TaskControllerAttach.Target, 'Loading..'));
 
         // Do UI Updates
         EnableControls(True);
