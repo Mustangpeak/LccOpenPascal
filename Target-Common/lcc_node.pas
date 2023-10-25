@@ -127,7 +127,6 @@ type
     FTagObject: TObject;
     FTimeoutLimit: Integer;
     FWorkerMessage: TLccMessage;
-    FValid: Boolean;
     function GetIsAborted: Boolean;
     function GetIsComplete: Boolean;
     function GetIsError: Boolean;
@@ -154,7 +153,6 @@ type
     property LiveTime: Int64 read FLiveTime;
     property ErrorMessage: String read FErrorMessage write FErrorMessage;
     property Callback: TOnTaskCallback read FCallback write FCallback;
-    property Valid: Boolean read FValid;
 
     constructor Create(AnOwner: TLccNode); virtual;
     destructor Destroy; override;
@@ -285,7 +283,7 @@ type
     constructor Create(AnOwner: TLccNode); override;
     procedure CopyTo(ATaskMemorySpaceAccess: TLccTaskMemorySpaceAccess);
     destructor Destroy; override;
-    procedure FlushMemorySpaceQueue;
+    procedure FlushMemorySpaceQueue(SendCallbacks: Boolean);
     procedure Start(ATimeout: Integer); override;
     procedure Reset; override;
     procedure Process(SourceMessage: TLccMessage); override;
@@ -567,7 +565,6 @@ type
     function RequestSNIP(ATarget: TNodeID; ACallback: TOnTaskCallback): Boolean;   // Callback: TTaskReadSNIP
     function RequestPIP(ATarget: TNodeID; ACallback: TOnTaskCallback): Boolean;    // Callback: TTaskReadPIP
     function RequestCDI(ATarget: TNodeID; ACallback: TOnTaskCallback): Boolean;
-    procedure AbortCDI;
   end;
 
   TLccNodeClass = class of TLccNode;
@@ -740,11 +737,7 @@ end;
 
 procedure TLccTaskBase.Abort;
 begin
-  FValid := False;
-  FTaskState := lesAbort;
-  if Assigned(Callback) then
-    Callback(Self);
-  Reset;
+  FTaskState := lesAbort
 end;
 
 procedure TLccTaskBase.Timeout;
@@ -752,7 +745,7 @@ begin
   FTaskState := lesTimeout;
   if Assigned(Callback) then
     Callback(Self);
-  Reset;
+  FTaskState := lesIdle;
 end;
 
 procedure TLccTaskBase.Start(ATimeout: Integer);
@@ -770,7 +763,6 @@ end;
 
 procedure TLccTaskBase.Error(AnErrorCode: Integer; AnErrorMessage: String);
 begin
-  FValid := False;
   ErrorCode := AnErrorCode;
   ErrorMessage := AnErrorMessage;
   FTaskState := lesError;
@@ -778,14 +770,12 @@ end;
 
 procedure TLccTaskBase.Complete;
 begin
-  FValid := True;
   FErrorCode := S_OK;
   FTaskState := lesComplete;
 end;
 
 procedure TLccTaskBase.Reset;
 begin
-  FValid := False;
   FTaskState := lesIdle;
 end;
 
@@ -1020,20 +1010,29 @@ begin
   end;
 end;
 
-procedure TLccTaskMemorySpaceAccess.FlushMemorySpaceQueue;
+procedure TLccTaskMemorySpaceAccess.FlushMemorySpaceQueue(SendCallbacks: Boolean);
 var
   i: Integer;
   MemorySpaceObject: TLccTaskMemorySpaceObject;
+  OldState: TLccTaskState;
 begin
+  OldState := FTaskState;
+  Abort;
   try
     for i := 0 to MemorySpaceQueue.Count - 1 do
     begin
       MemorySpaceObject := TLccTaskMemorySpaceObject( MemorySpaceQueue[i]);
+      if SendCallbacks then
+      begin
+        if Assigned(MemorySpaceObject.CallBack) then
+          MemorySpaceObject.CallBack(Self);
+      end;
       MemorySpaceObject.Free;
     end;
   finally
     MemorySpaceQueue.Clear;
   end;
+  FTaskState := OldState;
 end;
 
 constructor TLccTaskMemorySpaceAccess.Create(AnOwner: TLccNode);
@@ -1047,6 +1046,7 @@ end;
 procedure TLccTaskMemorySpaceAccess.CopyTo(ATaskMemorySpaceAccess: TLccTaskMemorySpaceAccess);
 begin
 
+
   ATaskMemorySpaceAccess.FAddressHi := AddressHi;
   ATaskMemorySpaceAccess.FAddressLo := AddressLo;
   ATaskMemorySpaceAccess.FAddressSpaceValid := AddressSpaceValid;
@@ -1058,17 +1058,15 @@ begin
   ATaskMemorySpaceAccess.FUseAddresses := UseAddresses;
   ATaskMemorySpaceAccess.FWritingChunk := WritingChunk;
   ATaskMemorySpaceAccess.FReadWrite := ReadWrite;
-   ATaskMemorySpaceAccess.FValid := Valid;
 
   MemoryStream.Position := 0;
   ATaskMemorySpaceAccess.MemoryStream.CopyFrom(MemoryStream, MemoryStream.Size);
   PIPHelper.CopyTo(ATaskMemorySpaceAccess.PIPHelper);
-
 end;
 
 destructor TLccTaskMemorySpaceAccess.Destroy;
 begin
-  FlushMemorySpaceQueue;
+  FlushMemorySpaceQueue(False);
   FreeAndNil(FPIPHelper);
   FreeAndNil(FMemoryStream);
   inherited Destroy;
@@ -1332,7 +1330,6 @@ end;
 
 procedure TLccTaskMemorySpaceAccess.Start(ATimeout: Integer);
 begin
-  FValid := False;
   if NextMemorySpaceObjectFromQueue then
     InternalStart
   else begin
@@ -1345,12 +1342,11 @@ end;
 
 procedure TLccTaskMemorySpaceAccess.Reset;
 begin
-  FValid := False;
+  inherited Reset;
   AddressSpaceValid := False;
-  FlushMemorySpaceQueue;
+  FlushMemorySpaceQueue(False);
   MemoryStream.Clear;
   PIPHelper.Valid := False;
-  inherited Reset;
 end;
 
 procedure TLccTaskMemorySpaceAccess.Process(SourceMessage: TLccMessage);
@@ -2031,11 +2027,6 @@ procedure TLccNode.HandleTractionManageReserveReply(var SourceMessage: TLccMessa
 procedure TLccNode.HandleTractionQuerySpeedReply(var SourceMessage: TLccMessage); begin end;
 
 procedure TLccNode.HandleTractionQueryFunctionReply(var SourceMessage: TLccMessage); begin end;
-
-procedure TLccNode.AbortCDI;
-begin
-  TaskMemorySpaceAccess.Abort
-end;
 
 procedure TLccNode.AfterLogin;
 begin
