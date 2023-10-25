@@ -1029,7 +1029,6 @@ object LccThrottleAppForm: TLccThrottleAppForm
           object SpeedButtonLogEnable: TSpeedButton
             StaysPressed = True
             Align = Left
-            IsPressed = True
             Size.Width = 80.000000000000000000
             Size.Height = 40.000000000000000000
             Size.PlatformDefault = False

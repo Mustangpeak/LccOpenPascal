@@ -181,7 +181,7 @@ public
   procedure LoadTractionControllerRelease(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; ANodeID: TNodeID);
   procedure LoadTractionControllerQuery(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word);
   procedure LoadTractionControllerQueryReply(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; AControllerID: TNodeID);
-//  procedure LoadTractionControllerChangedNotify(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; AControllerNodeID: TNodeID);
+  procedure LoadTractionControllerChangedNotify(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; ANewControllerNodeID: TNodeID);
   procedure LoadTractionListenerAttach(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; ListenerFlags: Byte; AListenerNodeID: TNodeID);
   procedure LoadTractionListenerAttachReply(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; AListenerNodeID: TNodeID; ReplyCode: Word);
   procedure LoadTractionListenerDetach(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; ListenerFlags: Byte; AListenerNodeID: TNodeID);
@@ -2410,9 +2410,10 @@ begin
   MTI := MTI_TRACTION_REPLY;
 end;
 
-{
+
 procedure TLccMessage.LoadTractionControllerChangedNotify(ASourceID: TNodeID;
-  ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; AControllerNodeID: TNodeID);
+  ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word;
+  ANewControllerNodeID: TNodeID);
 begin
   ZeroFields;
   SourceID := ASourceID;
@@ -2423,9 +2424,9 @@ begin
   FDataArray[0] := TRACTION_CONTROLLER_CONFIG;
   FDataArray[1] := TRACTION_CONTROLLER_CONFIG_CHANGED_NOTIFY;
   FDataArray[2] := 0;
-  InsertNodeID(3, AControllerNodeID);
+  InsertNodeID(3, ANewControllerNodeID);
   MTI := MTI_TRACTION_REQUEST;
-end;      }
+end;
 
 procedure TLccMessage.LoadTractionListenerAttach(ASourceID: TNodeID;
   ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; ListenerFlags: Byte;

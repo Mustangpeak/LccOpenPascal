@@ -906,24 +906,19 @@ begin
 
   if DoDefault then
   begin
-    // First check to see if the train is assigned to a controller.  If it is then if it is already assigned to the calling controller all is good and just reply Ok
+    // First check to see if the train is assigned to a controller.  If it is then tell that controller it is being released
     if ControllerState.IsControllerAssigned and not ControllerState.IsControllerEqual(SourceMessage.SourceID, SourceMessage.SourceAlias) then
     begin
-      // There is another controller driving this train, need to ask if it will give the train up
-      // Store the requesting controller that wants the train
-      ControllerState.AssignRequestingController(SourceMessage.SourceID, SourceMessage.SourceAlias);
-
-      // The train will call the currently attached node and tell it that it is loosing control
-  //    WorkerMessage.LoadTractionControllerChangedNotify(NodeID, AliasID, ControllerState.AttachedController.NodeID, ControllerState.AttachedController.Alias, ControllerState.RequestingController.NodeID);
-   //   SendMessage(WorkerMessage, Self);
-      // Now need to wait for a Changing Notity Reply
-    end else
-    begin
-      ControllerState.AssignController(SourceMessage.SourceID, SourceMessage.SourceAlias);
-
-      WorkerMessage.LoadTractionControllerAssignReply(NodeID, AliasID, SourceMessage.SourceID, SourceMessage.SourceAlias, TRACTION_CONTROLLER_CONFIG_REPLY_OK);
+      WorkerMessage.LoadTractionControllerChangedNotify(NodeID, AliasID, ControllerState.AttachedController.NodeID, ControllerState.AttachedController.Alias, SourceMessage.SourceID );
       SendMessage(WorkerMessage, Self);
     end;
+
+    // We just assign regardless of if another controller is
+    // TODO:
+    //   Should notify existing controller they are loosing control
+    ControllerState.AssignController(SourceMessage.SourceID, SourceMessage.SourceAlias);
+    WorkerMessage.LoadTractionControllerAssignReply(NodeID, AliasID, SourceMessage.SourceID, SourceMessage.SourceAlias, TRACTION_CONTROLLER_CONFIG_REPLY_OK);
+    SendMessage(WorkerMessage, Self);
   end;
 end;
 

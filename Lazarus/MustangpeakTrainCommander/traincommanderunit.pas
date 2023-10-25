@@ -26,6 +26,9 @@ uses
   lcc_alias_server_thread;
 
 
+const
+  MAX_LOGGING_LINES = 50;
+
 type
 
   { TFormTrainCommander }
@@ -349,13 +352,14 @@ begin
         ALccMessage.ConvertToLccTcp(ByteArray);
         MemoLog.Lines.Add(Preamble + ALccMessage.ConvertToLccTcpString(ByteArray));
       end;
-
-      MemoLog.SelStart := Length(MemoLog.Lines.Text);
     finally
-      if MemoLog.Lines.Count > 200 then
+      if MemoLog.Lines.Count > MAX_LOGGING_LINES then
         MemoLog.Lines.Delete(0);
+       MemoLog.Lines.EndUpdate;
 
-      MemoLog.Lines.EndUpdate;
+      MemoLog.SelStart := Length(MemoLog.Lines.Text)-1;
+      MemoLog.SelLength := 1;
+      MemoLog.SelLength := 0;
     end;
   end;
 end;
@@ -368,7 +372,7 @@ begin
     MemoRawGridConnectReceive.Lines.Add('R: ' + AGridConnectStr);
     MemoRawGridConnectReceive.SelStart := Length( MemoRawGridConnectReceive.Text);
   finally
-    if MemoRawGridConnectReceive.Lines.Count > 200 then
+    if MemoRawGridConnectReceive.Lines.Count > MAX_LOGGING_LINES then
       MemoRawGridConnectReceive.Lines.Delete(0);
 
     MemoRawGridConnectReceive.Lines.EndUpdate;
@@ -378,7 +382,6 @@ end;
 procedure TFormTrainCommander.OnServerManagerSendMessage(Sender: TObject; ALccMessage: TLccMessage);
 var
   ByteArray: TLccDynamicByteArray;
-  Preamble: String;
 begin
   if CheckBoxLogMessages.Checked then
   begin
@@ -396,11 +399,14 @@ begin
         ALccMessage.ConvertToLccTcp(ByteArray);
         MemoLog.Lines.Add('TCP: S: ' + ALccMessage.ConvertToLccTcpString(ByteArray));
       end;
-      MemoLog.SelStart := Length(MemoLog.Lines.Text);
     finally
-      if MemoLog.Lines.Count > 200 then
+      if MemoLog.Lines.Count > MAX_LOGGING_LINES then
         MemoLog.Lines.Delete(0);
       MemoLog.Lines.EndUpdate;
+
+      MemoLog.SelStart := Length(MemoLog.Lines.Text)-1;
+      MemoLog.SelLength := 1;
+      MemoLog.SelLength := 0;
     end;
   end;
 end;
@@ -625,7 +631,7 @@ begin
   ConnectionFactory.OnStateChange := @OnServerManagerConnectionState;
   ConnectionFactory.OnError := @OnServerErrorMessage;
   ConnectionFactory.OnLccMessageReceive := @OnServerManagerReceiveMessage;
-  ConnectionFactory.OnLccGridConnectStrReceive := @OnServerManagerReceiveGridConnectStr;
+ // ConnectionFactory.OnLccGridConnectStrReceive := @OnServerManagerReceiveGridConnectStr;   // Default Off
   ConnectionFactory.OnLccMessageSend := @OnServerManagerSendMessage;
 
   AutoCreateTrainAddress := 1;
