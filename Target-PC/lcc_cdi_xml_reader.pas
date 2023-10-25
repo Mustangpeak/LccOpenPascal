@@ -683,7 +683,7 @@ end;
 
 procedure TLccCdiRoot.SetTargetNode(ANodeID: TNodeID; ANodeAlias: Word);
 begin
-  EngineMemoryAccess.FlushMemorySpaceQueue;
+  EngineMemoryAccess.FlushMemorySpaceQueue(False);
   EngineMemoryAccess.TargetNodeID := ANodeID;
   EngineMemoryAccess.TargetAlias := ANodeAlias;
 end;
