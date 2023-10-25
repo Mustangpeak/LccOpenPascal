@@ -30,8 +30,7 @@ uses
   lcc_defines,
   lcc_utilities,
   lcc_alias_server,
-  lcc_cdi_parser,
-  lcc_protocol_utilities;
+  lcc_cdi_parser;
 
 
 const
@@ -54,26 +53,6 @@ type
   TLEDShapeArray = array[0..MAX_LED_SEGMENTS-1] of TShape;
 
 
-  { TTrainInfo }
-
-  TTrainInfo = class
-  private
-    FCDI: TLccTaskMemorySpaceAccess;
-    FNodeID: TNodeID;
-    FPIP: TProtocolSupportedProtocols;
-    FSNIP: TProtocolSimpleNodeInfo;
-  public
-    property NodeID: TNodeID read FNodeID write FNodeID;
-    property SNIP: TProtocolSimpleNodeInfo read FSNIP write FSNIP;
-    property PIP: TProtocolSupportedProtocols read FPIP write FPIP;
-    property CDI: TLccTaskMemorySpaceAccess read FCDI write FCDI;
-
-    constructor Create; virtual;
-    destructor Destroy; override;
-  end;
-
-
-
   { TFormTrainController }
 
   TFormTrainController = class(TForm)
@@ -83,6 +62,7 @@ type
     ActionLogClear: TAction;
     ActionLogEnable: TAction;
     ActionListMain: TActionList;
+    Button1: TButton;
     ButtonThrottleSelectRelease: TButton;
     ButtonLogClear: TButton;
     ButtonThrottleSelectGo: TButton;
@@ -169,12 +149,14 @@ type
     TrackBarThrottle: TTrackBar;
     procedure ActionLogClearExecute(Sender: TObject);
     procedure ActionRosterRefreshExecute(Sender: TObject);
+    procedure Button1Click(Sender: TObject);
     procedure ButtonSettingsRestartConnectionClick(Sender: TObject);
     procedure ButtonThrottleSelectGoClick(Sender: TObject);
     procedure ButtonThrottleSelectReleaseClick(Sender: TObject);
     procedure ButtonThrottleEStopClick(Sender: TObject);
     procedure ButtonThrottleStopClick(Sender: TObject);
     procedure ComboBoxTrainSelectKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+    procedure ComboBoxTrainSelectSelect(Sender: TObject);
     procedure FormCloseQuery(Sender: TObject; var CanClose: Boolean);
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
@@ -197,7 +179,6 @@ type
     procedure ToggleBoxThrottleSelectLongChange(Sender: TObject);
     procedure TrackBarThrottleChange(Sender: TObject);
   private
-    FAssignedTrain: TNodeID;
     FBitmapDetails: TBitmap;
     FCDIParser: TLccCdiParser;
     FConsistPanelShown: Boolean;
@@ -233,13 +214,12 @@ type
     procedure CallbackAssignToTrain(ATask: TLccTaskBase);      // TLccTaskControllerAttach
     procedure CallbackQueryTrain(ATask: TLccTaskBase);         // TLccTaskControllerQuery
 
-    procedure CallbackSnip(ATask: TLccTaskBase);               // TTaskReadSNIP
-    procedure CallbackPip(ATask: TLccTaskBase);                // TTaskReadPIP
-
     procedure CallbackQuerySpeedDir(ATask: TLccTaskBase);      // TLccTaskQuerySpeed
     procedure CallbackQueryFunction(ATask: TLccTaskBase);     // TLccTaskQueryFunction
 
     procedure CallbackCdi(ATask: TLccTaskBase);                // TLccTaskMemorySpaceAccess
+
+    procedure CallbackTrainRosterNotify(ATask: TLccTaskBase);      // TLccTaskTrainRoster
 
     procedure OnLEDClick(Sender: TObject);
     procedure UpdateRoster;
@@ -255,6 +235,7 @@ type
     property NodeManager: TLccNodeManager read FNodeManager write FNodeManager;
     property BitmapDetails: TBitmap read FBitmapDetails write FBitmapDetails;
 
+    procedure SelectTrainFromComboBox;
     function IsTrainAssigned: Boolean;
   end;
 
@@ -265,22 +246,6 @@ implementation
 
 {$R *.lfm}
 
-{ TTrainInfo }
-
-constructor TTrainInfo.Create;
-begin
-  SNIP := TProtocolSimpleNodeInfo.Create;
-  PIP := TProtocolSupportedProtocols.Create;
-  CDI := TLccTaskMemorySpaceAccess.Create(nil);
-end;
-
-destructor TTrainInfo.Destroy;
-begin
-  FreeAndNil(FSNIP);
-  FreeAndNil(FPIP);
-  FreeAndNil(FCDI);
-  inherited Destroy;
-end;
 
 { TFormTrainController }
 
@@ -288,7 +253,8 @@ end;
 procedure TFormTrainController.FormCreate(Sender: TObject);
 begin
   EmulateCanBus := True;
-  FTrainInfo := TTrainInfo.Create;
+
+  TrainInfo := TTrainInfo.Create(NULL_NODE_ID);
 
   NodeManager := TLccNodeManager.Create(nil);
   NodeManager.EmulateCanNetworkLogin := EmulateCanBus;
@@ -362,6 +328,12 @@ begin
     Controller.FindAllTrains;
 end;
 
+procedure TFormTrainController.Button1Click(Sender: TObject);
+begin
+  if Assigned(Controller) then
+    Controller.FindAllTrains;
+end;
+
 procedure TFormTrainController.ActionLogClearExecute(Sender: TObject);
 begin
   MemoLog.Lines.BeginUpdate;
@@ -373,24 +345,8 @@ begin
 end;
 
 procedure TFormTrainController.ButtonThrottleSelectGoClick(Sender: TObject);
-var
-  AddressStr: String;
-  AddressInt: LongInt;
-  IsLong: Boolean;
-  AddressWord: Word;
 begin
-  AddressStr := ComboBoxTrainSelect.Text;
-  AddressInt := -1;
-  IsLong := False;
-  if ValidateExtendedDccAddress(AddressStr, AddressInt, IsLong) then
-  begin
-    AddressWord := AddressInt;
-    if Assigned(Controller) then
-    begin
-      Controller.SearchByDccAddress(ComboBoxTrainSelect.Text, ToggleBoxThrottleSelectLong.Checked, TLccDccSpeedStep( ComboBoxTrainSelect.ItemIndex), @CallbackSearchByDccAddress);
-      LabelStatus.Caption := 'Searching for Train: ' + ComboBoxTrainSelect.Caption;
-    end;
-  end;
+  SelectTrainFromComboBox;
 end;
 
 procedure TFormTrainController.ButtonThrottleSelectReleaseClick(Sender: TObject);
@@ -416,7 +372,7 @@ end;
 procedure TFormTrainController.ComboBoxTrainSelectKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
 begin
   if (Key = VK_RETURN) then
-    ButtonThrottleSelectGoClick(Self);
+    SelectTrainFromComboBox;
 
   if (Key < VK_0) or (Key > VK_9) then
     if not ( (Key = VK_S) or
@@ -428,6 +384,11 @@ begin
              ((Key = VK_A) and (ssCtrl in Shift))
              ) then
       Key := 0;
+end;
+
+procedure TFormTrainController.ComboBoxTrainSelectSelect(Sender: TObject);
+begin
+  SelectTrainFromComboBox
 end;
 
 procedure TFormTrainController.FormDestroy(Sender: TObject);
@@ -613,6 +574,7 @@ begin
     HitItemIndex := ListBoxRoster.ItemAtPos(Point, True);
     if HitItemIndex > -1 then
     begin
+
       FillChar(YScroll, SizeOf(YScroll), #0);
 
     // No idea how or why this works....
@@ -635,13 +597,8 @@ end;
 
 procedure TFormTrainController.OnFunctionClick(Sender: TObject);
 begin
-  if Assigned(Controller) then
-  begin
-    if Controller.IsTrainAssigned then
-    begin
-   //   Controller.assigned
-    end;
-  end;
+  if Assigned(Controller) and IsTrainAssigned then
+    Controller.SetFunction(TrainInfo.NodeID, (Sender as TToggleBox).Tag, Word( (Sender as TToggleBox).Checked));
 end;
 
 procedure TFormTrainController.PageControlRosterChange(Sender: TObject);
@@ -765,6 +722,7 @@ begin
       lcsDisconnected :
         begin
           LabelSettingsConnectionState.Caption := 'Waiting for Connection';
+
         end;
       lcsConnecting :
         begin
@@ -776,14 +734,7 @@ begin
           if NodeManager.Nodes.Count = 0 then
           begin
             Controller := NodeManager.AddNodeByClass('', TLccTrainController, True, NULL_NODE_ID) as TLccTrainController;
-       {     Controller.TractionServer.OnSNIPChange := @OnSNIPChange;
-            Controller.TractionServer.OnTrainSNIPChange := @OnTrainSNIPChange;
-            Controller.TractionServer.OnRegisterChange := @OnRegisterChange;
-            Controller.TractionServer.OnEmergencyStopChange := @OnEmergencyStopChange;
-            Controller.TractionServer.OnFunctionChange := @OnFunctionChange;
-            Controller.TractionServer.OnSpeedChange := @OnSpeedChange;
-            Controller.OnControllerAssignChange := @OnControllerAssignChange;
-            Controller.TractionServer.Enabled := True;          }
+            Controller.TrainRoster.Callback := @CallbackTrainRosterNotify;
           end;
         end;
       lcsDisconnecting :
@@ -966,12 +917,11 @@ begin
           EnableControls(True);
 
           LabelStatus.Caption := 'Requesting Train Info...';
-          Controller.RequestSNIP(TrainInfo.NodeID, @CallbackSnip);
-          Controller.RequestPIP(TrainInfo.NodeID, @CallbackPIP);
+
           Controller.QuerySpeedDir(TrainInfo.NodeID, @CallbackQuerySpeedDir);
           for i := 0 to MAX_FUNCTIONS - 1 do
             Controller.QueryFunction(TrainInfo.NodeID, i, @CallbackQueryFunction);
-      //    Controller.RequestCDI(TrainInfo.NodeID, @CallbackCDI);
+     //     Controller.RequestCDI(TrainInfo.NodeID, @CallbackCDI);
 
 
         end;
@@ -991,50 +941,20 @@ begin
   LocalTask := ATask as TLccTaskControllerQuery;
 end;
 
-procedure TFormTrainController.CallbackSnip(ATask: TLccTaskBase);
-var
-  SNIP: TTaskReadSNIP;
-begin
-  SNIP := ATask as TTaskReadSNIP;
-  case ATask.TaskState of
-    lesComplete :
-      begin
-        Caption := 'Train: ' + SNIP.SimpleNodeInfo.UserName;
-        SNIP.SimpleNodeInfo.CopyTo(TrainInfo.SNIP);
-      end;
-    lesAbort : ShowMessage('CallbackSnip: Aborted');
-    lesRunning : ShowMessage('CallbackSnip: Running: (In progress updates here');
-    lesTimeout : ShowMessage('CallbackSnip: Timed out unsuccessful (no reply?)');
-    lesIdle : ShowMessage('CallbackSnip Idle: This should not have happended');
-    lesError : ShowMessage('Error: Code: ' + IntToStr(ATask.ErrorCode) + ' ' + ATask.ErrorMessage);
-  end;
-end;
-
-procedure TFormTrainController.CallbackPip(ATask: TLccTaskBase);
-var
-  PIP: TTaskReadPIP;
-begin
-  PIP := ATask as TTaskReadPIP;
-
-  case ATask.TaskState of
-    lesComplete :
-      begin
-        PIP.SupportedProtocols.CopyTo(TrainInfo.PIP);
-      end;
-    lesAbort : ShowMessage('CallbackSnip: Aborted');
-    lesRunning : ShowMessage('CallbackSnip: Running: (In progress updates here');
-    lesTimeout : ShowMessage('CallbackSnip: Timed out unsuccessful (no reply?)');
-    lesError : ShowMessage('Error: Code: ' + IntToStr(ATask.ErrorCode) + ' ' + ATask.ErrorMessage);
-    lesIdle : ShowMessage('CallbackSnip Idle: This should not have happended');
-  end;
-end;
 
 procedure TFormTrainController.CallbackQuerySpeedDir(ATask: TLccTaskBase);
 var
   QuerySpeed: TLccTaskQuerySpeed;
+  OldOnChange: TNotifyEvent;
 begin
   QuerySpeed := ATask as TLccTaskQuerySpeed;
-  TrackBarThrottle.Position := Integer( Round( QuerySpeed.CommandedSpeedReply));
+  OldOnChange := TrackBarThrottle.OnChange;
+  TrackBarThrottle.OnChange := nil;
+  try
+    TrackBarThrottle.Position := Integer( Round( QuerySpeed.SetSpeedReply));
+  finally
+    TrackBarThrottle.OnChange := OldOnChange;
+  end;
 end;
 
 procedure TFormTrainController.CallbackQueryFunction(ATask: TLccTaskBase);
@@ -1065,15 +985,28 @@ procedure TFormTrainController.CallbackQueryFunction(ATask: TLccTaskBase);
 var
   QueryFunction: TLccTaskQueryFunction;
   FunctionBox: TToggleBox;
+
+  Adrr: DWord;
+  V: Word;
+  OldOnChange: TNotifyEvent;
 begin
   QueryFunction := ATask as TLccTaskQueryFunction;
+  Adrr := QueryFunction.Address;
+  V := QueryFunction.ValueReply;
+
   FunctionBox := FindFunctionButton(QueryFunction.Address);
   if Assigned(FunctionBox) then
   begin
-    if QueryFunction.ValueReply = 0 then
-      FunctionBox.Checked := False
-    else
-      FunctionBox.Checked := True;
+    OldOnChange := FunctionBox.OnChange;
+    FunctionBox.OnChange := nil;
+    try
+      if QueryFunction.ValueReply = 0 then
+        FunctionBox.Checked := False
+      else
+        FunctionBox.Checked := True;
+    finally
+      FunctionBox.OnChange := OldOnChange;
+    end;
   end;
 end;
 
@@ -1100,6 +1033,36 @@ begin
         Caption := 'Mustangpeak TrainController';
       end;
     lesIdle : ShowMessage('CallbackCdi Idle: This should not have happended');
+  end;
+end;
+
+procedure TFormTrainController.CallbackTrainRosterNotify(ATask: TLccTaskBase);
+var
+  Roster: TLccTaskTrainRoster;
+  i: Integer;
+begin
+  Roster := ATask as TLccTaskTrainRoster;
+
+  ListBoxRoster.Items.BeginUpdate;
+  ComboBoxTrainSelect.Items.BeginUpdate;
+  try
+    ListBoxRoster.Items.Clear;
+    ComboBoxTrainSelect.Items.Clear;
+    for i := 0 to Roster.Count - 1 do
+    begin
+      if Roster.Train[i].SNIP.Valid then
+      begin
+        ListBoxRoster.Items.Add(Roster.Train[i].SNIP.UserName);
+        ComboBoxTrainSelect.Items.Add(Roster.Train[i].SNIP.UserName)
+      end else
+      begin
+        ListBoxRoster.Items.Add(NodeIDToString(Roster.Train[i].NodeID, True));
+        ComboBoxTrainSelect.Items.Add(NodeIDToString(Roster.Train[i].NodeID, True));
+      end;
+    end;
+  finally
+    ListBoxRoster.Items.EndUpdate;
+    ComboBoxTrainSelect.Items.EndUpdate;
   end;
 end;
 
@@ -1133,9 +1096,9 @@ var
   i: Integer;
 begin
   Result := True;
-  IsLong := not ToggleBoxThrottleSelectLong.Checked;
+  IsLong := ToggleBoxThrottleSelectLong.Checked;
+
   DccAddress := -1;
-  AddressStr := ComboBoxTrainSelect.Text;
   if AddressStr = '' then
     Result := False
   else begin
@@ -1228,6 +1191,25 @@ begin
       ATargetNode.Free;
     end;
   end;     }
+end;
+
+procedure TFormTrainController.SelectTrainFromComboBox;
+var
+  AddressInt: LongInt;
+  IsLong: Boolean;
+  i: Integer;
+begin
+  AddressInt := -1;
+  IsLong := False;
+  if ValidateExtendedDccAddress(ComboBoxTrainSelect.Text, AddressInt, IsLong) then
+  begin
+    if Assigned(Controller) then
+    begin
+      EnableControls(False);
+      Controller.SearchByDccAddress(AddressInt, IsLong, TLccDccSpeedStep( ComboBoxTrainSelect.ItemIndex), @CallbackSearchByDccAddress);
+      LabelStatus.Caption := 'Searching for Train: ' + ComboBoxTrainSelect.Caption;
+    end;
+  end;
 end;
 
 function TFormTrainController.IsTrainAssigned: Boolean;

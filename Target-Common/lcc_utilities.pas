@@ -37,6 +37,7 @@ uses
   function _Highest1(Data: QWord): Byte;
   function _Highest2(Data: QWord): Byte;
   function IsPrintableChar(C: Char): Boolean;
+  function IsNumericChar(C: Char): Boolean;
 
   function ThreadListCount(AThreadedList: TThreadList): Int64;
   procedure ThreadListClearObjects(AThreadList: TThreadList);
@@ -60,6 +61,11 @@ uses
 function IsPrintableChar(C: Char): Boolean;
 begin
   Result := ((Ord( C) >= 32) and (Ord( C) <= 126)) { or ((Ord( C) >= 128) and (Ord( C) <= 255)) }
+end;
+
+function IsNumericChar(C: Char): Boolean;
+begin
+  Result := (C >= '0') and (C <= '9')
 end;
 
 

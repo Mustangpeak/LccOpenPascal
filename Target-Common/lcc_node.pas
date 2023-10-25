@@ -753,9 +753,9 @@ begin
   FTaskState := lesRunning;
   FLiveTime := 0;
 
-  // 0 means forever'ish, negative means skip setting it
+  // 0 means forever
   if ATimeout = 0 then
-    FTimeoutLimit := MaxInt div 100           // 100ms intervals
+    FTimeoutLimit := 0
   else
   if ATimeout > 0 then
     FTimeoutLimit := ATimeout div 100;         // 100ms intervals
@@ -783,7 +783,7 @@ procedure TLccTaskBase._100msTimeTick;
 begin
   if IsRunning then
   begin
-    if (LiveTime > TimeoutLimit) then
+    if (LiveTime > TimeoutLimit) and (TimeoutLimit > 0) then
       Timeout
     else
       Inc(FLiveTime)

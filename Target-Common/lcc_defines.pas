@@ -39,6 +39,7 @@ const
   TIMEOUT_RECIEVE_THREAD = 20;             // 20ms sleep time
   TIMEOUT_CONTROLLER_NOTIFY_WAIT = 2000;   // milliseconds   How long we wait for the Notified message to come from the currently assigned Controller
   TIMEOUT_TASK_MESSAGES = 5000;
+  TIMEOUT_TASK_MESSSAGE_INFINITY = 0;
 
 const
   PATH_OSX_RESOURCES = 'Contents/Resources/';

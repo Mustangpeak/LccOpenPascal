@@ -26,6 +26,7 @@ uses
   lcc_math_float16,
   lcc_defines,
   lcc_alias_server,
+  lcc_protocol_utilities,
 
   lcc_node_messages;
 
@@ -62,31 +63,24 @@ type
   TLccTrainController = class;
   TLccTaskSearchTrain = class;
 
-  { TAssignedTrainState }
+  { TTrainInfo }
 
-  TAssignedTrainState = class
+  TTrainInfo = class
   private
-    FOwner: TLccTrainController;
-    FSearchCriteriaPending: DWORD;
-    FTrain: TLccAliasMappingRec;
-    FSearchCriteria: DWORD;
-    FWorkerMessage: TLccMessage;
+    FCDI: TLccTaskMemorySpaceAccess;
+    FNodeID: TNodeID;
+    FPIP: TProtocolSupportedProtocols;
+    FSNIP: TProtocolSimpleNodeInfo;
   public
-    property Owner: TLccTrainController read FOwner write FOwner;
-    property Train: TLccAliasMappingRec read FTrain write FTrain;
-    property SearchCriteriaPending: DWORD read FSearchCriteriaPending write FSearchCriteriaPending;
-  //  property SearchCriteria: DWORD read FSearchCriteria write FSearchCriteria;
-    property WorkerMessage: TLccMessage read FWorkerMessage write FWorkerMessage;
+    property NodeID: TNodeID read FNodeID write FNodeID;
+    property SNIP: TProtocolSimpleNodeInfo read FSNIP write FSNIP;
+    property PIP: TProtocolSupportedProtocols read FPIP write FPIP;
+    property CDI: TLccTaskMemorySpaceAccess read FCDI write FCDI;
 
     constructor Create;
+    constructor Create(ANodeID: TNodeID);
     destructor Destroy; override;
-
-    procedure AcceptSearchCriteriaPending;
-    procedure ClearTrain;
-    function IsAssigned: Boolean;
-    function IsEqual(ATestNodeID: TNodeID; ATestNodeAlias: Word): Boolean;
   end;
-
 
   TOnTLccTaskSearchTrainCallback = procedure(ATask: TLccTaskSearchTrain) of object;
 
@@ -349,13 +343,48 @@ type
 
   TLccTaskQueryFunctionArray = array of TLccTaskQueryFunction;
 
+  { TLccTaskTrainRoster }
+
+  TLccTaskTrainRoster = class(TLccTaskBase)
+  private
+    FOwnerNode: TLccNode;
+    FRosterList: TList;
+    FActiveTrain: TTrainInfo;
+    function GetCount: Integer;
+    function GetTrain(Index: Integer): TTrainInfo;
+    procedure SetActiveTrain(AValue: TTrainInfo);
+
+  protected
+    property RosterList: TList read FRosterList write FRosterList;
+    property OwnerNode: TLccNode read FOwnerNode write FOwnerNode;
+
+  public
+    property ActiveTrain: TTrainInfo read FActiveTrain write SetActiveTrain;
+    property Count: Integer read GetCount;
+    property Train[Index: Integer]: TTrainInfo read GetTrain;
+
+    constructor Create(AnOwner: TLccNode); override;
+    destructor Destroy; override;
+
+    procedure Add(ATrain: TTrainInfo);
+    function IndexOf(ATrain: TTrainInfo): Integer;
+    procedure Remove(ATrain: TTrainInfo);
+    function Delete(Index: Integer): TTrainInfo;
+    function FindBySNIPUserName(AName: string): TTrainInfo;
+    function FindByNodeID(ANodeID: TNodeID): TTrainInfo;
+
+    procedure Start(ATimeout: Integer); override;
+    procedure Process(SourceMessage: TLccMessage); override;
+  end;
+
+
+
   // ******************************************************************************
 
   { TLccTrainController }
 
   TLccTrainController = class(TLccNode)
   private
-    FAssignedTrain: TAssignedTrainState;
     FTaskControllerAttach: TLccTaskControllerAttach;
     FTaskControllerQuery: TLccTaskControllerQuery;
     FTaskControllerRelease: TLccTaskControllerRelease;
@@ -372,6 +401,7 @@ type
     FTaskSearchTrain: TLccTaskSearchTrain;
     FTaskSetFunctions: TLccTaskSetFunctionArray;
     FTaskSetSpeedDir: TLccTaskSetSpeedDir;
+    FTrainRoster: TLccTaskTrainRoster;
 
   protected
     property TaskSearchTrain: TLccTaskSearchTrain read FTaskSearchTrain write FTaskSearchTrain;
@@ -391,14 +421,12 @@ type
     property TaskQuerySpeed:  TLccTaskQuerySpeed read FTaskQuerySpeed write FTaskQuerySpeed;
     property TaskQueryFunctions:  TLccTaskQueryFunctionArray read FTaskQueryFunctions write FTaskQueryFunctions;
 
+
     function GetCdiFile: string; override;
     procedure BeforeLogin; override;
 
   public
-
-    property AssignedTrain: TAssignedTrainState read FAssignedTrain write FAssignedTrain;
-
-
+    property TrainRoster: TLccTaskTrainRoster read FTrainRoster;
 
     constructor Create(AOwner: TComponent; CdiXML: string); override;
     destructor Destroy; override;
@@ -435,15 +463,209 @@ type
     function QuerySpeedDir(Listener: TNodeID; ACallback: TOnTaskCallback): Boolean;                          // Callback -> TLccTaskQuerySpeed
     function QueryFunction(Listener: TNodeID; FunctionAddress: DWord; ACallback: TOnTaskCallback): Boolean;  // Callback -> TLccTaskQueryFunction
 
+
     procedure FindAllTrains;
     procedure ReleaseTrain;
-    function IsTrainAssigned: Boolean;
   end;
 
   TLccTrainControllerClass = class of TLccTrainController;
 
 
 implementation
+
+{ TLccTaskTrainRoster }
+
+{ TLccTaskTrainRoster }
+
+procedure TLccTaskTrainRoster.SetActiveTrain(AValue: TTrainInfo);
+begin
+  if FActiveTrain=AValue then Exit;
+
+  Add(AValue);
+  FActiveTrain:=AValue;
+end;
+
+function TLccTaskTrainRoster.GetCount: Integer;
+begin
+  Result := RosterList.Count
+end;
+
+function TLccTaskTrainRoster.GetTrain(Index: Integer): TTrainInfo;
+begin
+  Result := nil;
+  if Index < Count then
+    Result := TTrainInfo( RosterList[Index])
+end;
+
+constructor TLccTaskTrainRoster.Create(AnOwner: TLccNode);
+begin
+  inherited Create(AnOwner);
+  FOwnerNode := AnOwner;
+  RosterList := TList.Create;
+end;
+
+destructor TLccTaskTrainRoster.Destroy;
+begin
+  ListClearObjects(RosterList);
+  inherited Destroy;
+end;
+
+procedure TLccTaskTrainRoster.Add(ATrain: TTrainInfo);
+begin
+  if IndexOf(ATrain) < 0 then
+    RosterList.Add(ATrain);
+end;
+
+function TLccTaskTrainRoster.IndexOf(ATrain: TTrainInfo): Integer;
+begin
+  Result := RosterList.IndexOf(ATrain);
+end;
+
+procedure TLccTaskTrainRoster.Remove(ATrain: TTrainInfo);
+begin
+  RosterList.Remove(ATrain);
+end;
+
+function TLccTaskTrainRoster.Delete(Index: Integer): TTrainInfo;
+begin
+  if (Index < RosterList.Count) then
+  begin
+    Result := TTrainInfo( RosterList[Index]);
+    RosterList.Delete(Index);
+  end;
+end;
+
+function TLccTaskTrainRoster.FindBySNIPUserName(AName: string): TTrainInfo;
+var
+  i: Integer;
+  LocalTrainInfo: TTrainInfo;
+begin
+  Result := nil;
+  for i := 0 to RosterList.Count - 1 do
+  begin
+    LocalTrainInfo := TTrainInfo( RosterList[i]);
+    if LocalTrainInfo.SNIP.UserName = AName then
+    begin
+      Result := LocalTrainInfo;
+      Break;
+    end;
+  end;
+end;
+
+function TLccTaskTrainRoster.FindByNodeID(ANodeID: TNodeID): TTrainInfo;
+var
+  i: Integer;
+  LocalTrainInfo: TTrainInfo;
+begin
+  Result := nil;
+  for i := 0 to RosterList.Count - 1 do
+  begin
+    LocalTrainInfo := TTrainInfo( RosterList[i]);
+    if EqualNodeID(LocalTrainInfo.NodeID, ANodeID, False) then
+    begin
+      Result := LocalTrainInfo;
+      Break;
+    end;
+  end;
+end;
+
+procedure TLccTaskTrainRoster.Start(ATimeout: Integer);
+begin
+  inherited Start(ATimeout);
+end;
+
+procedure TLccTaskTrainRoster.Process(SourceMessage: TLccMessage);
+var
+  LocalTrain: TTrainInfo;
+begin
+  inherited Process(SourceMessage);
+
+
+  case SourceMessage.MTI of
+    MTI_PROTOCOL_SUPPORT_REPLY :
+      begin
+        LocalTrain := FindByNodeID(SourceMessage.SourceID);
+        if Assigned(LocalTrain) then
+        begin
+          LocalTrain.PIP.LoadFromLccMessage(SourceMessage);
+          if LocalTrain.PIP.SimpleNodeInfo then
+          begin
+            WorkerMessage.LoadSimpleNodeIdentInfoRequest(OwnerNode.NodeID, OwnerNode.AliasID, Target, AliasServer.FindAlias(LocalTrain.NodeID));
+            OwnerNode.SendMessage(WorkerMessage, OwnerNode);
+          end else
+          if LocalTrain.PIP.AbbreviatedConfigurationDefinitionInfo then
+          begin
+            // TODO
+            // Can find info drop it
+            Remove(LocalTrain);
+            LocalTrain.Free;
+          end else
+          if LocalTrain.PIP.Datagram then
+          begin
+            // TODO
+            Remove(LocalTrain);
+            LocalTrain.Free;
+          end else
+          begin
+            Remove(LocalTrain);
+            LocalTrain.Free;
+          end
+        end;
+      end;
+    MTI_SIMPLE_NODE_INFO_REPLY :
+      begin
+        LocalTrain := FindByNodeID(SourceMessage.SourceID);
+        if Assigned(LocalTrain) then
+        begin
+          LocalTrain.SNIP.LoadFromLccMessage(SourceMessage);
+          if Assigned(Callback) then
+            Callback(Self)
+        end
+      end;
+    MTI_PRODUCER_IDENTIFIED_UNKNOWN,
+    MTI_PRODUCER_IDENTIFIED_SET,
+    MTI_PRODUCER_IDENTIFIED_CLEAR :
+      begin
+        if SourceMessage.IsEqualEventID(EVENT_IS_TRAIN) then
+        begin
+         LocalTrain := FindByNodeID(SourceMessage.SourceID);
+         if not Assigned(LocalTrain) then
+         begin
+           LocalTrain := TTrainInfo.Create(SourceMessage.SourceID);
+           Add(LocalTrain);
+         end;
+         WorkerMessage.LoadProtocolIdentifyInquiry(OwnerNode.NodeID, OwnerNode.AliasID, LocalTrain.NodeID, AliasServer.FindAlias(LocalTrain.NodeID));
+         OwnerNode.SendMessage(WorkerMessage, OwnerNode);
+        end
+      end;
+  end; // case
+end;
+
+{ TTrainInfo }
+
+constructor TTrainInfo.Create;
+begin
+  FSNIP := TProtocolSimpleNodeInfo.Create;
+  FPIP := TProtocolSupportedProtocols.Create;
+  FCDI := TLccTaskMemorySpaceAccess.Create(nil);
+end;
+
+constructor TTrainInfo.Create(ANodeID: TNodeID);
+begin
+  inherited Create;
+  FSNIP := TProtocolSimpleNodeInfo.Create;
+  FPIP := TProtocolSupportedProtocols.Create;
+  FCDI := TLccTaskMemorySpaceAccess.Create(nil);
+  FNodeID := ANodeID;
+end;
+
+destructor TTrainInfo.Destroy;
+begin
+  FreeAndNil(FSNIP);
+  FreeAndNil(FPIP);
+  FreeAndNil(FCDI);
+  inherited Destroy;
+end;
 
 { TLccTaskManagementReleaseTrain }
 
@@ -784,11 +1006,14 @@ begin
   if SourceMessage.MTI = MTI_TRACTION_REPLY then
     if SourceMessage.DataArray[0] = TRACTION_QUERY_FUNCTION then
     begin
-      FValueReply := SourceMessage.TractionExtractFunctionValue;
-      Complete;
-      if Assigned(Callback) then
-        Callback(Self);
-      Reset;
+      if Address = SourceMessage.TractionExtractFunctionAddress then
+      begin
+        FValueReply := SourceMessage.TractionExtractFunctionValue;
+        Complete;
+        if Assigned(Callback) then
+          Callback(Self);
+        Reset;
+      end;
     end;
 end;
 
@@ -953,45 +1178,6 @@ begin
   end;
 end;
 
-{ TAssignedTrainState }
-
-constructor TAssignedTrainState.Create;
-begin
-  FWorkerMessage := TLccMessage.Create;
-end;
-
-destructor TAssignedTrainState.Destroy;
-begin
-  inherited Destroy;
-  FreeAndNil(FWorkerMessage);
-  inherited Destroy;
-end;
-
-
-procedure TAssignedTrainState.AcceptSearchCriteriaPending;
-begin
-  FSearchCriteria := SearchCriteriaPending;
-  FSearchCriteriaPending := 0;
-end;
-
-procedure TAssignedTrainState.ClearTrain;
-begin
-  FTrain.NodeID := NULL_NODE_ID;
-  FTrain.Alias := 0;
-  FSearchCriteria := 0;
-  FSearchCriteriaPending := 0;
-end;
-
-function TAssignedTrainState.IsAssigned: Boolean;
-begin
-  Result := not NullNodeID(FTrain.NodeID) or (FTrain.Alias <> 0)
-end;
-
-function TAssignedTrainState.IsEqual(ATestNodeID: TNodeID; ATestNodeAlias: Word): Boolean;
-begin
-  Result := EqualNodeID(ATestNodeID, FTrain.NodeID, False) or (ATestNodeAlias = FTrain.Alias);
-end;
-
 { TLccTrainController }
 
 procedure TLccTrainController.BeforeLogin;
@@ -1040,19 +1226,11 @@ begin
 //
 end;
 
-function TLccTrainController.IsTrainAssigned: Boolean;
-begin
-  Result := AssignedTrain.IsAssigned;
-end;
-
 constructor TLccTrainController.Create(AOwner: TComponent; CdiXML: string);
 var
   i: Integer;
 begin
   inherited Create(AOwner, CdiXML);
-
-  FAssignedTrain := TAssignedTrainState.Create;
-  AssignedTrain.Owner := Self;
 
   FTaskControllerAttach := TLccTaskControllerAttach.Create(Self);
   FTaskControllerQuery := TLccTaskControllerQuery.Create(Self);
@@ -1074,6 +1252,8 @@ begin
   for i := 0 to MAX_FUNCTIONS - 1 do
     TaskSetFunctions[i] := TLccTaskSetFunction.Create(Self);
   FTaskSetSpeedDir := TLccTaskSetSpeedDir.Create(Self);
+  FTrainRoster := TLccTaskTrainRoster.Create(Self);
+  TrainRoster.Start(TIMEOUT_TASK_MESSSAGE_INFINITY);    // Alway run
 
   RegisterTask(TaskControllerAttach);
   RegisterTask(TaskControllerQuery);
@@ -1092,6 +1272,7 @@ begin
   for i := 0 to MAX_FUNCTIONS - 1 do
     RegisterTask(TaskSetFunctions[i]);
   RegisterTask(TaskSetSpeedDir);
+  RegisterTask(TrainRoster);
 end;
 
 destructor TLccTrainController.Destroy;
@@ -1115,6 +1296,7 @@ begin
   for i := 0 to MAX_FUNCTIONS - 1 do
     UnRegisterTask(TaskSetFunctions[i]);
   UnRegisterTask(TaskSetSpeedDir);
+  UnRegisterTask(TrainRoster);
 
   FreeAndNil(FTaskControllerAttach);
   FreeAndNil(FTaskControllerQuery);
@@ -1133,6 +1315,7 @@ begin
   for i := 0 to MAX_FUNCTIONS - 1 do
     FreeAndNil(FTaskSetFunctions[i]);
   FreeAndNil(FTaskSetSpeedDir);
+  FreeAndNil(FTrainRoster);
 
   inherited Destroy;
 end;
@@ -1297,7 +1480,8 @@ begin
   end;
 end;
 
-function TLccTrainController.SetSpeedDir(Listener: TNodeID; Speed: Single; Forward: Boolean): Boolean;
+function TLccTrainController.SetSpeedDir(Listener: TNodeID; Speed: single;
+  Forward: Boolean): Boolean;
 begin
   if not Forward then Speed := -Speed;
   Result := SetSpeedDir(Listener, Speed);
