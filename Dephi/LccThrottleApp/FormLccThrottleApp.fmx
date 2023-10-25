@@ -609,7 +609,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
                   Text = 'Speed'
                   TabOrder = 1
                 end
-                object LabelTrainsSpeed: TLabel
+                object LabelTrainSpeed: TLabel
                   Align = Top
                   AutoSize = True
                   StyledSettings = [Family, FontColor]

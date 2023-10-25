@@ -369,7 +369,7 @@ type
     constructor Create(AnOwner: TLccNode); override;
     destructor Destroy; override;
 
-    procedure Add(ATrain: TTrainInfo);
+    function Add(ATrain: TTrainInfo): TTrainInfo;
     function IndexOf(ATrain: TTrainInfo): Integer;
     procedure Remove(ATrain: TTrainInfo; FreeTrain: Boolean);
     function Delete(Index: Integer; FreeTrain: Boolean): TTrainInfo;
@@ -394,7 +394,7 @@ type
     property Flags: Byte read FFlags write FFlags;
     property Index: Byte read FIndex write FIndex;
 
-    constructor Create;
+    constructor Create; overload;
     constructor Create(ANode: TNodeID; AFlags: Byte; AnIndex: Byte); overload;
 
     procedure CopyTo( ATarget: TTrainListener);
@@ -645,8 +645,9 @@ begin
   inherited Destroy;
 end;
 
-procedure TLccTaskTrainRoster.Add(ATrain: TTrainInfo);
+function TLccTaskTrainRoster.Add(ATrain: TTrainInfo): TTrainInfo;
 begin
+  Result := ATrain;
   if IndexOf(ATrain) < 0 then
     RosterList.Add(ATrain);
 end;

@@ -924,7 +924,7 @@ end;
 procedure TFormTrainController.CallbackAssignToTrain(ATask: TLccTaskBase);
 var
   TaskControllerAttach: TLccTaskControllerAttach;
-  TrainInfo: TTrainInfo;
+  LocalTrainInfo: TTrainInfo;
 
   i: Integer;
 begin
@@ -934,10 +934,10 @@ begin
     lesComplete :
       begin
         // If not in the list then we beat the call IsTrain Event if the train needed to be created
-        // (HIGHLY UNLIKELY) but if so create a TrainInfo here for the Roster and the SNIP/PIP will be handled
+        // (HIGHLY UNLIKELY) but if so create a LocalTrainInfo here for the Roster and the SNIP/PIP will be handled
         // in the Roster loop to fill it in
-        TrainInfo := Controller.TrainRoster.ActivateTrain(TaskControllerAttach.Target);
-        if not Assigned(TrainInfo) then
+        LocalTrainInfo := Controller.TrainRoster.ActivateTrain(TaskControllerAttach.Target);
+        if not Assigned(LocalTrainInfo) then
           Controller.TrainRoster.Add( TTrainInfo.Create(TaskControllerAttach.Target, 'Loading..'));
 
         // Do UI Updates
@@ -945,9 +945,9 @@ begin
 
         LabelStatus.Caption := 'Requesting Train Info...';
 
-        Controller.QuerySpeedDir(TrainInfo.NodeID, @CallbackQuerySpeedDir);
+        Controller.QuerySpeedDir(LocalTrainInfo.NodeID, @CallbackQuerySpeedDir);
         for i := 0 to MAX_FUNCTIONS - 1 do
-          Controller.QueryFunction(TrainInfo.NodeID, i, @CallbackQueryFunction);
+          Controller.QueryFunction(LocalTrainInfo.NodeID, i, @CallbackQueryFunction);
       end;
     lesAbort   : LabelStatus.Caption := 'Train Assign Aborted';
     lesTimeout : LabelStatus.Caption := 'Train Assign Timeout';
@@ -1090,15 +1090,8 @@ begin
           ComboBoxTrainSelect.Items.Clear;
           for i := 0 to TaskTrainRoster.Count - 1 do
           begin
-            if TaskTrainRoster.Train[i].SNIP.Valid then
-            begin
-              ListBoxRoster.Items.Add(TaskTrainRoster.Train[i].SNIP.UserName);
-              ComboBoxTrainSelect.Items.Add(TaskTrainRoster.Train[i].SNIP.UserName)
-            end else
-            begin
-              ListBoxRoster.Items.Add(NodeIDToString(TaskTrainRoster.Train[i].NodeID, True));
-              ComboBoxTrainSelect.Items.Add(NodeIDToString(TaskTrainRoster.Train[i].NodeID, True));
-            end;
+            ListBoxRoster.Items.Add(TaskTrainRoster.Train[i].UserName);
+            ComboBoxTrainSelect.Items.Add(TaskTrainRoster.Train[i].UserName)
           end;
         finally
           ListBoxRoster.Items.EndUpdate;
