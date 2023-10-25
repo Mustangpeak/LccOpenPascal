@@ -77,8 +77,8 @@ type
     property PIP: TProtocolSupportedProtocols read FPIP write FPIP;
     property CDI: TLccTaskMemorySpaceAccess read FCDI write FCDI;
 
-    constructor Create;
-    constructor Create(ANodeID: TNodeID);
+    constructor Create; overload;
+    constructor Create(ANodeID: TNodeID); overload;
     destructor Destroy; override;
   end;
 
@@ -528,6 +528,7 @@ end;
 
 function TLccTaskTrainRoster.Delete(Index: Integer): TTrainInfo;
 begin
+  Result := nil;
   if (Index < RosterList.Count) then
   begin
     Result := TTrainInfo( RosterList[Index]);
