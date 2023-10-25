@@ -47,7 +47,7 @@ type
     TabItemTrains: TTabItem;
     TabItemLog: TTabItem;
     ToolBarMain: TToolBar;
-    lblTitleMain: TLabel;
+    lbTitleMain: TLabel;
     TabItem3: TTabItem;
     ToolBar4: TToolBar;
     lblTitle4: TLabel;
@@ -209,7 +209,6 @@ type
     FCdiData: TLccCdiRoot;
     FNodeEditor: TFrameNodeEditorControl;
     FEmulateCanBus: Boolean;
-    FTrainInfo: TTrainInfo;
     { Private declarations }
 
   protected
@@ -236,7 +235,6 @@ type
     property PathMemoryConfig: string read FPathMemoryConfig write FPathMemoryConfig;
     property CdiData: TLccCdiRoot read FCdiData write FCdiData;
     property NodeEditor: TFrameNodeEditorControl read FNodeEditor write FNodeEditor;
-    property TrainInfo: TTrainInfo read FTrainInfo write FTrainInfo;
 
     // Callbacks
     procedure OnNodeLogin(Sender: TObject; LccSourceNode: TLccNode);
@@ -274,6 +272,10 @@ type
     procedure TrainTabCDISelect;
     procedure RenderCDI(ATrainInfo: TTrainInfo);
     procedure SelectTrain(AnAddress: String; HideMultiView: Boolean);
+    function FindRosterListItemByTrainInfoNodeID(ANodeID: TNodeID): TListViewItem;
+    function FindRosterTrainInfoByTrainInfoNodeID(ANodeID: TNodeID): TTrainInfo;
+    function RosterListSelectedTrainInfo: TTrainInfo;
+    function AddRosterListItem(ANodeID: TNodeID; ACaption: String): TListviewItem;
 
 
     function IsTrainAssigned: Boolean;
@@ -344,6 +346,13 @@ begin
     XmlNodeSetFirstLevelTextContent(PathSettingsFile, 'settings', 'port', EditSettingsPort.Text, True);
 end;
 
+function TLccThrottleAppForm.AddRosterListItem(ANodeID: TNodeID; ACaption: String): TListviewItem;
+begin
+  Result := ListViewTrainRoster.Items.Add;
+  Result.Text := ACaption;
+  Result.TagObject := TTrainInfo.Create(ANodeID)
+end;
+
 procedure TLccThrottleAppForm.BuildNodeEditor;
 var
   i: Integer;
@@ -371,9 +380,15 @@ begin
 end;
 
 procedure TLccThrottleAppForm.ButtonFnClick(Sender: TObject);
+var
+  LocalTrainInfo: TTrainInfo;
 begin
   if Assigned(Controller) and IsTrainAssigned then
-    Controller.SetFunction(TrainInfo.NodeID, (Sender as TButton).Tag, Word( (Sender as TButton).IsPressed));
+  begin
+    LocalTrainInfo := RosterListSelectedTrainInfo;
+    if Assigned(LocalTrainInfo) then
+      Controller.SetFunction(LocalTrainInfo.NodeID, (Sender as TButton).Tag, Word( (Sender as TButton).IsPressed));
+  end;
 end;
 
 procedure TLccThrottleAppForm.ButtonSettingsDeleteAppFolderClick(Sender: TObject);
@@ -399,7 +414,7 @@ end;
 procedure TLccThrottleAppForm.ButtonSettingsResetConnectionClick(Sender: TObject);
 var
   ConnectionInfo: TLccEthernetConnectionInfo;
-  LocalPort: LongInt;
+  LocalPort: Integer;
   LocalPortStr: String;
   LocalIPStr: String;
   LocalNodeIDStr: String;
@@ -437,41 +452,33 @@ end;
 
 procedure TLccThrottleAppForm.CallbackAssignToTrain(ATask: TLccTaskBase);
 var
-  LocalTask: TLccTaskControllerAttach;
-  Mapping: TLccAliasMapping;
+  TaskControllerAttach: TLccTaskControllerAttach;
   i: Integer;
+  LocalTrainInfo: TTrainInfo;
 begin
-  LocalTask := ATask as TLccTaskControllerAttach;
+  TaskControllerAttach := ATask as TLccTaskControllerAttach;
 
-  Mapping := AliasServer.FindMapping(LocalTask.Target);
-  if Assigned(Mapping) then
-  begin
-    case ATask.TaskState of
-      lesComplete :
+  case ATask.TaskState of
+    lesComplete :
+      begin
+        LocalTrainInfo := RosterListSelectedTrainInfo;
+        if Assigned(LocalTrainInfo) then
         begin
-          TrainInfo.NodeID := LocalTask.Target;
+          lbTitleMain.Text := 'Requesting Train Info...';
+          Controller.RequestSNIP(TaskControllerAttach.Target, CallbackSnip);
+          Controller.RequestPIP(TaskControllerAttach.Target, CallbackPIP);
 
-          // Do UI Updates
-
-    //      EnableControls(True);
-
-          lbStatus.Text := 'Requesting Train Info...';
-          Controller.RequestSNIP(TrainInfo.NodeID, CallbackSnip);
-          Controller.RequestPIP(TrainInfo.NodeID, CallbackPIP);
-          Controller.QuerySpeedDir(TrainInfo.NodeID, CallbackQuerySpeedDir);
+          Controller.QuerySpeedDir(TaskControllerAttach.Target, CallbackQuerySpeedDir);
           for i := 0 to MAX_FUNCTIONS - 1 do
-            Controller.QueryFunction(TrainInfo.NodeID, i, CallbackQueryFunction);
-      //    Controller.RequestCDI(TrainInfo.NodeID, @CallbackCDI);
-
-
+            Controller.QueryFunction(TaskControllerAttach.Target, i, CallbackQueryFunction);
         end;
-      lesAbort : ShowMessage('Assigned to Train: Aborted');
-      lesRunning : ShowMessage('Assigned to Train: Running: (In progress updates here');
-      lesTimeout : ShowMessage('Assigned to Train: Timed out unsuccessful (no reply?)');
-      lesError : ShowMessage('Error: Code: ' + IntToStr(ATask.ErrorCode) + ' ' + ATask.ErrorMessage);
-      lesIdle : ShowMessage('Idle: This should not have happended');
-    end;
+      end;
+
+    lesAbort   : lbStatus.Text := 'Controller Assign: Abort';
+    lesTimeout : lbStatus.Text := 'Controller Assign: Timout';
+    lesError   : lbStatus.Text := 'Controller Assign: Error - Code: ' + IntToStr(ATask.ErrorCode) + ' ' + ATask.ErrorMessage;
   end;
+
 end;
 
 procedure TLccThrottleAppForm.CallbackCdi(ATask: TLccTaskBase);
@@ -497,32 +504,29 @@ begin
       begin  // Update of progress
         lbStatus.Text := IntToStr(CDI.AddressCurrent) + ' of ' + IntToStr(CDI.AddressHi-CDI.AddressLo) + ' bytes';
       end;
-    lesAbort,
-    lesTimeout,
-    lesError :
-      begin
-        Caption := 'CallbackCdi: Abort/Timeout/Error';
-      end;
-    lesIdle : ShowMessage('CallbackCdi Idle: This should not have happended');
+    lesAbort   : lbStatus.Text := 'CDI: Abort';
+    lesTimeout : lbStatus.Text := 'CDI: Timout';
+    lesError   : lbStatus.Text := 'CDI: Error - Code: ' + IntToStr(ATask.ErrorCode) + ' ' + ATask.ErrorMessage;
   end;
 end;
 
 procedure TLccThrottleAppForm.CallbackPip(ATask: TLccTaskBase);
 var
-  PIP: TTaskReadPIP;
+  TaskReadPIP: TTaskReadPIP;
+  LocalTrainInfo: TTrainInfo;
 begin
-  PIP := ATask as TTaskReadPIP;
+  TaskReadPIP := ATask as TTaskReadPIP;
 
   case ATask.TaskState of
     lesComplete :
       begin
-        PIP.SupportedProtocols.CopyTo(TrainInfo.PIP);
+        LocalTrainInfo := FindRosterTrainInfoByTrainInfoNodeID(TaskReadPIP.Target);
+        if Assigned(LocalTrainInfo) then
+          TaskReadPIP.SupportedProtocols.CopyTo(LocalTrainInfo.PIP);
       end;
-    lesAbort : ShowMessage('CallbackSnip: Aborted');
-    lesRunning : ShowMessage('CallbackSnip: Running: (In progress updates here');
-    lesTimeout : ShowMessage('CallbackSnip: Timed out unsuccessful (no reply?)');
-    lesError : ShowMessage('Error: Code: ' + IntToStr(ATask.ErrorCode) + ' ' + ATask.ErrorMessage);
-    lesIdle : ShowMessage('CallbackSnip Idle: This should not have happended');
+    lesAbort   : lbStatus.Text := 'PIP: Abort';
+    lesTimeout : lbStatus.Text := 'PIP: Timout';
+    lesError   : lbStatus.Text := 'PIP: Error - Code: ' + IntToStr(ATask.ErrorCode) + ' ' + ATask.ErrorMessage;
   end;
 end;
 
@@ -532,20 +536,28 @@ var
   FunctionBox: TButton;
   OldOnChange: TNotifyEvent;
 begin
-  QueryFunction := ATask as TLccTaskQueryFunction;
-  FunctionBox := FindComponent('ButtonF' + IntToStr(QueryFunction.Address)) as TButton;
-  if Assigned(FunctionBox) then
-  begin
-    OldOnChange := FunctionBox.OnClick;
-    FunctionBox.OnClick := nil;
-    try
-      if QueryFunction.ValueReply = 0 then
-        FunctionBox.IsPressed := False
-      else
-        FunctionBox.IsPressed := True;
-    finally
-      FunctionBox.OnClick := OldOnChange;
-    end;
+  case ATask.TaskState of
+    lesComplete :
+      begin
+        QueryFunction := ATask as TLccTaskQueryFunction;
+        FunctionBox := FindComponent('ButtonF' + IntToStr(QueryFunction.Address)) as TButton;
+        if Assigned(FunctionBox) then
+        begin
+          OldOnChange := FunctionBox.OnClick;
+          FunctionBox.OnClick := nil;
+          try
+            if QueryFunction.ValueReply = 0 then
+              FunctionBox.IsPressed := False
+            else
+              FunctionBox.IsPressed := True;
+          finally
+            FunctionBox.OnClick := OldOnChange;
+          end;
+        end;
+      end;
+    lesAbort   : lbStatus.Text := 'Query Function: Abort';
+    lesTimeout : lbStatus.Text := 'Query Function: Timout';
+    lesError   : lbStatus.Text := 'Query Function: Error - Code: ' + IntToStr(ATask.ErrorCode) + ' ' + ATask.ErrorMessage;
   end;
 end;
 
@@ -554,18 +566,23 @@ var
   QuerySpeed: TLccTaskQuerySpeed;
   OldOnChange: TNotifyEvent;
 begin
-  QuerySpeed := ATask as TLccTaskQuerySpeed;
-
-  // Trackbar is upside down
-  OldOnChange := TrackBarTrainsThrottleLever.OnClick;
-  TrackBarTrainsThrottleLever.OnClick := nil;
-  try
-  TrackBarTrainsThrottleLever.Value := 100 - Abs(QuerySpeed.SetSpeedReply);
-  finally
-    TrackBarTrainsThrottleLever.OnClick := OldOnChange;
+  case ATask.TaskState of
+    lesComplete :
+      begin
+        QuerySpeed := ATask as TLccTaskQuerySpeed;
+        OldOnChange := TrackBarTrainsThrottleLever.OnClick;   // Trackbar is upside down
+        TrackBarTrainsThrottleLever.OnClick := nil;
+        try
+        TrackBarTrainsThrottleLever.Value := 100 - Abs(QuerySpeed.SetSpeedReply);
+        finally
+          TrackBarTrainsThrottleLever.OnClick := OldOnChange;
+        end;
+        SpeedButtonTrainsRev.IsPressed := QuerySpeed.CommandedSpeedReply < 0;
+      end;
+    lesAbort   : lbStatus.Text := 'Query Speed: Abort';
+    lesTimeout : lbStatus.Text := 'Query Speed: Timout';
+    lesError   : lbStatus.Text := 'Query Speed: Error - Code: ' + IntToStr(ATask.ErrorCode) + ' ' + ATask.ErrorMessage;
   end;
-
-  SpeedButtonTrainsRev.IsPressed := QuerySpeed.CommandedSpeedReply < 0;
 end;
 
 procedure TLccThrottleAppForm.CallbackQueryTrain(ATask: TLccTaskBase);
@@ -575,73 +592,55 @@ end;
 
 procedure TLccThrottleAppForm.CallbackSearchByDccAddress(ATask: TLccTaskBase);
 var
-  LocalTask: TLccTaskSearchTrain;
-  Mapping: TLccAliasMapping;
+  TaskSearchTrain: TLccTaskSearchTrain;
+  ListItem: TListviewItem;
 begin
-  LocalTask := ATask as TLccTaskSearchTrain;
+  TaskSearchTrain := ATask as TLccTaskSearchTrain;
 
-  Mapping := AliasServer.FindMapping(LocalTAsk.TrainNodeIDReply);
-  if Assigned(Mapping) then
-  begin
-    case ATask.TaskState of
-      lesComplete :
-        begin
-          TrainInfo.NodeID := LocalTask.TrainNodeIDReply;
-          Controller.ControllerAssign(TrainInfo.NodeID, CallbackAssignToTrain);
-          lbStatus.Text := 'Assigning Controller to: ' + lblTitleMain.Text;
-        end;
-      lesAbort : ShowMessage('Search for Train: Aborted');
-      lesRunning : ShowMessage('Search for Train: Running: (In progress updates here');
-      lesTimeout : ShowMessage('Search for Train: Timed out unsuccessful (no reply?)');
-      lesError : ShowMessage('Error: Code: ' + IntToStr(ATask.ErrorCode) + ' ' + ATask.ErrorMessage);
-      lesIdle : ShowMessage('Idle: This should not have happended');
-    end;
+  case TaskSearchTrain.TaskState of
+    lesComplete :
+      begin
+        ListItem := FindRosterListItemByTrainInfoNodeID(TaskSearchTrain.TrainNodeIDReply);
+        if not Assigned(ListItem) then
+          ListItem := AddRosterListItem(TaskSearchTrain.TrainNodeIDReply, 'Loading...');
+        ListViewTrainRoster.Selected := ListItem;
+        Controller.ControllerAssign(TaskSearchTrain.TrainNodeIDReply, CallbackAssignToTrain);
+        lbTitleMain.Text := 'Assigning Controller: ' + TaskSearchTrain.DccAddress;
+      end;
+    lesAbort   : lbStatus.Text := 'Train Search: Abort';
+    lesTimeout : lbStatus.Text := 'Train Search: Timout';
+    lesError   : lbStatus.Text := 'Train Search: Error - Code: ' + IntToStr(ATask.ErrorCode) + ' ' + ATask.ErrorMessage;
   end;
 end;
 
 procedure TLccThrottleAppForm.CallbackSnip(ATask: TLccTaskBase);
 var
-  SNIP: TTaskReadSNIP;
+  TaskReadSNIP: TTaskReadSNIP;
+  LocalTrainInfo: TTrainInfo;
 begin
-  SNIP := ATask as TTaskReadSNIP;
+  TaskReadSNIP := ATask as TTaskReadSNIP;
   case ATask.TaskState of
     lesComplete :
       begin
-        Caption := 'Train: ' + SNIP.SimpleNodeInfo.UserName;
-        SNIP.SimpleNodeInfo.CopyTo(TrainInfo.SNIP);
+        LocalTrainInfo := FindRosterTrainInfoByTrainInfoNodeID(TaskReadSNIP.Target);
+        if Assigned(LocalTrainInfo) then
+        begin
+          lbTitleMain.Text := 'Train: ' + TaskReadSNIP.SimpleNodeInfo.UserName;
+          TaskReadSNIP.SimpleNodeInfo.CopyTo(LocalTrainInfo.SNIP);
+        end;
       end;
-    lesAbort : ShowMessage('CallbackSnip: Aborted');
-    lesRunning : ShowMessage('CallbackSnip: Running: (In progress updates here');
-    lesTimeout : ShowMessage('CallbackSnip: Timed out unsuccessful (no reply?)');
-    lesIdle : ShowMessage('CallbackSnip Idle: This should not have happended');
-    lesError : ShowMessage('Error: Code: ' + IntToStr(ATask.ErrorCode) + ' ' + ATask.ErrorMessage);
+      lesAbort   : lbStatus.Text := 'SNIP: Abort';
+      lesTimeout : lbStatus.Text := 'SNIP: Timout';
+      lesError   : lbStatus.Text := 'SNIP: Error - Code: ' + IntToStr(ATask.ErrorCode) + ' ' + ATask.ErrorMessage;
   end;
 end;
 
 procedure TLccThrottleAppForm.CallbackTrainRosterNotify(ATask: TLccTaskBase);
-
-
-
-  function FindNode(ANodeID: TNodeID): TListViewItem;
-  var
-    i: Integer;
-  begin
-    Result := nil;
-    for i := 0 to ListViewTrainRoster.Items.UnfilteredItems.Count - 1 do
-    begin
-      if EqualNodeID( TTrainInfo( ListViewTrainRoster.Items.UnfilteredItems[i].TagObject).NodeID, ANodeID, False) then
-      begin
-        Result := ListViewTrainRoster.Items[i];
-        Break
-      end;
-    end;
-  end;
-
 var
   Roster: TLccTaskTrainRoster;
   i: Integer;
-  TrainInfo: TTrainInfo;
-  Node: TListviewItem;
+  LocalTrainInfo: TTrainInfo;
+  ListItem: TListviewItem;
 begin
   Roster := ATask as TLccTaskTrainRoster;
 
@@ -650,19 +649,14 @@ begin
 
     for i := 0 to Roster.Count - 1 do
     begin
-      Node := FindNode( Roster.Train[i].NodeID);
-      if not Assigned(Node) then
-      begin
-        Node := ListViewTrainRoster.Items.Add;
-        TrainInfo := TTrainInfo.Create;
-        TrainInfo.NodeID := Roster.Train[i].NodeID;
-        Node.TagObject := TrainInfo;
-      end else
-        TrainInfo := Roster.Train[i];
+      ListItem := FindRosterListItemByTrainInfoNodeID( Roster.Train[i].NodeID);
+      if not Assigned(ListItem) then
+        ListItem := AddRosterListItem(Roster.Train[i].NodeID, Roster.Train[i].SNIP.UserName);
 
-      Roster.Train[i].SNIP.CopyTo(TrainInfo.SNIP);
-      Roster.Train[i].PIP.CopyTo(TrainInfo.PIP);
-      Node.Text := TrainInfo.SNIP.UserName;
+      LocalTrainInfo := ListItem.TagObject as TTrainInfo;
+      Roster.Train[i].SNIP.CopyTo(LocalTrainInfo.SNIP);
+      Roster.Train[i].PIP.CopyTo(LocalTrainInfo.PIP);
+      ListItem.Text := LocalTrainInfo.SNIP.UserName;
     end;
   finally
     ListViewTrainRoster.EndUpdate
@@ -684,6 +678,31 @@ begin
   end;
 end;
 
+function TLccThrottleAppForm.FindRosterListItemByTrainInfoNodeID(ANodeID: TNodeID): TListViewItem;
+var
+  i: Integer;
+begin
+  Result := nil;
+  for i := 0 to ListViewTrainRoster.Items.UnfilteredItems.Count - 1 do
+  begin
+    if EqualNodeID( TTrainInfo( ListViewTrainRoster.Items.UnfilteredItems[i].TagObject).NodeID, ANodeID, False) then
+    begin
+      Result := ListViewTrainRoster.Items[i];
+      Break
+    end;
+  end;
+end;
+
+function TLccThrottleAppForm.FindRosterTrainInfoByTrainInfoNodeID(ANodeID: TNodeID): TTrainInfo;
+var
+  ListviewItem: TListviewItem;
+begin
+  Result := nil;
+  ListviewItem := FindRosterListItemByTrainInfoNodeID(ANodeID);
+  if Assigned(ListviewItem) then
+    Result := ListviewItem.TagObject as TTrainInfo;
+end;
+
 procedure TLccThrottleAppForm.FormCloseQuery(Sender: TObject; var CanClose: Boolean);
 begin
   TrainTabCDIClear;
@@ -697,8 +716,6 @@ procedure TLccThrottleAppForm.FormCreate(Sender: TObject);
 begin
   // Local field setup
   EmulateCanBus := True;
-
-  TrainInfo := TTrainInfo.Create;
 
   FCdiData := TLccCdiRoot.Create(nil);
 
@@ -771,7 +788,6 @@ begin
   FreeAndNil(FEthernetClient);
   FreeAndNil(FNodeManager);
   FreeAndNil(FCdiData);
-  FreeAndNil(FTrainInfo);
 end;
 
 procedure TLccThrottleAppForm.FormKeyUp(Sender: TObject; var Key: Word; var KeyChar: Char; Shift: TShiftState);
@@ -841,7 +857,7 @@ end;
 
 function TLccThrottleAppForm.IsTrainAssigned: Boolean;
 begin
-  Result := not EqualNodeID(TrainInfo.NodeID, NULL_NODE_ID, False);
+  Result := ListViewTrainRoster.Selected <> nil;
 end;
 
 procedure TLccThrottleAppForm.ListBoxItemTrainsDetailsUserDescriptionClick(Sender: TObject);
@@ -857,9 +873,9 @@ end;
 
 procedure TLccThrottleAppForm.ListViewTrainRosterItemClickEx(const Sender: TObject; ItemIndex: Integer; const LocalClickPos: TPointF; const ItemObject: TListItemDrawable);
 var
-  TrainInfo: TTrainInfo;
+  LocalTrainInfo: TTrainInfo;
 begin
-  TrainInfo := ListViewTrainRoster.Items[ItemIndex].TagObject as TTrainInfo;
+  LocalTrainInfo := ListViewTrainRoster.Items[ItemIndex].TagObject as TTrainInfo;
 
   // Did we click on the Accessory to move to the Details tab?
   if ItemObject is TListItemAccessory then
@@ -869,26 +885,21 @@ begin
 
     // Reset the CDI Tab
     TrainTabCDIClear;
+    // Clear the details so they are not stale from a previous load
+    TrainTabDetailsClear;
 
     // Need to load the information into that tab if we can.  If not we need to call for it
-    if TrainInfo.SNIP.Valid then
-    begin
-      TrainTabDetailsLoad(TrainInfo);
-    end else
-    begin
-      // Clear the details so they are not stale from a previous load
-      TrainTabDetailsClear;
-    //  Controller.SendSNIPRequest(TractionObject.NodeID, TractionObject.NodeAlias)
-    end;
+    if LocalTrainInfo.SNIP.Valid then
+      TrainTabDetailsLoad(LocalTrainInfo);
 
-  //  if not TrainInfo.CDI then
+    if not LocalTrainInfo.CDI.Valid then
     begin
-      Controller.RequestCDI(TrainInfo.NodeID, CallbackCdi);
+      Controller.RequestCDI(LocalTrainInfo.NodeID, CallbackCdi);
     end;
-
   end else
   begin
-    SelectTrain(TrainInfo.SNIP.UserName, True);
+    if LocalTrainInfo.SNIP.Valid then
+      SelectTrain(LocalTrainInfo.SNIP.UserName, True);
   end;
 end;
 
@@ -897,6 +908,7 @@ var
   I: Integer;
   SearchBox: TSearchBox;
   List: TListView;
+  OldSearchEvent: TNotifyEvent;
 begin
   SearchBox := nil;
   List := Sender as TListView;
@@ -909,8 +921,15 @@ begin
 
   if Assigned(Controller) and Assigned(SearchBox) then
   begin
+
     SelectTrain(SearchBox.Text, True);
-    SearchBox.Text := '';
+    OldSearchEvent := ListViewTrainRoster.OnSearchChange;
+    ListViewTrainRoster.OnSearchChange := nil;
+    try
+      SearchBox.Text := '';
+    finally
+      ListViewTrainRoster.OnSearchChange := OldSearchEvent;
+    end;
   end;
 end;
 
@@ -1009,6 +1028,13 @@ begin
   end;
 end;
 
+function TLccThrottleAppForm.RosterListSelectedTrainInfo: TTrainInfo;
+begin
+  Result := nil;
+  if ListViewTrainRoster.Selected <> nil then
+    Result :=  ListViewTrainRoster.Selected.TagObject as TTrainInfo
+end;
+
 procedure TLccThrottleAppForm.OnNodeAliasChanged(Sender: TObject; ALccNode: TLccNode);
 begin
   TextSettingsNodeAliasID.Text := ALccNode.AliasIDStr;
@@ -1032,12 +1058,24 @@ begin
 end;
 
 procedure TLccThrottleAppForm.SelectTrain(AnAddress: String; HideMultiView: Boolean);
+var
+  DccAddressInt: Integer;
+  IsLong: Boolean;
+  SpeedStep: TLccDccSpeedStep;
 begin
-  Controller.SearchByDccAddress(AnAddress, True, TLccDccSpeedStep.ldssDefault, CallbackSearchByDccAddress);
-  lbStatus.Text := 'Searching for Train: ' + QuotedStr(AnAddress) + '.';
+  // Find Some place to set these defaults in the UI
+  IsLong := True;
+  SpeedStep :=  TLccDccSpeedStep.ldssDefault;
 
-  if HideMultiView then
-    MultiViewRoster.HideMaster;
+  if ValidateExtendedDccAddress(AnAddress, DccAddressInt, IsLong) then
+  begin
+    Controller.SearchByDccAddress(DccAddressInt, IsLong, SpeedStep, CallbackSearchByDccAddress);
+    lbTitleMain.Text := 'Searching: ' + QuotedStr(AnAddress) + '.';
+
+    if HideMultiView then
+      MultiViewRoster.HideMaster;
+  end else
+    ShowMessage('Invalid DCC Address: ' + AnAddress);
 end;
 
 procedure TLccThrottleAppForm.SpeedButtonLogClearClick(Sender: TObject);
@@ -1059,17 +1097,30 @@ begin
 end;
 
 procedure TLccThrottleAppForm.SpeedButtonTrainsFwdClick(Sender: TObject);
+var
+  LocalTrainInfo: TTrainInfo;
 begin
-  SpeedButtonTrainsRev.IsPressed := not SpeedButtonTrainsFwd.IsPressed;
   if Assigned(Controller) and IsTrainAssigned then
-     Controller.SetSpeedDir(TrainInfo.NodeID, 100.0 - TrackBarTrainsThrottleLever.Value, SpeedButtonTrainsFwd.IsPressed);
+  begin
+    SpeedButtonTrainsRev.IsPressed := not SpeedButtonTrainsFwd.IsPressed;
+    LocalTrainInfo := RosterListSelectedTrainInfo;
+    if Assigned(LocalTrainInfo) then
+      Controller.SetSpeedDir(LocalTrainInfo.NodeID, 100.0 - TrackBarTrainsThrottleLever.Value, SpeedButtonTrainsFwd.IsPressed);
+  end;
 end;
 
 procedure TLccThrottleAppForm.SpeedButtonTrainsRevClick(Sender: TObject);
+var
+  LocalTrainInfo: TTrainInfo;
 begin
-  SpeedButtonTrainsFwd.IsPressed := not SpeedButtonTrainsRev.IsPressed;
   if Assigned(Controller) and IsTrainAssigned then
-    Controller.SetSpeedDir(TrainInfo.NodeID, 100.0 - TrackBarTrainsThrottleLever.Value, SpeedButtonTrainsFwd.IsPressed);
+  begin
+    SpeedButtonTrainsFwd.IsPressed := not SpeedButtonTrainsRev.IsPressed;
+    LocalTrainInfo := RosterListSelectedTrainInfo;
+    if Assigned(LocalTrainInfo) then
+      Controller.SetSpeedDir(LocalTrainInfo.NodeID, 100.0 - TrackBarTrainsThrottleLever.Value, SpeedButtonTrainsFwd.IsPressed);
+  end;
+
 end;
 
 procedure TLccThrottleAppForm.SpeedButtonTrainsStopClick(Sender: TObject);
@@ -1090,9 +1141,16 @@ begin
 end;
 
 procedure TLccThrottleAppForm.TrackBarTrainsThrottleLeverChange(Sender: TObject);
+var
+  LocalTrainInfo: TTrainInfo;
 begin
   if Assigned(Controller) and IsTrainAssigned then
-    Controller.SetSpeedDir(TrainInfo.NodeID, 100.0 - TrackBarTrainsThrottleLever.Value, SpeedButtonTrainsFwd.IsPressed);
+  begin
+    LocalTrainInfo := RosterListSelectedTrainInfo;
+    if Assigned(LocalTrainInfo) then
+      Controller.SetSpeedDir(LocalTrainInfo.NodeID, 100.0 - TrackBarTrainsThrottleLever.Value, SpeedButtonTrainsFwd.IsPressed);
+  end;
+
   LabelTrainsSpeed.Text := FloatToStr(100.0 - TrackBarTrainsThrottleLever.Value)
 end;
 

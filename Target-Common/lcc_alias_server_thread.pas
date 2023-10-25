@@ -374,7 +374,11 @@ end;
 
 constructor TReceiveMessageAliasServerThread.Create(CreateSuspended: Boolean; const StackSize: SizeUInt);
 begin
+  {$IFNDEF POSIX}
   inherited Create(CreateSuspended, StackSize);
+  {$ELSE}
+  inherited Create(CreateSuspended);
+  {$ENDIF}
   FOutgoingProcessedMessageList := TThreadList.Create;
   FIncomingMessageList := TThreadList.Create;
   FWaitingForMappingValidationMessageList := TThreadList.Create;

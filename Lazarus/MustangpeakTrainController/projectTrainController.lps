@@ -18,9 +18,8 @@
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="unitMainForm"/>
-        <IsVisibleTab Value="True"/>
-        <TopLine Value="943"/>
-        <CursorPos Y="954"/>
+        <TopLine Value="790"/>
+        <CursorPos X="44" Y="820"/>
         <UsageCount Value="440"/>
         <Loaded Value="True"/>
         <LoadedDesigner Value="True"/>
@@ -64,8 +63,8 @@
       <Unit>
         <Filename Value="../../Target-Common/lcc_defines.pas"/>
         <EditorIndex Value="5"/>
-        <TopLine Value="20"/>
-        <CursorPos X="33" Y="42"/>
+        <TopLine Value="107"/>
+        <CursorPos Y="121"/>
         <UsageCount Value="100"/>
         <Loaded Value="True"/>
       </Unit>
@@ -93,9 +92,9 @@
       </Unit>
       <Unit>
         <Filename Value="../../Target-Common/lcc_node.pas"/>
+        <IsVisibleTab Value="True"/>
         <EditorIndex Value="1"/>
-        <TopLine Value="2277"/>
-        <CursorPos Y="2296"/>
+        <CursorPos X="14"/>
         <UsageCount Value="198"/>
         <Loaded Value="True"/>
       </Unit>
@@ -206,8 +205,8 @@
       <Unit>
         <Filename Value="../../Target-Common/lcc_utilities.pas"/>
         <EditorIndex Value="6"/>
-        <TopLine Value="49"/>
-        <CursorPos X="22" Y="68"/>
+        <TopLine Value="86"/>
+        <CursorPos X="68" Y="103"/>
         <UsageCount Value="29"/>
         <Loaded Value="True"/>
       </Unit>
@@ -245,38 +244,6 @@
       <Define0 Value="LOG_MAPPING"/>
     </OtherDefines>
     <JumpHistory HistoryIndex="29">
-      <Position>
-        <Filename Value="unitmainform.pas"/>
-        <Caret Line="104" Column="18" TopLine="79"/>
-      </Position>
-      <Position>
-        <Filename Value="unitmainform.pas"/>
-        <Caret Line="105" Column="18" TopLine="79"/>
-      </Position>
-      <Position>
-        <Filename Value="unitmainform.pas"/>
-        <Caret Line="106" Column="18" TopLine="79"/>
-      </Position>
-      <Position>
-        <Filename Value="unitmainform.pas"/>
-        <Caret Line="107" Column="18" TopLine="79"/>
-      </Position>
-      <Position>
-        <Filename Value="unitmainform.pas"/>
-        <Caret Line="108" Column="18" TopLine="79"/>
-      </Position>
-      <Position>
-        <Filename Value="unitmainform.pas"/>
-        <Caret Line="173" Column="28" TopLine="143"/>
-      </Position>
-      <Position>
-        <Filename Value="unitmainform.pas"/>
-        <Caret Line="414" Column="41" TopLine="383"/>
-      </Position>
-      <Position>
-        <Filename Value="unitmainform.pas"/>
-        <Caret Line="415" Column="34" TopLine="384"/>
-      </Position>
       <Position>
         <Filename Value="unitmainform.pas"/>
         <Caret Line="424" Column="18" TopLine="393"/>
@@ -364,6 +331,38 @@
       <Position>
         <Filename Value="unitmainform.pas"/>
         <Caret Line="217" Column="22" TopLine="197"/>
+      </Position>
+      <Position>
+        <Filename Value="unitmainform.pas"/>
+        <Caret Line="948" Column="7" TopLine="943"/>
+      </Position>
+      <Position>
+        <Filename Value="unitmainform.pas"/>
+        <Caret Line="226" Column="15" TopLine="202"/>
+      </Position>
+      <Position>
+        <Filename Value="unitmainform.pas"/>
+        <Caret Line="1099" Column="12" TopLine="1087"/>
+      </Position>
+      <Position>
+        <Filename Value="unitmainform.pas"/>
+        <Caret Line="235" Column="56" TopLine="211"/>
+      </Position>
+      <Position>
+        <Filename Value="../../Target-Common/lcc_utilities.pas"/>
+        <Caret Line="71" Column="40" TopLine="49"/>
+      </Position>
+      <Position>
+        <Filename Value="../../Target-Common/lcc_defines.pas"/>
+        <Caret Line="58" Column="36" TopLine="68"/>
+      </Position>
+      <Position>
+        <Filename Value="../../Target-Common/lcc_defines.pas"/>
+        <Caret Line="121" TopLine="107"/>
+      </Position>
+      <Position>
+        <Filename Value="unitmainform.pas"/>
+        <Caret Line="820" Column="44" TopLine="790"/>
       </Position>
     </JumpHistory>
     <RunParams>

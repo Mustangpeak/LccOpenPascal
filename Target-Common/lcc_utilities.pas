@@ -49,6 +49,8 @@ uses
   function StreamReadByte(AStream: TStream): Byte;
   procedure StreamWriteByte(AStream: TStream; AByte: Byte);
 
+  function ValidateExtendedDccAddress(AddressStr: String; var DccAddress: Integer; var IsLong: Boolean): Boolean;
+
   function GridConnectToDetailedGridConnect(MessageString: string): string;
 
 
@@ -56,6 +58,52 @@ implementation
 
 uses
   lcc_node_messages;
+
+function ValidateExtendedDccAddress(AddressStr: String; var DccAddress: Integer; var IsLong: Boolean): Boolean;
+var
+  i: Integer;
+begin
+  Result := True;
+
+  DccAddress := 0;
+  if AddressStr = '' then
+    Result := False
+  else begin
+    if Length(AddressStr) = 1 then
+    begin
+      if not TryStrToInt(AddressStr, DccAddress) then
+        Result := False;
+    end else
+    begin
+      for i := 1 to Length(AddressStr) do
+      begin
+        if i < Length(AddressStr) then
+        begin
+          if (AddressStr[i] < '0') or (AddressStr[i] > '9') then
+            Result := False;
+        end else
+        begin
+          if (AddressStr[i] >= '0') and (AddressStr[i] <= '9') then
+          begin // all numbers
+            if not TryStrToInt(AddressStr, DccAddress) then   // This should always succeed
+              Result := False;
+          end else
+          begin
+            if (AddressStr[i] = 'L') or (AddressStr[i] = 'l') or (AddressStr[i] = 'S') or (AddressStr[i] = 's') then
+            begin
+              IsLong := (AddressStr[i] = 'L') or (AddressStr[i] = 'l');
+              SetLength(AddressStr, Length(AddressStr) - 1);  // strip it off
+              if not TryStrToInt(AddressStr, DccAddress) then   // This should always succeed
+                Result := False;
+            end else
+               Result := False
+          end
+        end;
+      end;
+      Result := (DccAddress > 0) and (DccAddress <= MAX_DCC_ADDRESS);
+    end
+  end;
+end;
 
 
 function IsPrintableChar(C: Char): Boolean;

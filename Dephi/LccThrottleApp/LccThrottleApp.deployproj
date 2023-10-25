@@ -6,8 +6,8 @@
     <PropertyGroup>
         <DeviceId Condition="'$(Platform)'=='Android'"/>
         <DeviceId Condition="'$(Platform)'=='Android64'"/>
-        <DeviceId Condition="'$(Platform)'=='iOSDevice64'">00008101-00021DDE2E22001E</DeviceId>
-        <DeviceId Condition="'$(Platform)'=='iOSSimARM64'">E6B3F743-D052-44D5-B420-132A7A43D6F2</DeviceId>
+        <DeviceId Condition="'$(Platform)'=='iOSDevice64'"/>
+        <DeviceId Condition="'$(Platform)'=='iOSSimARM64'"/>
     </PropertyGroup>
     <ItemGroup Condition="'$(Platform)'=='OSX64'">
         <DeployFile Include="OSX64\Debug\LccThrottleApp.dSYM" Condition="'$(Config)'=='Debug'">
@@ -264,6 +264,34 @@
         </DeployFile>
     </ItemGroup>
     <ItemGroup Condition="'$(Platform)'=='OSXARM64'">
+        <DeployFile Include="OSXARM64\Debug\LccThrottleApp" Condition="'$(Config)'=='Debug'">
+            <RemoteDir>LccThrottleApp.app\Contents\MacOS\</RemoteDir>
+            <RemoteName>LccThrottleApp</RemoteName>
+            <DeployClass>ProjectOutput</DeployClass>
+            <Operation>1</Operation>
+            <LocalCommand/>
+            <RemoteCommand/>
+            <Overwrite>True</Overwrite>
+            <Required>True</Required>
+        </DeployFile>
+        <DeployFile Include="OSXARM64\Debug\LccThrottleApp.info.plist" Condition="'$(Config)'=='Debug'">
+            <RemoteDir>LccThrottleApp.app\Contents\</RemoteDir>
+            <RemoteName>Info.plist</RemoteName>
+            <DeployClass>ProjectOSXInfoPList</DeployClass>
+            <Operation>1</Operation>
+            <LocalCommand/>
+            <RemoteCommand/>
+            <Overwrite>True</Overwrite>
+        </DeployFile>
+        <DeployFile Include="OSXARM64\Debug\LccThrottleApp.dSYM" Condition="'$(Config)'=='Debug'">
+            <RemoteDir>LccThrottleApp.app\..\$(PROJECTNAME).app.dSYM\Contents\Resources\DWARF\</RemoteDir>
+            <RemoteName>LccThrottleApp</RemoteName>
+            <DeployClass>ProjectOSXDebug</DeployClass>
+            <Operation>1</Operation>
+            <LocalCommand/>
+            <RemoteCommand/>
+            <Overwrite>True</Overwrite>
+        </DeployFile>
         <DeployFile Include="$(BDS)\binosxarm64\libsk4d.dylib" Condition="'$(Config)'=='Debug' And '$(SKIADIR)'==''">
             <RemoteDir>LccThrottleApp.app\Contents\MacOS\</RemoteDir>
             <RemoteName>libsk4d.dylib</RemoteName>
@@ -284,6 +312,15 @@
             <Overwrite>True</Overwrite>
             <Required>True</Required>
         </DeployFile>
+        <DeployFile Include="$(BDS)\bin\delphi_PROJECTICNS.icns" Condition="'$(Config)'=='Debug'">
+            <RemoteDir>LccThrottleApp.app\Contents\Resources\</RemoteDir>
+            <RemoteName>LccThrottleApp.icns</RemoteName>
+            <DeployClass>ProjectOSXResource</DeployClass>
+            <Operation>1</Operation>
+            <LocalCommand/>
+            <RemoteCommand/>
+            <Overwrite>True</Overwrite>
+        </DeployFile>
         <DeployFile Include="$(SKIADIR)\Binary\Shared\OSXARM64\libsk4d.dylib" Condition="'$(Config)'=='Debug' And '$(SKIADIR)'!=''">
             <RemoteDir>LccThrottleApp.app\Contents\MacOS\</RemoteDir>
             <RemoteName>libsk4d.dylib</RemoteName>
@@ -303,6 +340,15 @@
             <RemoteCommand/>
             <Overwrite>True</Overwrite>
             <Required>True</Required>
+        </DeployFile>
+        <DeployFile Include="OSXARM64\Debug\LccThrottleApp.entitlements" Condition="'$(Config)'=='Debug'">
+            <RemoteDir>LccThrottleApp.app\..\</RemoteDir>
+            <RemoteName>LccThrottleApp.entitlements</RemoteName>
+            <DeployClass>ProjectOSXEntitlements</DeployClass>
+            <Operation>1</Operation>
+            <LocalCommand/>
+            <RemoteCommand/>
+            <Overwrite>True</Overwrite>
         </DeployFile>
     </ItemGroup>
     <ItemGroup Condition="'$(Platform)'=='Win64'">

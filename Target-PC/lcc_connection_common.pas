@@ -613,7 +613,9 @@ end;
 constructor TLccConnectionThread.Create(CreateSuspended: Boolean; AnOwner: TLccConnectionThreadManager);
 begin
   inherited Create(CreateSuspended);
+  {$IFNDEF POSIX}
   Priority := tpHighest;
+  {$ENDIF}
   FOwnerConnectionManager := AnOwner;
   FSendMessageLccMessageBuffer := Classes.TThreadList.Create;
   FSendMessageStream := TMemoryStream.Create;

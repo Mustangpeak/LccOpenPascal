@@ -118,6 +118,8 @@ const
 
   MAX_MESSAGE_RETRY_ATTEMPTS = 5;
 
+  MAX_DCC_ADDRESS = 10239;
+
 type
   TEventState = (evs_Unknown, evs_Valid, evs_InValid);
   TLccConfigDataType = (cdt_String, cdt_Int, cdt_EventID, cdt_Bit);

@@ -44,7 +44,6 @@ const
 const
   MAX_LED_SEGMENTS = 100;
   LED_TAPER = 0.010;
-  MAX_DCC_ADDRESS = 10239;
 
   ICON_MORE_DOTS_IMAGE_INDEX = 4;
 
@@ -223,7 +222,6 @@ type
 
     procedure OnLEDClick(Sender: TObject);
     procedure UpdateRoster;
-    function ValidateExtendedDccAddress(AddressStr: String; var DccAddress: Integer; var IsLong: Boolean): Boolean;
     procedure UpdateRosterHeaderScrolledLeft;
     procedure UpdateRosterHeaderScrolledRight;
     procedure LoadCDIUserInterface;
@@ -1091,53 +1089,6 @@ begin
   end;
 end;
 
-function TFormTrainController.ValidateExtendedDccAddress(AddressStr: String; var DccAddress: Integer; var IsLong: Boolean): Boolean;
-var
-  i: Integer;
-begin
-  Result := True;
-  IsLong := ToggleBoxThrottleSelectLong.Checked;
-
-  DccAddress := -1;
-  if AddressStr = '' then
-    Result := False
-  else begin
-    if Length(AddressStr) = 1 then
-    begin
-      if not TryStrToInt(AddressStr, DccAddress) then
-        Result := False;
-    end else
-    begin
-      for i := 1 to Length(AddressStr) do
-      begin
-        if i < Length(AddressStr) then
-        begin
-          if (AddressStr[i] < '0') or (AddressStr[i] > '9') then
-            Result := False;
-        end else
-        begin
-          if (AddressStr[i] >= '0') and (AddressStr[i] <= '9') then
-          begin // all numbers
-            if not TryStrToInt(AddressStr, DccAddress) then   // This should always succeed
-              Result := False;
-          end else
-          begin
-            if (AddressStr[i] = 'L') or (AddressStr[i] = 'l') or (AddressStr[i] = 'S') or (AddressStr[i] = 's') then
-            begin
-              IsLong := (AddressStr[i] = 'L') or (AddressStr[i] = 'l');
-              SetLength(AddressStr, Length(AddressStr) - 1);  // strip it off
-              if not TryStrToInt(AddressStr, DccAddress) then   // This should always succeed
-                Result := False;
-            end else
-               Result := False
-          end
-        end;
-      end;
-      Result := (DccAddress > 0) and (DccAddress <= MAX_DCC_ADDRESS);
-    end
-  end;
-end;
-
 procedure TFormTrainController.UpdateRosterHeaderScrolledLeft;
 begin
   if PageControlRoster.PageIndex > 0 then
@@ -1200,7 +1151,7 @@ var
   i: Integer;
 begin
   AddressInt := -1;
-  IsLong := False;
+  IsLong := ToggleBoxThrottleSelectLong.Checked;
   if ValidateExtendedDccAddress(ComboBoxTrainSelect.Text, AddressInt, IsLong) then
   begin
     if Assigned(Controller) then

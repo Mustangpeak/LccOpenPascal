@@ -763,6 +763,12 @@
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>
+                <DeployFile LocalName="$(BDS)\bin\delphi_PROJECTICNS.icns" Configuration="Debug" Class="ProjectOSXResource">
+                    <Platform Name="OSXARM64">
+                        <RemoteName>LccThrottleApp.icns</RemoteName>
+                        <Overwrite>true</Overwrite>
+                    </Platform>
+                </DeployFile>
                 <DeployFile Condition="'$(SKIADIR)'==''" Required="true" LocalName="$(BDS)\bin\sk4d.dll" Configuration="Debug" Class="Skia">
                     <Platform Name="Win32">
                         <RemoteDir>.\</RemoteDir>
@@ -1035,6 +1041,29 @@
                 <DeployFile LocalName="OSX64\Debug\LccThrottleApp" Configuration="Debug" Class="ProjectOutput"/>
                 <DeployFile LocalName="OSX64\Debug\LccThrottleApp" Configuration="Debug" Class="ProjectOutput">
                     <Platform Name="OSX64">
+                        <RemoteName>LccThrottleApp</RemoteName>
+                        <Overwrite>true</Overwrite>
+                    </Platform>
+                </DeployFile>
+                <DeployFile LocalName="OSXARM64\Debug\LccThrottleApp.dSYM" Configuration="Debug" Class="ProjectOSXDebug">
+                    <Platform Name="OSXARM64">
+                        <RemoteName>LccThrottleApp</RemoteName>
+                        <Overwrite>true</Overwrite>
+                    </Platform>
+                </DeployFile>
+                <DeployFile LocalName="OSXARM64\Debug\LccThrottleApp.entitlements" Configuration="Debug" Class="ProjectOSXEntitlements">
+                    <Platform Name="OSXARM64">
+                        <Overwrite>true</Overwrite>
+                    </Platform>
+                </DeployFile>
+                <DeployFile LocalName="OSXARM64\Debug\LccThrottleApp.info.plist" Configuration="Debug" Class="ProjectOSXInfoPList">
+                    <Platform Name="OSXARM64">
+                        <RemoteName>Info.plist</RemoteName>
+                        <Overwrite>true</Overwrite>
+                    </Platform>
+                </DeployFile>
+                <DeployFile LocalName="OSXARM64\Debug\LccThrottleApp" Configuration="Debug" Class="ProjectOutput">
+                    <Platform Name="OSXARM64">
                         <RemoteName>LccThrottleApp</RemoteName>
                         <Overwrite>true</Overwrite>
                     </Platform>
