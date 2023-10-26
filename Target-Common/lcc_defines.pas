@@ -113,6 +113,8 @@ type
     Alias: Word;
   end;
 
+  TNodeIDArray = array of TNodeID;
+
 const
   MAX_FUNCTIONS = 29;
 
