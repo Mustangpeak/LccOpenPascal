@@ -981,9 +981,9 @@ begin
           TrackBarThrottle.OnChange := OldOnChange;
         end;
       end;
-    lesAbort   : LabelStatus.Caption := 'QueryAttachedListeners Aborted';
-    lesTimeout : LabelStatus.Caption := 'QueryAttachedListeners Timeout';
-    lesError   : LabelStatus.Caption := 'Error: QueryAttachedListeners - Code=' + IntToStr(ATask.ErrorCode) + ' ' + ATask.ErrorMessage;
+    lesAbort   : LabelStatus.Caption := 'Query Speed/Dir Aborted';
+    lesTimeout : LabelStatus.Caption := 'Query Speed/Dir Aborted Timeout';
+    lesError   : LabelStatus.Caption := 'Error: Query Speed/Dir Aborted - Code=' + IntToStr(ATask.ErrorCode) + ' ' + ATask.ErrorMessage;
   end;
 end;
 

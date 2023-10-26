@@ -18,8 +18,8 @@
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="unitMainForm"/>
-        <TopLine Value="922"/>
-        <CursorPos X="29" Y="941"/>
+        <TopLine Value="19"/>
+        <CursorPos X="8" Y="22"/>
         <UsageCount Value="440"/>
         <Loaded Value="True"/>
         <LoadedDesigner Value="True"/>
@@ -28,13 +28,14 @@
         <Filename Value="../../Target-Common/lcc_node_cache.pas"/>
         <EditorIndex Value="-1"/>
         <CursorPos X="5" Y="13"/>
-        <UsageCount Value="215"/>
+        <UsageCount Value="210"/>
       </Unit>
       <Unit>
         <Filename Value="../../Target-PC/HardwareConnection/lcc_ethernet_client.pas"/>
-        <EditorIndex Value="10"/>
-        <TopLine Value="253"/>
-        <CursorPos X="159" Y="257"/>
+        <IsVisibleTab Value="True"/>
+        <EditorIndex Value="13"/>
+        <TopLine Value="187"/>
+        <CursorPos X="10" Y="194"/>
         <UsageCount Value="103"/>
         <Loaded Value="True"/>
       </Unit>
@@ -43,25 +44,26 @@
         <EditorIndex Value="-1"/>
         <TopLine Value="232"/>
         <CursorPos Y="246"/>
-        <UsageCount Value="55"/>
+        <UsageCount Value="50"/>
       </Unit>
       <Unit>
         <Filename Value="../../Target-PC/HardwareConnection/lcc_ethernet_common.pas"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="5"/>
         <CursorPos X="28" Y="12"/>
-        <UsageCount Value="58"/>
+        <UsageCount Value="53"/>
       </Unit>
       <Unit>
         <Filename Value="../../Target-Common/lcc_node_manager.pas"/>
-        <EditorIndex Value="-1"/>
-        <TopLine Value="159"/>
-        <CursorPos X="109" Y="171"/>
+        <EditorIndex Value="3"/>
+        <TopLine Value="671"/>
+        <CursorPos Y="684"/>
         <UsageCount Value="212"/>
+        <Loaded Value="True"/>
       </Unit>
       <Unit>
         <Filename Value="../../Target-Common/lcc_defines.pas"/>
-        <EditorIndex Value="5"/>
+        <EditorIndex Value="8"/>
         <TopLine Value="449"/>
         <CursorPos X="34" Y="469"/>
         <UsageCount Value="100"/>
@@ -69,17 +71,17 @@
       </Unit>
       <Unit>
         <Filename Value="../../Target-PC/HardwareConnection/lcc_ethernet_server.pas"/>
-        <EditorIndex Value="-1"/>
-        <TopLine Value="591"/>
-        <CursorPos X="24" Y="608"/>
-        <UsageCount Value="76"/>
+        <EditorIndex Value="1"/>
+        <TopLine Value="704"/>
+        <CursorPos X="12" Y="698"/>
+        <UsageCount Value="72"/>
+        <Loaded Value="True"/>
       </Unit>
       <Unit>
         <Filename Value="../../Target-Common/lcc_node_controller.pas"/>
-        <IsVisibleTab Value="True"/>
-        <EditorIndex Value="2"/>
-        <TopLine Value="759"/>
-        <CursorPos X="59" Y="781"/>
+        <EditorIndex Value="5"/>
+        <TopLine Value="1369"/>
+        <CursorPos Y="1387"/>
         <UsageCount Value="199"/>
         <Loaded Value="True"/>
       </Unit>
@@ -88,13 +90,13 @@
         <EditorIndex Value="-1"/>
         <TopLine Value="587"/>
         <CursorPos Y="609"/>
-        <UsageCount Value="63"/>
+        <UsageCount Value="58"/>
       </Unit>
       <Unit>
         <Filename Value="../../Target-Common/lcc_node.pas"/>
-        <EditorIndex Value="1"/>
-        <TopLine Value="534"/>
-        <CursorPos X="15" Y="168"/>
+        <EditorIndex Value="2"/>
+        <TopLine Value="2513"/>
+        <CursorPos Y="2528"/>
         <UsageCount Value="198"/>
         <Loaded Value="True"/>
       </Unit>
@@ -103,28 +105,28 @@
         <EditorIndex Value="-1"/>
         <TopLine Value="130"/>
         <CursorPos X="3" Y="126"/>
-        <UsageCount Value="132"/>
+        <UsageCount Value="127"/>
       </Unit>
       <Unit>
         <Filename Value="../../Target-Common/lcc_node_messages.pas"/>
-        <EditorIndex Value="8"/>
-        <TopLine Value="1690"/>
-        <CursorPos X="15" Y="1710"/>
+        <EditorIndex Value="11"/>
+        <TopLine Value="749"/>
+        <CursorPos Y="777"/>
         <UsageCount Value="190"/>
         <Loaded Value="True"/>
       </Unit>
       <Unit>
         <Filename Value="../../Target-Common/lcc_alias_server.pas"/>
-        <EditorIndex Value="3"/>
+        <EditorIndex Value="6"/>
         <CursorPos X="14" Y="89"/>
         <UsageCount Value="159"/>
         <Loaded Value="True"/>
       </Unit>
       <Unit>
         <Filename Value="../../Target-Common/lcc_node_train.pas"/>
-        <EditorIndex Value="9"/>
-        <TopLine Value="130"/>
-        <CursorPos X="15" Y="342"/>
+        <EditorIndex Value="12"/>
+        <TopLine Value="277"/>
+        <CursorPos X="32" Y="288"/>
         <UsageCount Value="447"/>
         <Loaded Value="True"/>
       </Unit>
@@ -133,40 +135,41 @@
         <EditorIndex Value="-1"/>
         <TopLine Value="1918"/>
         <CursorPos X="15" Y="1944"/>
-        <UsageCount Value="395"/>
+        <UsageCount Value="390"/>
       </Unit>
       <Unit>
         <Filename Value="../../Target-Common/lcc_node_commandstation.pas"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="47"/>
         <CursorPos X="42" Y="59"/>
-        <UsageCount Value="393"/>
+        <UsageCount Value="388"/>
       </Unit>
       <Unit>
         <Filename Value="../../Target-Common/lcc_math_float16.pas"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="10"/>
         <CursorPos X="23" Y="28"/>
-        <UsageCount Value="40"/>
+        <UsageCount Value="35"/>
       </Unit>
       <Unit>
         <Filename Value="../../Target-PC/lcc_connection_common.pas"/>
-        <EditorIndex Value="-1"/>
-        <TopLine Value="254"/>
-        <CursorPos Y="277"/>
+        <EditorIndex Value="4"/>
+        <TopLine Value="717"/>
+        <CursorPos Y="733"/>
         <UsageCount Value="109"/>
+        <Loaded Value="True"/>
       </Unit>
       <Unit>
         <Filename Value="../../Target-Common/lcc_alias_server_thread.pas"/>
-        <EditorIndex Value="4"/>
+        <EditorIndex Value="7"/>
         <TopLine Value="283"/>
         <CursorPos X="18" Y="301"/>
-        <UsageCount Value="40"/>
+        <UsageCount Value="63"/>
         <Loaded Value="True"/>
       </Unit>
       <Unit>
         <Filename Value="../../Target-Common/lcc_protocol_utilities.pas"/>
-        <EditorIndex Value="7"/>
+        <EditorIndex Value="10"/>
         <TopLine Value="75"/>
         <CursorPos X="14" Y="94"/>
         <UsageCount Value="100"/>
@@ -177,37 +180,14 @@
         <EditorIndex Value="-1"/>
         <TopLine Value="277"/>
         <CursorPos X="8" Y="288"/>
-        <UsageCount Value="8"/>
-      </Unit>
-      <Unit>
-        <Filename Value="/Applications/Lazarus/lcl/controls.pp"/>
-        <UnitName Value="Controls"/>
-        <EditorIndex Value="-1"/>
-        <TopLine Value="2247"/>
-        <CursorPos X="15" Y="2264"/>
-        <UsageCount Value="4"/>
-      </Unit>
-      <Unit>
-        <Filename Value="/usr/local/share/fpcsrc/rtl/inc/mathh.inc"/>
-        <EditorIndex Value="-1"/>
-        <TopLine Value="95"/>
-        <CursorPos X="14" Y="114"/>
-        <UsageCount Value="4"/>
-      </Unit>
-      <Unit>
-        <Filename Value="/Applications/Lazarus/lcl/comctrls.pp"/>
-        <UnitName Value="ComCtrls"/>
-        <EditorIndex Value="-1"/>
-        <TopLine Value="2807"/>
-        <CursorPos X="19" Y="2822"/>
-        <UsageCount Value="4"/>
+        <UsageCount Value="3"/>
       </Unit>
       <Unit>
         <Filename Value="../../Target-Common/lcc_utilities.pas"/>
-        <EditorIndex Value="6"/>
-        <TopLine Value="7"/>
-        <CursorPos X="12" Y="25"/>
-        <UsageCount Value="40"/>
+        <EditorIndex Value="9"/>
+        <TopLine Value="911"/>
+        <CursorPos Y="935"/>
+        <UsageCount Value="63"/>
         <Loaded Value="True"/>
       </Unit>
       <Unit>
@@ -215,21 +195,21 @@
         <EditorIndex Value="-1"/>
         <TopLine Value="75"/>
         <CursorPos X="16" Y="94"/>
-        <UsageCount Value="6"/>
+        <UsageCount Value="1"/>
       </Unit>
       <Unit>
         <Filename Value="/usr/local/share/fpcsrc/rtl/inc/objpash.inc"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="187"/>
         <CursorPos X="23" Y="206"/>
-        <UsageCount Value="7"/>
+        <UsageCount Value="2"/>
       </Unit>
       <Unit>
         <Filename Value="/Applications/Lazarus/lcl/include/winapih.inc"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="307"/>
         <CursorPos X="10" Y="326"/>
-        <UsageCount Value="8"/>
+        <UsageCount Value="3"/>
       </Unit>
       <Unit>
         <Filename Value="/Applications/Lazarus/lcl/stdctrls.pp"/>
@@ -237,132 +217,199 @@
         <EditorIndex Value="-1"/>
         <TopLine Value="1189"/>
         <CursorPos X="36" Y="1193"/>
-        <UsageCount Value="8"/>
+        <UsageCount Value="3"/>
+      </Unit>
+      <Unit>
+        <Filename Value="../../../lazarus/lcl/include/customcombobox.inc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="973"/>
+        <CursorPos Y="995"/>
+        <UsageCount Value="9"/>
+      </Unit>
+      <Unit>
+        <Filename Value="../../Target-PC/HardwareConnection/Indy_Lcc/System/IdException.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="35"/>
+        <CursorPos X="28" Y="52"/>
+        <UsageCount Value="9"/>
+      </Unit>
+      <Unit>
+        <Filename Value="../../../lazarus/fpc/3.2.2/source/rtl/objpas/sysutils/sysutilh.inc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="90"/>
+        <CursorPos X="13" Y="107"/>
+        <UsageCount Value="9"/>
+      </Unit>
+      <Unit>
+        <Filename Value="../../Target-PC/HardwareConnection/Indy_Lcc/Core/IdIOHandler.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="2616"/>
+        <CursorPos Y="2644"/>
+        <UsageCount Value="10"/>
+      </Unit>
+      <Unit>
+        <Filename Value="../../Target-PC/HardwareConnection/Indy_Lcc/System/IdComponent.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="160"/>
+        <CursorPos Y="188"/>
+        <UsageCount Value="10"/>
+      </Unit>
+      <Unit>
+        <Filename Value="../../Target-PC/HardwareConnection/Indy_Lcc/Core/IdIOHandlerStack.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="227"/>
+        <CursorPos Y="244"/>
+        <UsageCount Value="10"/>
+      </Unit>
+      <Unit>
+        <Filename Value="../../Target-PC/HardwareConnection/Indy_Lcc/Core/IdSocketHandle.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="317"/>
+        <CursorPos Y="335"/>
+        <UsageCount Value="10"/>
+      </Unit>
+      <Unit>
+        <Filename Value="../../Target-PC/HardwareConnection/Indy_Lcc/System/IdStackBSDBase.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="434"/>
+        <CursorPos Y="454"/>
+        <UsageCount Value="10"/>
+      </Unit>
+      <Unit>
+        <Filename Value="../../Target-PC/HardwareConnection/Indy_Lcc/System/IdStackWindows.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="1059"/>
+        <CursorPos Y="1078"/>
+        <UsageCount Value="10"/>
+      </Unit>
+      <Unit>
+        <Filename Value="../../Target-PC/HardwareConnection/Indy_Lcc/System/IdStack.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="919"/>
+        <CursorPos Y="936"/>
+        <UsageCount Value="10"/>
+      </Unit>
+      <Unit>
+        <Filename Value="../../Target-PC/HardwareConnection/Indy_Lcc/Core/IdTCPConnection.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="486"/>
+        <CursorPos Y="503"/>
+        <UsageCount Value="10"/>
+      </Unit>
+      <Unit>
+        <Filename Value="../../Target-PC/HardwareConnection/Indy_Lcc/Core/IdBuffer.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="993"/>
+        <CursorPos X="21" Y="1010"/>
+        <UsageCount Value="10"/>
+      </Unit>
+      <Unit>
+        <Filename Value="../../Target-PC/HardwareConnection/Indy_Lcc/System/IdGlobal.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="1566"/>
+        <CursorPos X="94" Y="1582"/>
+        <UsageCount Value="10"/>
       </Unit>
     </Units>
     <OtherDefines Count="1">
       <Define0 Value="LOG_MAPPING"/>
     </OtherDefines>
-    <JumpHistory HistoryIndex="29">
+    <JumpHistory HistoryIndex="23">
       <Position>
-        <Filename Value="../../Target-Common/lcc_node_controller.pas"/>
-        <Caret Line="1529" TopLine="1508"/>
+        <Filename Value="../../Target-PC/HardwareConnection/lcc_ethernet_client.pas"/>
+        <Caret Line="253" TopLine="236"/>
       </Position>
       <Position>
-        <Filename Value="unitmainform.pas"/>
-        <Caret Line="298" Column="11" TopLine="285"/>
-      </Position>
-      <Position>
-        <Filename Value="../../Target-Common/lcc_node_controller.pas"/>
-        <Caret Line="1525" Column="18" TopLine="1508"/>
+        <Filename Value="../../Target-PC/HardwareConnection/lcc_ethernet_client.pas"/>
+        <Caret Line="197" TopLine="182"/>
       </Position>
       <Position>
         <Filename Value="../../Target-Common/lcc_node_controller.pas"/>
-        <Caret Line="375" Column="18" TopLine="361"/>
+        <Caret Line="1387" TopLine="1369"/>
+      </Position>
+      <Position>
+        <Filename Value="../../Target-Common/lcc_node.pas"/>
+        <Caret Line="2793" TopLine="2774"/>
+      </Position>
+      <Position>
+        <Filename Value="../../Target-Common/lcc_node_manager.pas"/>
+        <Caret Line="684" TopLine="671"/>
+      </Position>
+      <Position>
+        <Filename Value="../../Target-PC/HardwareConnection/lcc_ethernet_client.pas"/>
+        <Caret Line="197" TopLine="182"/>
       </Position>
       <Position>
         <Filename Value="../../Target-Common/lcc_node_controller.pas"/>
-        <Caret Line="674" Column="20" TopLine="663"/>
+        <Caret Line="786" TopLine="770"/>
+      </Position>
+      <Position>
+        <Filename Value="../../Target-Common/lcc_node_train.pas"/>
+        <Caret Line="342" Column="15" TopLine="129"/>
+      </Position>
+      <Position>
+        <Filename Value="../../Target-Common/lcc_node_train.pas"/>
+        <Caret Line="1191" Column="25" TopLine="1185"/>
+      </Position>
+      <Position>
+        <Filename Value="../../Target-Common/lcc_node_train.pas"/>
+        <Caret Line="319" Column="26" TopLine="313"/>
+      </Position>
+      <Position>
+        <Filename Value="../../Target-Common/lcc_node_train.pas"/>
+        <Caret Line="638" Column="39" TopLine="610"/>
+      </Position>
+      <Position>
+        <Filename Value="../../Target-Common/lcc_node_train.pas"/>
+        <Caret Line="319" Column="26" TopLine="302"/>
+      </Position>
+      <Position>
+        <Filename Value="../../Target-Common/lcc_node_train.pas"/>
+        <Caret Line="638" Column="39" TopLine="610"/>
+      </Position>
+      <Position>
+        <Filename Value="../../Target-Common/lcc_node_train.pas"/>
+        <Caret Line="288" Column="32" TopLine="277"/>
+      </Position>
+      <Position>
+        <Filename Value="../../Target-Common/lcc_node.pas"/>
+        <Caret Line="545" Column="21" TopLine="530"/>
+      </Position>
+      <Position>
+        <Filename Value="../../Target-Common/lcc_node.pas"/>
+        <Caret Line="2811" Column="3" TopLine="2807"/>
+      </Position>
+      <Position>
+        <Filename Value="../../Target-Common/lcc_node.pas"/>
+        <Caret Line="547" Column="14" TopLine="530"/>
+      </Position>
+      <Position>
+        <Filename Value="../../Target-Common/lcc_node.pas"/>
+        <Caret Line="2528" TopLine="2513"/>
       </Position>
       <Position>
         <Filename Value="../../Target-Common/lcc_node_controller.pas"/>
-        <Caret Line="374" Column="14" TopLine="357"/>
+        <Caret Line="786" TopLine="770"/>
       </Position>
       <Position>
-        <Filename Value="../../Target-Common/lcc_node_controller.pas"/>
-        <Caret Line="661" Column="20" TopLine="658"/>
+        <Filename Value="../../Target-PC/HardwareConnection/lcc_ethernet_client.pas"/>
+        <Caret Line="197" TopLine="182"/>
       </Position>
       <Position>
-        <Filename Value="../../Target-Common/lcc_node_controller.pas"/>
-        <Caret Line="374" Column="14" TopLine="356"/>
+        <Filename Value="../../Target-PC/HardwareConnection/lcc_ethernet_client.pas"/>
+        <Caret Line="202" Column="176" TopLine="182"/>
       </Position>
       <Position>
-        <Filename Value="../../Target-Common/lcc_node_controller.pas"/>
-        <Caret Line="662" Column="37" TopLine="658"/>
+        <Filename Value="../../Target-PC/HardwareConnection/lcc_ethernet_client.pas"/>
+        <Caret Line="233" TopLine="216"/>
       </Position>
       <Position>
-        <Filename Value="../../Target-Common/lcc_node_controller.pas"/>
-        <Caret Line="374" Column="60" TopLine="356"/>
+        <Filename Value="../../Target-PC/HardwareConnection/lcc_ethernet_server.pas"/>
+        <Caret Line="600" Column="31" TopLine="591"/>
       </Position>
       <Position>
-        <Filename Value="../../Target-Common/lcc_node_controller.pas"/>
-        <Caret Line="664" TopLine="658"/>
-      </Position>
-      <Position>
-        <Filename Value="../../Target-Common/lcc_node_controller.pas"/>
-        <Caret Line="375" Column="55" TopLine="356"/>
-      </Position>
-      <Position>
-        <Filename Value="../../Target-Common/lcc_node_controller.pas"/>
-        <Caret Line="677" Column="5" TopLine="667"/>
-      </Position>
-      <Position>
-        <Filename Value="../../Target-Common/lcc_node_controller.pas"/>
-        <Caret Line="681" Column="21" TopLine="651"/>
-      </Position>
-      <Position>
-        <Filename Value="../../Target-Common/lcc_node_controller.pas"/>
-        <Caret Line="662" Column="3" TopLine="646"/>
-      </Position>
-      <Position>
-        <Filename Value="../../Target-Common/lcc_node_controller.pas"/>
-        <Caret Line="375" Column="15" TopLine="356"/>
-      </Position>
-      <Position>
-        <Filename Value="../../Target-Common/lcc_node_controller.pas"/>
-        <Caret Line="672" Column="3" TopLine="669"/>
-      </Position>
-      <Position>
-        <Filename Value="../../Target-Common/lcc_node_controller.pas"/>
-        <Caret Line="666" Column="15" TopLine="647"/>
-      </Position>
-      <Position>
-        <Filename Value="unitmainform.pas"/>
-        <Caret Line="346" Column="22" TopLine="328"/>
-      </Position>
-      <Position>
-        <Filename Value="unitmainform.pas"/>
-        <Caret Line="208" Column="21" TopLine="203"/>
-      </Position>
-      <Position>
-        <Filename Value="unitmainform.pas"/>
-        <Caret Line="949" Column="37" TopLine="926"/>
-      </Position>
-      <Position>
-        <Filename Value="unitmainform.pas"/>
-        <Caret Line="217" Column="22" TopLine="193"/>
-      </Position>
-      <Position>
-        <Filename Value="unitmainform.pas"/>
-        <Caret Line="1099" Column="8" TopLine="1082"/>
-      </Position>
-      <Position>
-        <Filename Value="unitmainform.pas"/>
-        <Caret Line="209" Column="22" TopLine="201"/>
-      </Position>
-      <Position>
-        <Filename Value="unitmainform.pas"/>
-        <Caret Line="931" Column="3" TopLine="922"/>
-      </Position>
-      <Position>
-        <Filename Value="unitmainform.pas"/>
-        <Caret Line="208" Column="15" TopLine="194"/>
-      </Position>
-      <Position>
-        <Filename Value="unitmainform.pas"/>
-        <Caret Line="910" Column="3" TopLine="904"/>
-      </Position>
-      <Position>
-        <Filename Value="unitmainform.pas"/>
-        <Caret Line="209" Column="15" TopLine="193"/>
-      </Position>
-      <Position>
-        <Filename Value="unitmainform.pas"/>
-        <Caret Line="946" Column="49" TopLine="922"/>
-      </Position>
-      <Position>
-        <Filename Value="unitmainform.pas"/>
-        <Caret Line="209" Column="15" TopLine="194"/>
+        <Filename Value="../../Target-PC/HardwareConnection/lcc_ethernet_server.pas"/>
+        <Caret Line="123" Column="17" TopLine="107"/>
       </Position>
     </JumpHistory>
     <RunParams>
@@ -371,16 +418,46 @@
     </RunParams>
   </ProjectSession>
   <Debugging>
+    <BreakPoints>
+      <Item>
+        <Kind Value="bpkSource"/>
+        <WatchScope Value="wpsLocal"/>
+        <WatchKind Value="wpkWrite"/>
+        <Source Value="../../Target-PC/HardwareConnection/lcc_ethernet_client.pas"/>
+        <Line Value="218"/>
+      </Item>
+      <Item>
+        <Kind Value="bpkSource"/>
+        <WatchScope Value="wpsLocal"/>
+        <WatchKind Value="wpkWrite"/>
+        <Source Value="../../Target-PC/HardwareConnection/lcc_ethernet_client.pas"/>
+        <Line Value="233"/>
+      </Item>
+      <Item>
+        <Kind Value="bpkSource"/>
+        <WatchScope Value="wpsLocal"/>
+        <WatchKind Value="wpkWrite"/>
+        <Source Value="../../Target-PC/HardwareConnection/lcc_ethernet_client.pas"/>
+        <Line Value="239"/>
+      </Item>
+      <Item>
+        <Kind Value="bpkSource"/>
+        <WatchScope Value="wpsLocal"/>
+        <WatchKind Value="wpkWrite"/>
+        <Source Value="../../Target-Common/lcc_node_controller.pas"/>
+        <Line Value="1387"/>
+      </Item>
+      <Item>
+        <Kind Value="bpkSource"/>
+        <WatchScope Value="wpsLocal"/>
+        <WatchKind Value="wpkWrite"/>
+        <Source Value="../../Target-Common/lcc_node.pas"/>
+        <Line Value="2528"/>
+      </Item>
+    </BreakPoints>
     <Watches>
       <Item>
-        <Expression Value="FDataArray"/>
-        <DisplayStyle Value="wdfHex"/>
-      </Item>
-      <Item>
-        <Expression Value="Adrr"/>
-      </Item>
-      <Item>
-        <Expression Value="V"/>
+        <Expression Value="@Self"/>
       </Item>
     </Watches>
   </Debugging>

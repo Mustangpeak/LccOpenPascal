@@ -160,6 +160,7 @@ procedure TLccEthernetClientThread.Execute;
 var
   LocalListenerPort: Word;
   LocalListenerIP: String;
+  ErrorMsg: String;
 begin
   Running := True;
   try
@@ -189,16 +190,15 @@ begin
 
       idTCPClient.Connect(LocalListenerIP, LocalListenerPort);
       try
-        while not IsTerminated and idTCPClient.Connected do
+        while not IsTerminated do
         begin
           if LoadStreamFromMessageBuffer(SendStreamConnectionThread, SendMessageLccMessageBuffer) then
           begin
             SendStreamConnectionThread.Position := 0;
             idTCPClient.IOHandler.Write(SendStreamConnectionThread, SendStreamConnectionThread.Size);
           end;
+          IndySleep(THREAD_SLEEP_TIME);
         end;
-
-        IndySleep(THREAD_SLEEP_TIME);
       finally
         idThreadComponent.Active := False;
         idTCPClient.Disconnect;
@@ -212,8 +212,18 @@ begin
         HandleSendConnectionChangeNotify(lcsDisconnected, True);
         HandleErrorAndDisconnect(OwnerConnectionManager.ConnectionInfo.SuppressErrorMessages, True);
       end;
+      on E: Exception do
+      begin
+        // Trap
+        ErrorMsg := E.Message;
+        beep;
+      end;
     end;
   finally
+    if Terminated then
+      beep;
+    if not idTCPClient.Connected then
+      beep;
     Running := False;
   end;
 end;
