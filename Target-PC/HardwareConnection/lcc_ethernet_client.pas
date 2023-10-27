@@ -160,7 +160,6 @@ procedure TLccEthernetClientThread.Execute;
 var
   LocalListenerPort: Word;
   LocalListenerIP: String;
-  ErrorMsg: String;
 begin
   Running := True;
   try
@@ -215,15 +214,9 @@ begin
       on E: Exception do
       begin
         // Trap
-        ErrorMsg := E.Message;
-        beep;
       end;
     end;
   finally
-    if Terminated then
-      beep;
-    if not idTCPClient.Connected then
-      beep;
     Running := False;
   end;
 end;
@@ -248,7 +241,7 @@ var
   MessageStr: String;
 begin
 
-  if not IdTCPClient.IOHandler.InputBufferIsEmpty then
+  if IdTcpClient.IOHandler.CheckForDataOnSource(5)  then
   begin
     ReceiveStreamConnectionThread.Position := 0;
     ReceiveStreamConnectionThread.Size := 0;    // Would this set Postion too?
@@ -274,7 +267,7 @@ begin
 
           // Not a fan of having it here to block the main connection thread but need to hook into the raw individual messages.
           // after the next call to GridConnectMessageAssembler split up CAN messages will be recombined into a single LCC message
-          if Assigned(OwnerConnectionManager.OwnerConnectionFactory.OnLccMessageReceive) then
+          if Assigned(OwnerConnectionManager.OwnerConnectionFactory.OnLccGridConnectStrReceive) then
           begin
             OwnerConnectionManager.ReceiveGridConnectStringSyncronize := MessageStr;
             Synchronize({$IFDEF LCC_FPC}@{$ENDIF}OwnerConnectionManager.ReceiveGridConnectStrThoughSyncronize);

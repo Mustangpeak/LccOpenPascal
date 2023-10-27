@@ -27,9 +27,10 @@ uses
   lcc_node_controller,
   lcc_connection_common,
   lcc_node,
+  lcc_alias_server,
   lcc_defines,
   lcc_utilities,
-  lcc_alias_server,
+
   lcc_cdi_parser;
 
 
@@ -61,6 +62,7 @@ type
     ActionLogClear: TAction;
     ActionLogEnable: TAction;
     ActionListMain: TActionList;
+    Button1: TButton;
     ButtonThrottleSelectRelease: TButton;
     ButtonLogClear: TButton;
     ButtonThrottleSelectGo: TButton;
@@ -85,10 +87,14 @@ type
     LabelSettingsConnectionState: TLabel;
     ListBoxRosterDetails: TListBox;
     ListBoxRoster: TListBox;
+    Memo1: TMemo;
     MemoLog: TMemo;
+    PageControl1: TPageControl;
     PageControlRoster: TPageControl;
     PageControlMain: TPageControl;
     Panel1: TPanel;
+    Panel3: TPanel;
+    Panel4: TPanel;
     PanelRosterEditorConfigurationBkGnd: TPanel;
     PanelThrottleHamburger: TPanel;
     Panel2: TPanel;
@@ -109,6 +115,8 @@ type
     PanelSettings6: TPanel;
     PanelSettings1: TPanel;
     ScrollBoxFunctions: TScrollBox;
+    TabSheet1: TTabSheet;
+    TabSheet2: TTabSheet;
     TabSheetRosterList: TTabSheet;
     TabSheetRosterDetails: TTabSheet;
     TabSheetRosterEditor: TTabSheet;
@@ -321,8 +329,14 @@ begin
 end;
 
 procedure TFormTrainController.Button1Click(Sender: TObject);
+var
+  AStringList: TStringList;
 begin
-
+  Memo1.Lines.Clear;
+  AStringList := TStringList.Create;
+  AliasServer.ReadMappingsToStringList(AStringList);
+  Memo1.Lines.AddStrings(AStringList);
+  AStringList.Free;
 end;
 
 procedure TFormTrainController.ActionLogClearExecute(Sender: TObject);

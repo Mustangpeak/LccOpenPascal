@@ -606,7 +606,7 @@ begin
 
         // Not a fan of having it here to block the main connection thread but need to hook into the raw individual messages.
         // after the next call to GridConnectMessageAssembler split up CAN messages will be recombined into a single LCC message
-        if Assigned(OwnerConnectionContextList.OwnerConnectionThread.OwnerConnectionManager.OwnerConnectionFactory.OnLccMessageReceive) then
+        if Assigned(OwnerConnectionContextList.OwnerConnectionThread.OwnerConnectionManager.OwnerConnectionFactory.OnLccGridConnectStrReceive) then
         begin
           OwnerConnectionContextList.OwnerConnectionThread.OwnerConnectionManager.ReceiveGridConnectStringSyncronize := MessageStr;
           OwnerConnectionContextList.OwnerConnectionThread.Synchronize(OwnerConnectionContextList.OwnerConnectionThread.OwnerConnectionManager.ReceiveGridConnectStrThoughSyncronize);
@@ -712,14 +712,14 @@ begin
                   SendStreamConnectionThread.Position := 0;
                   if TIdContext( ContextList[i]).Connection.Connected then
                   begin
-                  // TIdContext( ContextList[i]).Connection.IOHandler.Write(SendStreamConnectionThread, SendStreamConnectionThread.Size);
+                   TIdContext( ContextList[i]).Connection.IOHandler.Write(SendStreamConnectionThread, SendStreamConnectionThread.Size);
 
                     // Only doing it this way works...  I don'g get it....
-                    for j := 0 to SendStreamConnectionThread.Size - 1 do
-                    begin
-                      B := StreamReadByte(SendStreamConnectionThread);
-                      TIdContext( ContextList[i]).Connection.IOHandler.Write(B );
-                    end;
+                 //   for j := 0 to SendStreamConnectionThread.Size - 1 do
+                 //   begin
+                 //     B := StreamReadByte(SendStreamConnectionThread);
+                 //     TIdContext( ContextList[i]).Connection.IOHandler.Write(B );
+                //    end;
 
                   //  for j := 0 to SendStreamConnectionThread.Size - 1 do
                   //    TIdContext( ContextList[i]).Connection.IOHandler.Write(SendStreamConnectionThread.ReadByte);
@@ -844,7 +844,7 @@ procedure TLccEthernetServerThread.IdTCPServerExecute(AContext: TIdContext);
 begin
   // Messages serialized here from all the Connections (Contexts)
 
-  if not AContext.Connection.IOHandler.InputBufferIsEmpty then
+  if IdTcpClient.IOHandler.CheckForDataOnSource(5)  then
   begin
     ReceiveStreamConnectionThread.Position := 0;
     ReceiveStreamConnectionThread.Size := 0;

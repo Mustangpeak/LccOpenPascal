@@ -53,7 +53,7 @@
     </Target>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir)"/>
-      <OtherUnitFiles Value="../../Target-PC;../../Target-PC/HardwareConnection;../../Target-PC/HardwareConnection/Indy_Lcc/Protocols;../../Target-PC/HardwareConnection/Indy_Lcc/Core;../../Target-PC/HardwareConnection/Indy_Lcc/System;../../Target-PC/HardwareConnection/TLazSerial"/>
+      <OtherUnitFiles Value="../../Target-PC;../../Target-PC/HardwareConnection;../../Target-PC/HardwareConnection/Indy_Lcc/Protocols;../../Target-PC/HardwareConnection/Indy_Lcc/Core;../../Target-PC/HardwareConnection/Indy_Lcc/System;../../Target-PC/HardwareConnection/TLazSerial;../../Target-Common"/>
       <UnitOutputDirectory Value="lib/$(TargetCPU)-$(TargetOS)"/>
     </SearchPaths>
     <Parsing>
