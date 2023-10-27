@@ -844,7 +844,8 @@ procedure TLccEthernetServerThread.IdTCPServerExecute(AContext: TIdContext);
 begin
   // Messages serialized here from all the Connections (Contexts)
 
-  if AContext.Connection.IOHandler.CheckForDataOnSource(5)  then
+  AContext.Connection.IOHandler.CheckForDataOnSource(1);
+  if AContext.Connection.IOHandler.InputBuffer.Size > 0 then
   begin
     ReceiveStreamConnectionThread.Position := 0;
     ReceiveStreamConnectionThread.Size := 0;

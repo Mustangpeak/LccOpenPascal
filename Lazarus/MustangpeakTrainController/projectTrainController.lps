@@ -32,9 +32,10 @@
       </Unit>
       <Unit>
         <Filename Value="../../Target-PC/HardwareConnection/lcc_ethernet_client.pas"/>
+        <IsVisibleTab Value="True"/>
         <EditorIndex Value="6"/>
         <TopLine Value="225"/>
-        <CursorPos X="66" Y="244"/>
+        <CursorPos X="48" Y="245"/>
         <UsageCount Value="103"/>
         <Loaded Value="True"/>
       </Unit>
@@ -68,10 +69,9 @@
       </Unit>
       <Unit>
         <Filename Value="../../Target-PC/HardwareConnection/lcc_ethernet_server.pas"/>
-        <IsVisibleTab Value="True"/>
         <EditorIndex Value="8"/>
         <TopLine Value="843"/>
-        <CursorPos X="5" Y="847"/>
+        <CursorPos X="15" Y="850"/>
         <UsageCount Value="82"/>
         <Loaded Value="True"/>
       </Unit>

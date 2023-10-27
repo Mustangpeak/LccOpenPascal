@@ -241,7 +241,8 @@ var
   MessageStr: String;
 begin
 
-  if IdTcpClient.IOHandler.CheckForDataOnSource(5)  then
+  IdTcpClient.IOHandler.CheckForDataOnSource(5);
+  if IdTcpClient.IOHandler.InputBuffer.Size > 0 then
   begin
     ReceiveStreamConnectionThread.Position := 0;
     ReceiveStreamConnectionThread.Size := 0;    // Would this set Postion too?

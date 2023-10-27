@@ -158,8 +158,8 @@
         <Filename Value="../../Target-PC/HardwareConnection/lcc_ethernet_server.pas"/>
         <IsVisibleTab Value="True"/>
         <EditorIndex Value="1"/>
-        <TopLine Value="31"/>
-        <CursorPos X="33" Y="11"/>
+        <TopLine Value="828"/>
+        <CursorPos X="12" Y="849"/>
         <UsageCount Value="109"/>
         <Loaded Value="True"/>
       </Unit19>
@@ -441,7 +441,7 @@
     <OtherDefines Count="1">
       <Define0 Value="PYTHON_SCRIPT_COMPATIBLE"/>
     </OtherDefines>
-    <JumpHistory Count="29" HistoryIndex="28">
+    <JumpHistory Count="30" HistoryIndex="29">
       <Position1>
         <Filename Value="../../Target-PC/HardwareConnection/lcc_ethernet_server.pas"/>
         <Caret Line="599" TopLine="572"/>
@@ -558,6 +558,10 @@
         <Filename Value="traincommanderunit.pas"/>
         <Caret Line="177" Column="46" TopLine="170"/>
       </Position29>
+      <Position30>
+        <Filename Value="../../Target-PC/HardwareConnection/lcc_ethernet_server.pas"/>
+        <Caret Line="11" Column="33" TopLine="31"/>
+      </Position30>
     </JumpHistory>
     <RunParams>
       <FormatVersion Value="2"/>
@@ -572,13 +576,6 @@
         <WatchKind Value="wpkWrite"/>
         <Source Value="../../Target-Common/lcc_node.pas"/>
         <Line Value="2480"/>
-      </Item>
-      <Item>
-        <Kind Value="bpkSource"/>
-        <WatchScope Value="wpsLocal"/>
-        <WatchKind Value="wpkWrite"/>
-        <Source Value="../../Target-PC/HardwareConnection/lcc_ethernet_server.pas"/>
-        <Line Value="849"/>
       </Item>
       <Item>
         <Kind Value="bpkSource"/>
