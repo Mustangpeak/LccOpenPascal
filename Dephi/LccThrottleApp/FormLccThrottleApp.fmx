@@ -3,7 +3,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
   Top = 0
   ActiveControl = TabItemLog
   Caption = 'Form56'
-  ClientHeight = 627
+  ClientHeight = 628
   ClientWidth = 416
   FormFactor.Width = 320
   FormFactor.Height = 480
@@ -20,7 +20,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
     Align = Client
     FullSize = True
     Size.Width = 416.000000000000000000
-    Size.Height = 610.000000000000000000
+    Size.Height = 611.000000000000000000
     Size.PlatformDefault = False
     TabHeight = 49.000000000000000000
     TabIndex = 0
@@ -28,13 +28,13 @@ object LccThrottleAppForm: TLccThrottleAppForm
     TabPosition = PlatformDefault
     Sizes = (
       416s
-      561s
+      562s
       416s
-      561s
+      562s
       416s
-      561s
+      562s
       416s
-      561s)
+      562s)
     object TabItemTrains: TTabItem
       CustomIcon = <
         item
@@ -51,13 +51,13 @@ object LccThrottleAppForm: TLccThrottleAppForm
       object LayoutTrains: TLayout
         Align = Client
         Size.Width = 416.000000000000000000
-        Size.Height = 513.000000000000000000
+        Size.Height = 514.000000000000000000
         Size.PlatformDefault = False
         TabOrder = 1
         object LayoutTrainsThrottle: TLayout
           Align = Client
           Size.Width = 359.000000000000000000
-          Size.Height = 513.000000000000000000
+          Size.Height = 514.000000000000000000
           Size.PlatformDefault = False
           TabOrder = 3
           object VertScrollBoxFunctions: TVertScrollBox
@@ -65,11 +65,11 @@ object LccThrottleAppForm: TLccThrottleAppForm
             Margins.Right = 2.000000000000000000
             Position.X = 184.000000000000000000
             Size.Width = 173.000000000000000000
-            Size.Height = 513.000000000000000000
+            Size.Height = 514.000000000000000000
             Size.PlatformDefault = False
             TabOrder = 0
             Viewport.Width = 157.000000000000000000
-            Viewport.Height = 513.000000000000000000
+            Viewport.Height = 514.000000000000000000
             object ButtonF0: TButton
               StaysPressed = True
               Align = Top
@@ -520,12 +520,12 @@ object LccThrottleAppForm: TLccThrottleAppForm
           object LayoutTrainsThrottleLever: TLayout
             Align = Client
             Size.Width = 184.000000000000000000
-            Size.Height = 513.000000000000000000
+            Size.Height = 514.000000000000000000
             Size.PlatformDefault = False
             TabOrder = 1
             object Layout1: TLayout
               Align = Bottom
-              Position.Y = 463.000000000000000000
+              Position.Y = 464.000000000000000000
               Size.Width = 184.000000000000000000
               Size.Height = 50.000000000000000000
               Size.PlatformDefault = False
@@ -563,7 +563,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
             object LayoutTrainsThrottleLeverBkgnd: TLayout
               Align = Client
               Size.Width = 184.000000000000000000
-              Size.Height = 463.000000000000000000
+              Size.Height = 464.000000000000000000
               Size.PlatformDefault = False
               TabOrder = 1
               object TrackBarTrainsThrottleLever: TTrackBar
@@ -577,7 +577,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
                 Scale.X = 3.000000000000000000
                 Scale.Y = 3.000000000000000000
                 Size.Width = 19.000000000000000000
-                Size.Height = 146.333343505859400000
+                Size.Height = 146.666671752929700000
                 Size.PlatformDefault = False
                 TabOrder = 0
                 Value = 100.000000000000000000
@@ -587,7 +587,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
                 Align = Right
                 Position.X = 71.000000000000000000
                 Size.Width = 113.000000000000000000
-                Size.Height = 463.000000000000000000
+                Size.Height = 464.000000000000000000
                 Size.PlatformDefault = False
                 TabOrder = 1
                 object LabelTrainsSpeedHeader: TLabel
@@ -601,7 +601,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
                   Position.X = 4.000000000000000000
                   Position.Y = 4.000000000000000000
                   Size.Width = 105.000000000000000000
-                  Size.Height = 19.000000000000000000
+                  Size.Height = 18.666666030883790000
                   Size.PlatformDefault = False
                   TextSettings.Font.Size = 14.000000000000000000
                   TextSettings.Font.StyleExt = {00070000000000000004000000}
@@ -618,7 +618,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
                   Margins.Right = 4.000000000000000000
                   Margins.Bottom = 4.000000000000000000
                   Position.X = 4.000000000000000000
-                  Position.Y = 31.000000000000000000
+                  Position.Y = 30.666666030883790000
                   Size.Width = 105.000000000000000000
                   Size.Height = 32.000000000000000000
                   Size.PlatformDefault = False
@@ -638,24 +638,24 @@ object LccThrottleAppForm: TLccThrottleAppForm
           NavigationPaneOptions.CollapsedWidth = 41.000000000000000000
           OnStartShowing = MultiViewRosterStartShowing
           Size.Width = 57.000000000000000000
-          Size.Height = 513.000000000000000000
+          Size.Height = 514.000000000000000000
           Size.PlatformDefault = False
           TabOrder = 1
           object TabControlTrainRoster: TTabControl
             Align = Client
             Size.Width = 57.000000000000000000
-            Size.Height = 513.000000000000000000
+            Size.Height = 514.000000000000000000
             Size.PlatformDefault = False
             TabIndex = 0
             TabOrder = 0
             TabPosition = PlatformDefault
             Sizes = (
               57s
-              487s
+              488s
               57s
-              487s
+              488s
               57s
-              487s)
+              488s)
             object TabItemTrainRosterSelect: TTabItem
               CustomIcon = <
                 item
@@ -676,7 +676,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
                 FooterAppearanceClassName = 'TListHeaderObjects'
                 Align = Client
                 Size.Width = 57.000000000000000000
-                Size.Height = 487.000000000000000000
+                Size.Height = 488.000000000000000000
                 Size.PlatformDefault = False
                 TabOrder = 0
                 OnItemClickEx = ListViewTrainRosterItemClickEx
@@ -700,7 +700,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
               object ListBoxTrainRosterItem: TListBox
                 Align = Client
                 Size.Width = 57.000000000000000000
-                Size.Height = 447.000000000000000000
+                Size.Height = 448.000000000000000000
                 Size.PlatformDefault = False
                 TabOrder = 0
                 DisableFocusEffect = True
@@ -708,7 +708,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
                 DefaultItemStyles.GroupHeaderStyle = ''
                 DefaultItemStyles.GroupFooterStyle = ''
                 Viewport.Width = 53.000000000000000000
-                Viewport.Height = 443.000000000000000000
+                Viewport.Height = 444.000000000000000000
                 object ListBoxGroupHeaderTrainDetails: TListBoxGroupHeader
                   StyleLookup = 'listboxplainheader'
                   TabOrder = 0
@@ -853,7 +853,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
               object LabelTrainRosterEditContainer: TLabel
                 Align = Client
                 Size.Width = 57.000000000000000000
-                Size.Height = 447.000000000000000000
+                Size.Height = 448.000000000000000000
                 Size.PlatformDefault = False
                 TextSettings.HorzAlign = Center
                 Text = 'Loading.....'
@@ -998,7 +998,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
       object LayoutLog: TLayout
         Align = Client
         Size.Width = 416.000000000000000000
-        Size.Height = 561.000000000000000000
+        Size.Height = 562.000000000000000000
         Size.PlatformDefault = False
         TabOrder = 0
         object MemoLog: TMemo
@@ -1006,11 +1006,11 @@ object LccThrottleAppForm: TLccThrottleAppForm
           DataDetectorTypes = []
           Align = Client
           Size.Width = 416.000000000000000000
-          Size.Height = 521.000000000000000000
+          Size.Height = 522.000000000000000000
           Size.PlatformDefault = False
           TabOrder = 0
           Viewport.Width = 412.000000000000000000
-          Viewport.Height = 517.000000000000000000
+          Viewport.Height = 518.000000000000000000
         end
         object ToolBarLog: TToolBar
           Size.Width = 416.000000000000000000
@@ -1097,7 +1097,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
       object LayoutSettingsTab: TLayout
         Align = Client
         Size.Width = 416.000000000000000000
-        Size.Height = 513.000000000000000000
+        Size.Height = 514.000000000000000000
         Size.PlatformDefault = False
         TabOrder = 1
         object ButtonSettingsResetConnection: TButton
@@ -1118,7 +1118,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
         object CheckBoxSettingsRawTCP: TCheckBox
           Anchors = [akLeft, akRight, akBottom]
           Position.X = 8.000000000000000000
-          Position.Y = 481.000000000000000000
+          Position.Y = 482.000000000000000000
           Size.Width = 337.000000000000000000
           Size.Height = 19.000000000000000000
           Size.PlatformDefault = False
@@ -1173,7 +1173,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
           Touch.InteractiveGestures = [LongTap, DoubleTap]
           Anchors = [akLeft, akTop, akRight]
           TabOrder = 2
-          Text = '10.0.3.145'
+          Text = '10.0.3.132'
           Position.X = 208.000000000000000000
           Position.Y = 8.000000000000000000
           Size.Width = 200.000000000000000000
@@ -1329,7 +1329,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
     Margins.Left = 4.000000000000000000
     Margins.Right = 4.000000000000000000
     Position.X = 4.000000000000000000
-    Position.Y = 610.000000000000000000
+    Position.Y = 611.000000000000000000
     Size.Width = 408.000000000000000000
     Size.Height = 17.000000000000000000
     Size.PlatformDefault = False

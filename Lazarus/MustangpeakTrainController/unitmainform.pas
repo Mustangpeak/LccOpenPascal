@@ -62,13 +62,12 @@ type
     ActionLogClear: TAction;
     ActionLogEnable: TAction;
     ActionListMain: TActionList;
-    Button1: TButton;
     ButtonThrottleSelectRelease: TButton;
     ButtonLogClear: TButton;
     ButtonThrottleSelectGo: TButton;
-    ButtonThrottleStop: TButton;
     ButtonSettingsRestartConnection: TButton;
     ButtonThrottleEStop: TButton;
+    ButtonThrottleStop: TButton;
     ComboBoxTrainSelect: TComboBox;
     EditSettingsIP: TEdit;
     EditSettingsPort: TEdit;
@@ -87,7 +86,6 @@ type
     LabelSettingsConnectionState: TLabel;
     ListBoxRosterDetails: TListBox;
     ListBoxRoster: TListBox;
-    Memo1: TMemo;
     MemoLog: TMemo;
     PageControl1: TPageControl;
     PageControlRoster: TPageControl;
@@ -95,6 +93,7 @@ type
     Panel1: TPanel;
     Panel3: TPanel;
     Panel4: TPanel;
+    Panel5: TPanel;
     PanelRosterEditorConfigurationBkGnd: TPanel;
     PanelThrottleHamburger: TPanel;
     Panel2: TPanel;
@@ -329,14 +328,8 @@ begin
 end;
 
 procedure TFormTrainController.Button1Click(Sender: TObject);
-var
-  AStringList: TStringList;
 begin
-  Memo1.Lines.Clear;
-  AStringList := TStringList.Create;
-  AliasServer.ReadMappingsToStringList(AStringList);
-  Memo1.Lines.AddStrings(AStringList);
-  AStringList.Free;
+
 end;
 
 procedure TFormTrainController.ActionLogClearExecute(Sender: TObject);
@@ -852,41 +845,6 @@ procedure TFormTrainController.OnConnectionManagerSendMessage(Sender: TObject; A
      end;
    end;
 end;
-
-{
-
-procedure TFormTrainController.OnRegisterChange(TractionObject: TLccTractionObject; IsRegistered: Boolean);
-var
-  ItemIndex: Integer;
-begin
-  ListBoxRoster.Items.BeginUpdate;
-  try
-    if IsRegistered then
-    begin
-      ItemIndex := ListBoxRoster.Items.IndexOfObject(TractionObject);
-      if ItemIndex < 0 then
-         ItemIndex := ListBoxRoster.Items.AddObject(TractionObject.DisplayName, TractionObject);
-      Controller.SendSNIPRequest(TractionObject.NodeID, TractionObject.NodeAlias);
-      Controller.SendTrainSNIPRequest(TractionObject.NodeID, TractionObject.NodeAlias);
-    end else
-    begin
-      ItemIndex := ListBoxRoster.Items.IndexOfObject(TractionObject);
-      if ItemIndex > -1 then
-      begin
-        if ListBoxRoster.Selected[ItemIndex] then
-        begin
-          ListBoxRoster.Selected[ItemIndex] := False;
-          PageControlRoster.PageIndex := 0;   // Item is going away jump back
-          if TractionObject =  DetailsTractionObject then
-            DetailsTractionObject := nil; // don't reference the traction object anymore
-        end;
-        ListBoxRoster.Items.Delete(ItemIndex);
-      end;
-    end
-  finally
-    ListBoxRoster.Items.EndUpdate;
-  end;
-end;      }
 
 procedure TFormTrainController.OnNodeIDChanged(Sender: TObject; ALccNode: TLccNode);
 begin

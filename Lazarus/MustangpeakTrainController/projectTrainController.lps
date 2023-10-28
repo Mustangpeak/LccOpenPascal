@@ -18,8 +18,9 @@
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="unitMainForm"/>
-        <TopLine Value="826"/>
-        <CursorPos Y="833"/>
+        <IsVisibleTab Value="True"/>
+        <TopLine Value="329"/>
+        <CursorPos X="47" Y="343"/>
         <UsageCount Value="440"/>
         <Loaded Value="True"/>
         <LoadedDesigner Value="True"/>
@@ -32,7 +33,6 @@
       </Unit>
       <Unit>
         <Filename Value="../../Target-PC/HardwareConnection/lcc_ethernet_client.pas"/>
-        <IsVisibleTab Value="True"/>
         <EditorIndex Value="6"/>
         <TopLine Value="225"/>
         <CursorPos X="48" Y="245"/>
@@ -220,62 +220,6 @@
     </OtherDefines>
     <JumpHistory HistoryIndex="29">
       <Position>
-        <Filename Value="../../Target-Common/lcc_node_messages.pas"/>
-        <Caret Line="1638" TopLine="1618"/>
-      </Position>
-      <Position>
-        <Filename Value="../../Target-Common/lcc_node_messages.pas"/>
-        <Caret Line="1639" TopLine="1618"/>
-      </Position>
-      <Position>
-        <Filename Value="../../Target-Common/lcc_node_messages.pas"/>
-        <Caret Line="1637" TopLine="1618"/>
-      </Position>
-      <Position>
-        <Filename Value="../../Target-Common/lcc_node_messages.pas"/>
-        <Caret Line="1641" TopLine="1618"/>
-      </Position>
-      <Position>
-        <Filename Value="../../Target-Common/lcc_node_messages.pas"/>
-        <Caret Line="1642" TopLine="1618"/>
-      </Position>
-      <Position>
-        <Filename Value="../../Target-Common/lcc_node_messages.pas"/>
-        <Caret Line="1644" TopLine="1618"/>
-      </Position>
-      <Position>
-        <Filename Value="../../Target-Common/lcc_node_messages.pas"/>
-        <Caret Line="1647" TopLine="1618"/>
-      </Position>
-      <Position>
-        <Filename Value="../../Target-Common/lcc_node.pas"/>
-        <Caret Line="2882" TopLine="2851"/>
-      </Position>
-      <Position>
-        <Filename Value="../../Target-Common/lcc_node.pas"/>
-        <Caret Line="2878" TopLine="2851"/>
-      </Position>
-      <Position>
-        <Filename Value="../../Target-Common/lcc_node.pas"/>
-        <Caret Line="2884" TopLine="2853"/>
-      </Position>
-      <Position>
-        <Filename Value="../../Target-Common/lcc_node.pas"/>
-        <Caret Line="2871" TopLine="2853"/>
-      </Position>
-      <Position>
-        <Filename Value="../../Target-Common/lcc_node.pas"/>
-        <Caret Line="2255" TopLine="2236"/>
-      </Position>
-      <Position>
-        <Filename Value="../../Target-Common/lcc_node.pas"/>
-        <Caret Line="2262" Column="139" TopLine="2236"/>
-      </Position>
-      <Position>
-        <Filename Value="../../Target-Common/lcc_node_controller.pas"/>
-        <Caret Line="1496" TopLine="1477"/>
-      </Position>
-      <Position>
         <Filename Value="../../Target-Common/lcc_node.pas"/>
         <Caret Line="2043" TopLine="2024"/>
       </Position>
@@ -338,6 +282,62 @@
       <Position>
         <Filename Value="../../Target-PC/HardwareConnection/lcc_ethernet_server.pas"/>
         <Caret Line="122" Column="18" TopLine="108"/>
+      </Position>
+      <Position>
+        <Filename Value="unitmainform.pas"/>
+        <Caret Line="854" Column="5" TopLine="848"/>
+      </Position>
+      <Position>
+        <Filename Value="unitmainform.pas"/>
+        <Caret Line="961" Column="93" TopLine="921"/>
+      </Position>
+      <Position>
+        <Filename Value="unitmainform.pas"/>
+        <Caret Line="220" Column="15" TopLine="189"/>
+      </Position>
+      <Position>
+        <Filename Value="unitmainform.pas"/>
+        <Caret Line="331" Column="62" TopLine="330"/>
+      </Position>
+      <Position>
+        <Filename Value="unitmainform.pas"/>
+        <Caret Line="330" Column="62" TopLine="329"/>
+      </Position>
+      <Position>
+        <Filename Value="unitmainform.pas"/>
+        <Caret Line="329" Column="62" TopLine="328"/>
+      </Position>
+      <Position>
+        <Filename Value="unitmainform.pas"/>
+        <Caret Line="328" Column="62" TopLine="327"/>
+      </Position>
+      <Position>
+        <Filename Value="unitmainform.pas"/>
+        <Caret Line="329" Column="62" TopLine="328"/>
+      </Position>
+      <Position>
+        <Filename Value="unitmainform.pas"/>
+        <Caret Line="328" Column="62" TopLine="327"/>
+      </Position>
+      <Position>
+        <Filename Value="unitmainform.pas"/>
+        <Caret Line="329" Column="62" TopLine="328"/>
+      </Position>
+      <Position>
+        <Filename Value="unitmainform.pas"/>
+        <Caret Line="328" Column="62" TopLine="327"/>
+      </Position>
+      <Position>
+        <Filename Value="unitmainform.pas"/>
+        <Caret Line="329" Column="62" TopLine="328"/>
+      </Position>
+      <Position>
+        <Filename Value="unitmainform.pas"/>
+        <Caret Line="328" Column="62" TopLine="327"/>
+      </Position>
+      <Position>
+        <Filename Value="unitmainform.pas"/>
+        <Caret Line="329" Column="62" TopLine="328"/>
       </Position>
     </JumpHistory>
     <RunParams>
