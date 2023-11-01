@@ -208,22 +208,6 @@ implementation
 
 { TLccWebsocketConnectionContext }
 
-{$IFDEF LCC_FPC}
-function TLccWebsocketConnectionContext.ParseHeader(const msg: string): TDictionary<string, string>;
-var
-  lines, SplittedLine: TStringArray;
-  line: string;
-begin
-  Result := TDictionary<string, string>.Create;
-  lines := SplitString(msg, #13#10);
-  for line in lines do
-  begin
-    SplittedLine := SplitString(line, ': ');
-    if Length(SplittedLine) > 1 then
-      Result.AddOrSetValue(Trim(SplittedLine[0]), Trim(SplittedLine[1]));
-  end;
-end;
-
 constructor TLccWebsocketConnectionContext.Create(AnOwner: TLccConnectionContextList; AContext: TIdContext);
 begin
   inherited Create(AnOwner, AContext);
@@ -239,6 +223,21 @@ begin
   inherited Destroy;
 end;
 
+{$IFDEF LCC_FPC}
+function TLccWebsocketConnectionContext.ParseHeader(const msg: string): TDictionary<string, string>;
+var
+  lines, SplittedLine: TStringArray;
+  line: string;
+begin
+  Result := TDictionary<string, string>.Create;
+  lines := SplitString(msg, #13#10);
+  for line in lines do
+  begin
+    SplittedLine := SplitString(line, ': ');
+    if Length(SplittedLine) > 1 then
+      Result.AddOrSetValue(Trim(SplittedLine[0]), Trim(SplittedLine[1]));
+  end;
+end;
 {$ENDIF}
 
 {$IFNDEF LCC_FPC}
