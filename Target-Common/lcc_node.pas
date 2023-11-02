@@ -564,9 +564,9 @@ type
     // This can be nil if the message is not using a NodeID and Alias associated with an internal node
     procedure SendMessage(ALccMessage: TLccMessage; AnAssociatedNode: TLccNode);
 
-    function RequestSNIP(ATarget: TNodeID; ACallback: TOnTaskCallback): Boolean;   // Callback: TTaskReadSNIP
-    function RequestPIP(ATarget: TNodeID; ACallback: TOnTaskCallback): Boolean;    // Callback: TTaskReadPIP
-    function RequestCDI(ATarget: TNodeID; ACallback: TOnTaskCallback): Boolean;
+    function RequestSNIP(ATarget: TNodeID; ACallback: TOnTaskCallback; ATag: Integer = 0; ATagObject: TObject = nil): Boolean;   // Callback: TTaskReadSNIP
+    function RequestPIP(ATarget: TNodeID; ACallback: TOnTaskCallback; ATag: Integer = 0; ATagObject: TObject = nil): Boolean;    // Callback: TTaskReadPIP
+    function RequestCDI(ATarget: TNodeID; ACallback: TOnTaskCallback; ATag: Integer = 0; ATagObject: TObject = nil): Boolean;
     procedure AbortCDI;
   end;
 
@@ -1607,40 +1607,41 @@ begin
   (Owner as TLccNodeManager).SendLccMessageNodeManager(ALccMessage);
 end;
 
-function TLccNode.RequestSNIP(ATarget: TNodeID; ACallback: TOnTaskCallback
-  ): Boolean;
+function TLccNode.RequestSNIP(ATarget: TNodeID; ACallback: TOnTaskCallback ; ATag: Integer = 0; ATagObject: TObject = nil): Boolean;
 begin
   Result := False;
   if TaskReadSNIP.IsIdle then
   begin
     TaskReadSNIP.Target := ATarget;
     TaskReadSNIP.Callback := ACallback;
+    TaskReadSNIP.Tag := ATag;
+    TaskReadSNIP.TagObject := ATagObject;
     TaskReadSNIP.Start(TIMEOUT_TASK_MESSAGES);
   end;
 end;
 
-function TLccNode.RequestPIP(ATarget: TNodeID; ACallback: TOnTaskCallback): Boolean;
+function TLccNode.RequestPIP(ATarget: TNodeID; ACallback: TOnTaskCallback; ATag: Integer = 0; ATagObject: TObject = nil): Boolean;
 begin
   Result := False;
   if TaskReadPIP.IsIdle then
   begin
     TaskReadPIP.Target := ATarget;
     TaskReadPIP.Callback := ACallback;
+    TaskReadPIP.Tag := ATag;
+    TaskReadPIP.TagObject := ATagObject;
     TaskReadPIP.Start(TIMEOUT_TASK_MESSAGES);
   end;
 end;
 
-function TLccNode.RequestCDI(ATarget: TNodeID; ACallback: TOnTaskCallback): Boolean;
-var
-  Alias: Word;
+function TLccNode.RequestCDI(ATarget: TNodeID; ACallback: TOnTaskCallback; ATag: Integer = 0; ATagObject: TObject = nil): Boolean;
 begin
   Result := False;
-  TaskMemorySpaceAccess.Callback := ACallback;
-  Alias := AliasServer.FindAlias(ATarget);
-  if Alias <> 0 then
+  if TaskMemorySpaceAccess.TaskState = lesIdle then
   begin
     TaskMemorySpaceAccess.Callback := ACallback;
-    TaskMemorySpaceAccess.Assign(lems_Read, MSI_CDI, True, 0, 0, False, ATarget, Alias, ACallback);
+    TaskMemorySpaceAccess.Tag := ATag;
+    TaskMemorySpaceAccess.TagObject := ATagObject;
+    TaskMemorySpaceAccess.Assign(lems_Read, MSI_CDI, True, 0, 0, False, ATarget, AliasServer.FindAlias(ATarget), ACallback);
     TaskMemorySpaceAccess.Start(TIMEOUT_TASK_MESSAGES);
     Result := True;
   end;

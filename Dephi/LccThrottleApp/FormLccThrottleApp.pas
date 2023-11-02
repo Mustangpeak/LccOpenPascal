@@ -261,7 +261,6 @@ type
 
     function ValidEditBoxKey(Key: Word): Boolean;
     function FindListviewItemByTagTractionObject(AListview: TListView; ATagObject: TObject): TListviewItem;
-    function SelectedRosterEqualsTractionObject(ATrain: TTrainInfo): Boolean;
     procedure TrainTabDetailsClear;
     procedure TrainTabDetailsLoad(ATrainInfo: TTrainInfo);
     procedure TrainTabCDIClear;
@@ -480,6 +479,7 @@ begin
         lbStatus.Text := IntToStr(TaskMemorySpaceAccess.AddressCurrent) + ' of ' + IntToStr(TaskMemorySpaceAccess.AddressHi-TaskMemorySpaceAccess.AddressLo) + ' bytes';
         if TaskMemorySpaceAccess.Valid then
         begin
+
           TrainInfo := ListViewTrainRoster.Selected.TagObject as TTrainInfo;
           TaskMemorySpaceAccess.CopyTo(TrainInfo.CDI);
           RenderCDI(TrainInfo);
@@ -803,6 +803,7 @@ begin
   // Did we click on the Accessory to move to the Details tab?
   if ItemObject is TListItemAccessory then
   begin
+
     // Move to the Details tab
     ActionTabTrainRosterNext.Execute;
 
@@ -816,9 +817,9 @@ begin
       TrainTabDetailsLoad(LocalTrainInfo);
 
     if not LocalTrainInfo.CDI.Valid then
-    begin
-      Controller.RequestCDI(LocalTrainInfo.NodeID, CallbackCdi);
-    end;
+      Controller.RequestCDI(LocalTrainInfo.NodeID, CallbackCdi)
+    else
+      TrainTabCDILoad(LocalTrainInfo)
   end else
   begin
     if LocalTrainInfo.SNIP.Valid then
@@ -966,13 +967,6 @@ begin
 
 end;
 
-function TLccThrottleAppForm.SelectedRosterEqualsTractionObject(ATrain: TTrainInfo): Boolean;
-begin
-  Result := False;
-  if ListViewTrainRoster.Selected <> nil then
-    Result := ListViewTrainRoster.Selected.TagObject = ATrain
-end;
-
 procedure TLccThrottleAppForm.SelectTrain(AnAddress: String; HideMultiView: Boolean);
 var
   DccAddressInt: Integer;
@@ -1071,7 +1065,7 @@ end;
 
 procedure TLccThrottleAppForm.TrainTabCDILoad(ATrainInfo: TTrainInfo);
 begin
-  if SelectedRosterEqualsTractionObject(ATrainInfo) then
+  if Assigned(ATrainInfo) then
   begin
     TrainTabCDIClear;
     if ATrainInfo.CDI.Valid then
@@ -1104,7 +1098,7 @@ end;
 
 procedure TLccThrottleAppForm.TrainTabDetailsLoad(ATrainInfo: TTrainInfo);
 begin
-  if SelectedRosterEqualsTractionObject(ATrainInfo) then
+  if Assigned(ATrainInfo) then
   begin
     ListBoxItemTrainsDetailsManufacturer.ItemData.Detail := ATrainInfo.SNIP.Manufacturer;
     ListBoxItemTrainsDetailsModel.ItemData.Detail := ATrainInfo.SNIP.Model;
