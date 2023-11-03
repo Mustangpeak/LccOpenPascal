@@ -949,6 +949,7 @@ begin
         TrackBarThrottle.OnChange := nil;
         try
           TrackBarThrottle.Position := Integer( Round( TaskQuerySpeed.SetSpeedReply));
+          LabelStatus.Caption := 'Received Speed/Dir';
         finally
           TrackBarThrottle.OnChange := OldOnChange;
         end;
@@ -1004,11 +1005,13 @@ begin
               FunctionBox.Checked := False
             else
               FunctionBox.Checked := True;
+            LabelStatus.Caption := 'Received Function: ' + IntToStr(TaskQueryFunction.Address);
           finally
             FunctionBox.OnChange := OldOnChange;
           end;
         end;
-
+        if TaskQueryFunction.Address = MAX_DCC_FUNCTIONS - 1 then
+          LabelStatus.Caption := '';
       end;
     lesAbort   : LabelStatus.Caption := 'QueryAttachedListeners Aborted';
     lesTimeout : LabelStatus.Caption := 'QueryAttachedListeners Timeout';
