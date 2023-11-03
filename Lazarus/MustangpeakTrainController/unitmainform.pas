@@ -813,6 +813,9 @@ begin
       end;
 
       MemoLog.SelStart := Length(MemoLog.Lines.Text);
+
+      if MemoLog.Lines.Count > 100 then
+        MemoLog.Lines.Delete(0);
     finally
       MemoLog.Lines.EndUpdate;
     end;
@@ -840,6 +843,9 @@ procedure TFormTrainController.OnConnectionManagerSendMessage(Sender: TObject; A
          MemoLog.Lines.Add('S: ' + ALccMessage.ConvertToLccTcpString(ByteArray));
        end;
        MemoLog.SelStart := Length(MemoLog.Lines.Text);
+
+       if MemoLog.Lines.Count > 100 then
+         MemoLog.Lines.Delete(0);
      finally
        MemoLog.Lines.EndUpdate;
      end;
