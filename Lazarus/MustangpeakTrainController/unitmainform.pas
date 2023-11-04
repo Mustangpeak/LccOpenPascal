@@ -253,7 +253,7 @@ implementation
 
 procedure TFormTrainController.FormCreate(Sender: TObject);
 begin
-  EmulateCanBus := True;
+  EmulateCanBus := False;
 
   NodeManager := TLccNodeManager.Create(nil);
   NodeManager.EmulateCanNetworkLogin := EmulateCanBus;

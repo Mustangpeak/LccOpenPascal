@@ -1005,8 +1005,6 @@ var
   NewListenerNode: TListenerNode;
   ListenerAttachFlags: Byte;
   ListenerNodeID: TNodeID;
-  ListenerNodeAlias: Word;
-  AliasMapping: TLccAliasMapping;
   DoDefault: Boolean;
 begin
   // Things to concider:
@@ -1023,13 +1021,6 @@ begin
   begin
     ListenerNodeID := SourceMessage.TractionExtractListenerID;
     ListenerAttachFlags := SourceMessage.TractionExtractListenerFlags;
-    ListenerNodeAlias := 0;
-    if (Owner as TLccNodeManager).EmulateCanNetworkLogin then
-    begin
-      AliasMapping := AliasServer.FindMapping(ListenerNodeID);
-      Assert(Assigned(AliasMapping), 'TLccTrainDccNode.HandleTractionListenerAttach: Alias Mapping Failed');
-      ListenerNodeAlias := AliasMapping.NodeAlias;
-    end;
 
     if EqualNodeID(NodeID, ListenerNodeID, False) then  // Trying to create a Listener that is the nodes itself.... will cause infinte loops
       WorkerMessage.LoadTractionListenerAttachReply(NodeID, AliasID, SourceMessage.SourceID, SourceMessage.SourceAlias, ListenerNodeID, ERROR_CODE_PERMANENT_INVALID_ARGUMENTS)
@@ -1045,7 +1036,7 @@ begin
         if Assigned(NewListenerNode) then
         begin
           NewListenerNode.NodeID := ListenerNodeID;
-          NewListenerNode.AliasID := ListenerNodeAlias;
+          NewListenerNode.AliasID := AliasServer.FindAlias(ListenerNodeID);
           NewListenerNode.DecodeFlags(ListenerAttachFlags);
           Listeners.Add(NewListenerNode);
           WorkerMessage.LoadTractionListenerAttachReply(NodeID, AliasID, SourceMessage.SourceID, SourceMessage.SourceAlias, ListenerNodeID, S_OK)

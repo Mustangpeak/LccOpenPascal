@@ -223,7 +223,7 @@ object FormTrainController: TFormTrainController
           Height = 403
           Top = 1
           Width = 175
-          HorzScrollBar.Page = 64
+          HorzScrollBar.Page = 63
           VertScrollBar.Page = 401
           Align = alClient
           ClientHeight = 401

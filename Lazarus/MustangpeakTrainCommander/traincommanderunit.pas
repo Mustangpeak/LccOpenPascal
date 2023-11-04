@@ -46,7 +46,6 @@ type
     ButtonTrainsClear: TButton;
     ButtonClear: TButton;
     ButtonEthernetConnect: TButton;
-    CheckBoxGridConnect: TCheckBox;
     CheckBoxDetailedLog: TCheckBox;
     CheckBoxLogMessages: TCheckBox;
     CheckBoxLoopBackIP: TCheckBox;
@@ -94,6 +93,7 @@ type
     FAutoCreateTrainAddress: Word;
     FCommandStationNode: TLccCommandStationNode;
     FComPort: TLccComPort;
+    FEmulateCANBus: Boolean;
  //   FLccHTTPServer: TLccHTTPServer;
     FLccWebsocketServer: TLccWebSocketServerThreadManager;
     FNodeManager: TLccNodeManager;
@@ -132,6 +132,7 @@ type
     procedure NodeIsGoingAway(LccSourceNode: TLccNode);
 
   public
+    property EmulateCANBus: Boolean read FEmulateCANBus write FEmulateCANBus;
     property LccServer: TLccEthernetServerThreadManager read FLccServer write FLccServer;
     property LccWebsocketServer: TLccWebSocketServerThreadManager read FLccWebsocketServer write FLccWebsocketServer;
   //  property LccHTTPServer: TLccHTTPServer read FLccHTTPServer write FLccHTTPServer;
@@ -242,7 +243,7 @@ begin
     ConnectionInfo.AutoResolveIP := not CheckBoxLoopBackIP.Checked;
     ConnectionInfo.ListenerIP := '127.0.0.1';
     ConnectionInfo.ListenerPort := 12022;
-    LccWebsocketServer := ConnectionFactory.CreateLccMessageConnection(TLccWebSocketServerThreadManager, ConnectionInfo, CheckBoxGridConnect.Checked) as TLccWebSocketServerThreadManager;
+    LccWebsocketServer := ConnectionFactory.CreateLccMessageConnection(TLccWebSocketServerThreadManager, ConnectionInfo, EmulateCANBus) as TLccWebSocketServerThreadManager;
     if Assigned(LccWebsocketServer) then
       LccWebsocketServer.OpenConnection;
   end;
@@ -303,7 +304,7 @@ begin
     ConnectionInfo.AutoResolveIP := not CheckBoxLoopBackIP.Checked;
     ConnectionInfo.ListenerIP := '127.0.0.1';
     ConnectionInfo.ListenerPort := 12021;
-    LccServer := ConnectionFactory.CreateLccMessageConnection(TLccEthernetServerThreadManager, ConnectionInfo, CheckBoxGridConnect.Checked) as TLccEthernetServerThreadManager;
+    LccServer := ConnectionFactory.CreateLccMessageConnection(TLccEthernetServerThreadManager, ConnectionInfo, EmulateCANBus) as TLccEthernetServerThreadManager;
     if Assigned(LccServer) then
       LccServer.OpenConnection;
   end;
@@ -340,7 +341,7 @@ begin
 
     MemoLog.Lines.BeginUpdate;
     try
-      if CheckBoxGridConnect.Checked then
+      if EmulateCANBus then
       begin
         if CheckBoxDetailedLog.Checked then
           MemoLog.Lines.Add(Preamble + MessageToDetailedMessage(ALccMessage))
@@ -387,7 +388,7 @@ begin
   begin
     MemoLog.Lines.BeginUpdate;
     try
-      if CheckBoxGridConnect.Checked then
+      if EmulateCANBus then
       begin
         if CheckBoxDetailedLog.Checked then
           MemoLog.Lines.Add('TCP: S: ' + MessageToDetailedMessage(ALccMessage))
@@ -609,15 +610,17 @@ end;
 
 procedure TFormTrainCommander.FormCreate(Sender: TObject);
 begin
+  EmulateCANBus := False;
 
   {$IFDEF PYTHON_SCRIPT_COMPATIBLE}
   Caption := 'Train Commander [LccOpenPascal]' + ' PYTHON SCRIPT ENABLED';
+  EmulateCANBus := True;
   {$ELSE}
   Caption := 'Train Commander [LccOpenPascal]' + ' PYTHON SCRIPT DISABLED';
   {$ENDIF}
 
   NodeManager := TLccNodeManager.Create(nil);
-  NodeManager.EmulateCanNetworkLogin := CheckBoxGridConnect.Checked;
+  NodeManager.EmulateCanNetworkLogin := EmulateCANBus;
   NodeManager.OnNodeAliasIDChanged := @OnNodeManagerAliasIDChanged;
   NodeManager.OnNodeIDChanged := @OnNodeManagerIDChanged;
   NodeManager.OnNodeLogin := @OnNodeManagerNodeLogin;

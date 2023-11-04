@@ -23,9 +23,9 @@ object FormTrainCommander: TFormTrainCommander
     TabOrder = 0
     object CheckBoxAutoConnect: TCheckBox
       Left = 192
-      Height = 19
+      Height = 18
       Top = 8
-      Width = 145
+      Width = 160
       Caption = 'AutoConnect at Startup'
       TabOrder = 0
     end
@@ -49,9 +49,9 @@ object FormTrainCommander: TFormTrainCommander
     end
     object CheckBoxLoopBackIP: TCheckBox
       Left = 376
-      Height = 19
+      Height = 18
       Top = 8
-      Width = 61
+      Width = 71
       Caption = 'Local IP'
       TabOrder = 3
     end
@@ -91,9 +91,9 @@ object FormTrainCommander: TFormTrainCommander
     end
     object CheckBoxLogMessages: TCheckBox
       Left = 496
-      Height = 19
-      Top = 56
-      Width = 94
+      Height = 18
+      Top = 39
+      Width = 108
       Caption = 'Log Messages'
       Checked = True
       State = cbChecked
@@ -101,12 +101,13 @@ object FormTrainCommander: TFormTrainCommander
     end
     object ComboBoxComPorts: TComboBox
       Left = 184
-      Height = 23
+      Height = 20
       Top = 32
       Width = 284
-      ItemHeight = 15
+      ItemHeight = 26
       Style = csDropDownList
       TabOrder = 5
+      Text = '0'
     end
     object ButtonComPortConnect: TButton
       Left = 16
@@ -119,9 +120,9 @@ object FormTrainCommander: TFormTrainCommander
     end
     object CheckBoxDetailedLog: TCheckBox
       Left = 496
-      Height = 19
-      Top = 72
-      Width = 86
+      Height = 18
+      Top = 58
+      Width = 98
       Caption = 'Detailed Log'
       ParentShowHint = False
       ShowHint = True
@@ -166,7 +167,7 @@ object FormTrainCommander: TFormTrainCommander
     end
     object Edit1: TEdit
       Left = 1192
-      Height = 23
+      Height = 22
       Top = 8
       Width = 80
       TabOrder = 12
@@ -190,16 +191,6 @@ object FormTrainCommander: TFormTrainCommander
       OnClick = ButtonLiveMessagesClick
       TabOrder = 14
     end
-    object CheckBoxGridConnect: TCheckBox
-      Left = 496
-      Height = 19
-      Top = 37
-      Width = 109
-      Caption = 'GridConnect Bus'
-      Checked = True
-      State = cbChecked
-      TabOrder = 15
-    end
     object Button1: TButton
       Left = 872
       Height = 25
@@ -207,13 +198,13 @@ object FormTrainCommander: TFormTrainCommander
       Width = 128
       Caption = 'Flush Alias Cache'
       OnClick = Button1Click
-      TabOrder = 16
+      TabOrder = 15
     end
   end
   object PanelConnections: TPanel
     Left = 0
     Height = 102
-    Top = 438
+    Top = 443
     Width = 1289
     Align = alBottom
     ClientHeight = 102
@@ -278,21 +269,21 @@ object FormTrainCommander: TFormTrainCommander
     Cursor = crVSplit
     Left = 0
     Height = 9
-    Top = 330
+    Top = 335
     Width = 1289
     Align = alBottom
     ResizeAnchor = akBottom
   end
   object SplitterTrains: TSplitter
     Left = 267
-    Height = 234
+    Height = 239
     Top = 96
     Width = 5
   end
   object StatusBarMain: TStatusBar
     Left = 0
-    Height = 23
-    Top = 540
+    Height = 18
+    Top = 545
     Width = 1289
     Panels = <    
       item
@@ -311,12 +302,12 @@ object FormTrainCommander: TFormTrainCommander
   end
   object PanelTrains: TPanel
     Left = 0
-    Height = 234
+    Height = 239
     Top = 96
     Width = 267
     Align = alLeft
     Caption = 'PanelTrains'
-    ClientHeight = 234
+    ClientHeight = 239
     ClientWidth = 267
     TabOrder = 5
     object PanelTrainsHeader: TPanel
@@ -344,7 +335,7 @@ object FormTrainCommander: TFormTrainCommander
     end
     object TreeViewTrains: TTreeView
       Left = 1
-      Height = 209
+      Height = 214
       Top = 24
       Width = 265
       Align = alClient
@@ -357,7 +348,7 @@ object FormTrainCommander: TFormTrainCommander
   end
   object MemoLog: TMemo
     Left = 272
-    Height = 234
+    Height = 239
     Top = 96
     Width = 1017
     Align = alClient
@@ -367,7 +358,7 @@ object FormTrainCommander: TFormTrainCommander
   object MemoComPort: TMemo
     Left = 0
     Height = 90
-    Top = 339
+    Top = 344
     Width = 1289
     Align = alBottom
     Lines.Strings = (
@@ -380,7 +371,7 @@ object FormTrainCommander: TFormTrainCommander
     Cursor = crVSplit
     Left = 0
     Height = 9
-    Top = 429
+    Top = 434
     Width = 1289
     Align = alBottom
     ResizeAnchor = akBottom
