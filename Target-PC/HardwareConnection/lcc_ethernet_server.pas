@@ -656,7 +656,7 @@ begin
     if TcpDecodeStateMachine.OPStackcoreTcp_DecodeMachine(StreamReadByte(WorkerStream), LocalDataArray) then
     begin
       if WorkerMessage.LoadByLccTcp(LocalDataArray) then
-        AliasServerThread.AddIncomingLccMessage(WorkerMessage, True);
+        AliasServerThread.AddIncomingLccMessage(WorkerMessage, False);
     end;
   end;
 end;

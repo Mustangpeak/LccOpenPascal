@@ -837,97 +837,68 @@ end;
 { TLccTaskManagementReleaseTrain }
 
 procedure TLccTaskManagementReleaseTrain.Start(ATimeout: Integer);
-var
-  Alias: Word;
 begin
   inherited Start(ATimeout);
 
-  Alias := AliasServer.FindAlias(Target);
-  if Alias <> 0 then
-  begin
-    WorkerMessage.LoadTractionManage(OwnerNode.NodeID, OwnerNode.AliasID, Target, Alias, False);
-    OwnerNode.SendMessage(WorkerMessage, OwnerNode);
-    Complete;
-    if Assigned(Callback) then
-      Callback(Self);
-    Reset;
-  end;
+  WorkerMessage.LoadTractionManage(OwnerNode.NodeID, OwnerNode.AliasID, Target, AliasServer.FindAlias(Target), False);
+  OwnerNode.SendMessage(WorkerMessage, OwnerNode);
+  Complete;
+  if Assigned(Callback) then
+    Callback(Self);
+  Reset;
 end;
 
 { TLccTaskEmergencyStop }
 
 procedure TLccTaskEmergencyStop.Start(ATimeout: Integer);
-var
-  Alias: Word;
 begin
   inherited Start(ATimeout);
 
-  Alias := AliasServer.FindAlias(Target);
-  if Alias <> 0 then
-  begin
-    WorkerMessage.LoadTractionEStop(OwnerNode.NodeID, OwnerNode.AliasID, Target, Alias);
-    OwnerNode.SendMessage(WorkerMessage, OwnerNode);
-    Complete;
-    if Assigned(Callback) then
-      Callback(Self);
-    Reset;
-  end;
+  WorkerMessage.LoadTractionEStop(OwnerNode.NodeID, OwnerNode.AliasID, Target, AliasServer.FindAlias(Target));
+  OwnerNode.SendMessage(WorkerMessage, OwnerNode);
+  Complete;
+  if Assigned(Callback) then
+    Callback(Self);
+  Reset;
+
 end;
 
 { TLccTaskSetFunction }
 
 procedure TLccTaskSetFunction.Start(ATimeout: Integer);
-var
-  Alias: Word;
 begin
   inherited Start(ATimeout);
 
-  Alias := AliasServer.FindAlias(Target);
-  if Alias <> 0 then
-  begin
-    WorkerMessage.LoadTractionSetFunction(OwnerNode.NodeID, OwnerNode.AliasID, Target, Alias, Address, Value, ForwardedListenerMessage);
-    OwnerNode.SendMessage(WorkerMessage, OwnerNode);
-    Complete;
-    if Assigned(Callback) then
-      Callback(Self);
-    Reset;
-  end;
+  WorkerMessage.LoadTractionSetFunction(OwnerNode.NodeID, OwnerNode.AliasID, Target, AliasServer.FindAlias(Target), Address, Value, ForwardedListenerMessage);
+  OwnerNode.SendMessage(WorkerMessage, OwnerNode);
+  Complete;
+  if Assigned(Callback) then
+    Callback(Self);
+  Reset;
 end;
 
 { TLccTaskSetSpeedDir }
 
 procedure TLccTaskSetSpeedDir.Start(ATimeout: Integer);
-var
-  Alias: Word;
 begin
   inherited Start(ATimeout);
 
-  Alias := AliasServer.FindAlias(Target);
-  if Alias <> 0 then
-  begin
-    WorkerMessage.LoadTractionSetSpeed(OwnerNode.NodeID, OwnerNode.AliasID, Target, Alias, Speed, ForwardedListenerMessage);
-    OwnerNode.SendMessage(WorkerMessage, OwnerNode);
-    Complete;
-    if Assigned(Callback) then
-      Callback(Self);
-    Reset;
-  end;
+  WorkerMessage.LoadTractionSetSpeed(OwnerNode.NodeID, OwnerNode.AliasID, Target, AliasServer.FindAlias(Target), Speed, ForwardedListenerMessage);
+  OwnerNode.SendMessage(WorkerMessage, OwnerNode);
+  Complete;
+  if Assigned(Callback) then
+    Callback(Self);
+  Reset;
 end;
 
 { TLccTaskListenerQueryCount }
 
 procedure TLccTaskListenerQueryCount.Start(ATimeout: Integer);
-var
-  Alias: Word;
 begin
   inherited Start(ATimeout);
 
-  Alias := AliasServer.FindAlias(Target);
-  if Alias <> 0 then
-  begin
-    WorkerMessage.LoadTractionListenerQueryCount(OwnerNode.NodeID, OwnerNode.AliasID, Target, Alias);
-    OwnerNode.SendMessage(WorkerMessage, OwnerNode);
-  end;
+  WorkerMessage.LoadTractionListenerQueryCount(OwnerNode.NodeID, OwnerNode.AliasID, Target, AliasServer.FindAlias(Target));
+  OwnerNode.SendMessage(WorkerMessage, OwnerNode);
 end;
 
 procedure TLccTaskListenerQueryCount.Process(SourceMessage: TLccMessage);
@@ -947,21 +918,15 @@ end;
 { TLccTaskManagementNoOp }
 
 procedure TLccTaskManagementNoOp.Start(ATimeout: Integer);
-var
-  Alias: Word;
 begin
   inherited Start(ATimeout);
 
-  Alias := AliasServer.FindAlias(Target);
-  if Alias <> 0 then
-  begin
-    WorkerMessage.LoadTractionManage(OwnerNode.NodeID, OwnerNode.AliasID, Target, Alias, False);
-    OwnerNode.SendMessage(WorkerMessage, OwnerNode);
-    Complete;
-    if Assigned(Callback) then
-      Callback(Self);
-    Reset;
-  end;
+  WorkerMessage.LoadTractionManage(OwnerNode.NodeID, OwnerNode.AliasID, Target, AliasServer.FindAlias(Target), False);
+  OwnerNode.SendMessage(WorkerMessage, OwnerNode);
+  Complete;
+  if Assigned(Callback) then
+    Callback(Self);
+  Reset;
 end;
 
 procedure TLccTaskManagementNoOp.Process(SourceMessage: TLccMessage);
@@ -982,18 +947,13 @@ end;
 
 procedure TLccTaskListenerDetach.Start(ATimeout: Integer);
 var
-  Alias: Word;
   Flags: Byte;
 begin
   inherited Start(ATimeout);
 
-  Alias := AliasServer.FindAlias(Target);
-  if Alias <> 0 then
-  begin
-    Flags := 0;
-    WorkerMessage.LoadTractionListenerDetach(OwnerNode.NodeID, OwnerNode.AliasID, Target, Alias, Flags, Listener);
-    OwnerNode.SendMessage(WorkerMessage, OwnerNode);
-  end;
+  Flags := 0;
+  WorkerMessage.LoadTractionListenerDetach(OwnerNode.NodeID, OwnerNode.AliasID, Target, AliasServer.FindAlias(Target), Flags, Listener);
+  OwnerNode.SendMessage(WorkerMessage, OwnerNode);
 end;
 
 procedure TLccTaskListenerDetach.Process(SourceMessage: TLccMessage);
@@ -1014,17 +974,11 @@ end;
 { TLccTaskListenerQueryAtIndex }
 
 procedure TLccTaskListenerQueryAtIndex.Start(ATimeout: Integer);
-var
-  Alias: Word;
 begin
   inherited Start(ATimeout);
 
-  Alias := AliasServer.FindAlias(Target);
-  if Alias <> 0 then
-  begin
-    WorkerMessage.LoadTractionListenerQuery(OwnerNode.NodeID, OwnerNode.AliasID, Target, Alias, QueryIndex);
-    OwnerNode.SendMessage(WorkerMessage, OwnerNode);
-  end;
+  WorkerMessage.LoadTractionListenerQuery(OwnerNode.NodeID, OwnerNode.AliasID, Target, AliasServer.FindAlias(Target), QueryIndex);
+  OwnerNode.SendMessage(WorkerMessage, OwnerNode);
 end;
 
 procedure TLccTaskListenerQueryAtIndex.Process(SourceMessage: TLccMessage);
@@ -1052,17 +1006,11 @@ end;
 { TLccTaskManagementReserveTrain }
 
 procedure TLccTaskManagementReserveTrain.Start(ATimeout: Integer);
-var
-  Alias: Word;
 begin
   inherited Start(ATimeout);
 
-  Alias := AliasServer.FindAlias(Target);
-  if Alias <> 0 then
-  begin
-    WorkerMessage.LoadTractionManage(OwnerNode.NodeID, OwnerNode.AliasID, Target, Alias, True);
-    OwnerNode.SendMessage(WorkerMessage, OwnerNode);
-  end;
+  WorkerMessage.LoadTractionManage(OwnerNode.NodeID, OwnerNode.AliasID, Target, AliasServer.FindAlias(Target), True);
+  OwnerNode.SendMessage(WorkerMessage, OwnerNode);
 end;
 
 procedure TLccTaskManagementReserveTrain.Process(SourceMessage: TLccMessage);
@@ -1091,17 +1039,11 @@ end;
 { TLccTaskQuerySpeed }
 
 procedure TLccTaskQuerySpeed.Start(ATimeout: Integer);
-var
-  Alias: Word;
 begin
   inherited Start(ATimeout);
 
-  Alias := AliasServer.FindAlias(Target);
-  if Alias <> 0 then
-  begin
-    WorkerMessage.LoadTractionQuerySpeed(OwnerNode.NodeID, OwnerNode.AliasID, Target, Alias);
-    OwnerNode.SendMessage(WorkerMessage, OwnerNode);
-  end;
+  WorkerMessage.LoadTractionQuerySpeed(OwnerNode.NodeID, OwnerNode.AliasID, Target, AliasServer.FindAlias(Target));
+  OwnerNode.SendMessage(WorkerMessage, OwnerNode);
 end;
 
 procedure TLccTaskQuerySpeed.Process(SourceMessage: TLccMessage);
@@ -1123,18 +1065,13 @@ end;
 
 procedure TLccTaskListenerAttach.Start(ATimeout: Integer);
 var
-  Alias: Word;
   Flags: Byte;
 begin
   inherited Start(ATimeout);
 
-  Alias := AliasServer.FindAlias(Target);
-  if Alias <> 0 then
-  begin
-    Flags := WorkerMessage.TractionEncodeListenerFlags(ReverseDir, LinkF0, FLinkFn, Hidden);
-    WorkerMessage.LoadTractionListenerAttach(OwnerNode.NodeID, OwnerNode.AliasID, Target, Alias, Flags, Listener);
-    OwnerNode.SendMessage(WorkerMessage, OwnerNode);
-  end;
+  Flags := WorkerMessage.TractionEncodeListenerFlags(ReverseDir, LinkF0, FLinkFn, Hidden);
+  WorkerMessage.LoadTractionListenerAttach(OwnerNode.NodeID, OwnerNode.AliasID, Target, AliasServer.FindAlias(Target), Flags, Listener);
+  OwnerNode.SendMessage(WorkerMessage, OwnerNode);
 end;
 
 procedure TLccTaskListenerAttach.Process(SourceMessage: TLccMessage);
@@ -1155,17 +1092,11 @@ end;
 { TLccTaskQueryFunction }
 
 procedure TLccTaskQueryFunction.Start(ATimeout: Integer);
-var
-  Alias: Word;
 begin
   inherited Start(ATimeout);
 
-  Alias := AliasServer.FindAlias(Target);
-  if Alias <> 0 then
-  begin
-    WorkerMessage.LoadTractionQueryFunction(OwnerNode.NodeID, OwnerNode.AliasID, Target, Alias, Address);
-    OwnerNode.SendMessage(WorkerMessage, OwnerNode);
-  end;
+  WorkerMessage.LoadTractionQueryFunction(OwnerNode.NodeID, OwnerNode.AliasID, Target, AliasServer.FindAlias(Target), Address);
+  OwnerNode.SendMessage(WorkerMessage, OwnerNode);
 end;
 
 procedure TLccTaskQueryFunction.Process(SourceMessage: TLccMessage);
@@ -1192,19 +1123,12 @@ var
 begin
   inherited Start(ATimeout);
 
-  Alias := AliasServer.FindAlias(Target);
-  if Alias <> 0 then
-  begin
-    WorkerMessage.LoadTractionControllerQuery(OwnerNode.NodeID, OwnerNode.AliasID, Target, Alias);
-    OwnerNode.SendMessage(WorkerMessage, OwnerNode);  // There is no reply from this
-    Complete;
-    if Assigned(Callback) then
-      Callback(Self);
-    Reset;
-  end else
-  begin
-    Error(1, 'Unable to resolve an Alias');
-  end;
+  WorkerMessage.LoadTractionControllerQuery(OwnerNode.NodeID, OwnerNode.AliasID, Target, AliasServer.FindAlias(Target));
+  OwnerNode.SendMessage(WorkerMessage, OwnerNode);  // There is no reply from this
+  Complete;
+  if Assigned(Callback) then
+    Callback(Self);
+  Reset;
 end;
 
 procedure TLccTaskControllerQuery.Process(SourceMessage: TLccMessage);
@@ -1225,40 +1149,25 @@ end;
 { TLccTaskControllerRelease }
 
 procedure TLccTaskControllerRelease.Start(ATimeout: Integer);
-var
-  Alias: Word;
 begin
   inherited Start(ATimeout);
 
-  Alias := AliasServer.FindAlias(Target);
-  if Alias <> 0 then
-  begin
-    WorkerMessage.LoadTractionControllerRelease(OwnerNode.NodeID, OwnerNode.AliasID, Target, Alias, ControllerNode);
-    OwnerNode.SendMessage(WorkerMessage, OwnerNode);  // There is no reply from this
-    Complete;
-    if Assigned(Callback) then
-      Callback(Self);
-    Reset;
-  end else
-  begin
-    Error(1, 'Unable to resolve an Alias');
-  end;
+  WorkerMessage.LoadTractionControllerRelease(OwnerNode.NodeID, OwnerNode.AliasID, Target, AliasServer.FindAlias(Target), ControllerNode);
+  OwnerNode.SendMessage(WorkerMessage, OwnerNode);  // There is no reply from this
+  Complete;
+  if Assigned(Callback) then
+    Callback(Self);
+  Reset;
 end;
 
 { TLccTaskControllerAttach }
 
 procedure TLccTaskControllerAttach.Start(ATimeout: Integer);
-var
-  Alias: Word;
 begin
   inherited Start(ATimeout);
 
-  Alias := AliasServer.FindAlias(Target);
-  if Alias <> 0 then
-  begin
-    WorkerMessage.LoadTractionControllerAssign(OwnerNode.NodeID, OwnerNode.AliasID, Target, Alias, OwnerNode.NodeID);
-    OwnerNode.SendMessage(WorkerMessage, OwnerNode);
-  end;
+  WorkerMessage.LoadTractionControllerAssign(OwnerNode.NodeID, OwnerNode.AliasID, Target, AliasServer.FindAlias(Target), OwnerNode.NodeID);
+  OwnerNode.SendMessage(WorkerMessage, OwnerNode);
 end;
 
 procedure TLccTaskControllerAttach.Process(SourceMessage: TLccMessage);

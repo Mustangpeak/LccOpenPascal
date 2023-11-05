@@ -592,17 +592,11 @@ begin
 end;
 
 procedure TTaskReadPIP.Start(ATimeout: Integer);
-var
-  Alias: Word;
 begin
   inherited Start(ATimeout);
 
-  Alias := AliasServer.FindAlias(Target);
-  if Alias <> 0 then
-  begin
-    WorkerMessage.LoadProtocolIdentifyInquiry(OwnerNode.NodeID, OwnerNode.AliasID, Target, Alias);
-    OwnerNode.SendMessage(WorkerMessage, OwnerNode);
-  end;
+  WorkerMessage.LoadProtocolIdentifyInquiry(OwnerNode.NodeID, OwnerNode.AliasID, Target, AliasServer.FindAlias(Target));
+  OwnerNode.SendMessage(WorkerMessage, OwnerNode);
 end;
 
 procedure TTaskReadPIP.Process(SourceMessage: TLccMessage);
@@ -632,17 +626,11 @@ begin
 end;
 
 procedure TTaskReadSNIP.Start(ATimeout: Integer);
-var
-  Alias: Word;
 begin
   inherited Start(ATimeout);
 
-  Alias := AliasServer.FindAlias(Target);
-  if Alias <> 0 then
-  begin
-    WorkerMessage.LoadSimpleNodeIdentInfoRequest(OwnerNode.NodeID, OwnerNode.AliasID, Target, Alias);
-    OwnerNode.SendMessage(WorkerMessage, OwnerNode);
-  end;
+  WorkerMessage.LoadSimpleNodeIdentInfoRequest(OwnerNode.NodeID, OwnerNode.AliasID, Target, AliasServer.FindAlias(Target));
+  OwnerNode.SendMessage(WorkerMessage, OwnerNode);
 end;
 
 procedure TTaskReadSNIP.Process(SourceMessage: TLccMessage);
