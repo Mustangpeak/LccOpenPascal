@@ -750,7 +750,7 @@ begin
           LocalTrain.PIP.LoadFromLccMessage(SourceMessage);
           if LocalTrain.PIP.SimpleNodeInfo then
           begin
-            WorkerMessage.LoadSimpleNodeIdentInfoRequest(OwnerNode.NodeID, OwnerNode.AliasID, Target, AliasServer.FindAlias(LocalTrain.NodeID));
+            WorkerMessage.LoadSimpleNodeIdentInfoRequest(OwnerNode.NodeID, OwnerNode.AliasID, LocalTrain.NodeID, AliasServer.FindAlias(LocalTrain.NodeID));
             OwnerNode.SendMessage(WorkerMessage, OwnerNode);
           end else
           if LocalTrain.PIP.AbbreviatedConfigurationDefinitionInfo then
