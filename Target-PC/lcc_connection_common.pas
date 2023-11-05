@@ -719,7 +719,7 @@ begin
       for iMessage := 0 to MessageList.Count - 1 do
       begin
         if TLccMessage( MessageList[iMessage]).ConvertToLccTcp(DynamicByteArray) then
-          AStream.Write(DynamicByteArray, Length(DynamicByteArray));
+          AStream.Write(DynamicByteArray[0], Length(DynamicByteArray));
       end;
     end;
   finally
