@@ -318,7 +318,6 @@ end;
 procedure TFormTrainCommander.OnServerManagerReceiveMessage(Sender: TObject;
   ALccMessage: TLccMessage);
 var
-  ByteArray: TLccDynamicByteArray;
   Preamble: String;
   ConnectionThread: TLccConnectionThread;
   ConnectionManager: TLccConnectionThreadManager;
@@ -341,18 +340,10 @@ begin
 
     MemoLog.Lines.BeginUpdate;
     try
-      if EmulateCANBus then
-      begin
-        if CheckBoxDetailedLog.Checked then
-          MemoLog.Lines.Add(Preamble + MessageToDetailedMessage(ALccMessage))
-        else
-          MemoLog.Lines.Add(Preamble + ALccMessage.ConvertToGridConnectStr('', False));
-      end else
-      begin
-        ByteArray := nil;
-        ALccMessage.ConvertToLccTcp(ByteArray);
-        MemoLog.Lines.Add(Preamble + ALccMessage.ConvertToLccTcpString(ByteArray));
-      end;
+      if CheckBoxDetailedLog.Checked then
+        MemoLog.Lines.Add(Preamble + MessageToDetailedMessageStr(ALccMessage, EmulateCANBus))
+      else
+        MemoLog.Lines.Add(Preamble + MessageToMessageStr(ALccMessage, EmulateCANBus));
     finally
       if MemoLog.Lines.Count > MAX_LOGGING_LINES then
         MemoLog.Lines.Delete(0);
@@ -382,24 +373,19 @@ end;
 
 procedure TFormTrainCommander.OnServerManagerSendMessage(Sender: TObject; ALccMessage: TLccMessage);
 var
-  ByteArray: TLccDynamicByteArray;
+  Preamble: String;
 begin
   if CheckBoxLogMessages.Checked then
   begin
     MemoLog.Lines.BeginUpdate;
     try
+      Preamble := '';
       if EmulateCANBus then
-      begin
-        if CheckBoxDetailedLog.Checked then
-          MemoLog.Lines.Add('TCP: S: ' + MessageToDetailedMessage(ALccMessage))
-        else
-          MemoLog.Lines.Add('TCP: S: ' + ALccMessage.ConvertToGridConnectStr('', False));
-      end else
-      begin
-        ByteArray := nil;
-        ALccMessage.ConvertToLccTcp(ByteArray);
-        MemoLog.Lines.Add('TCP: S: ' + ALccMessage.ConvertToLccTcpString(ByteArray));
-      end;
+        Preamble := 'TCP:';
+      if CheckBoxDetailedLog.Checked then
+        MemoLog.Lines.Add(Preamble + 'S: ' + MessageToDetailedMessageStr(ALccMessage, EmulateCANBus))
+      else
+        MemoLog.Lines.Add(Preamble + 'S: ' + MessageToMessageStr(ALccMessage, EmulateCANBus))
     finally
       if MemoLog.Lines.Count > MAX_LOGGING_LINES then
         MemoLog.Lines.Delete(0);

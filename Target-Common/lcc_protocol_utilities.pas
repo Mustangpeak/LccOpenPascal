@@ -534,7 +534,7 @@ function TProtocolSupportedProtocols.EncodeFlags: TLccSupportedProtocolArray;
 var
   i: Integer;
 begin
-  for i := 0 to MAX_SUPPORTEDPROTOCOL_LEN - 1 do
+  for i := 0 to LEN_SUPPORTEDPROTOCOL_MAX - 1 do
     Result[i] := 0;
 
   if SimpleNode then Result[5] := Result[5] or PIP_SIMPLENODE;

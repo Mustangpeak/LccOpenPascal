@@ -51,11 +51,11 @@ const
 
 const
   LCC_BYTE_COUNT            = 1024;       // This is longest data structure defined in Lcc
-  MAX_DATAGRAM_LENGTH       = 72;
-  MAX_EVENT_LEN             = 8;
-  MAX_NODEID_LEN            = 6;
-  MAX_MULTIFRAME_LEN        = 12;
-  MAX_SUPPORTEDPROTOCOL_LEN = 6;
+  LEN_DATAGRAM_MAX       = 72;
+  LEN_EVENT_MAX             = 8;
+  LEN_NODEID_MAX            = 6;
+  LEN_MULTIFRAME_MAX        = 12;
+  LEN_SUPPORTEDPROTOCOL_MAX = 6;
 
   {$IFDEF LCC_DELPHI}    // Must be Delphi
   type
@@ -83,7 +83,7 @@ type
 
 type
   TLccByteArray = array[0..LCC_BYTE_COUNT-1] of Byte;
-  TLccSupportedProtocolArray = array[0..MAX_SUPPORTEDPROTOCOL_LEN] of Byte;
+  TLccSupportedProtocolArray = array[0..LEN_SUPPORTEDPROTOCOL_MAX] of Byte;
 
   TNodeID = array[0..1] of DWord;
   {$IFNDEF WEB_APP}
@@ -97,16 +97,16 @@ type
   {$ENDIF}
 
 type
-  TDatagramArray = array[0..MAX_DATAGRAM_LENGTH-1] of Byte;
+  TDatagramArray = array[0..LEN_DATAGRAM_MAX-1] of Byte;
 
-  TEventID = array[0..MAX_EVENT_LEN-1] of Byte;
+  TEventID = array[0..LEN_EVENT_MAX-1] of Byte;
   {$IFNDEF WEB_APP}
   PEventID = ^TEventID;
   {$ENDIF}
 
   THexArray = TEventID;
 
-  TMultiFrameArray = array[0..MAX_MULTIFRAME_LEN-1] of Byte;
+  TMultiFrameArray = array[0..LEN_MULTIFRAME_MAX-1] of Byte;
 
   TLccAliasMappingRec = record
     NodeID: TNodeID;
@@ -645,14 +645,18 @@ var
     // Rest are reserved
 
   const
-    MAX_LCC_TCP_MESSAGE_DATA = 253;
-    MAX_LCC_TCP_MESSAGE_PREAMBLE = 14;      // 2 - MTI, 6 - Source ID, 6 - Dest ID
-    MIN_LCC_TCP_MESSAGE_PREAMBLE = 8;       // 2 - MTI, 6 - Source ID
-    MAX_HEADER_ONLY_LEN = 17;
-    MAX_HEADER_CONTRIBUTION_TO_SIZE_FIELD_LEN = 12;
+    LEN_LCC_TCP_MESSAGE_DATA_MAX = 253;
+    LEN_LCC_TCP_MESSAGE_PREAMBLE_MAX = 14;      // 2 - MTI, 6 - Source ID, 6 - Dest ID
+    LEN_LCC_TCP_MESSAGE_PREAMBLE_MIN = 8;       // 2 - MTI, 6 - Source ID
+    LEN_TCP_HEADER_MAX = 17;                    // Single Header... may contain nested headers  2 - Flags; 3 - Length of message; 6 - Source NodeID; 6 - Capture Time
+    OFFSET_HEADER_TCP_FLAGS = 0;
+    OFFSET_HEADER_TCP_MESSAGE_LENGTH = 2;
+    OFFSET_HEADER_TCP_SOURCEID = 5;
+    OFFSET_HEADER_TCP_CAPTURETIME = 11;
+    LEN_HEADER_CONTRIBUTION_TO_SIZE_FIELD_MAX = 12;
 
-    MAX_LCC_TCP_FRAME_LEN = MAX_LCC_TCP_MESSAGE_DATA + MAX_LCC_TCP_MESSAGE_PREAMBLE;    // Max frame sizse for a TCP message with Header and all included
-    MAX_TCP_MESSAGE_ONLY_LEN = MAX_LCC_TCP_FRAME_LEN - MAX_HEADER_ONLY_LEN;               // Max frame size for just the Lcc Message itself
+    LEN_LCC_TCP_FRAME_MAX = LEN_LCC_TCP_MESSAGE_DATA_MAX + LEN_LCC_TCP_MESSAGE_PREAMBLE_MAX;    // Max frame sizse for a TCP message with Header and all included
+    LEN_TCP_MESSAGE_ONLY_MAX = LEN_LCC_TCP_FRAME_MAX - LEN_TCP_HEADER_MAX;         // Max frame size for just the Lcc Message itself
 
 var
   {$IFDEF PYTHON_SCRIPT_COMPATIBLE}

@@ -96,7 +96,7 @@ public
   property CAN_FramingBits: Byte read FCAN_FramingBits write FCAN_FramingBits;
   property DestAlias: Word read FDestAlias write FDestAlias;
   property DestID: TNodeID read FDestID write FDestID;
-  property DataArray: TLccByteArray read FDataArray write FDataArray;
+  property DataArray: TLccByteArray read FDataArray write FDataArray;   // If Tcp also contains the Tcp Header and Message
   property DataArrayIndexer[iIndex: DWord]: Byte read GetDataArrayIndexer write SetDataArrayIndexer;
   property DataCount: Integer read FDataCount write FDataCount;
   property HasDestination: Boolean read GetHasDestination;
@@ -137,11 +137,11 @@ public
   function ValidateByAlias(RequestMappingCallback: TLccMessageRequestMappingCallback; AnAlias: Word): TLccAliasMapping;
 
   function LoadByGridConnectStr(GridConnectStr: String): Boolean;
-  function LoadByLccTcp(var ByteArray: TLccDynamicByteArray): Boolean;
-  function ConvertToGridConnectStr(Delimiter: String; Details: Boolean): String;
+  function LoadByLccTcp(ByteArray: TLccDynamicByteArray): Boolean;
+  function ConvertToGridConnectStr(Delimiter: String): String;
   function ConvertToLccTcp(var ByteArray: TLccDynamicByteArray): Boolean;
   procedure CopyToTarget(TargetMessage: TLccMessage);
-  class function ConvertToLccTcpString(var ByteArray: TLccDynamicByteArray): String;
+  function ConvertToLccTcpStr(ByteArray: TLccDynamicByteArray): String;
   procedure ZeroFields;
 
   // CAN
@@ -272,7 +272,8 @@ class  function TractionSearchEncodeNMRA(ForceLongAddress: Boolean; SpeedStep: T
 end;
 
 
-function MessageToDetailedMessage(AMessage: TLccMessage): String;
+function MessageToDetailedMessageStr(AMessage: TLccMessage; GridConnectFormat: Boolean): String;
+function MessageToMessageStr(AMessage: TLccMessage; GridConnectFormat: Boolean): String;
 
 var
   LccMessagesAllocated: Integer = 0;
@@ -430,19 +431,16 @@ begin
 end;
 
 
-function MessageToDetailedMessage(AMessage: TLccMessage): String;
+function MessageToDetailedMessageStr(AMessage: TLccMessage; GridConnectFormat: Boolean): String;
 type
   PDWord = ^DWord;
 var
-  j, S_Len: Integer;
   f: single;
   Half: Word;
   AddressSpace: Word;
 begin
-  Result := AMessage.ConvertToGridConnectStr('', False);
-  S_Len := Length(Result);
-  for j := 0 to (28-S_Len) do
-    Result := Result + ' ' ;
+  Result := '';
+  Result := MessageToMessageStr(AMessage, GridConnectFormat);
 
   if AMessage.IsCAN then
   begin
@@ -460,10 +458,19 @@ begin
     Exit
   end;
 
-  if AMessage.HasDestination then
-    Result := Result + '0x' + IntToHex( AMessage.SourceAlias, 4) + ' -> ' + '0x' + IntToHex( AMessage.DestAlias, 4)
-  else
-    Result := Result + '0x' + IntToHex( AMessage.SourceAlias, 4);
+  if GridConnectFormat then
+  begin
+    if AMessage.HasDestination then
+      Result := Result + ' 0x' + IntToHex( AMessage.SourceAlias, 4) + ' -> ' + ' 0x' + IntToHex( AMessage.DestAlias, 4)
+    else
+      Result := Result + ' 0x' + IntToHex( AMessage.SourceAlias, 4);
+  end else
+  begin
+    if AMessage.HasDestination then
+      Result := Result + ' 0x' + NodeIDToString( AMessage.SourceID, True) + ' -> ' + '0x' + NodeIDToString( AMessage.DestID, True)
+    else
+      Result := Result + ' 0x' + NodeIDToString( AMessage.SourceID, True);
+  end;
 
   if AMessage.MTI = MTI_DATAGRAM_REJECTED_REPLY then
   begin
@@ -720,6 +727,25 @@ begin
     else
       Result := Result + 'Unknown Traction Reply Operation';
     end;
+  end;
+end;
+
+function MessageToMessageStr(AMessage: TLccMessage; GridConnectFormat: Boolean): String;
+var
+  S_Len, j: Integer;
+  Data: TLccDynamicByteArray;
+begin
+  if GridConnectFormat then
+  begin
+    Result := AMessage.ConvertToGridConnectStr('');
+    S_Len := Length(Result);
+    for j := 0 to (28-S_Len) do
+      Result := Result + ' ' ;
+  end
+  else begin
+    Data := nil;
+    AMessage.ConvertToLccTcp(Data);
+    Result := AMessage.ConvertToLccTcpStr(Data);
   end;
 end;
 
@@ -1075,7 +1101,7 @@ begin
   end;
 end;
 
-function TLccMessage.LoadByLccTcp(var ByteArray: TLccDynamicByteArray): Boolean;
+function TLccMessage.LoadByLccTcp(ByteArray: TLccDynamicByteArray): Boolean;
 var
   Flags: Word;
   Size, Offset: DWord;
@@ -1115,7 +1141,7 @@ begin
   end;
 end;
 
-function TLccMessage.ConvertToGridConnectStr(Delimiter: String; Details: Boolean): String;
+function TLccMessage.ConvertToGridConnectStr(Delimiter: String): String;
 //
 // NOTE:  For internal nodes the CAN Alias messages work as expected because the Source NodeID is already
 //        known.  For new nodes on the network coming online the CID messages will have "000" for the 3 bytes
@@ -1290,9 +1316,9 @@ begin
     Result := False
   else begin
     if HasDestination then
-      SetLength(ByteArray, DataCount + MAX_HEADER_ONLY_LEN + MAX_LCC_TCP_MESSAGE_PREAMBLE)
+      SetLength(ByteArray, DataCount + LEN_TCP_HEADER_MAX + LEN_LCC_TCP_MESSAGE_PREAMBLE_MAX)
     else
-      SetLength(ByteArray, DataCount + MAX_HEADER_ONLY_LEN + MIN_LCC_TCP_MESSAGE_PREAMBLE);
+      SetLength(ByteArray, DataCount + LEN_TCP_HEADER_MAX + LEN_LCC_TCP_MESSAGE_PREAMBLE_MIN);
     Size := Length(ByteArray) - 5;
 
     Flags := OPSTACK_TCP_FLAG_LCC_MESSAGE;
@@ -1351,23 +1377,20 @@ begin
   end
 end;
 
-class function TLccMessage.ConvertToLccTcpString(var ByteArray: TLccDynamicByteArray): String;
-const
-  LF = #13#10;
+function TLccMessage.ConvertToLccTcpStr(ByteArray: TLccDynamicByteArray): String;
 var
   i: Integer;
 begin
   Result := '';
   if Length(ByteArray) > 0 then
   begin
-    Result := '';
-    Result := Result + LF + 'TCP Header: ';
-    for i := 0 to MAX_HEADER_ONLY_LEN - 1 do
+    Result := '[ [';
+    for i := 0 to LEN_TCP_HEADER_MAX - 1 do
       Result := Result + ' ' + IntToHex(ByteArray[i], 2);
-
-    Result := Result + LF + 'TCP Message: ';
-    for i := MAX_HEADER_ONLY_LEN to Length(ByteArray) - 1 do
+    Result := Result + ' ]' ;
+    for i := LEN_TCP_HEADER_MAX to Length(ByteArray) - 1 do
       Result := Result + ' ' + IntToHex(ByteArray[i], 2);
+    Result := Result + ' ]'
   end;
 end;
 
@@ -1620,7 +1643,6 @@ begin
   FDataArray[2] := _Hi(AnMTI);
   FDataArray[3] := _Lo(AnMTI);
 end;
-
 
 procedure TLccMessage.LoadPCER(ASourceID: TNodeID; ASourceAlias: Word; AnEvent: TEventID);
 begin

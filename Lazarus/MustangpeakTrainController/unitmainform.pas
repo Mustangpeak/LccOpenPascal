@@ -800,19 +800,12 @@ begin
   begin
     MemoLog.Lines.BeginUpdate;
     try
-      if EmulateCanBus then
-      begin
-        if ToggleBoxLogDetailed.Checked then
-          MemoLog.Lines.Add('R: ' + MessageToDetailedMessage(ALccMessage))
-        else
-          MemoLog.Lines.Add('R: ' + ALccMessage.ConvertToGridConnectStr('', False));
-      end else
-      begin
-        ALccMessage.ConvertToLccTcp(ByteArray);
-        MemoLog.Lines.Add('R: ' + ALccMessage.ConvertToLccTcpString(ByteArray));
-      end;
+      if ToggleBoxLogDetailed.Checked then
+        MemoLog.Lines.Add('R: ' + MessageToDetailedMessageStr(ALccMessage, EmulateCanBus))
+      else
+        MemoLog.Lines.Add('R: ' + MessageToMessageStr(ALccMessage, EmulateCanBus));
 
-      MemoLog.SelStart := Length(MemoLog.Lines.Text);
+        MemoLog.SelStart := Length(MemoLog.Lines.Text);
 
       if MemoLog.Lines.Count > 100 then
         MemoLog.Lines.Delete(0);
@@ -831,17 +824,11 @@ procedure TFormTrainController.OnConnectionManagerSendMessage(Sender: TObject; A
    begin
      MemoLog.Lines.BeginUpdate;
      try
-       if EmulateCanBus then
-       begin
-         if ToggleBoxLogDetailed.Checked then
-           MemoLog.Lines.Add('S: ' + MessageToDetailedMessage(ALccMessage))
-         else
-           MemoLog.Lines.Add('S: ' + ALccMessage.ConvertToGridConnectStr('', False));
-       end else
-       begin
-         ALccMessage.ConvertToLccTcp(ByteArray);
-         MemoLog.Lines.Add('S: ' + ALccMessage.ConvertToLccTcpString(ByteArray));
-       end;
+       if ToggleBoxLogDetailed.Checked then
+         MemoLog.Lines.Add('S: ' + MessageToDetailedMessageStr(ALccMessage, EmulateCanBus))
+       else
+         MemoLog.Lines.Add('S: ' + MessageToMessageStr(ALccMessage, EmulateCanBus));
+
        MemoLog.SelStart := Length(MemoLog.Lines.Text);
 
        if MemoLog.Lines.Count > 100 then

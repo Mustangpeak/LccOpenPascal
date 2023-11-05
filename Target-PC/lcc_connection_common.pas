@@ -709,7 +709,7 @@ begin
     begin
       for iMessage := 0 to MessageList.Count - 1 do
       begin
-        GridConnectStr := TLccMessage( MessageList[iMessage]).ConvertToGridConnectStr(#10, False) + #10;
+        GridConnectStr := TLccMessage( MessageList[iMessage]).ConvertToGridConnectStr(#10) + #10;
         for iString := 1 to Length(GridConnectStr) do
           StreamWriteByte(AStream, Ord(GridConnectStr[iString]));
       end;

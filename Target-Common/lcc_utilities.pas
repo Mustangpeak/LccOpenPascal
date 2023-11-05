@@ -298,16 +298,16 @@ begin
   Result := '';
   if InsertDots then
   begin
-    for i := 0 to MAX_EVENT_LEN - 1 do
+    for i := 0 to LEN_EVENT_MAX - 1 do
     begin
-      if i < MAX_EVENT_LEN - 1 then
+      if i < LEN_EVENT_MAX - 1 then
         Result := Result + IntToHex(EventID[i], 2) + '.'
       else
         Result := Result + IntToHex(EventID[i], 2);
     end;
   end else
   begin
-    for i := 0 to MAX_EVENT_LEN - 1 do
+    for i := 0 to LEN_EVENT_MAX - 1 do
       Result := Result + IntToHex(EventID[i], 2);
   end;
 end;
@@ -319,17 +319,17 @@ begin
   Result := '';
   if InsertDots then
   begin
-    for i := MAX_NODEID_LEN - 1 downto 0 do
+    for i := LEN_NODEID_MAX - 1 downto 0 do
     begin
       if i > 0 then
       begin
-        if i < MAX_NODEID_LEN div 2 then
+        if i < LEN_NODEID_MAX div 2 then
           Result := Result + IntToHex(((NodeID[0] shr (i*8)) and $0000FF), 2) + '.'
         else
           Result := Result + IntToHex(((NodeID[1] shr ((i-3)*8)) and $0000FF), 2) + '.'
       end else
       begin
-         if i < MAX_NODEID_LEN div 2 then
+         if i < LEN_NODEID_MAX div 2 then
           Result := Result + IntToHex(((NodeID[0] shr (i*8)) and $0000FF), 2)
         else
           Result := Result + IntToHex(((NodeID[1] shr ((i-3)*8)) and $0000FF), 2)
@@ -341,9 +341,9 @@ begin
     Result := Result + IntToHex(NodeID[0], 6);
     Result := '0x' + Result
 
-   { for i := MAX_NODEID_LEN - 1 downto 0 do
+   { for i := LEN_NODEID_MAX - 1 downto 0 do
     begin
-      if i < MAX_NODEID_LEN div 2 then
+      if i < LEN_NODEID_MAX div 2 then
         Result := Result + IntToHex(((NodeID[0] shr (i*8)) and $0000FF), 2)
       else
         Result := Result + IntToHex(((NodeID[1] shr ((i-3)*8)) and $0000FF), 2)
@@ -420,7 +420,7 @@ begin
     {$ENDIF}
   end else
   begin
-    for i := 0 to MAX_EVENT_LEN - 1 do
+    for i := 0 to LEN_EVENT_MAX - 1 do
       Result[i] := 0
   end
 end;

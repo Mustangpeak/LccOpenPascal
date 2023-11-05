@@ -75,7 +75,7 @@ begin
   case TcpReceiveState of
     STATE_FLAGS_BYTE_1 :
       begin
-        SetLength(FDecodeTcpMessage, MAX_HEADER_ONLY_LEN);
+        SetLength(FDecodeTcpMessage, LEN_TCP_HEADER_MAX);
         DecodeTcpMessage[TcpReceiveState] := NextByte;
         Inc(FTcpReceiveState);
         Exit;
@@ -180,8 +180,8 @@ begin
           TcpReceiveState := STATE_FLAGS_BYTE_1  // More headers
         else begin
           MessageSize := (DecodeTcpMessage[2] shl 16) or (DecodeTcpMessage[3] shl 8) or DecodeTcpMessage[4];
-          MessageSize := MessageSize - MAX_HEADER_CONTRIBUTION_TO_SIZE_FIELD_LEN;
-          SetLength(FDecodeTcpMessage, MessageSize + MAX_HEADER_ONLY_LEN);
+          MessageSize := MessageSize - LEN_HEADER_CONTRIBUTION_TO_SIZE_FIELD_MAX;
+          SetLength(FDecodeTcpMessage, MessageSize + LEN_TCP_HEADER_MAX);
           iMessage := TcpReceiveState;
         end;
 

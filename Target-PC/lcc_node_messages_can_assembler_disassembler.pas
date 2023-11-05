@@ -81,13 +81,13 @@ implementation
 function TLccGridConnectMessageDisAssembler.OutgoingMsgToGridConnect(Msg: TLccMessage): String;
 begin
   // Unsure if there is anything special to do here yet
-  Result := Msg.ConvertToGridConnectStr(#10, False);
+  Result := Msg.ConvertToGridConnectStr(#10);
 end;
 
 procedure TLccGridConnectMessageDisAssembler.OutgoingMsgToMsgList(Msg: TLccMessage; MsgList: TStringList);
 begin
   if Assigned(MsgList) then
-    MsgList.Text := Msg.ConvertToGridConnectStr(#10, False);
+    MsgList.Text := Msg.ConvertToGridConnectStr(#10);
 end;
 
 { TLccGridConnectMessageAssembler }
