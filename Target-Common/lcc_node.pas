@@ -1761,7 +1761,7 @@ var
 begin
   // Note here that for ACDI overlays the ConfigMemory so the ConfigMemory Address
   // must be offset by 1 as the ACDI has byte 0 = the ACDI version number
-  Code := ProtocolMemoryAccess.DatagramReadRequest(SourceMessage, WorkerMessage, StreamConfig, 1);
+  Code := ProtocolMemoryAccess.DatagramReadRequest(SourceMessage, WorkerMessage, StreamConfig, False, 1);
   case Code of
      S_OK : QueueAndSendDatagramReplyToWaitForAck(SourceMessage, WorkerMessage);   // Source may not have memory to take the data, set it up to resend if needed
   else
@@ -1801,7 +1801,7 @@ var
 begin
   // Note here that for ACDI overlays the ConfigMemory so the ConfigMemory Address
   // must be offset by 1 as the ACDI has byte 0 = the ACDI version number
-  Code := ProtocolMemoryAccess.DatagramReadRequest(SourceMessage, WorkerMessage, StreamConfig);
+  Code := ProtocolMemoryAccess.DatagramReadRequest(SourceMessage, WorkerMessage, StreamConfig, False);
   case Code of
      S_OK : QueueAndSendDatagramReplyToWaitForAck(SourceMessage, WorkerMessage);   // Source may not have memory to take the data, set it up to resend if needed
   else
@@ -1813,7 +1813,7 @@ procedure TLccNode.HandleACDI_Manufacturer_MemorySpaceRead(var SourceMessage: TL
 var
   Code: Word;
 begin
-  Code := ProtocolMemoryAccess.DatagramReadRequest(SourceMessage, WorkerMessage, StreamManufacturerData);
+  Code := ProtocolMemoryAccess.DatagramReadRequest(SourceMessage, WorkerMessage, StreamManufacturerData, False);
   case Code of
      S_OK : QueueAndSendDatagramReplyToWaitForAck(SourceMessage, WorkerMessage);   // Source may not have memory to take the data, set it up to resend if needed
   else
@@ -1830,7 +1830,7 @@ procedure TLccNode.HandleCDI_MemorySpaceRead(var SourceMessage: TLccMessage);
 var
   Code: Word;
 begin
-  Code := ProtocolMemoryAccess.DatagramReadRequest(SourceMessage, WorkerMessage, StreamCdi);
+  Code := ProtocolMemoryAccess.DatagramReadRequest(SourceMessage, WorkerMessage, StreamCdi, False);
   case Code of
      S_OK : QueueAndSendDatagramReplyToWaitForAck(SourceMessage, WorkerMessage);   // Source may not have memory to take the data, set it up to resend if needed
   else
@@ -1894,7 +1894,7 @@ procedure TLccNode.HandleTractionFDI_ConfigurationMemorySpaceRead(var SourceMess
 var
   Code: Word;
 begin
-  Code := ProtocolMemoryAccess.DatagramReadRequest(SourceMessage, WorkerMessage, StreamTractionConfig);
+  Code := ProtocolMemoryAccess.DatagramReadRequest(SourceMessage, WorkerMessage, StreamTractionConfig, False);
   case Code of
      S_OK : QueueAndSendDatagramReplyToWaitForAck(SourceMessage, WorkerMessage);   // Source may not have memory to take the data, set it up to resend if needed
   else
@@ -1914,7 +1914,7 @@ procedure TLccNode.HandleTractionFDI_MemorySpaceRead(var SourceMessage: TLccMess
 var
   Code: Word;
 begin
-  Code := ProtocolMemoryAccess.DatagramReadRequest(SourceMessage, WorkerMessage, StreamTractionFdi);
+  Code := ProtocolMemoryAccess.DatagramReadRequest(SourceMessage, WorkerMessage, StreamTractionFdi, False);
   case Code of
      S_OK : QueueAndSendDatagramReplyToWaitForAck(SourceMessage, WorkerMessage);   // Source may not have memory to take the data, set it up to resend if needed
   else

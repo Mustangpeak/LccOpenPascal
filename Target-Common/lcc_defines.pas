@@ -95,7 +95,7 @@ type
   TNodeIDObj = class
   private
     FNodeID: TNodeID;
-  published
+  public
     property NodeID: TNodeID read FNodeID write FNodeID;
   end;
 

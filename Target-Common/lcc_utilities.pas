@@ -254,7 +254,7 @@ end;
 function EqualNode(NodeID1: TNodeID; Node1AliasID: Word; NodeID2: TNodeID; Node2AliasID: Word; NodeID_OR_Alias: Boolean): Boolean;
 begin
   if NodeID_OR_Alias then
-    Result := (NodeID1[0] = NodeID2[0]) and (NodeID1[1] = NodeID2[1]) or (Node1AliasID = Node2AliasID)
+    Result := ((NodeID1[0] = NodeID2[0]) and (NodeID1[1] = NodeID2[1])) or (Node1AliasID = Node2AliasID)
   else begin
     Assert((Node1AliasID = 0) and (Node2AliasID > 0), 'Node1 AliasID is zero and the other is valid, should not be possible with GridConnect all Aliases should be valid');
     Assert((Node1AliasID > 0) and (Node2AliasID = 0),  'Node2 AliasID is zero and the other is valid, should not be possible with GridConnect all Aliases should be valid');

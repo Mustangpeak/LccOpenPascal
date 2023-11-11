@@ -45,7 +45,7 @@ type
     constructor Create; virtual;
     destructor Destroy; override;
 
-    function DatagramReadRequest(LccMessage: TLccMessage; OutMessage: TLccMessage; AStream: TStream; {AutoGrow: Boolean;} MemOffset: Int64 = 0): Word; virtual;
+    function DatagramReadRequest(LccMessage: TLccMessage; OutMessage: TLccMessage; AStream: TStream; AutoGrow: Boolean; MemOffset: Int64 = 0): Word; virtual;
     function DatagramWriteRequest(LccMessage: TLccMessage; AStream: TStream; AutoGrow: Boolean; MemOffset: Int64 = 0): Word; virtual;
 
     procedure CopyTo(ANodeProtocol: TNodeProtocolBase); virtual;
@@ -409,13 +409,15 @@ begin
   inherited Destroy;
 end;
 
-function TNodeProtocolBase.DatagramReadRequest(LccMessage: TLccMessage; OutMessage: TLccMessage; AStream: TStream; {AutoGrow: Boolean;} MemOffset: Int64 = 0): Word;
+function TNodeProtocolBase.DatagramReadRequest(LccMessage: TLccMessage; OutMessage: TLccMessage; AStream: TStream; AutoGrow: Boolean; MemOffset: Int64 = 0): Word;
 //
 // Assumes the Source and Destination have already been set up
+// Autogrow is for thinks like Configuration Memory where the size may not be known (like in DCC CVs)  It forces the stream to grow to the memory offset that is passed...
+//   this could be dangerous...
 //
 var
   FirstDataByte, BytesToRead: Integer;
-  AddressStart: DWord;
+  AddressStart, OldStreamSize: DWord;
   B: Byte;
 begin
   // Assumption is this is a datagram message
@@ -459,7 +461,7 @@ begin
   end else
   begin
 
-  {  if AutoGrow then
+    if AutoGrow then
     begin
       if AStream.Size < Int64( AddressStart) + Int64( BytesToRead) then         // Grow the Address space
       begin
@@ -472,7 +474,7 @@ begin
           AStream.Write(B, SizeOf(B));
         end;
       end;
-    end; }
+    end;
 
     if AddressStart >= AStream.Size then
     begin

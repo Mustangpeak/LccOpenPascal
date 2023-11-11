@@ -373,7 +373,6 @@ type
     function IndexOf(ATrain: TTrainInfo): Integer;
     procedure Remove(ATrain: TTrainInfo; FreeTrain: Boolean);
     function Delete(Index: Integer; FreeTrain: Boolean): TTrainInfo;
-    function FindBySNIPUserName(AName: string): TTrainInfo;
     function FindByNodeID(ANodeID: TNodeID): TTrainInfo;
     function ActivateTrain(ANodeID: TNodeID): TTrainInfo;
 
@@ -683,23 +682,6 @@ begin
     begin
       Result := nil;
       Result.Free;
-    end;
-  end;
-end;
-
-function TLccTaskTrainRoster.FindBySNIPUserName(AName: string): TTrainInfo;
-var
-  i: Integer;
-  LocalTrainInfo: TTrainInfo;
-begin
-  Result := nil;
-  for i := 0 to RosterList.Count - 1 do
-  begin
-    LocalTrainInfo := TTrainInfo( RosterList[i]);
-    if LocalTrainInfo.SNIP.UserName = AName then
-    begin
-      Result := LocalTrainInfo;
-      Break;
     end;
   end;
 end;
