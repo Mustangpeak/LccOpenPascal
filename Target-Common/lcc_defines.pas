@@ -90,6 +90,15 @@ type
   PNodeID = ^TNodeID;
   {$ENDIF}
 
+  { TNodeIDObj }
+
+  TNodeIDObj = class
+  private
+    FNodeID: TNodeID;
+  published
+    property NodeID: TNodeID read FNodeID write FNodeID;
+  end;
+
   TFunctionStatesArray = array[0..28] of Word;
   TLccDynamicByteArray = array of Byte;
   {$IFNDEF WEB_APP}
