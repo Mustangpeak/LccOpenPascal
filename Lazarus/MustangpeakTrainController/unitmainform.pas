@@ -1023,7 +1023,7 @@ begin
     lesComplete :
       begin
         LocalTrainInfo := Controller.TrainRoster.FindByNodeID(TaskMemorySpaceAccess.Target);
-        TaskMemorySpaceAccess.CopyTo(LocalTrainInfo.CDI);
+        LocalTrainInfo.CDI := TaskMemorySpaceAccess.StreamAsString;
         LabelStatus.Caption := IntToStr(TaskMemorySpaceAccess.AddressCurrent) + ' of ' + IntToStr(TaskMemorySpaceAccess.AddressHi-TaskMemorySpaceAccess.AddressLo) + ' bytes';
       end;
     lesRunning :

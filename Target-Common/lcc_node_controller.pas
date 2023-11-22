@@ -67,7 +67,7 @@ type
 
   TTrainInfo = class
   private
-    FCDI: TLccTaskMemorySpaceAccess;
+    FCDI: String;
     FDefaultName: String;
     FNodeID: TNodeID;
     FPIP: TProtocolSupportedProtocols;
@@ -78,7 +78,7 @@ type
     property NodeID: TNodeID read FNodeID write FNodeID;
     property SNIP: TProtocolSimpleNodeInfo read FSNIP write FSNIP;
     property PIP: TProtocolSupportedProtocols read FPIP write FPIP;
-    property CDI: TLccTaskMemorySpaceAccess read FCDI write FCDI;
+    property CDI: String read FCDI write FCDI;
     property UserName: String read GetUserName;
 
     constructor Create(ADefaultName: String = ''); overload;
@@ -795,7 +795,6 @@ begin
   FDefaultName := ADefaultName;
   FSNIP := TProtocolSimpleNodeInfo.Create;
   FPIP := TProtocolSupportedProtocols.Create;
-  FCDI := TLccTaskMemorySpaceAccess.Create(nil);
 end;
 
 constructor TTrainInfo.Create(ANodeID: TNodeID; ADefaultName: String = '');
@@ -804,7 +803,6 @@ begin
   FDefaultName := ADefaultName;
   FSNIP := TProtocolSimpleNodeInfo.Create;
   FPIP := TProtocolSupportedProtocols.Create;
-  FCDI := TLccTaskMemorySpaceAccess.Create(nil);
   FNodeID := ANodeID;
 end;
 
@@ -812,7 +810,6 @@ destructor TTrainInfo.Destroy;
 begin
   FreeAndNil(FSNIP);
   FreeAndNil(FPIP);
-  FreeAndNil(FCDI);
   inherited Destroy;
 end;
 
