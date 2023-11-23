@@ -235,7 +235,6 @@ type
     procedure UpdateRosterHeaderScrolledLeft;
     procedure UpdateRosterHeaderScrolledRight;
     procedure LoadCDIUserInterface;
-    procedure ClearActiveTrain(SleepToSend_ms: Word);
 
   public
     property Controller: TLccTrainController read FController write FController;
@@ -282,7 +281,12 @@ end;
 procedure TFormTrainController.FormCloseQuery(Sender: TObject; var CanClose: Boolean);
 begin
   TimerMain.Enabled := False; // Stop trying to log in
-  ClearActiveTrain(500);
+
+  if Assigned(Controller) then
+    Controller.ListenerDetach(Controller.TrainRoster.ActiveTrain.NodeID, Controller.NodeID, nil);
+  Controller.TrainRoster.TrainDeActivate;
+  Sleep(500); // Allow Listener Detach message to be sent;
+
   ConnectionFactory.DestroyConnection(EthernetClient);
   EthernetClient := nil;
   NodeManager.ReleaseAliasAll;
@@ -360,7 +364,9 @@ begin
     if Assigned( Controller.TrainRoster.ActiveTrain) then
     begin
       Controller.ControllerRelease(Controller.TrainRoster.ActiveTrain.NodeID, Controller.NodeID);
-      Controller.TrainRoster.ActivateTrain(NULL_NODE_ID);
+      if Assigned(Controller.TrainRoster.ActiveTrain) then
+        Controller.ListenerDetach(Controller.TrainRoster.ActiveTrain.NodeID, Controller.NodeID, @CallbackListenerDetach);
+      Controller.TrainRoster.TrainDeActivate;
       ComboBoxTrainSelect.Caption := '';
     end;
 
@@ -908,9 +914,12 @@ begin
     lesComplete :
       begin
         if Assigned(Controller.TrainRoster.ActiveTrain) then
-          Controller.ListenerDetach(Controller.TrainRoster.ActiveTrain.NodeID, Controller.NodeID);
+        begin
+          Controller.ListenerDetach(Controller.TrainRoster.ActiveTrain.NodeID, Controller.NodeID, @CallbackListenerDetach);
+          Controller.TrainRoster.TrainDeactivate;
+        end;
 
-        LocalTrainInfo := Controller.TrainRoster.ActivateTrain(TaskControllerAttach.Target);
+        LocalTrainInfo := Controller.TrainRoster.TrainActivate(TaskControllerAttach.Target);
 
         if Assigned(Controller.TrainRoster.ActiveTrain) then
           Controller.ListenerAttach(LocalTrainInfo.NodeID, Controller.NodeID, False, False, False, True, @CallbackListenerAttach);
@@ -1232,19 +1241,6 @@ begin
       ATargetNode.Free;
     end;
   end;     }
-end;
-
-procedure TFormTrainController.ClearActiveTrain(SleepToSend_ms: Word);
-begin
-  if Assigned(Controller) then
-  begin
-    if Assigned(Controller.TrainRoster.ActiveTrain) then
-    begin
-      Controller.ListenerDetach(Controller.TrainRoster.ActiveTrain.NodeID, Controller.NodeID);
-      Controller.TrainRoster.DeactivateTrain;
-      Sleep(SleepToSend_ms);
-    end;
-  end;
 end;
 
 procedure TFormTrainController.SelectTrainFromComboBox;

@@ -378,8 +378,8 @@ type
     procedure Remove(ATrain: TTrainInfo; FreeTrain: Boolean);
     function Delete(Index: Integer; FreeTrain: Boolean): TTrainInfo;
     function FindByNodeID(ANodeID: TNodeID): TTrainInfo;
-    function ActivateTrain(ANodeID: TNodeID): TTrainInfo;
-    procedure DeactivateTrain;
+    function TrainActivate(ANodeID: TNodeID): TTrainInfo;
+    procedure TrainDeActivate;
 
     procedure Start(ATimeout: Integer); override;
     procedure Process(SourceMessage: TLccMessage); override;
@@ -503,7 +503,7 @@ type
 
     // Listener Methods
     function ListenerAttach(ATractionID, AListenerToAttach: TNodeID; ReverseDir, LinkF0, LinkFn, Hide: Boolean; ACallback: TOnTaskCallback): Boolean; // Callback -> TLccTaskListenerAttach
-    function ListenerDetach(ATractionID, AListenerToDetach: TNodeID): Boolean;                                     // Callback -> TLccTaskListenerDetach
+    function ListenerDetach(ATractionID, AListenerToDetach: TNodeID; ACallback: TOnTaskCallback): Boolean;                                     // Callback -> TLccTaskListenerDetach
     function ListenerQueryAtIndex(ATractionID: TNodeID; ListenerIndex: Byte; ACallback: TOnTaskCallback): Boolean; // Callback -> TLccTaskListenerQueryAtIndex
     function ListenerQueryCount(ATractionID: TNodeID; ACallback: TOnTaskCallback): Boolean;                        // Callback -> TLccTaskListenerQueryCount
 
@@ -672,7 +672,7 @@ begin
   RosterList.Remove(ATrain);
 
   if ATrain = ActiveTrain then
-    ActivateTrain(NULL_NODE_ID);
+    TrainDeActivate;
 
   if FreeTrain then
     ATrain.Free;
@@ -685,7 +685,7 @@ begin
   begin
     Result := TTrainInfo( RosterList[Index]);
     if Result = ActiveTrain then
-      ActivateTrain(NULL_NODE_ID);
+      TrainDeActivate;
 
     RosterList.Delete(Index);
 
@@ -716,13 +716,13 @@ begin
   end;
 end;
 
-function TLccTaskTrainRoster.ActivateTrain(ANodeID: TNodeID): TTrainInfo;
+function TLccTaskTrainRoster.TrainActivate(ANodeID: TNodeID): TTrainInfo;
 begin
   Result := FindByNodeID(ANodeID);
   FActiveTrain := Result;
 end;
 
-procedure TLccTaskTrainRoster.DeactivateTrain;
+procedure TLccTaskTrainRoster.TrainDeActivate;
 begin
   FActiveTrain := nil;
 end;
@@ -1450,6 +1450,9 @@ end;
 function TLccTrainController.ControllerAssign(ATractionID: TNodeID; ACallback: TOnTaskCallback): Boolean;
 begin
   Result := False;
+  if NullNodeID(ATractionID) then
+    Exit;
+
   if TaskControllerAttach.IsIdle then
   begin
     TaskControllerAttach.Callback := ACallback;
@@ -1462,6 +1465,9 @@ end;
 function TLccTrainController.ControllerRelease(ATractionID, AControllerID: TNodeID): Boolean;
 begin
   Result := False;
+  if NullNodeID(ATractionID) then
+    Exit;
+
   if TaskControllerRelease.IsIdle then
   begin
     TaskControllerRelease.Target := ATractionID;
@@ -1485,6 +1491,9 @@ end;
 function TLccTrainController.ListenerAttach(ATractionID, AListenerToAttach: TNodeID; ReverseDir, LinkF0, LinkFn, Hide: Boolean; ACallback: TOnTaskCallback): Boolean;
 begin
   Result := False;
+  if NullNodeID(ATractionID) or NullNodeID(AListenerToAttach) then
+    Exit;
+
   if TaskListenerAttach.IsIdle then
   begin
     TaskListenerAttach.ReverseDir := ReverseDir;
@@ -1499,9 +1508,12 @@ begin
   end;
 end;
 
-function TLccTrainController.ListenerDetach(ATractionID, AListenerToDetach: TNodeID): Boolean;
+function TLccTrainController.ListenerDetach(ATractionID, AListenerToDetach: TNodeID; ACallback: TOnTaskCallback): Boolean;
 begin
   Result := False;
+  if NullNodeID(ATractionID) or NullNodeID(AListenerToDetach) then
+    Exit;
+
   if TaskListenerDetach.IsIdle then
   begin
     TaskListenerDetach.Listener := AListenerToDetach;
@@ -1514,6 +1526,9 @@ end;
 function TLccTrainController.ListenerQueryAtIndex(ATractionID: TNodeID; ListenerIndex: Byte; ACallback: TOnTaskCallback): Boolean;
 begin
   Result := False;
+  if NullNodeID(ATractionID) then
+    Exit;
+
   if TaskListenerQueryAtIndex.IsIdle then
   begin
     TaskListenerQueryAtIndex.Target := ATractionID;
@@ -1538,6 +1553,9 @@ end;
 function TLccTrainController.ManagementReserveTrain(ATractionID: TNodeID; ACallback: TOnTaskCallback): Boolean;
 begin
   Result := False;
+  if NullNodeID(ATractionID) then
+    Exit;
+
   if TaskManagementReserveTrain.IsIdle then
   begin
     TaskManagementReserveTrain.Target := ATractionID;
@@ -1550,6 +1568,9 @@ end;
 function TLccTrainController.ManagementReleaseTrain(ATractionID: TNodeID): Boolean;
 begin
   Result := False;
+  if NullNodeID(ATractionID) then
+    Exit;
+
   if TaskManagementReleaseTrain.IsIdle then
   begin
     TaskManagementReleaseTrain.Target := ATractionID;
@@ -1561,6 +1582,9 @@ end;
 function TLccTrainController.ManagementNoOp(ATractionID: TNodeID; ACallback: TOnTaskCallback): Boolean;
 begin
   Result := False;
+  if NullNodeID(ATractionID) then
+    Exit;
+
   if TaskManagementNoOp.IsIdle then
   begin
     TaskManagementNoOp.Target := ATractionID;
@@ -1573,6 +1597,9 @@ end;
 function TLccTrainController.SetSpeedDir(ATractionID: TNodeID; Speed: single): Boolean;
 begin
   Result := False;
+  if NullNodeID(ATractionID) then
+    Exit;
+
   if TaskSetSpeedDir.IsIdle then
   begin
     TaskSetSpeedDir.Target := ATractionID;
@@ -1582,9 +1609,11 @@ begin
   end;
 end;
 
-function TLccTrainController.SetSpeedDir(ATractionID: TNodeID; Speed: single;
-  Forward: Boolean): Boolean;
+function TLccTrainController.SetSpeedDir(ATractionID: TNodeID; Speed: single; Forward: Boolean): Boolean;
 begin
+  if NullNodeID(ATractionID) then
+    Exit;
+
   if not Forward then Speed := -Speed;
   Result := SetSpeedDir(ATractionID, Speed);
 end;
@@ -1592,6 +1621,9 @@ end;
 function TLccTrainController.SetFunction(ATractionID: TNodeID; FunctionAddress: DWord; Value: Word): Boolean;
 begin
   Result := False;
+  if NullNodeID(ATractionID) then
+    Exit;
+
   if TaskSetFunctions[FunctionAddress].IsIdle then
   begin
     TaskSetFunctions[FunctionAddress].Address := FunctionAddress;
@@ -1605,6 +1637,9 @@ end;
 function TLccTrainController.EmergencyStop(ATractionID: TNodeID): Boolean;
 begin
   Result := False;
+
+  if NullNodeID(ATractionID) then
+    Exit;
   if TaskEmergencyStop.IsIdle then
   begin
     TaskEmergencyStop.Target := ATractionID;
@@ -1613,10 +1648,12 @@ begin
   end;
 end;
 
-function TLccTrainController.QuerySpeedDir(ATractionID: TNodeID;
-  ACallback: TOnTaskCallback): Boolean;
+function TLccTrainController.QuerySpeedDir(ATractionID: TNodeID; ACallback: TOnTaskCallback): Boolean;
 begin
   Result := False;
+  if NullNodeID(ATractionID) then
+    Exit;
+
   if TaskQuerySpeed.IsIdle then
   begin
     TaskQuerySpeed.Target := ATractionID;
@@ -1629,6 +1666,9 @@ end;
 function TLccTrainController.QueryFunction(ATractionID: TNodeID; FunctionAddress: DWord; ACallback: TOnTaskCallback): Boolean;
 begin
   Result := False;
+  if NullNodeID(ATractionID) then
+    Exit;
+
   if TaskQueryFunctions[FunctionAddress].IsIdle then
   begin
     TaskQueryFunctions[FunctionAddress].Address := FunctionAddress;
@@ -1642,6 +1682,9 @@ end;
 function TLccTrainController.QueryAttachedListeners(ATractionID: TNodeID; ACallback: TOnTaskCallback): Boolean;
 begin
   Result := False;
+  if NullNodeID(ATractionID) then
+    Exit;
+
   if TaskQueryAttachedListeners.IsIdle then
   begin
     TaskQueryAttachedListeners.Target := ATractionID;
