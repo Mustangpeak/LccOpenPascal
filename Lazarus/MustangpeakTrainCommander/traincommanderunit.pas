@@ -655,7 +655,7 @@ end;
 
 procedure TFormTrainCommander.FormCreate(Sender: TObject);
 begin
-  EmulateCANBus := False;
+  EmulateCANBus := True;
 
   {$IFDEF PYTHON_SCRIPT_COMPATIBLE}
   Caption := 'Train Commander [LccOpenPascal]' + ' PYTHON SCRIPT ENABLED';

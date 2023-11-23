@@ -224,12 +224,18 @@ type
     procedure CallbackTrainRosterNotify(ATask: TLccTaskBase);      // TLccTaskTrainRoster
 
     procedure CallbackQueryAttachedListeners(ATask: TLccTaskBase);  // TLccTaskQueryAttachedListeners
+    procedure CallbackListenerAttach(ATask: TLccTaskBAse);     // TLccListenerAttach
+    procedure CallbackListenerDetach(ATask: TLccTaskBAse);     // TLccListenerDetach
+
+    procedure CallbackSetSpeedListener(Traininfo: TTrainInfo; SetSpeed, ActualSpeed, CommandedSpeed: Single);
+    procedure CallbackSetFunctionListener(TrainInfo: TTrainInfo; FunctionAddress, FunctionValue: Word);
 
     procedure OnLEDClick(Sender: TObject);
     procedure UpdateRoster;
     procedure UpdateRosterHeaderScrolledLeft;
     procedure UpdateRosterHeaderScrolledRight;
     procedure LoadCDIUserInterface;
+    procedure ClearActiveTrain(SleepToSend_ms: Word);
 
   public
     property Controller: TLccTrainController read FController write FController;
@@ -253,7 +259,7 @@ implementation
 
 procedure TFormTrainController.FormCreate(Sender: TObject);
 begin
-  EmulateCanBus := False;
+  EmulateCanBus := True;
 
   NodeManager := TLccNodeManager.Create(nil);
   NodeManager.EmulateCanNetworkLogin := EmulateCanBus;
@@ -276,6 +282,7 @@ end;
 procedure TFormTrainController.FormCloseQuery(Sender: TObject; var CanClose: Boolean);
 begin
   TimerMain.Enabled := False; // Stop trying to log in
+  ClearActiveTrain(500);
   ConnectionFactory.DestroyConnection(EthernetClient);
   EthernetClient := nil;
   NodeManager.ReleaseAliasAll;
@@ -773,6 +780,8 @@ begin
           begin
             Controller := NodeManager.AddNodeByClass('', TLccTrainController, True, NULL_NODE_ID) as TLccTrainController;
             Controller.TrainRoster.Callback := @CallbackTrainRosterNotify;
+            Controller.OnSetFunctionListener := @CallbackSetFunctionListener;
+            Controller.OnSetSpeedListener := @CallbackSetSpeedListener;
           end;
         end;
       lcsDisconnecting :
@@ -898,10 +907,17 @@ begin
   case ATask.TaskState of
     lesComplete :
       begin
+        if Assigned(Controller.TrainRoster.ActiveTrain) then
+          Controller.ListenerDetach(Controller.TrainRoster.ActiveTrain.NodeID, Controller.NodeID);
+
+        LocalTrainInfo := Controller.TrainRoster.ActivateTrain(TaskControllerAttach.Target);
+
+        if Assigned(Controller.TrainRoster.ActiveTrain) then
+          Controller.ListenerAttach(LocalTrainInfo.NodeID, Controller.NodeID, False, False, False, True, @CallbackListenerAttach);
+
         // If not in the list then we beat the call IsTrain Event if the train needed to be created
         // (HIGHLY UNLIKELY) but if so create a LocalTrainInfo here for the Roster and the SNIP/PIP will be handled
         // in the Roster loop to fill it in
-        LocalTrainInfo := Controller.TrainRoster.ActivateTrain(TaskControllerAttach.Target);
         if not Assigned(LocalTrainInfo) then
           LocalTrainInfo := Controller.TrainRoster.Add( TTrainInfo.Create(TaskControllerAttach.Target, 'Loading..'));
 
@@ -1094,6 +1110,50 @@ begin
   end;
 end;
 
+procedure TFormTrainController.CallbackListenerAttach(ATask: TLccTaskBAse);
+var
+  TaskListenerAttach: TLccTaskListenerAttach;
+begin
+  case ATask.TaskState of
+    lesComplete :
+      begin
+        TaskListenerAttach := ATask as TLccTaskListenerAttach;
+
+      end;
+    lesAbort   : LabelStatus.Caption := 'Listener Attach: Abort';
+    lesTimeout : LabelStatus.Caption := 'Listener Attach: Timout';
+    lesError   : LabelStatus.Caption := 'Listener Attach: Error - Code: ' + IntToStr(ATask.ErrorCode) + ' ' + ATask.ErrorMessage;
+  end;
+end;
+
+procedure TFormTrainController.CallbackListenerDetach(ATask: TLccTaskBAse);
+var
+  TaskListenerAttach: TLccTaskListenerDetach;
+begin
+  case ATask.TaskState of
+    lesComplete :
+      begin
+        TaskListenerAttach := ATask as TLccTaskListenerDetach;
+
+      end;
+    lesAbort   : LabelStatus.Caption := 'Listener Detach: Abort';
+    lesTimeout : LabelStatus.Caption := 'Listener Detach: Timout';
+    lesError   : LabelStatus.Caption := 'Listener Detach: Error - Code: ' + IntToStr(ATask.ErrorCode) + ' ' + ATask.ErrorMessage;
+  end;
+end;
+
+procedure TFormTrainController.CallbackSetSpeedListener(Traininfo: TTrainInfo;
+  SetSpeed, ActualSpeed, CommandedSpeed: Single);
+begin
+
+end;
+
+procedure TFormTrainController.CallbackSetFunctionListener(
+  TrainInfo: TTrainInfo; FunctionAddress, FunctionValue: Word);
+begin
+
+end;
+
 procedure TFormTrainController.OnLEDClick(Sender: TObject);
 begin
   ShowMessage('Clicked: ' + IntToStr((Sender as TShape).Tag));
@@ -1172,6 +1232,19 @@ begin
       ATargetNode.Free;
     end;
   end;     }
+end;
+
+procedure TFormTrainController.ClearActiveTrain(SleepToSend_ms: Word);
+begin
+  if Assigned(Controller) then
+  begin
+    if Assigned(Controller.TrainRoster.ActiveTrain) then
+    begin
+      Controller.ListenerDetach(Controller.TrainRoster.ActiveTrain.NodeID, Controller.NodeID);
+      Controller.TrainRoster.DeactivateTrain;
+      Sleep(SleepToSend_ms);
+    end;
+  end;
 end;
 
 procedure TFormTrainController.SelectTrainFromComboBox;

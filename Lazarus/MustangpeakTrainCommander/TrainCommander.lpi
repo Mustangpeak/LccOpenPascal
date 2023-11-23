@@ -240,7 +240,7 @@ if TargetOS = &apos;linux&apos; then
     </Other>
   </CompilerOptions>
   <Debugging>
-    <Exceptions Count="6">
+    <Exceptions Count="7">
       <Item1>
         <Name Value="EAbort"/>
       </Item1>
@@ -263,6 +263,9 @@ if TargetOS = &apos;linux&apos; then
       <Item6>
         <Name Value="00000006EAbort"/>
       </Item6>
+      <Item7>
+        <Name Value="EInOutError"/>
+      </Item7>
     </Exceptions>
   </Debugging>
 </CONFIG>

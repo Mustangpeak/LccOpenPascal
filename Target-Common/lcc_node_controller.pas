@@ -62,6 +62,10 @@ type
 
   TLccTrainController = class;
   TLccTaskSearchTrain = class;
+  TTrainInfo = class;
+
+  TOnSetSpeedListener = procedure(Traininfo: TTrainInfo; SetSpeed, ActualSpeed, CommandedSpeed: Single) of object;
+  TOnSetFunctionListener = procedure(TrainInfo: TTrainInfo; FunctionAddress, FunctionValue: Word) of object;
 
   { TTrainInfo }
 
@@ -375,6 +379,7 @@ type
     function Delete(Index: Integer; FreeTrain: Boolean): TTrainInfo;
     function FindByNodeID(ANodeID: TNodeID): TTrainInfo;
     function ActivateTrain(ANodeID: TNodeID): TTrainInfo;
+    procedure DeactivateTrain;
 
     procedure Start(ATimeout: Integer); override;
     procedure Process(SourceMessage: TLccMessage); override;
@@ -431,6 +436,8 @@ type
 
   TLccTrainController = class(TLccNode)
   private
+    FOnSetFunctionListener: TOnSetFunctionListener;
+    FOnSetSpeedListener: TOnSetSpeedListener;
     FTaskControllerAttach: TLccTaskControllerAttach;
     FTaskControllerQuery: TLccTaskControllerQuery;
     FTaskControllerRelease: TLccTaskControllerRelease;
@@ -472,9 +479,13 @@ type
 
     function GetCdiFile: string; override;
     procedure BeforeLogin; override;
+    procedure HandleTractionSetSpeed(var SourceMessage: TLccMessage; ListenerForwarded: Boolean); override;
+    procedure HandleTractionSetFunction(var SourceMessage: TLccMessage; ListenerForwarded: Boolean); override;
 
   public
     property TrainRoster: TLccTaskTrainRoster read FTrainRoster;
+    property OnSetSpeedListener: TOnSetSpeedListener read FOnSetSpeedListener write FOnSetSpeedListener;
+    property OnSetFunctionListener: TOnSetFunctionListener read FOnSetFunctionListener write FOnSetFunctionListener;
 
     constructor Create(AOwner: TComponent; CdiXML: string); override;
     destructor Destroy; override;
@@ -709,6 +720,11 @@ function TLccTaskTrainRoster.ActivateTrain(ANodeID: TNodeID): TTrainInfo;
 begin
   Result := FindByNodeID(ANodeID);
   FActiveTrain := Result;
+end;
+
+procedure TLccTaskTrainRoster.DeactivateTrain;
+begin
+  FActiveTrain := nil;
 end;
 
 procedure TLccTaskTrainRoster.Start(ATimeout: Integer);
@@ -1266,6 +1282,32 @@ begin
   ProtocolMemoryOptions.WriteStream := False;
   ProtocolMemoryOptions.HighSpace := MSI_CDI;
   ProtocolMemoryOptions.LowSpace := MSI_TRACTION_FUNCTION_CONFIG;
+end;
+
+procedure TLccTrainController.HandleTractionSetSpeed(var SourceMessage: TLccMessage; ListenerForwarded: Boolean);
+var
+  TrainInfo: TTrainInfo;
+begin
+  // We can be a listener so we could get notified
+  if Assigned(OnSetSpeedListener) and ListenerForwarded then
+  begin
+    TrainInfo := TrainRoster.FindByNodeID(SourceMessage.SourceID);
+    if Assigned(TrainInfo) then
+      OnSetSpeedListener(TrainInfo,  HalfToFloat( SourceMessage.TractionExtractSetSpeed), HalfToFloat( SourceMessage.TractionExtractActualSpeed), HalfToFloat( SourceMessage.TractionExtractCommandedSpeed));
+  end;
+end;
+
+procedure TLccTrainController.HandleTractionSetFunction(var SourceMessage: TLccMessage; ListenerForwarded: Boolean);
+var
+  TrainInfo: TTrainInfo;
+begin
+  // We can be a listener so we could get notified
+  if Assigned(OnSetFunctionListener) and ListenerForwarded then
+  begin
+    TrainInfo := TrainRoster.FindByNodeID(SourceMessage.SourceID);
+    if Assigned(TrainInfo) then
+      OnSetFunctionListener(TrainInfo, SourceMessage.TractionExtractFunctionAddress, SourceMessage.TractionExtractFunctionValue);
+  end;
 end;
 
 

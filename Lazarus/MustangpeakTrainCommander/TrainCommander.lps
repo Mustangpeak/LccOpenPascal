@@ -19,8 +19,8 @@
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="TrainCommanderUnit"/>
         <IsVisibleTab Value="True"/>
-        <TopLine Value="325"/>
-        <CursorPos X="47" Y="351"/>
+        <TopLine Value="621"/>
+        <CursorPos X="24" Y="658"/>
         <UsageCount Value="245"/>
         <Loaded Value="True"/>
         <LoadedDesigner Value="True"/>
@@ -101,7 +101,7 @@
         <EditorIndex Value="3"/>
         <TopLine Value="26"/>
         <CursorPos X="53" Y="33"/>
-        <UsageCount Value="17"/>
+        <UsageCount Value="18"/>
         <Loaded Value="True"/>
       </Unit12>
       <Unit13>
@@ -223,9 +223,9 @@
         <Filename Value="../../Target-PC/HardwareConnection/TLazSerial/lazsynaser.pas"/>
         <UnitName Value="LazSynaSer"/>
         <EditorIndex Value="2"/>
-        <TopLine Value="2229"/>
-        <CursorPos Y="2255"/>
-        <UsageCount Value="11"/>
+        <TopLine Value="1082"/>
+        <CursorPos Y="1105"/>
+        <UsageCount Value="12"/>
         <Loaded Value="True"/>
       </Unit28>
       <Unit29>
@@ -242,123 +242,123 @@
     <JumpHistory Count="30" HistoryIndex="29">
       <Position1>
         <Filename Value="traincommanderunit.pas"/>
-        <Caret Line="342" TopLine="323"/>
+        <Caret Line="194" TopLine="167"/>
       </Position1>
       <Position2>
         <Filename Value="traincommanderunit.pas"/>
-        <Caret Line="189" TopLine="167"/>
+        <Caret Line="196" TopLine="167"/>
       </Position2>
       <Position3>
         <Filename Value="traincommanderunit.pas"/>
-        <Caret Line="190" TopLine="167"/>
+        <Caret Line="197" TopLine="167"/>
       </Position3>
       <Position4>
         <Filename Value="traincommanderunit.pas"/>
-        <Caret Line="193" TopLine="167"/>
+        <Caret Line="198" TopLine="167"/>
       </Position4>
       <Position5>
         <Filename Value="traincommanderunit.pas"/>
-        <Caret Line="194" TopLine="167"/>
+        <Caret Line="200" TopLine="167"/>
       </Position5>
       <Position6>
         <Filename Value="traincommanderunit.pas"/>
-        <Caret Line="203" Column="99" TopLine="179"/>
+        <Caret Line="201" TopLine="167"/>
       </Position6>
       <Position7>
         <Filename Value="traincommanderunit.pas"/>
-        <Caret Line="347" TopLine="325"/>
+        <Caret Line="203" TopLine="167"/>
       </Position7>
       <Position8>
         <Filename Value="traincommanderunit.pas"/>
-        <Caret Line="351" TopLine="325"/>
+        <Caret Line="204" TopLine="167"/>
       </Position8>
       <Position9>
         <Filename Value="traincommanderunit.pas"/>
-        <Caret Line="347" TopLine="325"/>
+        <Caret Line="220" TopLine="199"/>
       </Position9>
       <Position10>
-        <Filename Value="../../Target-PC/HardwareConnection/TLazSerial/lazsynaser.pas"/>
-        <Caret Line="2252" TopLine="2229"/>
+        <Filename Value="traincommanderunit.pas"/>
+        <Caret Line="348" TopLine="325"/>
       </Position10>
       <Position11>
-        <Filename Value="../../Target-PC/HardwareConnection/TLazSerial/lazsynaser.pas"/>
-        <Caret Line="2255" TopLine="2229"/>
+        <Filename Value="traincommanderunit.pas"/>
+        <Caret Line="349" TopLine="325"/>
       </Position11>
       <Position12>
         <Filename Value="traincommanderunit.pas"/>
-        <Caret Line="351" TopLine="325"/>
+        <Caret Line="348" Column="18" TopLine="325"/>
       </Position12>
       <Position13>
         <Filename Value="traincommanderunit.pas"/>
-        <Caret Line="353" TopLine="325"/>
+        <Caret Line="141" Column="21" TopLine="107"/>
       </Position13>
       <Position14>
         <Filename Value="traincommanderunit.pas"/>
-        <Caret Line="352" Column="39" TopLine="324"/>
+        <Caret Line="802" Column="121" TopLine="759"/>
       </Position14>
       <Position15>
         <Filename Value="traincommanderunit.pas"/>
-        <Caret Line="347" TopLine="324"/>
+        <Caret Line="767" TopLine="759"/>
       </Position15>
       <Position16>
         <Filename Value="traincommanderunit.pas"/>
-        <Caret Line="348" TopLine="324"/>
+        <Caret Line="233" TopLine="211"/>
       </Position16>
       <Position17>
         <Filename Value="traincommanderunit.pas"/>
-        <Caret Line="189" TopLine="167"/>
+        <Caret Line="234" TopLine="211"/>
       </Position17>
       <Position18>
-        <Filename Value="traincommanderunit.pas"/>
-        <Caret Line="190" TopLine="167"/>
+        <Filename Value="../../Target-PC/HardwareConnection/TLazSerial/lazsynaser.pas"/>
+        <Caret Line="1104" TopLine="1082"/>
       </Position18>
       <Position19>
-        <Filename Value="traincommanderunit.pas"/>
-        <Caret Line="193" TopLine="167"/>
+        <Filename Value="../../Target-PC/HardwareConnection/TLazSerial/lazsynaser.pas"/>
+        <Caret Line="1105" TopLine="1082"/>
       </Position19>
       <Position20>
         <Filename Value="traincommanderunit.pas"/>
-        <Caret Line="194" TopLine="167"/>
+        <Caret Line="748" Column="16" TopLine="73"/>
       </Position20>
       <Position21>
         <Filename Value="traincommanderunit.pas"/>
-        <Caret Line="196" TopLine="167"/>
+        <Caret Line="113" Column="13" TopLine="77"/>
       </Position21>
       <Position22>
         <Filename Value="traincommanderunit.pas"/>
-        <Caret Line="197" TopLine="167"/>
+        <Caret Line="152" Column="71" TopLine="116"/>
       </Position22>
       <Position23>
         <Filename Value="traincommanderunit.pas"/>
-        <Caret Line="198" TopLine="167"/>
+        <Caret Line="253" Column="96" TopLine="216"/>
       </Position23>
       <Position24>
         <Filename Value="traincommanderunit.pas"/>
-        <Caret Line="200" TopLine="167"/>
+        <Caret Line="329" Column="129" TopLine="292"/>
       </Position24>
       <Position25>
         <Filename Value="traincommanderunit.pas"/>
-        <Caret Line="201" TopLine="167"/>
+        <Caret Line="389" Column="119" TopLine="352"/>
       </Position25>
       <Position26>
         <Filename Value="traincommanderunit.pas"/>
-        <Caret Line="203" TopLine="167"/>
+        <Caret Line="424" Column="86" TopLine="387"/>
       </Position26>
       <Position27>
         <Filename Value="traincommanderunit.pas"/>
-        <Caret Line="204" TopLine="167"/>
+        <Caret Line="426" Column="78" TopLine="389"/>
       </Position27>
       <Position28>
         <Filename Value="traincommanderunit.pas"/>
-        <Caret Line="220" TopLine="199"/>
+        <Caret Line="463" Column="17" TopLine="426"/>
       </Position28>
       <Position29>
         <Filename Value="traincommanderunit.pas"/>
-        <Caret Line="348" TopLine="325"/>
+        <Caret Line="466" Column="94" TopLine="429"/>
       </Position29>
       <Position30>
         <Filename Value="traincommanderunit.pas"/>
-        <Caret Line="349" TopLine="325"/>
+        <Caret Line="468" Column="86" TopLine="431"/>
       </Position30>
     </JumpHistory>
     <RunParams>
