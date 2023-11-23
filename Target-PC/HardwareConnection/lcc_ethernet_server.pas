@@ -776,20 +776,7 @@ begin
                 begin
                   SendStreamConnectionThread.Position := 0;
                   if TIdContext( ContextList[i]).Connection.Connected then
-                  begin
-                   TIdContext( ContextList[i]).Connection.IOHandler.Write(SendStreamConnectionThread, SendStreamConnectionThread.Size);
-
-                    // Only doing it this way works...  I don'g get it....
-                 //   for j := 0 to SendStreamConnectionThread.Size - 1 do
-                 //   begin
-                 //     B := StreamReadByte(SendStreamConnectionThread);
-                 //     TIdContext( ContextList[i]).Connection.IOHandler.Write(B );
-                //    end;
-
-                  //  for j := 0 to SendStreamConnectionThread.Size - 1 do
-                  //    TIdContext( ContextList[i]).Connection.IOHandler.Write(SendStreamConnectionThread.ReadByte);
-
-                  end;
+                    TIdContext( ContextList[i]).Connection.IOHandler.Write(SendStreamConnectionThread, SendStreamConnectionThread.Size);
                 end;
               end;
             finally

@@ -53,6 +53,8 @@ uses
 
   function GridConnectToDetailedGridConnect(MessageString: string): string;
 
+  function FormatComPortString(ComPort: string): string;
+
 
 implementation
 
@@ -874,6 +876,19 @@ begin
   finally
     Message.Free
   end;
+end;
+
+function FormatComPortString(ComPort: string): string;
+begin
+  {$IFDEF MSWINDOWS}
+    Result := ComPort;
+  {$ELSE}
+    {$IFDEF DARWIN}
+    Result := PATH_OSX_DEV + ComPort;
+    {$ELSE}
+    Result := PATH_LINUX_DEV + ComPort;
+    {$ENDIF}
+  {$ENDIF}
 end;
 
   {$IFNDEF LCC_MOBILE}

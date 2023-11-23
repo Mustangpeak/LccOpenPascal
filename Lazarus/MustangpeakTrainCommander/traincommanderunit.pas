@@ -9,13 +9,13 @@ uses
   StdCtrls, Buttons,
   lcc_ethernet_server,
   lcc_defines,
+  lcc_utilities,
   lcc_node,
   lcc_node_manager,
   lcc_node_messages,
   lcc_node_commandstation,
   lcc_node_controller,
   lcc_node_train,
-  lcc_comport,
   LazSynaSer,
   lcc_alias_server,
  // lcc_ethernet_http,
@@ -30,6 +30,24 @@ const
   MAX_LOGGING_LINES = 50;
 
 type
+
+  { TMustangPeakCommanderSerialLink }
+
+  TMustangPeakCommanderSerialLink = class
+  private
+    FSerial: TBlockSerial;
+    FConnected: Boolean;
+  protected
+    property Serial: TBlockSerial read FSerial write FSerial;
+  public
+    property Connected: Boolean read FConnected;
+    constructor Create; virtual;
+    destructor Destroy; override;
+
+    function OpenConnection(ComPort: String): Boolean;
+    procedure CloseConnection;
+    procedure SendString(AString: AnsiString);
+  end;
 
   { TFormTrainCommander }
 
@@ -92,11 +110,11 @@ type
   private
     FAutoCreateTrainAddress: Word;
     FCommandStationNode: TLccCommandStationNode;
-    FComPort: TLccComPort;
     FEmulateCANBus: Boolean;
  //   FLccHTTPServer: TLccHTTPServer;
     FLccWebsocketServer: TLccWebSocketServerThreadManager;
     FNodeManager: TLccNodeManager;
+    FSerialLink: TMustangPeakCommanderSerialLink;
     FWorkerMessage: TLccMessage;
     FLccServer: TLccEthernetServerThreadManager;
   protected
@@ -108,9 +126,6 @@ type
     procedure OnServerManagerSendMessage(Sender: TObject; ALccMessage: TLccMessage);
     procedure OnServerManagerConnectionState(Sender: TObject; Manager: TLccConnectionThreadManager; Thread: TLccConnectionThread; Info: TLccConnectionInfo);
     procedure OnServerErrorMessage(Sender: TObject; Manager: TLccConnectionThreadManager; Thread: TLccConnectionThread; Info: TLccConnectionInfo);
-
-    // Callbacks from the ComPort
-    procedure OnComPortReceiveMessage(Sender: TObject; Info: TLccConnectionInfo);
 
     // Callbacks from the Node Manager
     procedure OnNodeManagerAliasIDChanged(Sender: TObject; LccSourceNode: TLccNode);
@@ -137,11 +152,12 @@ type
     property LccWebsocketServer: TLccWebSocketServerThreadManager read FLccWebsocketServer write FLccWebsocketServer;
   //  property LccHTTPServer: TLccHTTPServer read FLccHTTPServer write FLccHTTPServer;
     property NodeManager: TLccNodeManager read FNodeManager write FNodeManager;
-    property LccComPort: TLccComPort read FComPort write FComPort;
 
     property CommandStationNode: TLccCommandStationNode read FCommandStationNode write FCommandStationNode;
 
     property AutoCreateTrainAddress: Word read FAutoCreateTrainAddress write FAutoCreateTrainAddress;
+
+    property SerialLink: TMustangPeakCommanderSerialLink read FSerialLink write FSerialLink;
   end;
 
 var
@@ -150,6 +166,55 @@ var
 implementation
 
 {$R *.lfm}
+
+{ TMustangPeakCommanderSerialLink }
+
+constructor TMustangPeakCommanderSerialLink.Create;
+begin
+  inherited Create;
+  FSerial := TBlockSerial.Create;
+end;
+
+destructor TMustangPeakCommanderSerialLink.Destroy;
+begin
+  Serial.CloseSocket;
+  FreeAndNil(FSerial);
+  inherited Destroy;
+end;
+
+function TMustangPeakCommanderSerialLink.OpenConnection(ComPort: String): Boolean;
+begin
+  Result := False;
+  if Connected then
+    CloseConnection;
+
+  Serial.Connect(ComPort);
+  if Serial.LastError <> 0 then
+  begin
+    Serial.Config(9600, 8, 'N', SB1, False, False);
+    if Serial.LastError <> 0 then
+    begin
+      FConnected := True;
+      Result := True;
+    end else
+      CloseConnection;
+  end;
+end;
+
+procedure TMustangPeakCommanderSerialLink.CloseConnection;
+begin
+  if Connected then
+  begin
+    Serial.CloseSocket;
+    FConnected := False;
+  end;
+end;
+
+procedure TMustangPeakCommanderSerialLink.SendString(AString: AnsiString);
+begin
+  if Connected then
+    Serial.SendString(AString);
+end;
 
 { TFormTrainCommander }
 
@@ -251,25 +316,19 @@ end;
 
 procedure TFormTrainCommander.ButtonComPortConnectClick(Sender: TObject);
 var
-  ConnectionInfo: TLccComPortConnectionInfo;
+  AComPort: String;
 begin
-  if Assigned(LccComPort) then
+  if SerialLink.Connected then
   begin
-    ConnectionFactory.DestroyConnection(LccComPort);
-    LccComPort := nil;
+    SerialLink.CloseConnection;
+    StatusBarMain.Panels[3].Text := 'ComPort Disconnected';
   end else
   begin
-    ConnectionInfo := TLccComPortConnectionInfo.Create;
-    ConnectionInfo.ComPort := ComboBoxComPorts.Items[ComboBoxComPorts.ItemIndex];
-    ConnectionInfo.Baud := 9600;
-    ConnectionInfo.StopBits := 8;
-    ConnectionInfo.Parity := 'N';
-    LccComPort := ConnectionFactory.CreateConnection(TLccComPort, ConnectionInfo) as TLccComPort;
-    if Assigned(LccComPort) then
-    begin
-      LccComPort.RawData := True;
-      LccComPort.OpenConnection;
-    end;
+    AComPort := FormatComPortString( ComboBoxComPorts.Items[ ComboBoxComPorts.ItemIndex]);
+    if SerialLink.OpenConnection(AComPort) then
+      StatusBarMain.Panels[3].Text := 'ComPort: ' + AComPort
+    else
+      StatusBarMain.Panels[3].Text :=  'Unable to open Port'
   end;
 end;
 
@@ -334,9 +393,7 @@ begin
   {  else
     if Manager = LccHTTPServer then
       Preamble := 'HTTP:R: '   }
-    else
-    if ConnectionManager = LccComPort then      // Should never hit as the Comport is SendMessage Only
-      Preamble := 'ComPort:R: ';
+    ;
 
     MemoLog.Lines.BeginUpdate;
     try
@@ -540,23 +597,7 @@ begin
           end;
       end;
   end else   }
-  if Manager = LccComPort then
-  begin
-    case (Info as TLccComPortConnectionInfo).ConnectionState of
-      lcsConnecting :    StatusBarMain.Panels[3].Text := 'ComPort Connecting';
-      lcsConnected :
-        begin
-          StatusBarMain.Panels[3].Text := 'ComPort: ' + (Info as TLccComPortConnectionInfo).ComPort;
-          ButtonComPortConnect.Caption := 'Close ComPort';
-        end;
-      lcsDisConnecting : StatusBarMain.Panels[3].Text := 'ComPort Disconnectiong';
-      lcsDisconnected :
-        begin
-          ButtonComPortConnect.Caption := 'Open ComPort';
-          StatusBarMain.Panels[3].Text := 'ComPort Disconnected';
-        end;
-    end;
-  end;
+
 end;
 
 procedure TFormTrainCommander.OnServerErrorMessage(Sender: TObject;
@@ -575,20 +616,15 @@ begin
   begin
     ShowMessage('HTTP Server: ' + Info.MessageStr);
   end else  }
-  if Manager = LccComPort then
-  begin
-    ShowMessage('ComPort: ' + Info.MessageStr);
-  end;
+  ;
 end;
 
 procedure TFormTrainCommander.FormCloseQuery(Sender: TObject; var CanClose: boolean);
 begin
   CanClose := CanClose; // Keep Hints quiet
-  ConnectionFactory.DestroyConnection(LccComPort);
   ConnectionFactory.DestroyConnection(LccWebsocketServer);
   ConnectionFactory.DestroyConnection(LccServer);
 //   ConnectionFactory.DestroyConnection(LccHTTPServer);
-  LccComPort := nil;
   LccWebsocketServer:= nil;
   LccServer:= nil;
 //  LccHTTPServer:= nil;
@@ -626,10 +662,12 @@ begin
   AutoCreateTrainAddress := 1;
 
   FWorkerMessage := TLccMessage.Create;
+  FSerialLink := TMustangPeakCommanderSerialLink.Create;
 end;
 
 procedure TFormTrainCommander.FormDestroy(Sender: TObject);
 begin
+  FreeAndNil(FSerialLink);
   NodeManager.ReleaseAliasAll;
   FreeAndNil(FNodeManager);   // after the servers are destroyed
   FreeAndNil(FWorkerMessage);
@@ -795,17 +833,6 @@ begin
         TreeNode := TreeViewTrains.Items.FindNodeWithData(LccSourceNode);
       end;
     end;
-  end;
-end;
-
-procedure TFormTrainCommander.OnComPortReceiveMessage(Sender: TObject; Info: TLccConnectionInfo);
-begin
-  MemoComPort.Lines.BeginUpdate;
-  try
-    MemoComPort.Lines.Add('R: ' + Info.MessageStr);
-    MemoComPort.SelStart := Length(MemoComPort.Lines.Text);
-  finally
-    MemoComPort.Lines.EndUpdate;
   end;
 end;
 
