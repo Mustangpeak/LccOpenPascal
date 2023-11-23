@@ -44,7 +44,7 @@ type
     constructor Create; virtual;
     destructor Destroy; override;
 
-    function OpenConnection(ComPort: String): Boolean;
+    function OpenConnection(ComPort: String; out ErrorCode: Integer; out ErrorDesc: String): Boolean;
     procedure CloseConnection;
     procedure SendString(AString: AnsiString);
   end;
@@ -138,6 +138,8 @@ type
     procedure OnNodeTractionListenerDetached(Sender: TObject; LccNode: TLccNode; AMessage: TLccMessage);
     procedure OnNodeTractionListenerQuery(Sender: TObject; LccNode: TLccNode; AMessage: TLccMessage; var DoDefault: Boolean);
 
+    procedure OnComPortSendMessage(Sender: TObject; var GridConnectStyleMessage: string);
+
     // Other
 
     function TrainNodeToCaption(ATrainNode: TLccTrainDccNode): string;
@@ -182,22 +184,38 @@ begin
   inherited Destroy;
 end;
 
-function TMustangPeakCommanderSerialLink.OpenConnection(ComPort: String): Boolean;
+function TMustangPeakCommanderSerialLink.OpenConnection(ComPort: String; out ErrorCode: Integer; out ErrorDesc: String): Boolean;
 begin
   Result := False;
   if Connected then
     CloseConnection;
 
-  Serial.Connect(ComPort);
-  if Serial.LastError <> 0 then
-  begin
-    Serial.Config(9600, 8, 'N', SB1, False, False);
-    if Serial.LastError <> 0 then
+  ErrorCode := 0;
+  ErrorDesc := '';
+
+  try
+    Serial.Connect(ComPort);
+    if Serial.LastError = 0 then
     begin
-      FConnected := True;
-      Result := True;
+      Serial.Config(9600, 8, 'N', SB1, False, False);
+      if Serial.LastError = 0 then
+      begin
+        FConnected := True;
+        Result := True;
+      end else
+      begin
+        CloseConnection;
+        ErrorCode := Serial.LastError;
+        ErrorDesc := Serial.LastErrorDesc;
+      end;
     end else
-      CloseConnection;
+    begin
+      ErrorCode := Serial.LastError;
+      ErrorDesc := Serial.LastErrorDesc;
+    end;
+  except
+     ErrorCode := Serial.LastError;
+     ErrorDesc := Serial.LastErrorDesc;
   end;
 end;
 
@@ -317,18 +335,23 @@ end;
 procedure TFormTrainCommander.ButtonComPortConnectClick(Sender: TObject);
 var
   AComPort: String;
+  ErrorCode: Integer;
+  ErrorDesc: String;
 begin
   if SerialLink.Connected then
   begin
     SerialLink.CloseConnection;
     StatusBarMain.Panels[3].Text := 'ComPort Disconnected';
+    ButtonComPortConnect.Caption := 'Open ComPort';
   end else
   begin
-    AComPort := FormatComPortString( ComboBoxComPorts.Items[ ComboBoxComPorts.ItemIndex]);
-    if SerialLink.OpenConnection(AComPort) then
-      StatusBarMain.Panels[3].Text := 'ComPort: ' + AComPort
-    else
-      StatusBarMain.Panels[3].Text :=  'Unable to open Port'
+    AComPort := ComboBoxComPorts.Items[ ComboBoxComPorts.ItemIndex];
+    if SerialLink.OpenConnection(AComPort, ErrorCode, ErrorDesc) then
+    begin
+      StatusBarMain.Panels[3].Text := 'ComPort: ' + AComPort;
+      ButtonComPortConnect.Caption := 'Close ComPort';
+    end else
+      StatusBarMain.Panels[3].Text :=  'ErrorCode: ' + IntToStr(ErrorCode) + ', ' + ErrorDesc;
   end;
 end;
 
@@ -701,7 +724,7 @@ begin
   begin
     TrainNode := LccSourceNode as TLccTrainDccNode;
 
- //   TrainNode.OnSendMessageComPort := @OnComPortSendMessage;
+    TrainNode.OnSendMessageComPort := @OnComPortSendMessage;
 
     TreeNode := TreeViewTrains.Items.Add(nil, TrainNodeToCaption(TrainNode));
     TreeNode.Data := TrainNode;
@@ -735,6 +758,28 @@ procedure TFormTrainCommander.OnNodeTractionListenerQuery(Sender: TObject;
   LccNode: TLccNode; AMessage: TLccMessage; var DoDefault: Boolean);
 begin
   RebuildTrainTreeview;
+end;
+
+procedure TFormTrainCommander.OnComPortSendMessage(Sender: TObject; var GridConnectStyleMessage: string);
+begin
+  if SerialLink.Connected then
+  begin
+    SerialLink.SendString(GridConnectStyleMessage);
+
+    MemoComPort.Lines.BeginUpdate;
+    try
+      MemoComPort.Lines.Add(GridConnectStyleMessage)
+
+    finally
+      if MemoComPort.Lines.Count > MAX_LOGGING_LINES then
+        MemoComPort.Lines.Delete(0);
+       MemoComPort.Lines.EndUpdate;
+
+      MemoComPort.SelStart := Length(MemoComPort.Lines.Text)-1;
+      MemoComPort.SelLength := 1;
+      MemoComPort.SelLength := 0;
+    end;
+  end;
 end;
 
 function TFormTrainCommander.TrainNodeToCaption(ATrainNode: TLccTrainDccNode): string;
