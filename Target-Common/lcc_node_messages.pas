@@ -586,7 +586,8 @@ begin
   if AMessage.MTI = MTI_TRACTION_REQUEST then
   begin
     case AMessage.DataArray[0] of
-        TRACTION_SET_SPEED_DIR :
+        TRACTION_SET_SPEED_DIR,
+        TRACTION_SET_SPEED_DIR_LISTENER_FORWARDED :
           begin
             Result := Result + ' LCC Speed/Dir Operation; Speed = ';
             f := HalfToFloat( (AMessage.DataArray[1] shl 8) or AMessage.DataArray[2]);
@@ -598,9 +599,23 @@ begin
                 Result := Result + '+0.0'
             end else
               Result := Result + IntToStr( round(f));
+            if AMessage.DataArray[0] = TRACTION_SET_SPEED_DIR_LISTENER_FORWARDED then
+              Result := Result + ', Listener Forwarded';
           end;
-        TRACTION_SET_FUNCTION : Result := Result + ' LCC Traction Operation - Function Address: ' + IntToStr( AMessage.ExtractDataBytesAsInt(1, 3)) + ' [0x' + IntToHex( AMessage.ExtractDataBytesAsInt(1, 3), 6) + '], Value: ' + IntToStr( AMessage.ExtractDataBytesAsInt(4, 5)) + ' [0x' + IntToHex( AMessage.ExtractDataBytesAsInt(4, 5), 2) + ']';
-        TRACTION_SET_E_STOP : Result := Result + ' LCC Traction Emergency Stop';
+        TRACTION_SET_FUNCTION,
+        TRACTION_SET_FUNCTION_LISTENER_FORWARDED :
+          begin
+            Result := Result + ' LCC Traction Operation - Function Address: ' + IntToStr( AMessage.ExtractDataBytesAsInt(1, 3)) + ' [0x' + IntToHex( AMessage.ExtractDataBytesAsInt(1, 3), 6) + '], Value: ' + IntToStr( AMessage.ExtractDataBytesAsInt(4, 5)) + ' [0x' + IntToHex( AMessage.ExtractDataBytesAsInt(4, 5), 2) + ']';
+            if AMessage.DataArray[0] = TRACTION_SET_FUNCTION_LISTENER_FORWARDED then
+              Result := Result + ', Listener Forwarded';
+          end;
+        TRACTION_SET_E_STOP,
+        TRACTION_SET_E_STOP_LISTENER_FORWARDED :
+          begin
+            Result := Result + ' LCC Traction Emergency Stop';
+            if AMessage.DataArray[0] = TRACTION_SET_E_STOP_LISTENER_FORWARDED then
+              Result := Result + ', Listener Forwarded';
+          end;
         TRACTION_QUERY_SPEED : Result := Result + ' Query Speeds';
         TRACTION_QUERY_FUNCTION : Result := Result + ' Query Function - Address: ' + IntToStr( AMessage.ExtractDataBytesAsInt(1, 3)) + ' [0x' + IntToHex( AMessage.ExtractDataBytesAsInt(1, 3), 6) + ']';
         TRACTION_CONTROLLER_CONFIG :
