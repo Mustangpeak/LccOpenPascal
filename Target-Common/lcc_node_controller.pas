@@ -321,14 +321,20 @@ type
   TLccTaskQuerySpeed = class(TLccTaskBase)
   private
     FActualSpeedReply: single;
+    FActualSpeedReverseReply: Boolean;
     FCommandedSpeedReply: single;
+    FCommandedSpeedReverseReply: Boolean;
     FSetSpeedReply: single;
+    FSetSpeedReverseReply: Boolean;
   public
 
     // Replies
     property ActualSpeedReply: single read FActualSpeedReply;
+    property ActualSpeedReverseReply: Boolean read FActualSpeedReverseReply;
     property SetSpeedReply: single read FSetSpeedReply;
+    property SetSpeedReverseReply: Boolean read FSetSpeedReverseReply;
     property CommandedSpeedReply: single read FCommandedSpeedReply;
+    property CommandedSpeedReverseReply: Boolean read FCommandedSpeedReverseReply;
 
     procedure Start(ATimeout: Integer); override;
     procedure Process(SourceMessage: TLccMessage); override;
@@ -1053,8 +1059,11 @@ begin
     if SourceMessage.DataArray[0] = TRACTION_QUERY_SPEED then
     begin
       FActualSpeedReply := HalfToFloat( SourceMessage.TractionExtractActualSpeed);
+      FActualSpeedReverseReply := HalfIsNegative( SourceMessage.TractionExtractActualSpeed);
       FSetSpeedReply := HalfToFloat(SourceMessage.TractionExtractSetSpeed);
+      FSetSpeedReverseReply := HalfIsNegative( SourceMessage.TractionExtractSetSpeed);
       FCommandedSpeedReply := HalfToFloat(SourceMessage.TractionExtractCommandedSpeed);
+      FCommandedSpeedReverseReply := HalfIsNegative( SourceMessage.TractionExtractCommandedSpeed);
       Complete;
       if Assigned(Callback) then
         Callback(Self);

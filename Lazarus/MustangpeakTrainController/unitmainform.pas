@@ -973,6 +973,8 @@ begin
         TrackBarThrottle.OnChange := nil;
         try
           TrackBarThrottle.Position := Integer( Round( TaskQuerySpeed.SetSpeedReply));
+          ToggleBoxThrottleReverse.Checked ;= TaskQuerySpeed.SetSpeedReverseReply;
+          ToggleBoxThrottleForward.Checked := not ToggleBoxThrottleReverse.Checked;
           LabelStatus.Caption := 'Received Speed/Dir';
         finally
           TrackBarThrottle.OnChange := OldOnChange;
