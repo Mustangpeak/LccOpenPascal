@@ -1134,11 +1134,12 @@ begin
 
   if TrainInfo.Equal(Controller.TrainRoster.ActiveTrain.NodeID) then
   begin
-    OldEvent := TrackBarThrottle.OnChange;
+    OldEvent := TrackBarThrottle.OnClick;
     try
+      TrackBarThrottle.OnClick := nil;
       TrackBarThrottle.Position := Integer( Round( SetSpeed))
     finally
-      TrackBarThrottle.OnChange := OldEvent;
+      TrackBarThrottle.OnClick := OldEvent;
     end;
   end;
 end;
@@ -1156,14 +1157,14 @@ begin
     ToggleBox := FindFunctionButton(FunctionAddress);
     if not Assigned(ToggleBox) then Exit;
 
-    OldEvent := ToggleBox.OnChange;
+    OldEvent := ToggleBox.OnClick;
     try
+      ToggleBox.OnClick := nil;
       ToggleBox.Checked := FunctionValue > 0
     finally
-      ToggleBox.OnChange := OldEvent;
+      ToggleBox.OnClick := OldEvent;
     end;
   end;
-
 end;
 
 procedure TFormTrainController.OnLEDClick(Sender: TObject);

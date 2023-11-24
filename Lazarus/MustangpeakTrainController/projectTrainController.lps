@@ -19,8 +19,8 @@
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="unitMainForm"/>
         <IsVisibleTab Value="True"/>
-        <TopLine Value="896"/>
-        <CursorPos X="95" Y="926"/>
+        <TopLine Value="1127"/>
+        <CursorPos X="41" Y="1137"/>
         <UsageCount Value="440"/>
         <Loaded Value="True"/>
         <LoadedDesigner Value="True"/>
@@ -198,30 +198,6 @@
     </OtherDefines>
     <JumpHistory HistoryIndex="29">
       <Position>
-        <Filename Value="unitmainform.pas"/>
-        <Caret Line="238" Column="62" TopLine="211"/>
-      </Position>
-      <Position>
-        <Filename Value="unitmainform.pas"/>
-        <Caret Line="1260" Column="3" TopLine="1241"/>
-      </Position>
-      <Position>
-        <Filename Value="unitmainform.pas"/>
-        <Caret Line="220" Column="23" TopLine="212"/>
-      </Position>
-      <Position>
-        <Filename Value="unitmainform.pas"/>
-        <Caret Line="982" Column="75" TopLine="980"/>
-      </Position>
-      <Position>
-        <Filename Value="unitmainform.pas"/>
-        <Caret Line="238" Column="18" TopLine="214"/>
-      </Position>
-      <Position>
-        <Filename Value="unitmainform.pas"/>
-        <Caret Line="1255" Column="5" TopLine="1219"/>
-      </Position>
-      <Position>
         <Filename Value="../../Target-Common/lcc_node_controller.pas"/>
         <Caret Line="833" Column="26" TopLine="813"/>
       </Position>
@@ -316,6 +292,30 @@
       <Position>
         <Filename Value="unitmainform.pas"/>
         <Caret Line="227" Column="85" TopLine="207"/>
+      </Position>
+      <Position>
+        <Filename Value="unitmainform.pas"/>
+        <Caret Line="906" Column="46" TopLine="896"/>
+      </Position>
+      <Position>
+        <Filename Value="unitmainform.pas"/>
+        <Caret Line="216" Column="15" TopLine="195"/>
+      </Position>
+      <Position>
+        <Filename Value="unitmainform.pas"/>
+        <Caret Line="912" Column="3" TopLine="904"/>
+      </Position>
+      <Position>
+        <Filename Value="unitmainform.pas"/>
+        <Caret Line="231" Column="21" TopLine="202"/>
+      </Position>
+      <Position>
+        <Filename Value="unitmainform.pas"/>
+        <Caret Line="1136" Column="57" TopLine="1124"/>
+      </Position>
+      <Position>
+        <Filename Value="unitmainform.pas"/>
+        <Caret Line="230" Column="19" TopLine="210"/>
       </Position>
     </JumpHistory>
     <RunParams>
