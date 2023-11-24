@@ -64,7 +64,7 @@ type
   TLccTaskSearchTrain = class;
   TTrainInfo = class;
 
-  TOnSetSpeedListener = procedure(Traininfo: TTrainInfo; SetSpeed, ActualSpeed, CommandedSpeed: Single) of object;
+  TOnSetSpeedListener = procedure(Traininfo: TTrainInfo; SetSpeed: Single) of object;
   TOnSetFunctionListener = procedure(TrainInfo: TTrainInfo; FunctionAddress, FunctionValue: Word) of object;
 
   { TTrainInfo }
@@ -88,6 +88,7 @@ type
     constructor Create(ADefaultName: String = ''); overload;
     constructor Create(ANodeID: TNodeID; ADefaultName: String = ''); overload;
     destructor Destroy; override;
+    function Equal(TestNodeID: TNodeID): Boolean;
   end;
 
   TOnTLccTaskSearchTrainCallback = procedure(ATask: TLccTaskSearchTrain) of object;
@@ -829,6 +830,11 @@ begin
   inherited Destroy;
 end;
 
+function TTrainInfo.Equal(TestNodeID: TNodeID): Boolean;
+begin
+  Result := EqualNodeID(NodeID, TestNodeID, False);
+end;
+
 { TLccTaskManagementReleaseTrain }
 
 procedure TLccTaskManagementReleaseTrain.Start(ATimeout: Integer);
@@ -1293,7 +1299,7 @@ begin
   begin
     TrainInfo := TrainRoster.FindByNodeID(SourceMessage.SourceID);
     if Assigned(TrainInfo) then
-      OnSetSpeedListener(TrainInfo,  HalfToFloat( SourceMessage.TractionExtractSetSpeed), HalfToFloat( SourceMessage.TractionExtractActualSpeed), HalfToFloat( SourceMessage.TractionExtractCommandedSpeed));
+      OnSetSpeedListener(TrainInfo,  HalfToFloat( SourceMessage.TractionExtractSetSpeed));
   end;
 end;
 

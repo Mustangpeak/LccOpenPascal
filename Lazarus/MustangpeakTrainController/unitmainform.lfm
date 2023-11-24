@@ -789,7 +789,7 @@ object FormTrainController: TFormTrainController
           Alignment = taCenter
           Anchors = [akTop, akLeft, akRight]
           TabOrder = 0
-          Text = '10.0.3.132'
+          Text = '10.0.3.145'
         end
       end
       object LabelSettings2: TLabel

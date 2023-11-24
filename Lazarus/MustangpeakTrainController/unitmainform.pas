@@ -227,7 +227,7 @@ type
     procedure CallbackListenerAttach(ATask: TLccTaskBAse);     // TLccListenerAttach
     procedure CallbackListenerDetach(ATask: TLccTaskBAse);     // TLccListenerDetach
 
-    procedure CallbackSetSpeedListener(Traininfo: TTrainInfo; SetSpeed, ActualSpeed, CommandedSpeed: Single);
+    procedure CallbackSetSpeedListener(Traininfo: TTrainInfo; SetSpeed: Single);
     procedure CallbackSetFunctionListener(TrainInfo: TTrainInfo; FunctionAddress, FunctionValue: Word);
 
     procedure OnLEDClick(Sender: TObject);
@@ -235,6 +235,7 @@ type
     procedure UpdateRosterHeaderScrolledLeft;
     procedure UpdateRosterHeaderScrolledRight;
     procedure LoadCDIUserInterface;
+    function FindFunctionButton(Index: DWord): TToggleBox;
 
   public
     property Controller: TLccTrainController read FController write FController;
@@ -922,7 +923,7 @@ begin
         LocalTrainInfo := Controller.TrainRoster.TrainActivate(TaskControllerAttach.Target);
 
         if Assigned(Controller.TrainRoster.ActiveTrain) then
-          Controller.ListenerAttach(LocalTrainInfo.NodeID, Controller.NodeID, False, False, False, True, @CallbackListenerAttach);
+          Controller.ListenerAttach(LocalTrainInfo.NodeID, Controller.NodeID, False, True, True, True, @CallbackListenerAttach);
 
         // If not in the list then we beat the call IsTrain Event if the train needed to be created
         // (HIGHLY UNLIKELY) but if so create a LocalTrainInfo here for the Roster and the SNIP/PIP will be handled
@@ -979,30 +980,6 @@ begin
 end;
 
 procedure TFormTrainController.CallbackQueryFunction(ATask: TLccTaskBase);
-
-  function FindFunctionButton(Index: DWord): TToggleBox;
-  var
-    i: Integer;
-    TBox: TToggleBox;
-  begin
-    Result := nil;
-    if Index < ScrollBoxFunctions.ControlCount then
-    begin
-      for i := 0 to ScrollBoxFunctions.ControlCount - 1 do
-      begin
-        if (ScrollBoxFunctions.Controls[i] is TToggleBox) then
-        begin
-          TBox :=  ScrollBoxFunctions.Controls[i] as TToggleBox;
-          if TBox.Tag = Index then
-          begin
-            Result := TBox;
-            Break
-          end;
-        end
-      end;
-    end;
-  end;
-
 var
   TaskQueryFunction: TLccTaskQueryFunction;
   FunctionBox: TToggleBox;
@@ -1019,10 +996,7 @@ begin
           OldOnChange := FunctionBox.OnChange;
           FunctionBox.OnChange := nil;
           try
-            if TaskQueryFunction.ValueReply = 0 then
-              FunctionBox.Checked := False
-            else
-              FunctionBox.Checked := True;
+            FunctionBox.Checked := TaskQueryFunction.ValueReply > 0;
             LabelStatus.Caption := 'Received Function: ' + IntToStr(TaskQueryFunction.Address);
           finally
             FunctionBox.OnChange := OldOnChange;
@@ -1151,15 +1125,44 @@ begin
   end;
 end;
 
-procedure TFormTrainController.CallbackSetSpeedListener(Traininfo: TTrainInfo;
-  SetSpeed, ActualSpeed, CommandedSpeed: Single);
+procedure TFormTrainController.CallbackSetSpeedListener(Traininfo: TTrainInfo; SetSpeed: Single);
+var
+  OldEvent: TNotifyEvent;
 begin
+  if not Assigned(Controller) then Exit;
+  if not Assigned(Controller.TrainRoster.ActiveTrain) then Exit;
 
+  if TrainInfo.Equal(Controller.TrainRoster.ActiveTrain.NodeID) then
+  begin
+    OldEvent := TrackBarThrottle.OnChange;
+    try
+      TrackBarThrottle.Position := Integer( Round( SetSpeed))
+    finally
+      TrackBarThrottle.OnChange := OldEvent;
+    end;
+  end;
 end;
 
-procedure TFormTrainController.CallbackSetFunctionListener(
-  TrainInfo: TTrainInfo; FunctionAddress, FunctionValue: Word);
+procedure TFormTrainController.CallbackSetFunctionListener(TrainInfo: TTrainInfo; FunctionAddress, FunctionValue: Word);
+var
+  OldEvent: TNotifyEvent;
+  ToggleBox: TToggleBox;
 begin
+  if not Assigned(Controller) then Exit;
+  if not Assigned(Controller.TrainRoster.ActiveTrain) then Exit;
+
+  if TrainInfo.Equal(Controller.TrainRoster.ActiveTrain.NodeID) then
+  begin
+    ToggleBox := FindFunctionButton(FunctionAddress);
+    if not Assigned(ToggleBox) then Exit;
+
+    OldEvent := ToggleBox.OnChange;
+    try
+      ToggleBox.Checked := FunctionValue > 0
+    finally
+      ToggleBox.OnChange := OldEvent;
+    end;
+  end;
 
 end;
 
@@ -1241,6 +1244,29 @@ begin
       ATargetNode.Free;
     end;
   end;     }
+end;
+
+function TFormTrainController.FindFunctionButton(Index: DWord): TToggleBox;
+var
+  i: Integer;
+  TBox: TToggleBox;
+begin
+  Result := nil;
+  if Index < ScrollBoxFunctions.ControlCount then
+  begin
+    for i := 0 to ScrollBoxFunctions.ControlCount - 1 do
+    begin
+      if (ScrollBoxFunctions.Controls[i] is TToggleBox) then
+      begin
+        TBox :=  ScrollBoxFunctions.Controls[i] as TToggleBox;
+        if TBox.Tag = Index then
+        begin
+          Result := TBox;
+          Break
+        end;
+      end
+    end;
+  end;
 end;
 
 procedure TFormTrainController.SelectTrainFromComboBox;

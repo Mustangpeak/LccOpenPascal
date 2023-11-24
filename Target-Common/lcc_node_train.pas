@@ -1112,10 +1112,8 @@ begin
   end
 end;
 
-procedure TLccTrainDccNode.HandleTractionSetFunction(
-  var SourceMessage: TLccMessage; ListenerForwarded: Boolean);
+procedure TLccTrainDccNode.HandleTractionSetFunction(var SourceMessage: TLccMessage; ListenerForwarded: Boolean);
 var
-  FunctionAddress: DWORD;
   DoDefault: Boolean;
 begin
   DoDefault := True;
@@ -1124,8 +1122,7 @@ begin
   if DoDefault then
   begin
     // Should be from assigned controller only but.....
-    FunctionAddress := SourceMessage.TractionExtractFunctionAddress;
-    Functions[FunctionAddress, SourceMessage] := SourceMessage.TractionExtractFunctionValue;
+    SetFunctions(SourceMessage.TractionExtractFunctionAddress, SourceMessage, SourceMessage.TractionExtractFunctionValue);
   end;
 end;
 
