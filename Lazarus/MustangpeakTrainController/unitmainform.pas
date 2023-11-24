@@ -227,7 +227,7 @@ type
     procedure CallbackListenerAttach(ATask: TLccTaskBAse);     // TLccListenerAttach
     procedure CallbackListenerDetach(ATask: TLccTaskBAse);     // TLccListenerDetach
 
-    procedure CallbackSetSpeedListener(Traininfo: TTrainInfo; SetSpeed: Single);
+    procedure CallbackSetSpeedListener(Traininfo: TTrainInfo; SetSpeed: Single; Reverse: Boolean);
     procedure CallbackSetFunctionListener(TrainInfo: TTrainInfo; FunctionAddress, FunctionValue: Word);
 
     procedure OnLEDClick(Sender: TObject);
@@ -1125,7 +1125,7 @@ begin
   end;
 end;
 
-procedure TFormTrainController.CallbackSetSpeedListener(Traininfo: TTrainInfo; SetSpeed: Single);
+procedure TFormTrainController.CallbackSetSpeedListener(Traininfo: TTrainInfo; SetSpeed: Single; Reverse: Boolean);
 var
   OldEvent: TNotifyEvent;
 begin
@@ -1134,12 +1134,13 @@ begin
 
   if TrainInfo.Equal(Controller.TrainRoster.ActiveTrain.NodeID) then
   begin
-    OldEvent := TrackBarThrottle.OnClick;
+    OldEvent := TrackBarThrottle.OnChange;
     try
-      TrackBarThrottle.OnClick := nil;
-      TrackBarThrottle.Position := Integer( Round( SetSpeed))
+      TrackBarThrottle.OnChange := nil;
+      TrackBarThrottle.Position := Integer( Round( SetSpeed));
+      ToggleBoxThrottleReverse.Checked := Reverse;
     finally
-      TrackBarThrottle.OnClick := OldEvent;
+      TrackBarThrottle.OnChange := OldEvent;
     end;
   end;
 end;
