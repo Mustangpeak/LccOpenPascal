@@ -1098,8 +1098,7 @@ begin
   end;
 end;
 
-procedure TLccTrainDccNode.HandleTractionSetSpeed(
-  var SourceMessage: TLccMessage; ListenerForwarded: Boolean);
+procedure TLccTrainDccNode.HandleTractionSetSpeed(var SourceMessage: TLccMessage; ListenerForwarded: Boolean);
 var
   DoDefault: Boolean;
 begin

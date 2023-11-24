@@ -2182,7 +2182,6 @@ begin
     FDataArray[0] := TRACTION_SET_SPEED_DIR OR TRACTION_FORWARED_LISTENER_FLAG
   else
     FDataArray[0] := TRACTION_SET_SPEED_DIR;
-  FDataArray[0] := TRACTION_SET_SPEED_DIR;
   FDataArray[1] := Hi( ASpeed);
   FDataArray[2] := Lo( ASpeed);
   MTI := MTI_TRACTION_REQUEST;
