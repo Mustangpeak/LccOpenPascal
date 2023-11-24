@@ -264,7 +264,6 @@ var
   Bytes: TIdBytes;
   msg, SecWebSocketKey, Hash: string;
   ParsedHeaders: TDictionary<string, string>;
-  ConnectionContext: TLccWebsocketConnectionContext;
 
   // Normal Payload
   i: Int64;
@@ -316,7 +315,7 @@ begin
         end;
 
         // Mark IOHandler as handshaked
-        ConnectionContext.Upgraded := True;;
+        Upgraded := True;;
       end;
 
       ParsedHeaders.Free;
@@ -712,10 +711,9 @@ end;
 procedure TLccEthernetServerThread.Execute;
 // Receiving messages are handled in the IdTCPServerExecute handler and dispatched directly to each LccNode
 var
-  i, j: Integer;
+  i: Integer;
   ContextList: TList;
   IdSocketHandle: TIdSocketHandle;
-  B: Byte;
 begin
   Running := True;
   try

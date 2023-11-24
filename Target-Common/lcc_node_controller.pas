@@ -1617,6 +1617,7 @@ end;
 
 function TLccTrainController.SetSpeedDir(ATractionID: TNodeID; Speed: single; Forward: Boolean): Boolean;
 begin
+  Result := False;
   if NullNodeID(ATractionID) then
     Exit;
 
