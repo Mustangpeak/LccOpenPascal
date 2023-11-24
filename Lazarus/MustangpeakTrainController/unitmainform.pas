@@ -191,6 +191,7 @@ type
     FNodeManager: TLccNodeManager;
     FShownOnce: Boolean;
     FLEDArray: TLEDShapeArray;
+    FUpdateLock: Boolean;
 
   protected
     property CDIParser: TLccCdiParser read FCDIParser write FCDIParser;
@@ -198,6 +199,7 @@ type
 
     property ShownOnce: Boolean read FShownOnce write FShownOnce;
     property EmulateCanBus: Boolean read FEmulateCanBus write FEmulateCanBus;
+    property UpdateLock: Boolean read FUpdateLock write FUpdateLock;
 
     procedure OnConnectionConnectionState(Sender: TObject; Manager: TLccConnectionThreadManager; Thread: TLccConnectionThread; Info: TLccConnectionInfo);
     procedure OnConnectionErrorMessage(Sender: TObject; Manager: TLccConnectionThreadManager; Thread: TLccConnectionThread; Info: TLccConnectionInfo);
@@ -730,15 +732,19 @@ procedure TFormTrainController.ToggleBoxFunctionChange(Sender: TObject);
 begin
   if not Assigned(Controller) then Exit;
 
+  if UpdateLock then Exit;
+
   if Assigned(Controller.TrainRoster.ActiveTrain) then
     Controller.SetFunction(Controller.TrainRoster.ActiveTrain.NodeID, (Sender as TToggleBox).Tag, Word( (Sender as TToggleBox).Checked));
 end;
 
 procedure TFormTrainController.ToggleBoxThrottleForwardChange(Sender: TObject);
 begin
+  if not Assigned(Controller) then Exit;
+
   ToggleBoxThrottleReverse.Checked := not ToggleBoxThrottleForward.Checked;
 
-  if not Assigned(Controller) then Exit;
+  if UpdateLock then Exit;
 
   if Assigned(Controller.TrainRoster.ActiveTrain) then
     Controller.SetSpeedDir(Controller.TrainRoster.ActiveTrain.NodeID, TrackBarThrottle.Position, ToggleBoxThrottleForward.Checked);
@@ -746,9 +752,11 @@ end;
 
 procedure TFormTrainController.ToggleBoxThrottleReverseChange(Sender: TObject);
 begin
+  if not Assigned(Controller) then Exit;
+
   ToggleBoxThrottleForward.Checked := not ToggleBoxThrottleReverse.Checked;
 
-  if not Assigned(Controller) then Exit;
+  if UpdateLock then Exit;
 
   if Assigned(Controller.TrainRoster.ActiveTrain) then
     Controller.SetSpeedDir(Controller.TrainRoster.ActiveTrain.NodeID, TrackBarThrottle.Position, ToggleBoxThrottleForward.Checked);
@@ -762,14 +770,14 @@ procedure TFormTrainController.TrackBarThrottleChange(Sender: TObject);
 begin
   if not Assigned(Controller) then Exit;
 
+  if UpdateLock then Exit;
+
   if Assigned(Controller.TrainRoster.ActiveTrain) then
     Controller.SetSpeedDir(Controller.TrainRoster.ActiveTrain.NodeID, TrackBarThrottle.Position, ToggleBoxThrottleForward.Checked);
 end;
 
 
-procedure TFormTrainController.OnConnectionConnectionState(Sender: TObject;
-  Manager: TLccConnectionThreadManager; Thread: TLccConnectionThread;
-  Info: TLccConnectionInfo);
+procedure TFormTrainController.OnConnectionConnectionState(Sender: TObject; Manager: TLccConnectionThreadManager; Thread: TLccConnectionThread; Info: TLccConnectionInfo);
 begin
 
   if Manager = EthernetClient then
@@ -962,22 +970,20 @@ end;
 procedure TFormTrainController.CallbackQuerySpeedDir(ATask: TLccTaskBase);
 var
   TaskQuerySpeed: TLccTaskQuerySpeed;
-  OldOnChange: TNotifyEvent;
 begin
   TaskQuerySpeed := ATask as TLccTaskQuerySpeed;
 
   case ATask.TaskState of
     lesComplete :
       begin
-        OldOnChange := TrackBarThrottle.OnChange;
-        TrackBarThrottle.OnChange := nil;
+        UpdateLock := True;
         try
           TrackBarThrottle.Position := Integer( Round( TaskQuerySpeed.SetSpeedReply));
-          ToggleBoxThrottleReverse.Checked ;= TaskQuerySpeed.SetSpeedReverseReply;
+          ToggleBoxThrottleReverse.Checked := TaskQuerySpeed.SetSpeedReverseReply;
           ToggleBoxThrottleForward.Checked := not ToggleBoxThrottleReverse.Checked;
           LabelStatus.Caption := 'Received Speed/Dir';
         finally
-          TrackBarThrottle.OnChange := OldOnChange;
+          UpdateLock := False;
         end;
       end;
     lesAbort   : LabelStatus.Caption := 'Query Speed/Dir Aborted';
@@ -990,7 +996,6 @@ procedure TFormTrainController.CallbackQueryFunction(ATask: TLccTaskBase);
 var
   TaskQueryFunction: TLccTaskQueryFunction;
   FunctionBox: TToggleBox;
-  OldOnChange: TNotifyEvent;
 begin
   TaskQueryFunction := ATask as TLccTaskQueryFunction;
 
@@ -1000,13 +1005,12 @@ begin
         FunctionBox := FindFunctionButton(TaskQueryFunction.Address);
         if Assigned(FunctionBox) then
         begin
-          OldOnChange := FunctionBox.OnChange;
-          FunctionBox.OnChange := nil;
+          UpdateLock := True;
           try
             FunctionBox.Checked := TaskQueryFunction.ValueReply > 0;
             LabelStatus.Caption := 'Received Function: ' + IntToStr(TaskQueryFunction.Address);
           finally
-            FunctionBox.OnChange := OldOnChange;
+            UpdateLock := False;
           end;
         end;
         if TaskQueryFunction.Address = MAX_DCC_FUNCTIONS - 1 then
@@ -1133,28 +1137,24 @@ begin
 end;
 
 procedure TFormTrainController.CallbackSetSpeedListener(Traininfo: TTrainInfo; SetSpeed: Single; Reverse: Boolean);
-var
-  OldEvent: TNotifyEvent;
 begin
   if not Assigned(Controller) then Exit;
   if not Assigned(Controller.TrainRoster.ActiveTrain) then Exit;
 
   if TrainInfo.Equal(Controller.TrainRoster.ActiveTrain.NodeID) then
   begin
-    OldEvent := TrackBarThrottle.OnChange;
+    UpdateLock := True;
     try
-      TrackBarThrottle.OnChange := nil;
       TrackBarThrottle.Position := Integer( Round( SetSpeed));
       ToggleBoxThrottleReverse.Checked := Reverse;
     finally
-      TrackBarThrottle.OnChange := OldEvent;
+      UpdateLock := False;
     end;
   end;
 end;
 
 procedure TFormTrainController.CallbackSetFunctionListener(TrainInfo: TTrainInfo; FunctionAddress, FunctionValue: Word);
 var
-  OldEvent: TNotifyEvent;
   ToggleBox: TToggleBox;
 begin
   if not Assigned(Controller) then Exit;
@@ -1165,12 +1165,11 @@ begin
     ToggleBox := FindFunctionButton(FunctionAddress);
     if not Assigned(ToggleBox) then Exit;
 
-    OldEvent := ToggleBox.OnClick;
+    UpdateLock := True;
     try
-      ToggleBox.OnClick := nil;
       ToggleBox.Checked := FunctionValue > 0
     finally
-      ToggleBox.OnClick := OldEvent;
+      UpdateLock := False;
     end;
   end;
 end;
