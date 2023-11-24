@@ -284,9 +284,14 @@ begin
   TimerMain.Enabled := False; // Stop trying to log in
 
   if Assigned(Controller) then
-    Controller.ListenerDetach(Controller.TrainRoster.ActiveTrain.NodeID, Controller.NodeID, nil);
-  Controller.TrainRoster.TrainDeActivate;
-  Sleep(500); // Allow Listener Detach message to be sent;
+  begin
+    if Assigned(Controller.TrainRoster.ActiveTrain) then
+    begin
+      Controller.ListenerDetach(Controller.TrainRoster.ActiveTrain.NodeID, Controller.NodeID, nil);
+      Sleep(500); // Allow Listener Detach message to be sent;
+    end;
+    Controller.TrainRoster.TrainDeActivate;
+  end;
 
   ConnectionFactory.DestroyConnection(EthernetClient);
   EthernetClient := nil;

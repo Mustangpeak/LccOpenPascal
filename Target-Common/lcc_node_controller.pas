@@ -1293,17 +1293,13 @@ end;
 procedure TLccTrainController.HandleTractionSetSpeed(var SourceMessage: TLccMessage; ListenerForwarded: Boolean);
 var
   TrainInfo: TTrainInfo;
-  Speed: Single;
 begin
   // We can be a listener so we could get notified
   if Assigned(OnSetSpeedListener) and ListenerForwarded then
   begin
     TrainInfo := TrainRoster.FindByNodeID(SourceMessage.SourceID);
     if Assigned(TrainInfo) then
-    begin
-      Speed := HalfToFloat( SourceMessage.TractionExtractSetSpeed);
-      OnSetSpeedListener(TrainInfo,  Abs( Speed), Speed < 0);
-    end;
+      OnSetSpeedListener(TrainInfo,  Abs( HalfToFloat( SourceMessage.TractionExtractSetSpeed)), HalfIsNegative(SourceMessage.TractionExtractSetSpeed));
   end;
 end;
 
