@@ -203,6 +203,8 @@ type
 
   TLccTaskListenerQueryAtIndex = class(TLccTaskBase)
   private
+    FFlagsReply: Byte;
+    FIndexReply: Byte;
     FQueryIndex: Byte;
     FReplyCode: Byte;
     FListenerNodeIDReply: TNodeID;
@@ -212,6 +214,8 @@ type
     // Replies
     property ReplyCode: Byte read FReplyCode;
     property ListenerNodeIDReply: TNodeID read FListenerNodeIDReply;
+    property FlagsReply: Byte read FFlagsReply;
+    property IndexReply: Byte read FIndexReply;
 
     procedure Start(ATimeout: Integer); override;
     procedure Process(SourceMessage: TLccMessage); override;
@@ -227,6 +231,62 @@ type
     // Replies
     property NodeCountReply: Byte read FNodeCountReply;
 
+    procedure Start(ATimeout: Integer); override;
+    procedure Process(SourceMessage: TLccMessage); override;
+  end;
+
+    { TTrainListener }
+
+  TTrainListener = class
+  private
+    FFlags: Byte;
+    FIndex: Byte;
+    FNodeID: TNodeID;
+    function GetF0Forward: Boolean;
+    function GetFnForward: Boolean;
+    function GetHidden: Boolean;
+    function GetReverseDir: Boolean;
+    procedure SetF0Forward(AValue: Boolean);
+    procedure SetFnForward(AValue: Boolean);
+    procedure SetHidden(AValue: Boolean);
+    procedure SetReverseDir(AValue: Boolean);
+  public
+    property NodeID: TNodeID read FNodeID write FNodeID;
+    property Flags: Byte read FFlags write FFlags;
+    property Index: Byte read FIndex write FIndex;
+
+    property ReverseDir: Boolean read GetReverseDir write SetReverseDir;
+    property F0Forward: Boolean read GetF0Forward write SetF0Forward;
+    property FnForward: Boolean read GetFnForward write SetFnForward;
+    property Hidden: Boolean read GetHidden write SetHidden;
+
+    constructor Create; overload;
+    constructor Create(ANode: TNodeID; AFlags: Byte; AnIndex: Byte); overload;
+
+    procedure CopyTo( ATarget: TTrainListener);
+
+  end;
+
+  { TLccTaskListenersEnumerate }
+
+  TLccTaskListenersEnumerate = class(TLccTaskBase)
+  private
+    FiListener: Byte;
+    FListenerCount: Byte;
+    FTrainListener: TTrainListener;
+
+  protected
+
+
+  public
+
+    // Replies
+    property TrainListener: TTrainListener read FTrainListener write FTrainListener;
+    property iListener: Byte read FiListener;
+    property ListenerCount: Byte read FListenerCount;
+
+    constructor Create(AnOwnerNode: TLccNode); override;
+    destructor Destroy; override;
     procedure Start(ATimeout: Integer); override;
     procedure Process(SourceMessage: TLccMessage); override;
   end;
@@ -393,49 +453,6 @@ type
   end;
 
 
-  { TTrainListener }
-
-  TTrainListener = class
-  private
-    FFlags: Byte;
-    FIndex: Byte;
-    FNodeID: TNodeID;
-  public
-    property NodeID: TNodeID read FNodeID write FNodeID;
-    property Flags: Byte read FFlags write FFlags;
-    property Index: Byte read FIndex write FIndex;
-
-    constructor Create; overload;
-    constructor Create(ANode: TNodeID; AFlags: Byte; AnIndex: Byte); overload;
-
-    procedure CopyTo( ATarget: TTrainListener);
-  end;
-
-  { TLccTaskQueryAttachedListeners }
-
-  TLccTaskQueryAttachedListeners = class(TLccTaskBase)
-  private
-    FiListener: Byte;
-    FListenerCount: Byte;
-    FTrainListener: TTrainListener;
-
-  protected
-
-
-  public
-
-    // Replies
-    property TrainListener: TTrainListener read FTrainListener write FTrainListener;
-    property iListener: Byte read FiListener;
-    property ListenerCount: Byte read FListenerCount;
-
-    constructor Create(AnOwnerNode: TLccNode); override;
-    destructor Destroy; override;
-    procedure Start(ATimeout: Integer); override;
-    procedure Process(SourceMessage: TLccMessage); override;
-  end;
-
-
 
   // ******************************************************************************
 
@@ -456,7 +473,7 @@ type
     FTaskManagementNoOp: TLccTaskManagementNoOp;
     FTaskManagementReleaseTrain: TLccTaskManagementReleaseTrain;
     FTaskManagementReserveTrain: TLccTaskManagementReserveTrain;
-    FTaskQueryAttachedListeners: TLccTaskQueryAttachedListeners;
+    FTaskListenerEnumerate: TLccTaskListenersEnumerate;
     FTaskQueryFunctions: TLccTaskQueryFunctionArray;
     FTaskQuerySpeed: TLccTaskQuerySpeed;
     FTaskSearchTrain: TLccTaskSearchTrain;
@@ -473,6 +490,7 @@ type
     property TaskListenerDetach: TLccTaskListenerDetach read FTaskListenerDetach write FTaskListenerDetach;
     property TaskListenerQueryAtIndex: TLccTaskListenerQueryAtIndex read FTaskListenerQueryAtIndex write FTaskListenerQueryAtIndex;
     property TaskListenerQueryCount: TLccTaskListenerQueryCount read FTaskListenerQueryCount write FTaskListenerQueryCount;
+    property TaskListenerEnumerate: TLccTaskListenersEnumerate read FTaskListenerEnumerate;
     property TaskManagementReserveTrain: TLccTaskManagementReserveTrain read FTaskManagementReserveTrain write FTaskManagementReserveTrain;
     property TaskManagementReleaseTrain: TLccTaskManagementReleaseTrain read FTaskManagementReleaseTrain write FTaskManagementReleaseTrain;
     property TaskManagementNoOp: TLccTaskManagementNoOp read FTaskManagementNoOp write FTaskManagementNoOp;
@@ -481,7 +499,6 @@ type
     property TaskEmergencyStop: TLccTaskEmergencyStop read FTaskEmergencyStop write FTaskEmergencyStop;
     property TaskQuerySpeed:  TLccTaskQuerySpeed read FTaskQuerySpeed write FTaskQuerySpeed;
     property TaskQueryFunctions:  TLccTaskQueryFunctionArray read FTaskQueryFunctions write FTaskQueryFunctions;
-    property TaskQueryAttachedListeners: TLccTaskQueryAttachedListeners read FTaskQueryAttachedListeners;
 
 
     function GetCdiFile: string; override;
@@ -513,6 +530,7 @@ type
     function ListenerDetach(ATractionID, AListenerToDetach: TNodeID; ACallback: TOnTaskCallback): Boolean;                                     // Callback -> TLccTaskListenerDetach
     function ListenerQueryAtIndex(ATractionID: TNodeID; ListenerIndex: Byte; ACallback: TOnTaskCallback): Boolean; // Callback -> TLccTaskListenerQueryAtIndex
     function ListenerQueryCount(ATractionID: TNodeID; ACallback: TOnTaskCallback): Boolean;                        // Callback -> TLccTaskListenerQueryCount
+    function ListenerEnumerate(ATractionID: TNodeID; ACallback: TOnTaskCallback): Boolean;                         // Callback -> TLccTaskListenersEnumerate
 
     // Management Methods
     function ManagementReserveTrain(ATractionID: TNodeID; ACallback: TOnTaskCallback): Boolean;              // Callback -> TLccTaskManagementReserveTrain
@@ -528,7 +546,7 @@ type
     // Query Methods
     function QuerySpeedDir(ATractionID: TNodeID; ACallback: TOnTaskCallback): Boolean;                          // Callback -> TLccTaskQuerySpeed
     function QueryFunction(ATractionID: TNodeID; FunctionAddress: DWord; ACallback: TOnTaskCallback): Boolean;  // Callback -> TLccTaskQueryFunction
-    function QueryAttachedListeners(ATractionID: TNodeID; ACallback: TOnTaskCallback): Boolean;                 // Callback -> TLccTaskQueryAttachedListeners
+    function QueryAttachedListeners(ATractionID: TNodeID; ACallback: TOnTaskCallback): Boolean;                 // Callback -> TLccTaskListenersEnumerate
 
     procedure FindAllTrains;
     procedure ReleaseTrain;
@@ -540,6 +558,46 @@ type
 implementation
 
 { TTrainListener }
+
+function TTrainListener.GetF0Forward: Boolean;
+begin
+  Result := Flags and TRACTION_LISTENER_FLAG_LINK_F0 <> 0;
+end;
+
+function TTrainListener.GetFnForward: Boolean;
+begin
+  Result := Flags and TRACTION_LISTENER_FLAG_LINK_FN <> 0;
+end;
+
+function TTrainListener.GetHidden: Boolean;
+begin
+  Result := Flags and TRACTION_LISTENER_FLAG_HIDDEN <> 0;
+end;
+
+function TTrainListener.GetReverseDir: Boolean;
+begin
+  Result := Flags and TRACTION_LISTENER_FLAG_REVERSE_DIR <> 0;
+end;
+
+procedure TTrainListener.SetF0Forward(AValue: Boolean);
+begin
+  Flags := Flags or TRACTION_LISTENER_FLAG_LINK_F0;
+end;
+
+procedure TTrainListener.SetFnForward(AValue: Boolean);
+begin
+  Flags := Flags or TRACTION_LISTENER_FLAG_LINK_FN
+end;
+
+procedure TTrainListener.SetHidden(AValue: Boolean);
+begin
+  Flags := Flags or TRACTION_LISTENER_FLAG_HIDDEN;
+end;
+
+procedure TTrainListener.SetReverseDir(AValue: Boolean);
+begin
+  Flags := Flags or TRACTION_LISTENER_FLAG_REVERSE_DIR;
+end;
 
 constructor TTrainListener.Create;
 begin
@@ -561,21 +619,21 @@ begin
   ATarget.Index := Index;
 end;
 
-{ TLccTaskQueryAttachedListeners }
+{ TLccTaskListenersEnumerate }
 
-constructor TLccTaskQueryAttachedListeners.Create(AnOwnerNode: TLccNode);
+constructor TLccTaskListenersEnumerate.Create(AnOwnerNode: TLccNode);
 begin
   inherited Create(AnOwnerNode);
   TrainListener := TTrainListener.Create;
 end;
 
-destructor TLccTaskQueryAttachedListeners.Destroy;
+destructor TLccTaskListenersEnumerate.Destroy;
 begin
   FreeAndNil(FTrainListener);
   inherited Destroy;
 end;
 
-procedure TLccTaskQueryAttachedListeners.Start(ATimeout: Integer);
+procedure TLccTaskListenersEnumerate.Start(ATimeout: Integer);
 begin
   inherited Start(ATimeout);
 
@@ -584,7 +642,7 @@ begin
   OwnerNode.SendMessage(WorkerMessage, OwnerNode);
 end;
 
-procedure TLccTaskQueryAttachedListeners.Process(SourceMessage: TLccMessage);
+procedure TLccTaskListenersEnumerate.Process(SourceMessage: TLccMessage);
 var
   i: Integer;
 begin
@@ -1002,6 +1060,8 @@ begin
         end else
         begin
           FListenerNodeIDReply := SourceMessage.TractionExtractListenerQueryNodeIDReply;
+          FFlagsReply := SourceMessage.TractionExtractListenerQueryNodeFlagsReply;
+          FIndexReply := SourceMessage.TractionExtractListenerQueryNodeIndexReply;
         end;
         Complete;
           if Assigned(Callback) then
@@ -1366,7 +1426,7 @@ begin
   FTaskSetSpeedDir := TLccTaskSetSpeedDir.Create(Self);
   FTrainRoster := TLccTaskTrainRoster.Create(Self);
   TrainRoster.Start(TIMEOUT_TASK_MESSSAGE_INFINITY);    // Alway run
-  FTaskQueryAttachedListeners := TLccTaskQueryAttachedListeners.Create(Self);
+  FTaskListenerEnumerate := TLccTaskListenersEnumerate.Create(Self);
 
   RegisterTask(TaskControllerAttach);
   RegisterTask(TaskControllerQuery);
@@ -1386,7 +1446,7 @@ begin
     RegisterTask(TaskSetFunctions[i]);
   RegisterTask(TaskSetSpeedDir);
   RegisterTask(TrainRoster);
-  RegisterTask(TaskQueryAttachedListeners);
+  RegisterTask(TaskListenerEnumerate);
 end;
 
 destructor TLccTrainController.Destroy;
@@ -1411,7 +1471,7 @@ begin
     UnRegisterTask(TaskSetFunctions[i]);
   UnRegisterTask(TaskSetSpeedDir);
   UnRegisterTask(TrainRoster);
-  UnRegisterTask(TaskQueryAttachedListeners);
+  UnRegisterTask(TaskListenerEnumerate);
 
   FreeAndNil(FTaskControllerAttach);
   FreeAndNil(FTaskControllerQuery);
@@ -1431,7 +1491,7 @@ begin
     FreeAndNil(FTaskSetFunctions[i]);
   FreeAndNil(FTaskSetSpeedDir);
   FreeAndNil(FTrainRoster);
-  FreeAndNil(FTaskQueryAttachedListeners);
+  FreeAndNil(FTaskListenerEnumerate);
 
   inherited Destroy;
 end;
@@ -1561,6 +1621,18 @@ begin
     TaskListenerQueryCount.Target := ATractionID;
     TaskListenerQueryCount.Callback := ACallback;
     TaskListenerQueryCount.Start(TIMEOUT_TASK_MESSAGES);
+    Result := True;
+  end;
+end;
+
+function TLccTrainController.ListenerEnumerate(ATractionID: TNodeID;ACallback: TOnTaskCallback): Boolean;
+begin
+  Result := False;
+  if TaskListenerEnumerate.IsIdle then
+  begin
+    TaskListenerEnumerate.Target := ATractionID;
+    TaskListenerEnumerate.Callback := ACallback;
+    TaskListenerEnumerate.Start(TIMEOUT_TASK_MESSAGES);
     Result := True;
   end;
 end;
@@ -1701,11 +1773,11 @@ begin
   if NullNodeID(ATractionID) then
     Exit;
 
-  if TaskQueryAttachedListeners.IsIdle then
+  if TaskListenerEnumerate.IsIdle then
   begin
-    TaskQueryAttachedListeners.Target := ATractionID;
-    TaskQueryAttachedListeners.Callback := ACallback;
-    TaskQueryAttachedListeners.Start(TIMEOUT_TASK_MESSAGES);
+    TaskListenerEnumerate.Target := ATractionID;
+    TaskListenerEnumerate.Callback := ACallback;
+    TaskListenerEnumerate.Start(TIMEOUT_TASK_MESSAGES);
     Result := True
   end;
 end;

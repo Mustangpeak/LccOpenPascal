@@ -44,6 +44,16 @@
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="unitMainForm"/>
       </Unit>
+      <Unit>
+        <Filename Value="unitframeconsistentry.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="Frame1"/>
+        <ResourceBaseClass Value="Frame"/>
+      </Unit>
+      <Unit>
+        <Filename Value="unitconsistselectorpanel.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

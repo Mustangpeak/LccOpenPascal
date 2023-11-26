@@ -1792,7 +1792,7 @@ end;
 
 function TLccMessage.TractionExtractListenerQueryNodeFlagsReply: Byte;
 begin
-  Result := DataArray[3]; // Optional
+  Result := DataArray[4]; // Optional
 end;
 
 function TLccMessage.TractionExtractListenerQueryNodeIDReply: TNodeID;

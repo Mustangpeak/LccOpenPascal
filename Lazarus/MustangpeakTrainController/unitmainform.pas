@@ -19,6 +19,7 @@ uses
   LCLType,
   ActnList,
   Buttons,
+  unitconsistselectorpanel,
   lcc_ethernet_client,
   lcc_node_manager,
   lcc_ethernet_common,
@@ -30,7 +31,6 @@ uses
   lcc_alias_server,
   lcc_defines,
   lcc_utilities,
-
   lcc_cdi_parser;
 
 
@@ -62,6 +62,8 @@ type
     ActionLogClear: TAction;
     ActionLogEnable: TAction;
     ActionListMain: TActionList;
+    Button1: TButton;
+    ButtonThrottleConsist: TButton;
     ButtonThrottleSelectRelease: TButton;
     ButtonLogClear: TButton;
     ButtonThrottleSelectGo: TButton;
@@ -72,10 +74,9 @@ type
     EditSettingsIP: TEdit;
     EditSettingsPort: TEdit;
     EditSettingsNodeID: TEdit;
-    ImageThrottleHamburger: TImage;
     ImageListMain: TImageList;
-    ImageScrollLeft: TImage;
-    ImageScrollRight: TImage;
+    ImageRosterScrollLeft: TImage;
+    ImageRosterScrollRight: TImage;
     Label2: TLabel;
     LabelStatus: TLabel;
     LabelErrorMsg: TLabel;
@@ -87,19 +88,15 @@ type
     ListBoxRosterDetails: TListBox;
     ListBoxRoster: TListBox;
     MemoLog: TMemo;
-    PageControl1: TPageControl;
+    PageControlThrottle: TPageControl;
     PageControlRoster: TPageControl;
     PageControlMain: TPageControl;
     Panel1: TPanel;
-    Panel3: TPanel;
-    Panel4: TPanel;
+    Panel2: TPanel;
     Panel5: TPanel;
     PanelRosterEditorConfigurationBkGnd: TPanel;
-    PanelThrottleHamburger: TPanel;
-    Panel2: TPanel;
     PanelRosterHeader: TPanel;
     PanelThrottle: TPanel;
-    PanelRosterSlider: TPanel;
     PanelMainRosterBackground: TPanel;
     PanelLogHeader: TPanel;
     PanelThrottleContainer: TPanel;
@@ -113,9 +110,10 @@ type
     PanelSettings4: TPanel;
     PanelSettings6: TPanel;
     PanelSettings1: TPanel;
+    ScrollBoxConsistEntry: TScrollBox;
     ScrollBoxFunctions: TScrollBox;
-    TabSheet1: TTabSheet;
-    TabSheet2: TTabSheet;
+    TabSheetThrottleConsist: TTabSheet;
+    TabSheetThrottleCab: TTabSheet;
     TabSheetRosterList: TTabSheet;
     TabSheetRosterDetails: TTabSheet;
     TabSheetRosterEditor: TTabSheet;
@@ -153,6 +151,7 @@ type
     procedure ActionRosterRefreshExecute(Sender: TObject);
     procedure Button1Click(Sender: TObject);
     procedure ButtonSettingsRestartConnectionClick(Sender: TObject);
+    procedure ButtonThrottleConsistClick(Sender: TObject);
     procedure ButtonThrottleSelectGoClick(Sender: TObject);
     procedure ButtonThrottleSelectReleaseClick(Sender: TObject);
     procedure ButtonThrottleEStopClick(Sender: TObject);
@@ -163,8 +162,8 @@ type
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure FormShow(Sender: TObject);
-    procedure ImageScrollLeftClick(Sender: TObject);
-    procedure ImageScrollRightClick(Sender: TObject);
+    procedure ImageRosterScrollLeftClick(Sender: TObject);
+    procedure ImageRosterScrollRightClick(Sender: TObject);
     procedure ImageThrottleHamburgerClick(Sender: TObject);
     procedure ListBoxRosterDetailsDrawItem(Control: TWinControl;Index: Integer; ARect: TRect; State: TOwnerDrawState);
     procedure ListBoxRosterDetailsMouseUp(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
@@ -174,7 +173,6 @@ type
     procedure PageControlRosterChange(Sender: TObject);
     procedure PageControlRosterChanging(Sender: TObject;var AllowChange: Boolean);
     procedure PanelThrottleLeverResize(Sender: TObject);
-    procedure SpeedButton1Click(Sender: TObject);
     procedure TimerMainTimer(Sender: TObject);
     procedure ToggleBoxFunctionChange(Sender: TObject);
     procedure ToggleBoxThrottleForwardChange(Sender: TObject);
@@ -184,6 +182,7 @@ type
   private
     FBitmapDetails: TBitmap;
     FCDIParser: TLccCdiParser;
+    FConsistEntryPanel: TConsistSelectorPanel;
     FConsistPanelShown: Boolean;
     FController: TLccTrainController;
     FEmulateCanBus: Boolean;
@@ -196,6 +195,7 @@ type
   protected
     property CDIParser: TLccCdiParser read FCDIParser write FCDIParser;
     property ConsistPanelShown: Boolean read FConsistPanelShown;
+    property ConsistEntryPanel: TConsistSelectorPanel read FConsistEntryPanel write FConsistEntryPanel;
 
     property ShownOnce: Boolean read FShownOnce write FShownOnce;
     property EmulateCanBus: Boolean read FEmulateCanBus write FEmulateCanBus;
@@ -225,7 +225,6 @@ type
 
     procedure CallbackTrainRosterNotify(ATask: TLccTaskBase);      // TLccTaskTrainRoster
 
-    procedure CallbackQueryAttachedListeners(ATask: TLccTaskBase);  // TLccTaskQueryAttachedListeners
     procedure CallbackListenerAttach(ATask: TLccTaskBAse);     // TLccListenerAttach
     procedure CallbackListenerDetach(ATask: TLccTaskBAse);     // TLccListenerDetach
 
@@ -268,6 +267,7 @@ begin
   BitmapDetails := TBitmap.Create;
   CDIParser := TLccCdiParser.Create(nil);
   ImageListMain.GetBitmap(ICON_MORE_DOTS_IMAGE_INDEX, BitmapDetails);
+  PageControlThrottle.ShowTabs := False;
 
   ConnectionFactory.OnStateChange := @OnConnectionConnectionState;
   ConnectionFactory.OnError := @OnConnectionErrorMessage;
@@ -278,7 +278,8 @@ begin
   NodeManager.OnNodeIDChanged := @OnNodeIdChanged;
   NodeManager.OnNodeLogin := @OnNodeLogin;
 
-  PanelRosterSlider.Width := 0;
+  ConsistEntryPanel := TConsistSelectorPanel.Create(Self);
+  ConsistEntryPanel.Parent := ScrollBoxConsistEntry;
 end;
 
 procedure TFormTrainController.FormCloseQuery(Sender: TObject; var CanClose: Boolean);
@@ -340,6 +341,24 @@ begin
     LabelErrorMsg.Caption := 'Invalid Port number: ' + LocalPortStr;
 end;
 
+procedure TFormTrainController.ButtonThrottleConsistClick(Sender: TObject);
+begin
+  if PageControlThrottle.PageIndex = 0 then
+  begin
+    if Assigned(Controller.TrainRoster.ActiveTrain) then
+    begin
+      PageControlThrottle.PageIndex := 1;
+      ButtonThrottleConsist.Caption := '<- Cab';
+      ConsistEntryPanel.Clear;
+      ConsistEntryPanel.Initialize(Controller.TrainRoster.ActiveTrain.NodeID);
+    end;
+  end else
+  begin
+    PageControlThrottle.PageIndex := 0;
+    ButtonThrottleConsist.Caption := '<- Consist';
+  end;
+end;
+
 procedure TFormTrainController.ActionRosterRefreshExecute(Sender: TObject);
 begin
   if Assigned(Controller) then
@@ -348,7 +367,7 @@ end;
 
 procedure TFormTrainController.Button1Click(Sender: TObject);
 begin
-
+  ConsistEntryPanel.Add;
 end;
 
 procedure TFormTrainController.ActionLogClearExecute(Sender: TObject);
@@ -459,36 +478,18 @@ begin
   end;
 end;
 
-procedure TFormTrainController.ImageScrollLeftClick(Sender: TObject);
+procedure TFormTrainController.ImageRosterScrollLeftClick(Sender: TObject);
 begin
   UpdateRosterHeaderScrolledLeft;
 end;
 
-procedure TFormTrainController.ImageScrollRightClick(Sender: TObject);
+procedure TFormTrainController.ImageRosterScrollRightClick(Sender: TObject);
 begin
   UpdateRosterHeaderScrolledRight;
 end;
 
 procedure TFormTrainController.ImageThrottleHamburgerClick(Sender: TObject);
-var
-  i: Integer;
 begin
-  if PanelRosterSlider.Width < 5 then
-  begin
-    for i := 1 to ClientWidth do
-    begin
-      PanelRosterSlider.Width := i;
-      Application.ProcessMessages;
-
-    end;
-  end else
-  begin
-    for i := PanelRosterSlider.Width downto 0 do
-    begin
-      PanelRosterSlider.Width := i;
-      Application.ProcessMessages;
-    end;
-  end;
 
 end;
 
@@ -687,35 +688,6 @@ begin
   end;
 end;
 
-procedure TFormTrainController.SpeedButton1Click(Sender: TObject);
-var
-  i: Integer;
-begin
-  if ConsistPanelShown then
-  begin
-    PanelRosterSlider.Width  := 0;
-  {  for i := PanelRosterSlider.Width downto 0 do
-    begin
-      PanelRosterSlider.Width := i;
-   //   Sleep(0);
-      Invalidate;
-      Update;
-    end;   }
-    FConsistPanelShown := False;
-  end else
-  begin
-    PanelRosterSlider.Width  := 200;
-  {  for i := 0 to 150 do
-    begin
-      PanelRosterSlider.Width := i;
-  //    Sleep(0);
-      Invalidate;
-      Update;
-    end;      }
-    FConsistPanelShown := True;
-  end;
-end;
-
 procedure TFormTrainController.TimerMainTimer(Sender: TObject);
 begin
   if TimerMain.Interval <> 5000 then
@@ -799,6 +771,7 @@ begin
           if NodeManager.Nodes.Count = 0 then
           begin
             Controller := NodeManager.AddNodeByClass('', TLccTrainController, True, NULL_NODE_ID) as TLccTrainController;
+            ConsistEntryPanel.Controller := Controller;
             Controller.TrainRoster.Callback := @CallbackTrainRosterNotify;
             Controller.OnSetFunctionListener := @CallbackSetFunctionListener;
             Controller.OnSetSpeedListener := @CallbackSetSpeedListener;
@@ -1082,28 +1055,6 @@ begin
   end;
 end;
 
-procedure TFormTrainController.CallbackQueryAttachedListeners(ATask: TLccTaskBase);
-var
-  TaskQueryAttachedListeners: TLccTaskQueryAttachedListeners;
-begin
-  TaskQueryAttachedListeners := ATask as TLccTaskQueryAttachedListeners;
-
-  case ATask.TaskState of
-    lesComplete :
-      begin
-
-        LabelStatus.Caption := '';
-      end;
-    lesRunning :
-      begin
-        LabelStatus.Caption := 'Listener Number: ' + IntToStr(TaskQueryAttachedListeners.iListener) + ' of ' + IntToStr(TaskQueryAttachedListeners.ListenerCount)
-      end;
-    lesAbort   : LabelStatus.Caption := 'Query Attached Listeners Aborted';
-    lesTimeout : LabelStatus.Caption := 'Query Attached Listeners Timeout';
-    lesError   : LabelStatus.Caption := 'Error: Query Attached Listeners - Code=' + IntToStr(ATask.ErrorCode) + ' ' + ATask.ErrorMessage;
-  end;
-end;
-
 procedure TFormTrainController.CallbackListenerAttach(ATask: TLccTaskBAse);
 var
   TaskListenerAttach: TLccTaskListenerAttach;
@@ -1210,8 +1161,8 @@ begin
       ListBoxRosterDetails.ClearSelection;
     end;
   end;
-  ImageScrollLeft.Visible := PageControlRoster.PageIndex > 0;
-  ImageScrollRight.Visible := True;
+  ImageRosterScrollLeft.Visible := PageControlRoster.PageIndex > 0;
+  ImageRosterScrollRight.Visible := True;
   PanelRosterHeader.Caption := PageControlRoster.Pages[PageControlRoster.PageIndex].Caption;
 end;
 
@@ -1231,8 +1182,8 @@ begin
     end;
   end;
 
-  ImageScrollLeft.Visible :=  True;
-  ImageScrollRight.Visible := PageControlRoster.PageIndex < (PageControlRoster.PageCount - 1);
+  ImageRosterScrollLeft.Visible :=  True;
+  ImageRosterScrollRight.Visible := PageControlRoster.PageIndex < (PageControlRoster.PageCount - 1);
   PanelRosterHeader.Caption := PageControlRoster.Pages[PageControlRoster.PageIndex].Caption;
 end;
 
