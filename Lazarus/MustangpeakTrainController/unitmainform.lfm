@@ -19,9 +19,9 @@ object FormTrainController: TFormTrainController
     Height = 576
     Top = 0
     Width = 395
-    ActivePage = TabSheetThrottle
+    ActivePage = TabSheetRoster
     Align = alClient
-    TabIndex = 0
+    TabIndex = 1
     TabOrder = 0
     object TabSheetThrottle: TTabSheet
       Caption = 'Throttle'
@@ -44,6 +44,7 @@ object FormTrainController: TFormTrainController
           Anchors = [akTop, akLeft, akRight, akBottom]
           BorderSpacing.Around = 4
           ItemHeight = 19
+          OnChange = ComboBoxTrainSelectChange
           OnKeyDown = ComboBoxTrainSelectKeyDown
           OnSelect = ComboBoxTrainSelectSelect
           Sorted = True

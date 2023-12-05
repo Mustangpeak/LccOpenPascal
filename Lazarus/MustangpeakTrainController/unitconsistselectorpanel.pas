@@ -18,6 +18,7 @@ uses
 
 
 type
+  TConsistSelectorPanel = class;
 
   { TConsistSelectorItem }
 
@@ -28,7 +29,9 @@ type
     FCheckBoxFnForward: TCheckBox;
     FCheckBoxReverseDir: TCheckBox;
     FComboBoxEntry: TComboBox;
+    FController: TLccTrainController;
     FNodeID: TNodeID;
+    FOwnerPanel: TConsistSelectorPanel;
   protected
     property ComboBoxEntry: TComboBox read FComboBoxEntry write FComboBoxEntry;
     property CheckBoxReverseDir: TCheckBox read FCheckBoxReverseDir write FCheckBoxReverseDir;
@@ -36,11 +39,14 @@ type
     property CheckBoxFnForward: TCheckBox read FCheckBoxFnForward write FCheckBoxFnForward;
     property ButtonRemove: TButton read FButtonRemove write FButtonRemove;
     property NodeID: TNodeID read FNodeID write FNodeID;
+    property Controller: TLccTrainController read FController write FController;
+    property OwnerPanel: TConsistSelectorPanel read FOwnerPanel write FOwnerPanel;
 
     procedure ButtonRemoveClick(Sender: TObject);
-    procedure CheckBoxReverseDirClick(Sender: TObject);
-    procedure CheckBoxF0ForwardClick(Sender: TObject);
-    procedure CheckBoxFnForwardClick(Sender: TObject);
+    procedure CheckBoxClick(Sender: TObject);
+
+    procedure CallbackListenerAttach(ATask: TLccTaskBase);
+    procedure CallbackListenerDetach(ATask: TLccTaskBase);
   public
     constructor Create(TheOwner: TComponent); override;
     destructor Destroy; override;
@@ -53,16 +59,19 @@ type
     FController: TLccTrainController;
     FiListener: Byte;
     FListenerCount: Byte;
+    FTractionNodeID: TNodeID;
     FSelectorItems: TObjectList;
   protected
     property SelectorItems: TObjectList read FSelectorItems write FSelectorItems;
 
     property ListenerCount: Byte read FListenerCount write FListenerCount;
     property iListener: Byte read FiListener write FiListener;
+    property TractionNodeID: TNodeID read FTractionNodeID write FTractionNodeID;
 
     procedure CallbackListenerEnumerate(ATask: TLccTaskBase);
   public
     property Controller: TLccTrainController read FController write FController;
+
 
     constructor Create(TheOwner: TComponent); override;
     destructor Destroy; override;
@@ -78,20 +87,39 @@ implementation
 
 procedure TConsistSelectorPanel.CallbackListenerEnumerate(ATask: TLccTaskBase);
 
-  procedure AddConsistItem(Task: TLccTaskListenersEnumerate);
+  procedure AddListenerItem(Task: TLccTaskListenersEnumerate);
   var
-    ConsistItem: TConsistSelectorItem;
+    ListenerItem: TConsistSelectorItem;
+    i: Integer;
   begin
     if Task.TrainListener.Hidden then Exit;
 
-    ConsistItem := Add;
-    ConsistItem.CheckBoxReverseDir.Checked := Task.TrainListener.ReverseDir;
-    ConsistItem.CheckBoxF0Forward.Checked := Task.TrainListener.F0Forward;
-    ConsistItem.CheckBoxFnForward.Checked := Task.TrainListener.FnForward;
+    ListenerItem := Add;
 
-    ConsistItem.ComboBoxEntry.Items.Add( NodeIDToString(Task.TrainListener.NodeID, True));
-    ConsistItem.ComboBoxEntry.ItemIndex := 0;
-    ConsistItem.NodeID := Task.Target;
+    ListenerItem.CheckBoxReverseDir.Checked := Task.TrainListener.ReverseDir;
+    ListenerItem.CheckBoxF0Forward.Checked := Task.TrainListener.F0Forward;
+    ListenerItem.CheckBoxFnForward.Checked := Task.TrainListener.FnForward;
+
+    ListenerItem.ComboBoxEntry.Items.BeginUpdate;
+    try
+      ListenerItem.ComboBoxEntry.Clear;
+      for i := 0 to Controller.TrainRoster.Count - 1 do
+      begin
+        if not EqualNodeID(Controller.TrainRoster[i].NodeID, TractionNodeID, False) then     // Do not show the node that is the parent
+        begin
+          ListenerItem.ComboBoxEntry.AddItem(Controller.TrainRoster[i].UserName, Controller.TrainRoster[i]);
+          if EqualNodeID(Controller.TrainRoster[i].NodeID, Task.TrainListener.NodeID, False) then
+            ListenerItem.ComboBoxEntry.ItemIndex  := ListenerItem.ComboBoxEntry.Items.Count - 1;
+        end;
+      end;
+
+    finally
+      ListenerItem.ComboBoxEntry.Items.EndUpdate;
+    end;
+
+    ListenerItem.NodeID := Task.TrainListener.NodeID;      // If the item is carrying the TrainInfo from above likely don't need this...
+    ListenerItem.OwnerPanel := Self;
+    ListenerItem.Controller := Controller;  // Important to do last so we don't fire off ListenerAssign as the checkboxes are set above
   end;
 
 var
@@ -102,11 +130,11 @@ begin
   case ATask.TaskState of
     lesComplete :
       begin
-        AddConsistItem(TaskListenerEnumerate)
+        AddListenerItem(TaskListenerEnumerate)
       end;
     lesRunning :
       begin
-         AddConsistItem(TaskListenerEnumerate)
+         AddListenerItem(TaskListenerEnumerate)
       end;
     lesAbort   : begin end;
     lesTimeout : begin end;
@@ -128,7 +156,20 @@ begin
 end;
 
 function TConsistSelectorPanel.Add: TConsistSelectorItem;
+var
+  i: Integer;
+  OldItem: TObject;
 begin
+  for i := 0 to SelectorItems.Count - 1 do
+  begin
+    if not (SelectorItems[i] as TConsistSelectorItem).Visible then
+    begin
+      OldItem :=SelectorItems[i];
+      SelectorItems.Delete(i);
+      OldItem.Free;
+    end;
+  end;
+
   Result := TConsistSelectorItem.Create(Self);
   Result.Top := $FFFF;
   Result.Parent := Self;
@@ -153,6 +194,7 @@ procedure TConsistSelectorPanel.Initialize(ANodeID: TNodeID);
 begin
   if not Assigned(Controller) then Exit;
 
+  TractionNodeID := ANodeID;
   Controller.ListenerEnumerate(ANodeID, @CallbackListenerEnumerate);
 
 end;
@@ -162,23 +204,51 @@ end;
 
 procedure TConsistSelectorItem.ButtonRemoveClick(Sender: TObject);
 begin
-  // Still need to keep this information so we can remove the consist from the train later
-  Visible := False;
+  if not Assigned(Controller) then Exit;
+
+  Controller.ListenerDetach(OwnerPanel.TractionNodeID, NodeID, @CallbackListenerDetach);
+//  Controller.ListenerDetach(NodeIDOwnerPanel.TractionNodeID, @CallbackListenerDetach);
 end;
 
-procedure TConsistSelectorItem.CheckBoxReverseDirClick(Sender: TObject);
+procedure TConsistSelectorItem.CheckBoxClick(Sender: TObject);
 begin
+  if not Assigned(Controller) then Exit;
 
+  Controller.ListenerAttach(OwnerPanel.TractionNodeID, NodeID, CheckBoxReverseDir.Checked, CheckBoxF0Forward.Checked, CheckBoxFnForward.Checked, False, @CallbackListenerAttach);
 end;
 
-procedure TConsistSelectorItem.CheckBoxF0ForwardClick(Sender: TObject);
+procedure TConsistSelectorItem.CallbackListenerAttach(ATask: TLccTaskBase);
+var
+  TaskListenerAttach: TLccTaskListenerAttach;
 begin
+  TaskListenerAttach := ATask as TLccTaskListenerAttach;
 
+  case ATask.TaskState of
+    lesComplete :
+      begin
+
+      end;
+    lesAbort   : begin end;
+    lesTimeout : begin end;
+    lesError   : begin end;
+  end;
 end;
 
-procedure TConsistSelectorItem.CheckBoxFnForwardClick(Sender: TObject);
+procedure TConsistSelectorItem.CallbackListenerDetach(ATask: TLccTaskBase);
+var
+  TaskListenerAttach: TLccTaskListenerAttach;
 begin
+  TaskListenerAttach := ATask as TLccTaskListenerAttach;
 
+  case ATask.TaskState of
+    lesComplete :
+      begin
+        Visible := False;
+      end;
+    lesAbort   : begin end;
+    lesTimeout : begin end;
+    lesError   : begin end;
+  end;
 end;
 
 constructor TConsistSelectorItem.Create(TheOwner: TComponent);
@@ -199,7 +269,7 @@ begin
   CheckBoxReverseDir.Top := ComboBoxEntry.Top + ComboBoxEntry.Height + 4;
   CheckBoxReverseDir.Left := CHECKBOX_INDENT;
   CheckBoxReverseDir.Tag := 0;
-  CheckBoxReverseDir.OnClick := @CheckBoxReverseDirClick;
+  CheckBoxReverseDir.OnClick := @CheckBoxClick;
 
   CheckBoxF0Forward := TCheckBox.Create(Self);
   CheckBoxF0Forward.Parent := Self;
@@ -207,7 +277,7 @@ begin
   CheckBoxF0Forward.Top := CheckBoxReverseDir.Top + CheckBoxReverseDir.Height + 4;
   CheckBoxF0Forward.Left := CHECKBOX_INDENT;
   CheckBoxF0Forward.Tag := 1;
-  CheckBoxF0Forward.OnClick := @CheckBoxF0ForwardClick;
+  CheckBoxF0Forward.OnClick := @CheckBoxClick;
 
   CheckBoxFnForward := TCheckBox.Create(Self);
   CheckBoxFnForward.Parent := Self;
@@ -215,7 +285,7 @@ begin
   CheckBoxFnForward.Top := CheckBoxF0Forward.Top + CheckBoxF0Forward.Height + 4;
   CheckBoxFnForward.Left := CHECKBOX_INDENT;
   CheckBoxFnForward.Tag := 2;
-  CheckBoxFnForward.OnClick := @CheckBoxFnForwardClick;
+  CheckBoxFnForward.OnClick := @CheckBoxClick;
 
   ButtonRemove := TButton.Create(Self);
   ButtonRemove.Parent := Self;

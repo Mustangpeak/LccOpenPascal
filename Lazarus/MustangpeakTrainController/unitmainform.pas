@@ -156,6 +156,7 @@ type
     procedure ButtonThrottleSelectReleaseClick(Sender: TObject);
     procedure ButtonThrottleEStopClick(Sender: TObject);
     procedure ButtonThrottleStopClick(Sender: TObject);
+    procedure ComboBoxTrainSelectChange(Sender: TObject);
     procedure ComboBoxTrainSelectKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure ComboBoxTrainSelectSelect(Sender: TObject);
     procedure FormCloseQuery(Sender: TObject; var CanClose: Boolean);
@@ -185,6 +186,7 @@ type
     FConsistEntryPanel: TConsistSelectorPanel;
     FConsistPanelShown: Boolean;
     FController: TLccTrainController;
+    FCurrentDetailsNodeID: TNodeID;
     FEmulateCanBus: Boolean;
     FEthernetClient: TLccEthernetClientThreadManager;
     FNodeManager: TLccNodeManager;
@@ -201,6 +203,8 @@ type
     property EmulateCanBus: Boolean read FEmulateCanBus write FEmulateCanBus;
     property UpdateLock: Boolean read FUpdateLock write FUpdateLock;
 
+    property CurrentDetailsNodeID: TNodeID read FCurrentDetailsNodeID write FCurrentDetailsNodeID;
+
     procedure OnConnectionConnectionState(Sender: TObject; Manager: TLccConnectionThreadManager; Thread: TLccConnectionThread; Info: TLccConnectionInfo);
     procedure OnConnectionErrorMessage(Sender: TObject; Manager: TLccConnectionThreadManager; Thread: TLccConnectionThread; Info: TLccConnectionInfo);
     procedure OnConnectionManagerReceiveMessage(Sender: TObject; ALccMessage: TLccMessage);
@@ -209,8 +213,6 @@ type
     procedure OnNodeIDChanged(Sender: TObject; ALccNode: TLccNode);
     procedure OnNodeAliasChanged(Sender: TObject; ALccNode: TLccNode);
     procedure OnNodeLogin(Sender: TObject; ALccNode: TLccNode);
-
-    procedure OnCDIReadCallback(MemorySpaceReadEnging: TLccTaskMemorySpaceAccess);
 
     procedure EnableControls(DoEnable: Boolean);
 
@@ -222,6 +224,7 @@ type
     procedure CallbackQueryFunction(ATask: TLccTaskBase);     // TLccTaskQueryFunction
 
     procedure CallbackCdi(ATask: TLccTaskBase);                // TLccTaskMemorySpaceAccess
+    procedure CalllbackSNIP(ATask: TLccTaskBase);
 
     procedure CallbackTrainRosterNotify(ATask: TLccTaskBase);      // TLccTaskTrainRoster
 
@@ -235,8 +238,9 @@ type
     procedure UpdateRoster;
     procedure UpdateRosterHeaderScrolledLeft;
     procedure UpdateRosterHeaderScrolledRight;
-    procedure LoadCDIUserInterface;
+    procedure LoadCDIUserInterface(ACDI: String);
     function FindFunctionButton(Index: DWord): TToggleBox;
+    procedure ClearListboxRoster;
 
   public
     property Controller: TLccTrainController read FController write FController;
@@ -417,6 +421,11 @@ begin
   TrackBarThrottle.Position := 0;
 end;
 
+procedure TFormTrainController.ComboBoxTrainSelectChange(Sender: TObject);
+begin
+
+end;
+
 procedure TFormTrainController.ComboBoxTrainSelectKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
 begin
   if (Key = VK_RETURN) then
@@ -441,6 +450,7 @@ end;
 
 procedure TFormTrainController.FormDestroy(Sender: TObject);
 begin
+  ClearListboxRoster;
   NodeManager.ReleaseAliasAll;
   FreeAndNil(FNodeManager);    // Must be last as previous 2 use it
   FreeAndNil(FBitmapDetails);
@@ -498,6 +508,7 @@ var
   aColor: TColor;                       //Background color
   TextRect, ImageRect: TRect;
   DetailsText: String;
+  TrainInfo: TTrainInfo;
 begin
   if (Index mod 2 = 0)                  //Index tells which item it is
     then aColor:=$FFFFFF                //every second item gets white as the background color
@@ -512,20 +523,24 @@ begin
   ListBoxRosterDetails.Canvas.TextRect(TextRect, 2, TextRect.Top+2, ListBoxRosterDetails.Items[Index]);  //Draw Itemtext
 
   DetailsText := 'Unknown...';
- { if Assigned(DetailsTractionObject) then
+  if not NullNodeID(CurrentDetailsNodeID) then
   begin
-    if DetailsTractionObject.SNIP.Valid then
+    TrainInfo := Controller.TrainRoster.FindByNodeID(CurrentDetailsNodeID);
+    if Assigned(TrainInfo) then
     begin
-      case Index of
-        0 : DetailsText := DetailsTractionObject.SNIP.Manufacturer;
-        1 : DetailsText := DetailsTractionObject.SNIP.Model;
-        2 : DetailsText := DetailsTractionObject.SNIP.HardwareVersion;
-        3 : DetailsText := DetailsTractionObject.SNIP.SoftwareVersion;
-        4 : DetailsText := DetailsTractionObject.SNIP.UserName;
-        5 : DetailsText := DetailsTractionObject.SNIP.UserDescription;
-      end;
-    end
-  end;  }
+      if TrainInfo.SNIP.Valid then
+      begin
+        case Index of
+          0 : DetailsText := TrainInfo.SNIP.Manufacturer;
+          1 : DetailsText := TrainInfo.SNIP.Model;
+          2 : DetailsText := TrainInfo.SNIP.HardwareVersion;
+          3 : DetailsText := TrainInfo.SNIP.SoftwareVersion;
+          4 : DetailsText := TrainInfo.SNIP.UserName;
+          5 : DetailsText := TrainInfo.SNIP.UserDescription;
+        end;
+      end
+    end;
+  end;
   ListBoxRosterDetails.Canvas.Font.Bold := False;
   ListBoxRosterDetails.Canvas.TextOut(TextRect.Left + 20, TextRect.Top + (TextRect.Height div 2), DetailsText);
 
@@ -545,6 +560,7 @@ var
   HitItemIndex: Integer;
   DetailsRect: TRect;
   YScroll: TScrollInfo;
+  TrainInfo: TTrainInfo;
 begin
   if PageControlRoster.PageIndex = 1 then
   begin
@@ -568,17 +584,19 @@ begin
       if PtInRect(DetailsRect, Point) then
       begin
         UpdateRosterHeaderScrolledRight;
-      {  if Assigned(DetailsTractionObject) then
+        if not NullNodeID(CurrentDetailsNodeID) and Assigned(Controller) then
         begin
-          if not DetailsTractionObject.NodeCDI.Valid then
+          TrainInfo := Controller.TrainRoster.FindByNodeID(CurrentDetailsNodeID);
+          if Assigned(TrainInfo) then
           begin
-            PanelRosterEditorConfigurationBkGnd.Caption := 'Reading Configuration Data......';
-            Controller.TaskMemorySpaceAccess.Reset;
-            Controller.TaskMemorySpaceAccess.Assign(lems_Read, MSI_CDI, True, 0, 0, False, DetailsTractionObject.NodeID, DetailsTractionObject.NodeAlias, @OnCDIReadCallback);
-            Controller.TaskMemorySpaceAccess.Start;
-          end else
-            LoadCDIUserInterface;
-        end;   }
+            if TrainInfo.CDI = '' then
+            begin
+              Controller.RequestCDI(TrainInfo.NodeID, @CallbackCDI);
+              PanelRosterEditorConfigurationBkGnd.Caption := 'Reading Configuration Data......';
+            end else
+              LoadCDIUserInterface(TrainInfo.CDI);
+          end;
+        end;
       end;
     end;
   end;
@@ -609,8 +627,6 @@ begin
 
 end;
 
-type
-  THackListBox = class(TListBox);
 
 procedure TFormTrainController.ListBoxRosterMouseUp(Sender: TObject; Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 var
@@ -640,7 +656,7 @@ begin
 
       if PtInRect(DetailsRect, Point) then
       begin
-//        DetailsTractionObject := ListBoxRoster.Items.Objects[HitItemIndex] as TLccTractionObject;
+        CurrentDetailsNodeID := (ListBoxRoster.Items.Objects[HitItemIndex] as TNodeIDObj).NodeID;
         UpdateRosterHeaderScrolledRight;
       end;
     end;
@@ -794,10 +810,7 @@ begin
 end;
 
 procedure TFormTrainController.OnConnectionManagerReceiveMessage(Sender: TObject; ALccMessage: TLccMessage);
- var
-  ByteArray: TLccDynamicByteArray;
 begin
-  ByteArray := nil;
   if ToggleBoxLogEnable.Checked then
   begin
     MemoLog.Lines.BeginUpdate;
@@ -818,10 +831,7 @@ begin
 end;
 
 procedure TFormTrainController.OnConnectionManagerSendMessage(Sender: TObject; ALccMessage: TLccMessage);
- var
-   ByteArray: TLccDynamicByteArray;
  begin
-   ByteArray := nil;
    if ToggleBoxLogEnable.Checked then
    begin
      MemoLog.Lines.BeginUpdate;
@@ -855,12 +865,6 @@ procedure TFormTrainController.OnNodeLogin(Sender: TObject; ALccNode: TLccNode);
 begin
   if ALccNode = Controller then
     Controller.FindAllTrains;
-end;
-
-
-procedure TFormTrainController.OnCDIReadCallback(MemorySpaceReadEnging: TLccTaskMemorySpaceAccess);
-begin
-  LoadCDIUserInterface;
 end;
 
 procedure TFormTrainController.EnableControls(DoEnable: Boolean);
@@ -1006,7 +1010,11 @@ begin
     lesComplete :
       begin
         LocalTrainInfo := Controller.TrainRoster.FindByNodeID(TaskMemorySpaceAccess.Target);
-        LocalTrainInfo.CDI := TaskMemorySpaceAccess.StreamAsString;
+        if Assigned(LocalTrainInfo) then
+        begin
+          LocalTrainInfo.CDI := TaskMemorySpaceAccess.StreamAsString;
+          LoadCDIUserInterface(LocalTrainInfo.CDI);
+        end;
         LabelStatus.Caption := IntToStr(TaskMemorySpaceAccess.AddressCurrent) + ' of ' + IntToStr(TaskMemorySpaceAccess.AddressHi-TaskMemorySpaceAccess.AddressLo) + ' bytes';
       end;
     lesRunning :
@@ -1019,10 +1027,16 @@ begin
   end;
 end;
 
+procedure TFormTrainController.CalllbackSNIP(ATask: TLccTaskBase);
+begin
+
+end;
+
 procedure TFormTrainController.CallbackTrainRosterNotify(ATask: TLccTaskBase);
 var
   TaskTrainRoster: TLccTaskTrainRoster;
   i: Integer;
+  NodeIDObj: TNodeIDObj;
 begin
   TaskTrainRoster := ATask as TLccTaskTrainRoster;
 
@@ -1037,12 +1051,15 @@ begin
         ListBoxRoster.Items.BeginUpdate;
         ComboBoxTrainSelect.Items.BeginUpdate;
         try
-          ListBoxRoster.Items.Clear;
+          ClearListBoxRoster;
           ComboBoxTrainSelect.Items.Clear;
+
           for i := 0 to TaskTrainRoster.Count - 1 do
           begin
-            ListBoxRoster.Items.Add(TaskTrainRoster.Train[i].UserName);
-            ComboBoxTrainSelect.Items.Add(TaskTrainRoster.Train[i].UserName)
+            NodeIDObj := TNodeIDObj.Create;
+            NodeIDObj.NodeID := TaskTrainRoster.Train[i].NodeID;
+            ListBoxRoster.Items.AddObject(TaskTrainRoster.Train[i].UserName, NodeIDObj);
+            ComboBoxTrainSelect.Items.Add(TaskTrainRoster.Train[i].UserName);
           end;
         finally
           ListBoxRoster.Items.EndUpdate;
@@ -1157,7 +1174,7 @@ begin
     PageControlRoster.PageIndex := PageControlRoster.PageIndex - 1 ;
     if PageControlRoster.PageIndex = 0 then
     begin
- //     DetailsTractionObject := nil;
+      CurrentDetailsNodeID := NULL_NODE_ID;
       ListBoxRosterDetails.ClearSelection;
     end;
   end;
@@ -1167,18 +1184,23 @@ begin
 end;
 
 procedure TFormTrainController.UpdateRosterHeaderScrolledRight;
+var
+  TrainInfo: TTrainInfo;
 begin
   if PageControlRoster.PageIndex < PageControlRoster.PageCount - 1 then
     PageControlRoster.PageIndex := PageControlRoster.PageIndex + 1;
 
   if PageControlRoster.PageIndex = 1 then
   begin
-  //  if Assigned(DetailsTractionObject) then
+    if not NullNodeID(CurrentDetailsNodeID) and Assigned(Controller) then
     begin
-//      if not DetailsTractionObject.SNIP.Valid then
-  //      Controller.SendSNIPRequest(DetailsTractionObject.NodeID, DetailsTractionObject.NodeAlias);
-  //    if not DetailsTractionObject.TrainSNIP.Valid then
-  //      Controller.SendTrainSNIPRequest(DetailsTractionObject.NodeID, DetailsTractionObject.NodeAlias);
+      TrainInfo := Controller.TrainRoster.FindByNodeID(CurrentDetailsNodeID);
+
+      if not TrainInfo.SNIP.Valid then
+        Controller.RequestSNIP(CurrentDetailsNodeID, @CalllbackSNIP);
+
+   //   if not DetailsTractionObject.TrainSNIP.Valid then
+   //     Controller.SendTrainSNIPRequest(DetailsTractionObject.NodeID, DetailsTractionObject.NodeAlias);
     end;
   end;
 
@@ -1187,22 +1209,14 @@ begin
   PanelRosterHeader.Caption := PageControlRoster.Pages[PageControlRoster.PageIndex].Caption;
 end;
 
-procedure TFormTrainController.LoadCDIUserInterface;
-var
-  ATargetNode: TLccAliasMappingRec;
+procedure TFormTrainController.LoadCDIUserInterface(ACDI: String);
 begin
- { if Assigned(DetailsTractionObject) then
+  if not NullNodeID(CurrentDetailsNodeID) then
   begin
-    try
-      ATargetNode := DetailsTractionObject;
-      PanelRosterEditorConfigurationBkGnd.Caption := 'Building User Interface......';
-      CDIParser.Build_CDI_Interface(Controller, ATargetNode, PanelRosterEditorConfigurationBkGnd, DetailsTractionObject.NodeCDI.CDI);
-      PanelRosterEditorConfigurationBkGnd.Caption := '';
-
-    finally
-      ATargetNode.Free;
-    end;
-  end;     }
+    PanelRosterEditorConfigurationBkGnd.Caption := 'Building User Interface......';
+    CDIParser.Build_CDI_Interface(Controller, CurrentDetailsNodeID, PanelRosterEditorConfigurationBkGnd, ACDI);
+    PanelRosterEditorConfigurationBkGnd.Caption := '';
+  end;
 end;
 
 function TFormTrainController.FindFunctionButton(Index: DWord): TToggleBox;
@@ -1228,11 +1242,22 @@ begin
   end;
 end;
 
+procedure TFormTrainController.ClearListboxRoster;
+var
+  i: Integer;
+begin
+  try
+    for i := 0 to ListBoxRoster.Items.Count - 1 do
+      ListBoxRoster.Items.Objects[i].Free;
+  finally
+    ListBoxRoster.Items.Clear;
+  end;
+end;
+
 procedure TFormTrainController.SelectTrainFromComboBox;
 var
   AddressInt: LongInt;
   IsLong: Boolean;
-  i: Integer;
 begin
   AddressInt := -1;
   IsLong := True; // Address string will catch it with "L", "S" or nothing = "L"

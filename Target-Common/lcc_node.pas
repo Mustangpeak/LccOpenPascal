@@ -188,6 +188,8 @@ type
     FIsString: Boolean;
     FMemorySpace: Byte;
     FReadWrite: TLccTaskMemorySpaceReadWrite;
+    FTag: Integer;
+    FTagObject: TObject;
     FTargetAlias: Word;
     FTargetNodeID: TNodeID;
     FUseAddresses: Boolean;
@@ -203,6 +205,8 @@ type
     property IsString: Boolean read FIsString write FIsString;
     property TargetNodeID: TNodeID read FTargetNodeID write FTargetNodeID;
     property TargetAlias: Word read FTargetAlias write FTargetAlias;
+    property Tag: Integer read FTag write FTag;
+    property TagObject: TObject read FTagObject write FTagObject;
     property CallBack: TOnTaskCallback read FCallback write FCallback;
     property CurrentAddress: DWord read FCurrentAddress write FCurrentAddress;
     property UseAddresses: Boolean read FUseAddresses write FUseAddresses;
@@ -214,8 +218,9 @@ type
     property WriteEventID: TEventID read FWriteEventID write SetWriteEventID;
     property DataType: TLccConfigDataType read FDataType write FDataType;
 
-    constructor Create(AReadWrite: TLccTaskMemorySpaceReadWrite; AMemorySpace: Byte; AnIsString: Boolean; AnAddressLo, AnAddressHi: DWORD; AnUseAddresses: Boolean; ATargetNodeID: TNodeID; ATargetAliasID: Word; ACallback: TOnTaskCallback);
+    constructor Create(AReadWrite: TLccTaskMemorySpaceReadWrite; AMemorySpace: Byte; AnIsString: Boolean; AnAddressLo, AnAddressHi: DWORD; AnUseAddresses: Boolean; ATargetNodeID: TNodeID; ATargetAliasID: Word; ACallback: TOnTaskCallback; ATag: Integer; ATagObject: TObject);
   end;
+
 
   { TLccTaskMemorySpaceAccess }
 
@@ -255,7 +260,6 @@ type
     procedure ValidatePIPAndProceed;
     procedure ValidateAddressSpaceAndProceed(SourceMessage: TLccMessage);
     function NextMemorySpaceObjectFromQueue: Boolean;
-    procedure CallbackAndNextMemorySpace;
     procedure StartOperation;
 
 
@@ -289,7 +293,7 @@ type
     procedure Start(ATimeout: Integer); override;
     procedure Reset; override;
     procedure Process(SourceMessage: TLccMessage); override;
-    function Assign(AReadWrite: TLccTaskMemorySpaceReadWrite; AMemorySpace: Byte; AnIsString: Boolean; AnAddressLo, AnAddressHi: DWORD; AnUseAddresses: Boolean; ATargetNodeID: TNodeID; ATargetAliasID: Word; ACallback: TOnTaskCallback): TLccTaskMemorySpaceObject; // AMemorySpace = MSI_xxxx constants
+    function Assign(AReadWrite: TLccTaskMemorySpaceReadWrite; AMemorySpace: Byte; AnIsString: Boolean; AnAddressLo, AnAddressHi: DWORD; AnUseAddresses: Boolean; ATargetNodeID: TNodeID; ATargetAliasID: Word; ACallback: TOnTaskCallback; ATag: Integer; ATagObject: TObject): TLccTaskMemorySpaceObject; // AMemorySpace = MSI_xxxx constants
   end;
 
   { TTaskReadPIP }
@@ -385,7 +389,7 @@ type
         // Datagram Configuration Type Handlers - Memory Space Write Handlers
     procedure HandleCDI_MemorySpaceWrite(var SourceMessage: TLccMessage); virtual;
     procedure HandleAll_MemorySpaceWrite(var SourceMessage: TLccMessage);virtual;
-    procedure HandleConfiguration_MemorySpaceWrite(var SourceMessage: TLccMessage);virtual;
+    procedure HandleConfiguration_MemorySpaceWrite(var SourceMessage: TLccMessage; AutoGrowSpace: Boolean);virtual;
     procedure HandleACDI_Manufacturer_MemorySpaceWrite(var SourceMessage: TLccMessage); virtual;
     procedure HandleACDI_UserMemorySpaceWrite(var SourceMessage: TLccMessage);virtual;
     procedure HandleTractionFDI_MemorySpaceWrite(var SourceMessage: TLccMessage); virtual;
@@ -395,7 +399,7 @@ type
        // Datagram Configuration Type Handlers - Memory Space Read Handlers
     procedure HandleCDI_MemorySpaceRead(var SourceMessage: TLccMessage);virtual;
     procedure HandleAll_MemorySpaceRead(var SourceMessage: TLccMessage);virtual;
-    procedure HandleConfiguration_MemorySpaceRead(var SourceMessage: TLccMessage); virtual;
+    procedure HandleConfiguration_MemorySpaceRead(var SourceMessage: TLccMessage; AutoGrowSpace: Boolean); virtual;
     procedure HandleACDI_Manufacturer_MemorySpaceRead(var SourceMessage: TLccMessage);virtual;
     procedure HandleACDI_User_MemorySpaceRead(var SourceMessage: TLccMessage);virtual;
     procedure HandleTractionFDI_MemorySpaceRead(var SourceMessage: TLccMessage); virtual;
@@ -512,6 +516,10 @@ type
     function GetCdiFile: string; virtual;
     procedure BeforeLogin; virtual;
     procedure LccLogIn(ANodeID: TNodeID); virtual;
+    function InternalRequestConfigMemRead(ATarget: TNodeID; MemAddressStart, MemAddressEnd: DWord; IsString: Boolean; ACallback: TOnTaskCallback; ATag: Integer = 0; ATagObject: TObject = nil; Queue: Boolean = False): Boolean;
+    function InternalRequestConfigMemWriteString(ATarget: TNodeID; MemAddressStart, MemAddressEnd: DWord; AString: String; ACallback: TOnTaskCallback; ATag: Integer = 0; ATagObject: TObject = nil; Queue: Boolean = False): Boolean;
+    function InternalRequestConfigMemWriteInteger(ATarget: TNodeID; MemAddressStart, MemAddressEnd: DWord; AnInteger: Integer; ACallback: TOnTaskCallback; ATag: Integer = 0; ATagObject: TObject = nil; Queue: Boolean = False): Boolean;
+    function InternalRequestConfigMemWriteEventID(ATarget: TNodeID; MemAddressStart, MemAddressEnd: DWord; AnEventID: TEventID; ACallback: TOnTaskCallback; ATag: Integer = 0; ATagObject: TObject = nil; Queue: Boolean = False): Boolean;
 
     // GridConnect Helpers
     function GenerateID_Alias_From_Seed(var Seed: TNodeID): Word;
@@ -555,8 +563,6 @@ type
     procedure SendConsumerIdentify(Event: TEventID);
     procedure SendProducedEvents;
     procedure SendProducerIdentify(Event: TEventID);
-    procedure SendSNIPRequest(TargetNodeID: TNodeID; TargetAlias: Word);
-    procedure SendTrainSNIPRequest(TargetNodeID: TNodeID; TargetAlias: Word);
 
     //  AnAssociatedNode is the node that matches the NodeID/AliasID so it is not sent back and generate a Duplicate Alias when dispatching back to other virtual nodes
     // This is tricky if a virtual node is created then its NodeID and Alias are used in response to a query and you forget to set the Associated node...
@@ -567,7 +573,16 @@ type
     function RequestSNIP(ATarget: TNodeID; ACallback: TOnTaskCallback; ATag: Integer = 0; ATagObject: TObject = nil): Boolean;   // Callback: TTaskReadSNIP
     function RequestPIP(ATarget: TNodeID; ACallback: TOnTaskCallback; ATag: Integer = 0; ATagObject: TObject = nil): Boolean;    // Callback: TTaskReadPIP
     function RequestCDI(ATarget: TNodeID; ACallback: TOnTaskCallback; ATag: Integer = 0; ATagObject: TObject = nil): Boolean;
-    procedure AbortCDI;
+    function RequestConfigMemRead(ATarget: TNodeID; MemAddressStart, MemAddressEnd: DWord; IsString: Boolean; ACallback: TOnTaskCallback; ATag: Integer = 0; ATagObject: TObject = nil): Boolean;
+    function RequestQueueConfigMemRead(ATarget: TNodeID; MemAddressStart, MemAddressEnd: DWord; IsString: Boolean; ACallback: TOnTaskCallback; ATag: Integer = 0; ATagObject: TObject = nil): Boolean;
+    function RequestConfigMemWriteString(ATarget: TNodeID; MemAddressStart, MemAddressEnd: DWord; AString: String; ACallback: TOnTaskCallback; ATag: Integer = 0; ATagObject: TObject = nil): Boolean;
+    function RequestConfigMemWriteInteger(ATarget: TNodeID; MemAddressStart, MemAddressEnd: DWord; AnInteger: Integer; ACallback: TOnTaskCallback; ATag: Integer = 0; ATagObject: TObject = nil): Boolean;
+    function RequestConfigMemWriteEventID(ATarget: TNodeID; MemAddressStart, MemAddressEnd: DWord; AnEventID: TEventID; ACallback: TOnTaskCallback; ATag: Integer = 0; ATagObject: TObject = nil): Boolean;
+    function RequestQueueConfigMemWriteString(ATarget: TNodeID; MemAddressStart, MemAddressEnd: DWord; AString: String; ACallback: TOnTaskCallback; ATag: Integer = 0; ATagObject: TObject = nil): Boolean;
+    function RequestQueueConfigMemWriteInteger(ATarget: TNodeID; MemAddressStart, MemAddressEnd: DWord; AnInteger: Integer; ACallback: TOnTaskCallback; ATag: Integer = 0; ATagObject: TObject = nil): Boolean;
+    function RequestQueueConfigMemWriteEventID(ATarget: TNodeID; MemAddressStart, MemAddressEnd: DWord; AnEventID: TEventID; ACallback: TOnTaskCallback; ATag: Integer = 0; ATagObject: TObject = nil): Boolean;
+    procedure RequestMemoryAccessQueueStart;
+    procedure RequestMemoryAccessAbort;
   end;
 
   TLccNodeClass = class of TLccNode;
@@ -603,10 +618,8 @@ procedure TTaskReadPIP.Process(SourceMessage: TLccMessage);
 begin
   if SourceMessage.MTI = MTI_PROTOCOL_SUPPORT_REPLY then
   begin
-    Complete;
     SupportedProtocols.LoadFromLccMessage(SourceMessage);
-    if Assigned(Callback) then
-      Callback(Self);
+    Complete;
     Reset;
   end;
 end;
@@ -637,10 +650,8 @@ procedure TTaskReadSNIP.Process(SourceMessage: TLccMessage);
 begin
   if SourceMessage.MTI = MTI_SIMPLE_NODE_INFO_REPLY then
   begin
-    Complete;
     SimpleNodeInfo.LoadFromLccMessage(SourceMessage);
-    if Assigned(Callback) then
-      Callback(Self);
+    Complete;
     Reset;
   end;
 end;
@@ -669,7 +680,7 @@ constructor TLccTaskMemorySpaceObject.Create(
   AReadWrite: TLccTaskMemorySpaceReadWrite; AMemorySpace: Byte;
   AnIsString: Boolean; AnAddressLo, AnAddressHi: DWORD;
   AnUseAddresses: Boolean; ATargetNodeID: TNodeID; ATargetAliasID: Word;
-  ACallback: TOnTaskCallback);
+  ACallback: TOnTaskCallback; ATag: Integer; ATagObject: TObject);
 begin
   ReadWrite := AReadWrite;
   MemorySpace := AMemorySpace;
@@ -679,6 +690,8 @@ begin
   UseAddresses := AnUseAddresses;
   TargetNodeID := ATargetNodeID;
   TargetAlias := ATargetAliasID;
+  Tag := ATag;
+  TagObject := ATagObject;
   CallBack := ACallback;
 end;
 
@@ -732,15 +745,14 @@ begin
   FTaskState := lesAbort;
   if Assigned(Callback) then
     Callback(Self);
-  Reset;
 end;
 
 procedure TLccTaskBase.Timeout;
 begin
   FTaskState := lesTimeout;
+  FValid := False;
   if Assigned(Callback) then
     Callback(Self);
-  Reset;
 end;
 
 procedure TLccTaskBase.Start(ATimeout: Integer);
@@ -762,13 +774,18 @@ begin
   ErrorCode := AnErrorCode;
   ErrorMessage := AnErrorMessage;
   FTaskState := lesError;
+  if Assigned(Callback) then
+    Callback(Self);
 end;
 
 procedure TLccTaskBase.Complete;
 begin
   FValid := True;
   FErrorCode := S_OK;
+  FErrorMessage := '';
   FTaskState := lesComplete;
+  if Assigned(Callback) then
+    Callback(Self);
 end;
 
 procedure TLccTaskBase.Reset;
@@ -782,7 +799,10 @@ begin
   if IsRunning then
   begin
     if (LiveTime > TimeoutLimit) and (TimeoutLimit > 0) then
-      Timeout
+    begin
+      Timeout;
+      Reset;
+    end
     else
       Inc(FLiveTime)
   end;
@@ -826,9 +846,12 @@ begin
     if not NullFound and (AddressCurrent < (AddressHi-AddressLo)) then
       ReadNextChunk
     else begin
-      Complete;
-      CallbackAndNextMemorySpace;
-      Reset;
+      Complete;     // this one is done
+      // Move to the next one, if available
+      if NextMemorySpaceObjectFromQueue then
+        InternalStart
+      else
+        Reset
     end;
   end
 end;
@@ -837,9 +860,12 @@ procedure TLccTaskMemorySpaceAccess.HandleWriteReply(SourceMessage: TLccMessage)
 begin
   if MemoryStream.Position = MemoryStream.Size then
   begin
-    Complete;
-    CallbackAndNextMemorySpace;
-    Reset;
+    Complete;      // this one is done
+    // Move to the next one, if available
+    if NextMemorySpaceObjectFromQueue then
+      InternalStart
+    else
+      Reset
   end else
     WriteNextChunk;
 end;
@@ -946,7 +972,11 @@ begin
     end else
     begin
       Error(TASK_ERROR_MEMORY_SPACE_UNSUPPORTED_PROTOCOL, 'Unsupported Protocol');
-      CallbackAndNextMemorySpace;
+      // Move to the next one, if available
+      if NextMemorySpaceObjectFromQueue then
+        InternalStart
+      else
+        Reset
     end;
   end;
 end;
@@ -980,12 +1010,20 @@ begin
       end else
       begin
         Error(TASK_ERROR_MEMORY_SPACE_WRITE_TO_READONLY_SPACE, 'Writing to a Read Only Memory Space');
-        CallbackAndNextMemorySpace;
+        // Move to the next one, if available
+        if NextMemorySpaceObjectFromQueue then
+          InternalStart
+        else
+          Reset
       end;
     end else
     begin
       Error(TASK_ERROR_MEMORY_SPACE_UNSUPPORTED_MEMORYSPACE, 'Accessing and unsupported Memory Space');
-      CallbackAndNextMemorySpace;
+      // Move to the next one, if available
+      if NextMemorySpaceObjectFromQueue then
+        InternalStart
+      else
+        Reset
     end;
   end
 end;
@@ -994,7 +1032,8 @@ function TLccTaskMemorySpaceAccess.Assign(
   AReadWrite: TLccTaskMemorySpaceReadWrite; AMemorySpace: Byte;
   AnIsString: Boolean; AnAddressLo, AnAddressHi: DWORD;
   AnUseAddresses: Boolean; ATargetNodeID: TNodeID; ATargetAliasID: Word;
-  ACallback: TOnTaskCallback): TLccTaskMemorySpaceObject;
+  ACallback: TOnTaskCallback; ATag: Integer; ATagObject: TObject
+  ): TLccTaskMemorySpaceObject;
 begin
   Result := nil;
   // Need to Assign everthing first.. maybe you can add in while its running... but it was not envisioned to do so
@@ -1002,7 +1041,7 @@ begin
 
   if Assigned(OwnerNode) and ((ATargetAliasID <> 0) or not NullNodeID(ATargetNodeID)) then
   begin
-    Result := TLccTaskMemorySpaceObject.Create(AReadWrite, AMemorySpace, AnIsString, AnAddressLo, AnAddressHi, AnUseAddresses, ATargetNodeID, ATargetAliasID, ACallback);
+    Result := TLccTaskMemorySpaceObject.Create(AReadWrite, AMemorySpace, AnIsString, AnAddressLo, AnAddressHi, AnUseAddresses, ATargetNodeID, ATargetAliasID, ACallback, Tag, TagObject);
     if Assigned(Result) then
       MemorySpaceQueue.Add(Result);
   end;
@@ -1046,12 +1085,13 @@ begin
   ATaskMemorySpaceAccess.FUseAddresses := UseAddresses;
   ATaskMemorySpaceAccess.FWritingChunk := WritingChunk;
   ATaskMemorySpaceAccess.FReadWrite := ReadWrite;
-   ATaskMemorySpaceAccess.FValid := Valid;
+  ATaskMemorySpaceAccess.Tag := Tag;
+  ATaskMemorySpaceAccess.TagObject := TagObject;
+  ATaskMemorySpaceAccess.FValid := Valid;
 
   MemoryStream.Position := 0;
   ATaskMemorySpaceAccess.MemoryStream.CopyFrom(MemoryStream, MemoryStream.Size);
   PIPHelper.CopyTo(ATaskMemorySpaceAccess.PIPHelper);
-
 end;
 
 destructor TLccTaskMemorySpaceAccess.Destroy;
@@ -1255,16 +1295,6 @@ begin
   end;
 end;
 
-procedure TLccTaskMemorySpaceAccess.CallbackAndNextMemorySpace;
-begin
-  if Assigned(Callback) then
-  begin
-    Callback(Self);
-  end;
-  if NextMemorySpaceObjectFromQueue then
-    InternalStart;
-end;
-
 procedure TLccTaskMemorySpaceAccess.StartOperation;
 begin
   // Start off the current address
@@ -1325,8 +1355,6 @@ begin
     InternalStart
   else begin
     Error(TASK_ERROR_MEMORY_SPACE_NO_JOB_ASSIGNED, 'No job was assigined, used the Assign() function to define a memory space to read/write');
-    if Assigned(Callback) then
-      Callback(Self);
     Reset;
   end;
 end;
@@ -1375,11 +1403,7 @@ begin
                 ReplyPending := SourceMessage.DataArray[0] and DATAGRAM_OK_ACK_REPLY_PENDING = DATAGRAM_OK_ACK_REPLY_PENDING;
                 ReplyEstimatedTime := Power(2, SourceMessage.DataArray[0] and $0F);
               end else
-              begin
-                Complete;
-                ErrorCode := S_OK;
                 HandleWriteReply(SourceMessage);
-              end;
             end;
           end;
         MTI_DATAGRAM_REJECTED_REPLY :
@@ -1424,9 +1448,12 @@ begin
                  MCP_WRITE_REPLY_FAILURE_CDI        : // This only happens if the write can take a while (like a CV write).   In that case a special Datagram Rejected message is sent.. see MTI_DATAGRAM_OK_REPLY above
                      begin
                        Error(TASK_ERROR_MEMORY_SPACE_WRITE_ERROR, 'Memory Space Write Error');
-                       CallbackAndNextMemorySpace;
+                       // Move to the next one, if available
+                       if NextMemorySpaceObjectFromQueue then
+                         InternalStart
+                       else
+                         Reset
                      end;
-
                  MCP_READ_REPLY,
                  MCP_READ_REPLY_CONFIG,
                  MCP_READ_REPLY_ALL,
@@ -1454,7 +1481,11 @@ begin
                  MCP_READ_REPLY_FAILURE_CDI                  :
                      begin
                        Error(TASK_ERROR_MEMORY_SPACE_READ_ERROR, 'Memory Space Read Error');
-                       CallbackAndNextMemorySpace;
+                       // Move to the next one, if available
+                       if NextMemorySpaceObjectFromQueue then
+                         InternalStart
+                       else
+                         Reset
                      end;
                  MCP_OP_GET_CONFIG_OPTIONS_REPLY             : begin end;
                  MCP_OP_GET_ADD_SPACE_INFO_PRESENT_REPLY     : ValidateAddressSpaceAndProceed(SourceMessage);
@@ -1604,6 +1635,7 @@ begin
     TaskReadSNIP.Callback := ACallback;
     TaskReadSNIP.Tag := ATag;
     TaskReadSNIP.TagObject := ATagObject;
+    TaskReadSNIP.Target := ATarget;
     TaskReadSNIP.Start(TIMEOUT_TASK_MESSAGES);
   end;
 end;
@@ -1617,6 +1649,7 @@ begin
     TaskReadPIP.Callback := ACallback;
     TaskReadPIP.Tag := ATag;
     TaskReadPIP.TagObject := ATagObject;
+    TaskReadPIP.Target := ATarget;
     TaskReadPIP.Start(TIMEOUT_TASK_MESSAGES);
   end;
 end;
@@ -1629,10 +1662,65 @@ begin
     TaskMemorySpaceAccess.Callback := ACallback;
     TaskMemorySpaceAccess.Tag := ATag;
     TaskMemorySpaceAccess.TagObject := ATagObject;
-    TaskMemorySpaceAccess.Assign(lems_Read, MSI_CDI, True, 0, 0, False, ATarget, AliasServer.FindAlias(ATarget), ACallback);
+    TaskMemorySpaceAccess.Target := ATarget;
+    TaskMemorySpaceAccess.Assign(lems_Read, MSI_CDI, True, 0, 0, False, ATarget, AliasServer.FindAlias(ATarget), ACallback, ATag, ATagObject);
     TaskMemorySpaceAccess.Start(TIMEOUT_TASK_MESSAGES);
     Result := True;
   end;
+end;
+
+function TLccNode.RequestConfigMemRead(ATarget: TNodeID; MemAddressStart, MemAddressEnd: DWord; IsString: Boolean; ACallback: TOnTaskCallback; ATag: Integer; ATagObject: TObject): Boolean;
+begin
+  Result := InternalRequestConfigMemRead(ATarget, MemAddressStart, MemAddressEnd, IsString, ACallback, ATag, ATagObject, False);
+end;
+
+function TLccNode.RequestQueueConfigMemRead(ATarget: TNodeID; MemAddressStart, MemAddressEnd: DWord; IsString: Boolean; ACallback: TOnTaskCallback; ATag: Integer; ATagObject: TObject): Boolean;
+begin
+  Result := InternalRequestConfigMemRead(ATarget, MemAddressStart, MemAddressEnd, IsString, ACallback, ATag, ATagObject, TRue);
+end;
+
+function TLccNode.RequestConfigMemWriteString(ATarget: TNodeID; MemAddressStart, MemAddressEnd: DWord; AString: String; ACallback: TOnTaskCallback; ATag: Integer; ATagObject: TObject): Boolean;
+begin
+  Result := InternalRequestConfigMemWriteString(ATarget, MemAddressStart, MemAddressEnd, AString, ACallback, ATag, ATagObject, False);
+end;
+
+function TLccNode.RequestConfigMemWriteInteger(ATarget: TNodeID; MemAddressStart, MemAddressEnd: DWord; AnInteger: Integer; ACallback: TOnTaskCallback; ATag: Integer; ATagObject: TObject): Boolean;
+begin
+  Result := InternalRequestConfigMemWriteInteger(ATarget, MemAddressStart, MemAddressEnd, AnInteger, ACallback, ATag, ATagObject, False);
+end;
+
+function TLccNode.RequestConfigMemWriteEventID(ATarget: TNodeID;
+  MemAddressStart, MemAddressEnd: DWord; AnEventID: TEventID;
+  ACallback: TOnTaskCallback; ATag: Integer; ATagObject: TObject): Boolean;
+begin
+  InternalRequestConfigMemWriteEventID(ATarget, MemAddressStart, MemAddressEnd, AnEventID, ACallback, ATag, ATagObject, False);
+end;
+
+function TLccNode.RequestQueueConfigMemWriteString(ATarget: TNodeID; MemAddressStart, MemAddressEnd: DWord; AString: String; ACallback: TOnTaskCallback; ATag: Integer; ATagObject: TObject): Boolean;
+begin
+  Result := InternalRequestConfigMemWriteString(ATarget, MemAddressStart, MemAddressEnd, AString, ACallback, ATag, ATagObject, True);
+end;
+
+function TLccNode.RequestQueueConfigMemWriteInteger(ATarget: TNodeID; MemAddressStart, MemAddressEnd: DWord; AnInteger: Integer; ACallback: TOnTaskCallback; ATag: Integer; ATagObject: TObject): Boolean;
+begin
+  Result := InternalRequestConfigMemWriteInteger(ATarget, MemAddressStart, MemAddressEnd, AnInteger, ACallback, ATag, ATagObject, True);
+end;
+
+function TLccNode.RequestQueueConfigMemWriteEventID(ATarget: TNodeID; MemAddressStart, MemAddressEnd: DWord; AnEventID: TEventID; ACallback: TOnTaskCallback; ATag: Integer; ATagObject: TObject): Boolean;
+begin
+  Result := InternalRequestConfigMemWriteEventID(ATarget, MemAddressStart, MemAddressEnd, AnEventID, ACallback, ATag, ATagObject, True);
+end;
+
+procedure TLccNode.RequestMemoryAccessQueueStart;
+begin
+  if TaskMemorySpaceAccess.QueuedRequests > 0 then
+    TaskMemorySpaceAccess.Start(TIMEOUT_TASK_MESSAGES);
+end;
+
+procedure TLccNode.RequestMemoryAccessAbort;
+begin
+  TaskMemorySpaceAccess.Abort;
+  TaskMemorySpaceAccess.Reset;
 end;
 
 procedure TLccNode.HandleTractionFDI_MemorySpaceWrite(var SourceMessage: TLccMessage);
@@ -1734,14 +1822,14 @@ begin
   ((Owner as TLccNodeManager) as INodeManagerCallbacks).DoConsumerIdentified(Self, SourceMessage);
 end;
 
-procedure TLccNode.HandleConfiguration_MemorySpaceWrite(var SourceMessage: TLccMessage);
+procedure TLccNode.HandleConfiguration_MemorySpaceWrite(var SourceMessage: TLccMessage; AutoGrowSpace: Boolean);
 var
   Code: Word;
 begin
   // Note here that for ACDI overlays the ConfigMemory so the ConfigMemory Address
   // must be offset by 1 as the ACDI has byte 0 = the ACDI version number
 
-  Code := ProtocolMemoryAccess.DatagramWriteRequest(SourceMessage, StreamConfig, True, 1);
+  Code := ProtocolMemoryAccess.DatagramWriteRequest(SourceMessage, StreamConfig, AutoGrowSpace, 1);
   case Code of
      S_OK : SendDatagramAckReply(SourceMessage, False, 0);      // All Ok just an Ack
   else
@@ -1755,13 +1843,13 @@ begin
   SendMemoryWriteFailure(SourceMessage, ERROR_CODE_PERMANENT_NOT_IMPLEMENTED, '');
 end;
 
-procedure TLccNode.HandleConfiguration_MemorySpaceRead(var SourceMessage: TLccMessage);
+procedure TLccNode.HandleConfiguration_MemorySpaceRead(var SourceMessage: TLccMessage; AutoGrowSpace: Boolean);
 var
   Code: Word;
 begin
   // Note here that for ACDI overlays the ConfigMemory so the ConfigMemory Address
   // must be offset by 1 as the ACDI has byte 0 = the ACDI version number
-  Code := ProtocolMemoryAccess.DatagramReadRequest(SourceMessage, WorkerMessage, StreamConfig, False, 1);
+  Code := ProtocolMemoryAccess.DatagramReadRequest(SourceMessage, WorkerMessage, StreamConfig, AutoGrowSpace, 1);
   case Code of
      S_OK : QueueAndSendDatagramReplyToWaitForAck(SourceMessage, WorkerMessage);   // Source may not have memory to take the data, set it up to resend if needed
   else
@@ -2021,11 +2109,6 @@ procedure TLccNode.HandleTractionQuerySpeedReply(var SourceMessage: TLccMessage)
 
 procedure TLccNode.HandleTractionQueryFunctionReply(var SourceMessage: TLccMessage); begin end;
 
-procedure TLccNode.AbortCDI;
-begin
-  TaskMemorySpaceAccess.Abort
-end;
-
 procedure TLccNode.AfterLogin;
 begin
   // For overriding in decentants
@@ -2246,6 +2329,91 @@ begin
   end;
 end;
 
+function TLccNode.InternalRequestConfigMemRead(ATarget: TNodeID;
+  MemAddressStart, MemAddressEnd: DWord; IsString: Boolean;
+  ACallback: TOnTaskCallback; ATag: Integer; ATagObject: TObject; Queue: Boolean
+  ): Boolean;
+begin
+  Result := False;
+  if TaskMemorySpaceAccess.TaskState = lesIdle then
+  begin
+    TaskMemorySpaceAccess.Callback := ACallback;
+    TaskMemorySpaceAccess.Tag := ATag;
+    TaskMemorySpaceAccess.TagObject := ATagObject;
+    TaskMemorySpaceAccess.Target := ATarget;
+    TaskMemorySpaceAccess.Assign(lems_Read, MSI_CONFIG, IsString, MemAddressStart, MemAddressEnd, True, ATarget, AliasServer.FindAlias(ATarget), ACallback, ATag, ATagObject);
+    if not Queue then
+      TaskMemorySpaceAccess.Start(TIMEOUT_TASK_MESSAGES);
+    Result := True;
+  end;
+end;
+
+function TLccNode.InternalRequestConfigMemWriteString(ATarget: TNodeID;
+  MemAddressStart, MemAddressEnd: DWord; AString: String;
+  ACallback: TOnTaskCallback; ATag: Integer; ATagObject: TObject; Queue: Boolean
+  ): Boolean;
+var
+  MemSpaceObj: TLccTaskMemorySpaceObject;
+begin
+  Result := False;
+  if TaskMemorySpaceAccess.TaskState = lesIdle then
+  begin
+    TaskMemorySpaceAccess.Callback := ACallback;
+    TaskMemorySpaceAccess.Tag := ATag;
+    TaskMemorySpaceAccess.TagObject := ATagObject;
+    TaskMemorySpaceAccess.Target := ATarget;
+    MemSpaceObj := TaskMemorySpaceAccess.Assign(lems_Write, MSI_CONFIG, True, MemAddressStart, MemAddressEnd, True, ATarget, AliasServer.FindAlias(ATarget), ACallback, ATag, ATagObject);
+    MemSpaceObj.WriteString := AString;
+    if not Queue then
+      TaskMemorySpaceAccess.Start(TIMEOUT_TASK_MESSAGES);
+    Result := True;
+  end;
+end;
+
+function TLccNode.InternalRequestConfigMemWriteInteger(ATarget: TNodeID;
+  MemAddressStart, MemAddressEnd: DWord; AnInteger: Integer;
+  ACallback: TOnTaskCallback; ATag: Integer; ATagObject: TObject; Queue: Boolean
+  ): Boolean;
+var
+  MemSpaceObj: TLccTaskMemorySpaceObject;
+begin
+  Result := False;
+  if TaskMemorySpaceAccess.TaskState = lesIdle then
+  begin
+    TaskMemorySpaceAccess.Callback := ACallback;
+    TaskMemorySpaceAccess.Tag := ATag;
+    TaskMemorySpaceAccess.TagObject := ATagObject;
+    TaskMemorySpaceAccess.Target := ATarget;
+    MemSpaceObj := TaskMemorySpaceAccess.Assign(lems_Write, MSI_CONFIG, False, MemAddressStart, MemAddressEnd, True, ATarget, AliasServer.FindAlias(ATarget), ACallback, ATag, ATagObject);
+    MemSpaceObj.WriteInteger := AnInteger;
+    if not Queue then
+      TaskMemorySpaceAccess.Start(TIMEOUT_TASK_MESSAGES);
+    Result := True;
+  end;
+end;
+
+function TLccNode.InternalRequestConfigMemWriteEventID(ATarget: TNodeID;
+  MemAddressStart, MemAddressEnd: DWord; AnEventID: TEventID;
+  ACallback: TOnTaskCallback; ATag: Integer; ATagObject: TObject; Queue: Boolean
+  ): Boolean;
+var
+  MemSpaceObj: TLccTaskMemorySpaceObject;
+begin
+  Result := False;
+  if TaskMemorySpaceAccess.TaskState = lesIdle then
+  begin
+    TaskMemorySpaceAccess.Callback := ACallback;
+    TaskMemorySpaceAccess.Tag := ATag;
+    TaskMemorySpaceAccess.TagObject := ATagObject;
+    TaskMemorySpaceAccess.Target := ATarget;
+    MemSpaceObj := TaskMemorySpaceAccess.Assign(lems_Write, MSI_CONFIG, False, MemAddressStart, MemAddressEnd, True, ATarget, AliasServer.FindAlias(ATarget), ACallback, ATag, ATagObject);
+    MemSpaceObj.WriteEventID := AnEventID;
+    if not Queue then
+      TaskMemorySpaceAccess.Start(TIMEOUT_TASK_MESSAGES);
+    Result := True;
+  end;
+end;
+
 function TLccNode.ProcessMessageLCC(SourceMessage: TLccMessage): Boolean;
 
 var
@@ -2439,7 +2607,7 @@ begin
                      case AddressSpace of
                        MSI_CDI                      : HandleCDI_MemorySpaceWrite(SourceMessage);
                        MSI_ALL                      : HandleAll_MemorySpaceWrite(SourceMessage);
-                       MSI_CONFIG                   : HandleConfiguration_MemorySpaceWrite(SourceMessage); // Configuration Memory through the CDI protocol
+                       MSI_CONFIG                   : HandleConfiguration_MemorySpaceWrite(SourceMessage, False); // Configuration Memory through the CDI protocol
                        MSI_ACDI_MFG                 : HandleACDI_Manufacturer_MemorySpaceWrite(SourceMessage);
                        MSI_ACDI_USER                : HandleACDI_UserMemorySpaceWrite(SourceMessage);            // Configuration Memory through the Abbreviated CDI protocol
                        MSI_TRACTION_FDI             : HandleTractionFDI_MemorySpaceWrite(SourceMessage);
@@ -2451,7 +2619,7 @@ begin
                      case AddressSpace of
                        MSI_CDI                      : HandleCDI_MemorySpaceRead(SourceMessage);
                        MSI_ALL                      : HandleAll_MemorySpaceRead(SourceMessage);
-                       MSI_CONFIG                   : HandleConfiguration_MemorySpaceRead(SourceMessage);
+                       MSI_CONFIG                   : HandleConfiguration_MemorySpaceRead(SourceMessage, False);
                        MSI_ACDI_MFG                 : HandleACDI_Manufacturer_MemorySpaceRead(SourceMessage);
                        MSI_ACDI_USER                : HandleACDI_User_MemorySpaceRead(SourceMessage);
                        MSI_TRACTION_FDI             : HandleTractionFDI_MemorySpaceRead(SourceMessage);
@@ -2884,18 +3052,6 @@ begin
     WorkerMessage.LoadProducerIdentified(NodeID, FAliasID, Temp, EventObj.State);
     SendMessage(WorkerMessage, Self);
   end;
-end;
-
-procedure TLccNode.SendSNIPRequest(TargetNodeID: TNodeID; TargetAlias: Word);
-begin
-  WorkerMessage.LoadSimpleNodeIdentInfoRequest(NodeID, AliasID, TargetNodeID, TargetAlias);
-  SendMessage(WorkerMessage, Self);
-end;
-
-procedure TLccNode.SendTrainSNIPRequest(TargetNodeID: TNodeID; TargetAlias: Word);
-begin
-  WorkerMessage.LoadSimpleTrainNodeIdentInfoRequest(NodeID, AliasID, TargetNodeID, TargetAlias);
-  SendMessage(WorkerMessage, Self);
 end;
 
 initialization

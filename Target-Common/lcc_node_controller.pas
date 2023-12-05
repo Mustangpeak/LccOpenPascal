@@ -435,7 +435,7 @@ type
   public
     property ActiveTrain: TTrainInfo read FActiveTrain;  // Use ActivateTrain method to set
     property Count: Integer read GetCount;
-    property Train[Index: Integer]: TTrainInfo read GetTrain;
+    property Train[Index: Integer]: TTrainInfo read GetTrain; default;
 
     constructor Create(AnOwner: TLccNode); override;
     destructor Destroy; override;
@@ -677,8 +677,6 @@ begin
                           end else
                           begin
                             Complete;
-                            if Assigned(Callback) then
-                              Callback(Self);
                             Reset;
                           end;
                        end;
@@ -908,8 +906,6 @@ begin
   WorkerMessage.LoadTractionManage(OwnerNode.NodeID, OwnerNode.AliasID, Target, AliasServer.FindAlias(Target), False);
   OwnerNode.SendMessage(WorkerMessage, OwnerNode);
   Complete;
-  if Assigned(Callback) then
-    Callback(Self);
   Reset;
 end;
 
@@ -922,10 +918,7 @@ begin
   WorkerMessage.LoadTractionEStop(OwnerNode.NodeID, OwnerNode.AliasID, Target, AliasServer.FindAlias(Target));
   OwnerNode.SendMessage(WorkerMessage, OwnerNode);
   Complete;
-  if Assigned(Callback) then
-    Callback(Self);
   Reset;
-
 end;
 
 { TLccTaskSetFunction }
@@ -937,8 +930,6 @@ begin
   WorkerMessage.LoadTractionSetFunction(OwnerNode.NodeID, OwnerNode.AliasID, Target, AliasServer.FindAlias(Target), Address, Value, ForwardedListenerMessage);
   OwnerNode.SendMessage(WorkerMessage, OwnerNode);
   Complete;
-  if Assigned(Callback) then
-    Callback(Self);
   Reset;
 end;
 
@@ -951,8 +942,6 @@ begin
   WorkerMessage.LoadTractionSetSpeed(OwnerNode.NodeID, OwnerNode.AliasID, Target, AliasServer.FindAlias(Target), Speed, ForwardedListenerMessage);
   OwnerNode.SendMessage(WorkerMessage, OwnerNode);
   Complete;
-  if Assigned(Callback) then
-    Callback(Self);
   Reset;
 end;
 
@@ -974,8 +963,6 @@ begin
       begin
         FNodeCountReply := SourceMessage.TractionExtractListenerQueryNodeCountReply;
         Complete;
-        if Assigned(Callback) then
-          Callback(Self);
         Reset;
       end;
 end;
@@ -989,8 +976,6 @@ begin
   WorkerMessage.LoadTractionManage(OwnerNode.NodeID, OwnerNode.AliasID, Target, AliasServer.FindAlias(Target), False);
   OwnerNode.SendMessage(WorkerMessage, OwnerNode);
   Complete;
-  if Assigned(Callback) then
-    Callback(Self);
   Reset;
 end;
 
@@ -1002,8 +987,6 @@ begin
       begin
         FTimeoutSecondsReply := SourceMessage.TractionExtractHeartBeatTimeoutReply;
         Complete;
-         if Assigned(Callback) then
-           Callback(Self);
          Reset;
       end
 end;
@@ -1030,8 +1013,6 @@ begin
         FReplyCode := SourceMessage.TractionExtractListenerCodeReply;
         SourceMessage.ExtractDataBytesAsNodeID(3, FListenerNodeIDReply);
         Complete;
-        if Assigned(Callback) then
-          Callback(Self);
         Reset;
       end;
 end;
@@ -1064,8 +1045,6 @@ begin
           FIndexReply := SourceMessage.TractionExtractListenerQueryNodeIndexReply;
         end;
         Complete;
-          if Assigned(Callback) then
-            Callback(Self);
         Reset;
       end;
 end;
@@ -1089,14 +1068,10 @@ begin
         case SourceMessage.DataArray[2] of
           S_OK : begin
                    Complete;
-                   if Assigned(Callback) then
-                     Callback(Self);
                    Reset;
                  end
           else begin
              Error(1, 'Train Refused to be Reserved');
-             if Assigned(Callback) then
-               Callback(Self);
              Reset;
           end;
       end
@@ -1125,8 +1100,6 @@ begin
       FCommandedSpeedReply := HalfToFloat(SourceMessage.TractionExtractCommandedSpeed);
       FCommandedSpeedReverseReply := HalfIsNegative( SourceMessage.TractionExtractCommandedSpeed);
       Complete;
-      if Assigned(Callback) then
-        Callback(Self);
       Reset;
     end;
 end;
@@ -1153,8 +1126,6 @@ begin
         FReplyCode := SourceMessage.TractionExtractListenerCodeReply;
         SourceMessage.ExtractDataBytesAsNodeID(3, FListenerNodeIDReply);
         Complete;
-        if Assigned(Callback) then
-          Callback(Self);
         Reset;
       end;
 end;
@@ -1178,8 +1149,6 @@ begin
       begin
         FValueReply := SourceMessage.TractionExtractFunctionValue;
         Complete;
-        if Assigned(Callback) then
-          Callback(Self);
         Reset;
       end;
     end;
@@ -1196,8 +1165,6 @@ begin
   WorkerMessage.LoadTractionControllerQuery(OwnerNode.NodeID, OwnerNode.AliasID, Target, AliasServer.FindAlias(Target));
   OwnerNode.SendMessage(WorkerMessage, OwnerNode);  // There is no reply from this
   Complete;
-  if Assigned(Callback) then
-    Callback(Self);
   Reset;
 end;
 
@@ -1210,8 +1177,6 @@ begin
         FFlagsReply := SourceMessage.DataArray[2];
         SourceMessage.ExtractDataBytesAsNodeID(3, FActiveControllerReply);
         Complete;
-        if Assigned(Callback) then
-          Callback(Self);
         Reset;
       end;
 end;
@@ -1225,8 +1190,6 @@ begin
   WorkerMessage.LoadTractionControllerRelease(OwnerNode.NodeID, OwnerNode.AliasID, Target, AliasServer.FindAlias(Target), ControllerNode);
   OwnerNode.SendMessage(WorkerMessage, OwnerNode);  // There is no reply from this
   Complete;
-  if Assigned(Callback) then
-    Callback(Self);
   Reset;
 end;
 
@@ -1249,15 +1212,11 @@ begin
         case SourceMessage.DataArray[2] of
           S_OK : begin
                    Complete;
-                   if Assigned(Callback) then
-                     Callback(Self);
                    Reset;
                  end;
          TRACTION_CONTROLLER_CONFIG_ASSIGN_REPLY_REFUSE_TRAIN :
                 begin
                    Error(TRACTION_CONTROLLER_CONFIG_ASSIGN_REPLY_REFUSE_TRAIN, 'Train Refused to connect to the throttle');
-                   if Assigned(Callback) then
-                     Callback(Self);
                    Reset;
                 end;
       end
@@ -1314,8 +1273,6 @@ begin
               begin
                 FTrainNodeIDReply := SourceMessage.SourceID;
                 Complete;
-                if Assigned(Callback) then
-                  Callback(Self);
                 Reset;
               end
             end;

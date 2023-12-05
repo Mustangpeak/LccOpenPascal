@@ -341,6 +341,9 @@ type
     procedure HandleTractionQueryFunction(var SourceMessage: TLccMessage); override;
     procedure HandleTractionSimpleTrainInfoReply(var SourceMessage: TLccMessage); override;
 
+    procedure HandleConfiguration_MemorySpaceRead(var SourceMessage: TLccMessage; AutoGrowSpace: Boolean);override;
+    procedure HandleConfiguration_MemorySpaceWrite(var SourceMessage: TLccMessage; AutoGrowSpace: Boolean);override;
+
     procedure LccLogIn(ANodeID: TNodeID); override;
 
   public
@@ -1180,6 +1183,16 @@ begin
   begin
 
   end;
+end;
+
+procedure TLccTrainDccNode.HandleConfiguration_MemorySpaceRead(var SourceMessage: TLccMessage; AutoGrowSpace: Boolean);
+begin
+  inherited HandleConfiguration_MemorySpaceRead(SourceMessage, True);
+end;
+
+procedure TLccTrainDccNode.HandleConfiguration_MemorySpaceWrite(var SourceMessage: TLccMessage; AutoGrowSpace: Boolean);
+begin
+  inherited HandleConfiguration_MemorySpaceWrite(SourceMessage, True);
 end;
 
 procedure TLccTrainDccNode.LccLogIn(ANodeID: TNodeID);
