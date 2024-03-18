@@ -294,7 +294,7 @@ const
   MTI_TRACTION_REQUEST               = $05EB;                                // Databyte = depends
   MTI_TRACTION_REPLY                 = $01E9;                                // Databyte = depends
 
-  MTI_REMOTE_BUTTON_REQUEST           = $0948;
+  MTI_REMOTE_BUTTON_REQUEST          = $0948;
   MTI_REMOTE_BUTTON_REPLY            = $0949;
 
   MTI_STREAM_INIT_REQUEST            = $0CC8;
