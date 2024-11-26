@@ -197,7 +197,7 @@ begin
     Serial.Connect(ComPort);
     if Serial.LastError = 0 then
     begin
-      Serial.Config(9600, 8, 'N', SB1, False, False);
+      Serial.Config(333333, 8, 'N', SB1, False, False);
       if Serial.LastError = 0 then
       begin
         FConnected := True;

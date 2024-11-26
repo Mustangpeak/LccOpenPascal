@@ -7,9 +7,9 @@ object Form1: TForm1
   Caption = 'Dual Throttle [LccOpenPascal]'
   ClientHeight = 640
   ClientWidth = 743
+  LCLVersion = '4.0.0.1'
   OnCloseQuery = FormCloseQuery
   OnCreate = FormCreate
-  LCLVersion = '2.2.4.0'
   object PanelThrottleConsistEdit1: TPanel
     Left = 0
     Height = 590
@@ -34,8 +34,8 @@ object Form1: TForm1
         Top = 8
         Width = 99
         Caption = 'Connect'
-        OnClick = ButtonConnect1Click
         TabOrder = 0
+        OnClick = ButtonConnect1Click
       end
       object Label2: TLabel
         Left = 119
@@ -95,15 +95,15 @@ object Form1: TForm1
       TabOrder = 2
       object TabSheetThrottle1Throttle: TTabSheet
         Caption = 'Throttle'
-        ClientHeight = 492
+        ClientHeight = 486
         ClientWidth = 362
         object PanelThrottleFace1: TPanel
           Left = 0
-          Height = 492
+          Height = 486
           Top = 0
           Width = 362
           Align = alClient
-          ClientHeight = 492
+          ClientHeight = 486
           ClientWidth = 362
           TabOrder = 0
           object PanelThrottleAssign1: TPanel
@@ -184,11 +184,11 @@ object Form1: TForm1
           end
           object PanelThrottleKeypad1: TPanel
             Left = 1
-            Height = 249
+            Height = 243
             Top = 242
             Width = 360
             Align = alClient
-            ClientHeight = 249
+            ClientHeight = 243
             ClientWidth = 360
             TabOrder = 1
             object SpeedButtonFunction0: TSpeedButton
@@ -347,8 +347,8 @@ object Form1: TForm1
               Width = 272
               Frequency = 10
               Max = 100
-              OnChange = TrackBarThrottle1Change
               Position = 0
+              OnChange = TrackBarThrottle1Change
               TabOrder = 0
             end
             object LabelThrottleSpeed1: TLabel
@@ -471,15 +471,15 @@ object Form1: TForm1
       end
       object TabSheetThrottle1ServiceMode: TTabSheet
         Caption = 'Service Mode'
-        ClientHeight = 492
+        ClientHeight = 486
         ClientWidth = 362
         object PanelThrottle1ServiceMode: TPanel
           Left = 0
-          Height = 492
+          Height = 486
           Top = 0
           Width = 362
           Align = alClient
-          ClientHeight = 492
+          ClientHeight = 486
           ClientWidth = 362
           TabOrder = 0
           object Label10: TLabel
@@ -616,8 +616,8 @@ object Form1: TForm1
             Top = 256
             Width = 75
             Caption = 'Read'
-            OnClick = Button1Click
             TabOrder = 8
+            OnClick = Button1Click
           end
         end
       end
@@ -654,8 +654,8 @@ object Form1: TForm1
       Top = 11
       Width = 120
       Caption = 'Show Logging'
-      OnChange = ToggleBoxLoggingChange
       TabOrder = 1
+      OnChange = ToggleBoxLoggingChange
     end
     object ToggleBoxServerForm: TToggleBox
       Left = 616
@@ -663,8 +663,8 @@ object Form1: TForm1
       Top = 11
       Width = 120
       Caption = 'Show Servers'
-      OnChange = ToggleBoxServerFormChange
       TabOrder = 2
+      OnChange = ToggleBoxServerFormChange
     end
   end
   object PanelThrottle2: TPanel
@@ -691,8 +691,8 @@ object Form1: TForm1
         Top = 8
         Width = 99
         Caption = 'Connect'
-        OnClick = ButtonConnect2Click
         TabOrder = 0
+        OnClick = ButtonConnect2Click
       end
       object Label4: TLabel
         Left = 119
@@ -752,15 +752,15 @@ object Form1: TForm1
       TabOrder = 2
       object TabSheetThrottle2Throttle: TTabSheet
         Caption = 'Throttle'
-        ClientHeight = 492
+        ClientHeight = 486
         ClientWidth = 362
         object PanelThrottleFace2: TPanel
           Left = 0
-          Height = 492
+          Height = 486
           Top = 0
           Width = 362
           Align = alClient
-          ClientHeight = 492
+          ClientHeight = 486
           ClientWidth = 362
           TabOrder = 0
           object PanelThrottleAssign2: TPanel
@@ -841,11 +841,11 @@ object Form1: TForm1
           end
           object PanelThrottleKeypad2: TPanel
             Left = 1
-            Height = 411
+            Height = 405
             Top = 80
             Width = 360
             Align = alClient
-            ClientHeight = 411
+            ClientHeight = 405
             ClientWidth = 360
             TabOrder = 1
             object SpeedButtonFunction12: TSpeedButton
@@ -1004,8 +1004,8 @@ object Form1: TForm1
               Width = 272
               Frequency = 10
               Max = 100
-              OnChange = TrackBarThrottle2Change
               Position = 0
+              OnChange = TrackBarThrottle2Change
               TabOrder = 0
             end
             object LabelThrottleSpeed2: TLabel
@@ -1186,20 +1186,20 @@ object Form1: TForm1
       end
       object TabSheetThrottle2Consists: TTabSheet
         Caption = 'Consists'
-        ClientHeight = 492
+        ClientHeight = 486
         ClientWidth = 362
         object PanelConsistWizard2: TPanel
           Left = 0
-          Height = 492
+          Height = 486
           Top = 0
           Width = 362
           Align = alClient
-          ClientHeight = 492
+          ClientHeight = 486
           ClientWidth = 362
           TabOrder = 0
           object PageControlConsists2: TPageControl
             Left = 1
-            Height = 490
+            Height = 484
             Top = 1
             Width = 360
             ActivePage = TabSheetConsistNew2
@@ -1208,11 +1208,11 @@ object Form1: TForm1
             TabOrder = 0
             object TabSheetConsistNew2: TTabSheet
               Caption = 'Create'
-              ClientHeight = 460
+              ClientHeight = 448
               ClientWidth = 354
               object TreeViewConsistWizard2: TTreeView
                 Left = 161
-                Height = 460
+                Height = 448
                 Top = 0
                 Width = 193
                 Align = alClient
@@ -1222,11 +1222,11 @@ object Form1: TForm1
               end
               object PanelConsistCreate2: TPanel
                 Left = 0
-                Height = 460
+                Height = 448
                 Top = 0
                 Width = 161
                 Align = alLeft
-                ClientHeight = 460
+                ClientHeight = 448
                 ClientWidth = 161
                 TabOrder = 1
                 object EditConsistAddress2: TEdit
@@ -1286,8 +1286,8 @@ object Form1: TForm1
                   Font.Style = [fsBold]
                   Images = ImageList
                   ImageIndex = 3
-                  OnClick = SpeedButtonConstistTrainAdd2Click
                   ParentFont = False
+                  OnClick = SpeedButtonConstistTrainAdd2Click
                 end
                 object SpeedButtonConsistSubtract2: TSpeedButton
                   Left = 120
@@ -1298,8 +1298,8 @@ object Form1: TForm1
                   Font.Style = [fsBold]
                   Images = ImageList
                   ImageIndex = 4
-                  OnClick = SpeedButtonConsistSubtract2Click
                   ParentFont = False
+                  OnClick = SpeedButtonConsistSubtract2Click
                 end
                 object ButtonCreateConstist2: TButton
                   Left = 8
@@ -1307,8 +1307,8 @@ object Form1: TForm1
                   Top = 232
                   Width = 139
                   Caption = 'Create Consist'
-                  OnClick = ButtonCreateConstist2Click
                   TabOrder = 3
+                  OnClick = ButtonCreateConstist2Click
                 end
                 object CheckBoxConsistReverseDir2: TCheckBox
                   Left = 5
@@ -1322,11 +1322,11 @@ object Form1: TForm1
             end
             object TabSheetConsists2: TTabSheet
               Caption = 'Existing'
-              ClientHeight = 460
+              ClientHeight = 448
               ClientWidth = 354
               object TreeViewConsists2: TTreeView
                 Left = 156
-                Height = 460
+                Height = 448
                 Top = 0
                 Width = 198
                 Align = alClient
@@ -1334,11 +1334,11 @@ object Form1: TForm1
               end
               object PanelConsistRelease2: TPanel
                 Left = 0
-                Height = 460
+                Height = 448
                 Top = 0
                 Width = 156
                 Align = alLeft
-                ClientHeight = 460
+                ClientHeight = 448
                 ClientWidth = 156
                 Enabled = False
                 TabOrder = 1
