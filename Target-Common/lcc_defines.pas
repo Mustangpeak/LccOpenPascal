@@ -367,6 +367,14 @@ const
   STR_PIP_FIRMWARE_UPGRADE_ACTIVE    = 'Firmware Upgrade Active Protocol';
 
 const
+  ADDRESS_SPACE_CONFIG_DEFINITION_INFO   = $FF;
+  ADDRESS_SPACE_ALL                      = $FE;
+  ADDRESS_SPACE_CONFIG_MEMORY            = $FD;
+  ADDRESS_SPACE_ACDI_MFG                 = $FC;
+  ADDRESS_SPACE_ACDI_USER                = $FB;
+  ADDRESS_SPACE_FUNCTION_DEFINITION_INFO = $FA;
+  ADDRESS_SPACE_FUNCTION_MEMORY          = $F9;
+
   MCP_OPERATION                       = $80;                                    // MemoryConfigurationProtocol - Operation Mask
   MCP_OPERATION_REPLY                 = $80;
 
@@ -418,11 +426,13 @@ const
   MCP_OP_LOCK                        = $88;                                     // MemoryConfigurationProtocol Operation - Lock Node
   MCP_OP_LOCK_REPLY                  = $8A;                                     // MemoryConfigurationProtocol Operation - Lock Node Reply
   MCP_OP_GET_UNIQUEID                = $8C;                                     // MemoryConfigurationProtocol Operation - Get Unique ID Key
-  MCP_OP_GET_UNIQUEID_REPLY          = $8E;                                     // MemoryConfigurationProtocol Operation - Get Unique ID Key Reply
+  MCP_OP_GET_UNIQUEID_REPLY          = $8D;                                     // MemoryConfigurationProtocol Operation - Get Unique ID Key Reply
 
-  MCP_OP_FREEZE                      = $A0;                                     // MemoryConfigurationProtocol Operation - Freeze Node
-  MCP_OP_INDICATE                    = $A4;                                     // MemoryConfigurationProtocol Operation - Indicate
-  MCP_OP_RESETS                      = $A8;                                     // MemoryConfigurationProtocol Operation - Resets
+  MCP_OP_FREEZE                      = $A1;                                     // MemoryConfigurationProtocol Operation - Freeze Node
+  MC_OP_UNFREEZE                     = $A0;
+  MCP_OP_UPDATE_COMPLETE             = $A8;                                     // MemoryConfigurationProtocol Operation -
+  MPC_OP_RESET_REBOOT                = $A9;
+  MP_OP_REINITIALIZE_FACTORY_RESET   = $AA;
 
 
   MSI_CDI                            = $FF;                                     // MemorySpaceIdentifier - Access the Configuration Definition Infomation (CDI)

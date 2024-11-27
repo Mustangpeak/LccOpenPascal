@@ -536,8 +536,11 @@ begin
                  MCP_OP_LOCK               : Result := Result + ' Operation -> Lock ';
                  MCP_OP_GET_UNIQUEID       : Result := Result + ' Operation -> Get Unique ID ';
                  MCP_OP_FREEZE             : Result := Result + ' Operation -> Freeze ';
-                 MCP_OP_INDICATE           : Result := Result + ' Operation -> Indicate ';
-                 MCP_OP_RESETS             : Result := Result + ' Operation -> Reset '
+                 MC_OP_UNFREEZE            : Result := Result + ' Operation -> UnFreeze ';
+                 MCP_OP_UPDATE_COMPLETE    : Result := Result + ' Operation -> Update Complete ';
+                 MPC_OP_RESET_REBOOT       : Result := Result + ' Operation -> Reboot ';
+                 MP_OP_REINITIALIZE_FACTORY_RESET    : Result := Result + ' Operation -> Factory Reset ';
+
                else
                  Result := Result + ' Operation -> Unknown ';
                end // case

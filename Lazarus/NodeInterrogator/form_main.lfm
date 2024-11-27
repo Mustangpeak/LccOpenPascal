@@ -1,39 +1,21 @@
 object Form1: TForm1
-  Left = 360
-  Height = 408
-  Top = 169
-  Width = 786
+  Left = 645
+  Height = 682
+  Top = 199
+  Width = 1447
   Caption = 'Form1'
-  ClientHeight = 408
-  ClientWidth = 786
+  ClientHeight = 682
+  ClientWidth = 1447
   LCLVersion = '4.0.0.1'
   OnCloseQuery = FormCloseQuery
   OnCreate = FormCreate
   OnDestroy = FormDestroy
   OnShow = FormShow
-  object ComboBoxComPorts: TComboBox
-    Left = 88
-    Height = 20
-    Top = 8
-    Width = 256
-    ItemHeight = 19
-    TabOrder = 0
-    Text = 'ComboBoxComPorts'
-  end
-  object ButtonComPortConnect: TButton
-    Left = 360
-    Height = 25
-    Top = 8
-    Width = 136
-    Caption = 'Connect...'
-    TabOrder = 1
-    OnClick = ButtonComPortConnectClick
-  end
   object StatusBarMain: TStatusBar
     Left = 0
     Height = 18
-    Top = 390
-    Width = 786
+    Top = 664
+    Width = 1447
     Panels = <    
       item
         Width = 300
@@ -43,69 +25,532 @@ object Form1: TForm1
       end>
     SimplePanel = False
   end
-  object LabelAliasID: TLabel
-    Left = 520
-    Height = 16
-    Top = 8
-    Width = 29
-    Caption = 'Alias'
-  end
-  object LabelNodeID: TLabel
-    Left = 520
-    Height = 16
-    Top = 24
-    Width = 49
-    Caption = 'Node ID'
-  end
-  object ButtonRefreshComPort: TButton
-    Left = 8
-    Height = 25
-    Top = 3
-    Width = 75
-    Caption = 'Refresh'
-    TabOrder = 3
-    OnClick = ButtonRefreshComPortClick
-  end
-  object Panel1: TPanel
+  object PanelLogging: TPanel
     Left = 0
-    Height = 334
-    Top = 56
-    Width = 786
-    Align = alBottom
-    Anchors = [akTop, akLeft, akRight, akBottom]
-    Caption = 'Panel1'
-    ClientHeight = 334
-    ClientWidth = 786
-    TabOrder = 4
-    object MemoComPort: TMemo
+    Height = 614
+    Top = 50
+    Width = 1447
+    Align = alClient
+    ClientHeight = 614
+    ClientWidth = 1447
+    TabOrder = 1
+    object PanelMemo: TPanel
       Left = 1
-      Height = 295
+      Height = 612
       Top = 1
-      Width = 784
-      Align = alTop
-      Anchors = [akLeft, akRight, akBottom]
-      Lines.Strings = (
-        'MemoComPort'
-      )
+      Width = 297
+      Align = alLeft
+      Caption = 'PanelMemo'
+      ClientHeight = 612
+      ClientWidth = 297
       TabOrder = 0
+      object MemoComPort: TMemo
+        Left = 1
+        Height = 500
+        Top = 111
+        Width = 295
+        Align = alClient
+        Anchors = [akLeft, akRight, akBottom]
+        ScrollBars = ssAutoBoth
+        TabOrder = 0
+      end
+      object PanelLoggingHeader: TPanel
+        Left = 1
+        Height = 39
+        Top = 72
+        Width = 295
+        Align = alTop
+        ClientHeight = 39
+        ClientWidth = 295
+        TabOrder = 1
+        object ButtonClearMemo: TButton
+          Left = 16
+          Height = 25
+          Top = 8
+          Width = 75
+          Caption = 'Clear'
+          TabOrder = 0
+          OnClick = ButtonClearMemoClick
+        end
+      end
+      object PanelNodeList: TPanel
+        Left = 1
+        Height = 71
+        Top = 1
+        Width = 295
+        Align = alTop
+        ClientHeight = 71
+        ClientWidth = 295
+        TabOrder = 2
+        object ComboBoxNodeList: TComboBox
+          Left = 8
+          Height = 20
+          Top = 40
+          Width = 280
+          Anchors = [akTop, akLeft, akRight]
+          ItemHeight = 19
+          Style = csDropDownList
+          TabOrder = 0
+        end
+        object Label1: TLabel
+          Left = 17
+          Height = 16
+          Top = 11
+          Width = 86
+          Caption = 'Node Selector'
+        end
+      end
     end
-    object ButtonClearMemo: TButton
-      Left = 64
-      Height = 25
-      Top = 304
-      Width = 75
-      Caption = 'Clear'
+    object PageControlMain: TPageControl
+      Left = 303
+      Height = 612
+      Top = 1
+      Width = 1143
+      ActivePage = TabSheetConfigMem
+      Align = alClient
+      TabIndex = 2
       TabOrder = 1
-      OnClick = ButtonClearMemoClick
+      object TabSheetMessageNetwork: TTabSheet
+        Caption = 'Message Network'
+        ClientHeight = 576
+        ClientWidth = 1137
+        object PanelTabMessageNetwork: TPanel
+          Left = 0
+          Height = 576
+          Top = 0
+          Width = 1137
+          Align = alClient
+          ClientHeight = 576
+          ClientWidth = 1137
+          TabOrder = 0
+          object ButtonVerifyNodesGlobal: TButton
+            Left = 24
+            Height = 25
+            Top = 16
+            Width = 214
+            Caption = 'Verify Nodes Global'
+            TabOrder = 0
+            OnClick = ButtonVerifyNodesGlobalClick
+          end
+          object ButtonVerifyNodesAddressed: TButton
+            Left = 24
+            Height = 25
+            Top = 48
+            Width = 214
+            Caption = 'Verify Nodes Addressed'
+            TabOrder = 1
+            OnClick = ButtonVerifyNodesGlobalClick
+          end
+        end
+      end
+      object TabSheetEvents: TTabSheet
+        Caption = 'Events'
+        ClientHeight = 576
+        ClientWidth = 1137
+        object PanelTabEvents: TPanel
+          Left = 0
+          Height = 576
+          Top = 0
+          Width = 1137
+          Align = alClient
+          TabOrder = 0
+        end
+      end
+      object TabSheetConfigMem: TTabSheet
+        Caption = 'Config Memory Info'
+        ClientHeight = 576
+        ClientWidth = 1137
+        object PanelTabSheetConfigMem: TPanel
+          Left = 0
+          Height = 576
+          Top = 0
+          Width = 1137
+          Align = alClient
+          ClientHeight = 576
+          ClientWidth = 1137
+          TabOrder = 0
+          object GroupBoxConfMemOptions: TGroupBox
+            Left = 16
+            Height = 464
+            Top = 8
+            Width = 628
+            Caption = 'Configuration Options'
+            ClientHeight = 437
+            ClientWidth = 618
+            TabOrder = 0
+            object EditConfigMemHighestAddressSpace: TEdit
+              Left = 280
+              Height = 22
+              Top = 224
+              Width = 101
+              ReadOnly = True
+              TabOrder = 0
+              Text = ' '
+            end
+            object LabelConfigMemeHighestAddressSpace: TLabel
+              Left = 280
+              Height = 16
+              Top = 200
+              Width = 141
+              Caption = 'Highest Address Space'
+            end
+            object GroupBoxConfigMemAvailableCommands: TGroupBox
+              Left = 0
+              Height = 144
+              Top = 48
+              Width = 320
+              Caption = 'Available Commands'
+              ClientHeight = 117
+              ClientWidth = 310
+              TabOrder = 1
+              object CheckBoxConfigMemWriteUnderMask: TCheckBox
+                Left = 8
+                Height = 18
+                Top = 0
+                Width = 187
+                Caption = 'Write Under Mask Support'
+                TabOrder = 0
+              end
+              object CheckBoxConfigMemUnalignedRead: TCheckBox
+                Left = 8
+                Height = 18
+                Top = 16
+                Width = 181
+                Caption = 'Unaligned Reads Support'
+                TabOrder = 1
+              end
+              object CheckBoxConfigMemSupportRead0xFC: TCheckBox
+                Left = 8
+                Height = 18
+                Top = 48
+                Width = 273
+                Caption = 'Read From Address Space 0xFC Support'
+                TabOrder = 2
+              end
+              object CheckBoxConfigMemSupportRead0xFB: TCheckBox
+                Left = 8
+                Height = 18
+                Top = 64
+                Width = 231
+                Caption = 'Read From Address 0xFB Support'
+                TabOrder = 3
+              end
+              object CheckBoxConfigMemSupportWrite0xFB: TCheckBox
+                Left = 8
+                Height = 18
+                Top = 80
+                Width = 216
+                Caption = 'Write To Address 0xFB Support'
+                TabOrder = 4
+              end
+              object CheckBoxConfigMemOpAllBitsZero: TCheckBox
+                Left = 8
+                Height = 18
+                Top = 96
+                Width = 206
+                Caption = 'All Other Bits Received as "0"'
+                TabOrder = 5
+              end
+              object CheckBoxConfigMemUnalignedWrite: TCheckBox
+                Left = 8
+                Height = 18
+                Top = 32
+                Width = 182
+                Caption = 'Unaligned Writes Support'
+                TabOrder = 6
+              end
+            end
+            object LabelConfigMemLowestAddressSpace: TLabel
+              Left = 8
+              Height = 16
+              Top = 200
+              Width = 137
+              Caption = 'Lowest Address Space'
+            end
+            object EditConfigMemLowestAddressSpace: TEdit
+              Left = 8
+              Height = 22
+              Top = 224
+              Width = 101
+              ReadOnly = True
+              TabOrder = 2
+              Text = ' '
+            end
+            object GroupBoxConfigMemWriteLenghts: TGroupBox
+              Left = 336
+              Height = 144
+              Top = 48
+              Width = 280
+              Caption = 'Write Lenghts'
+              ClientHeight = 117
+              ClientWidth = 270
+              TabOrder = 3
+              object CheckBoxConfigMemReserved0x80: TCheckBox
+                Left = 8
+                Height = 18
+                Top = 0
+                Width = 211
+                Caption = 'Reserved mask 0x80 (set to 1)'
+                TabOrder = 0
+              end
+              object CheckBoxConfigMemReserved0x40: TCheckBox
+                Left = 8
+                Height = 18
+                Top = 17
+                Width = 211
+                Caption = 'Reserved mask 0x80 (set to 1)'
+                TabOrder = 1
+              end
+              object CheckBoxConfigMemReserved0x20: TCheckBox
+                Left = 8
+                Height = 18
+                Top = 33
+                Width = 210
+                Caption = 'Reserved Mask 0x20 (set to 1)'
+                TabOrder = 2
+              end
+              object CheckBoxConfigMemReserved0x10: TCheckBox
+                Left = 8
+                Height = 18
+                Top = 49
+                Width = 236
+                Caption = 'Reserved Mask 0x10 (set to 1 or 0)'
+                TabOrder = 3
+              end
+              object CheckBoxConfigMemReserved0x02: TCheckBox
+                Left = 8
+                Height = 18
+                Top = 65
+                Width = 210
+                Caption = 'Reserved Mask 0x02 (set to 1)'
+                TabOrder = 4
+              end
+              object CheckBoxConfigMemStreamReadWriteSupport: TCheckBox
+                Left = 8
+                Height = 18
+                Top = 81
+                Width = 192
+                Caption = 'Stream Read/Write Support'
+                TabOrder = 5
+              end
+              object CheckBoxConfigMemWriteLengthAllOtherBitsZero: TCheckBox
+                Left = 8
+                Height = 18
+                Top = 97
+                Width = 206
+                Caption = 'All Other Bits Received as "0"'
+                TabOrder = 6
+              end
+            end
+            object LabelConfigMemOpNameString: TLabel
+              Left = 8
+              Height = 16
+              Top = 280
+              Width = 137
+              Caption = 'Name String (optional)'
+            end
+            object EditCongMemOpNameString: TEdit
+              Left = 6
+              Height = 22
+              Top = 304
+              Width = 610
+              TabOrder = 4
+            end
+            object ButtonSendConfigMemConfigOptions: TButton
+              Left = 56
+              Height = 25
+              Top = 352
+              Width = 485
+              Caption = 'Send Configuration Options Command'
+              TabOrder = 5
+              OnClick = ButtonSendConfigMemConfigOptionsClick
+            end
+            object LabelConfigMemLowestAddressSpaceName: TLabel
+              Left = 8
+              Height = 16
+              Top = 251
+              Width = 66
+              Caption = '[Unknown]'
+            end
+            object LabelConfigMemHighestAddressSpaceName: TLabel
+              Left = 295
+              Height = 16
+              Top = 253
+              Width = 66
+              Caption = '[Unknown]'
+            end
+            object ButtonConfigMemOpClear: TButton
+              Left = 16
+              Height = 25
+              Top = 14
+              Width = 75
+              Caption = 'Clear'
+              TabOrder = 6
+              OnClick = ButtonConfigMemOpClearClick
+            end
+          end
+          object GroupBoxConfigMemAddressSpaceInfo: TGroupBox
+            Left = 648
+            Height = 496
+            Top = 16
+            Width = 425
+            Caption = 'Address Space Info'
+            ClientHeight = 469
+            ClientWidth = 415
+            TabOrder = 1
+            object TreeViewConfigMemAddressSpaceInfo: TTreeView
+              Left = 24
+              Height = 264
+              Top = 40
+              Width = 384
+              TabOrder = 0
+            end
+            object ButtonConfigMemAddressSpaceInfoAll: TButton
+              Left = 40
+              Height = 25
+              Top = 432
+              Width = 336
+              Caption = 'Get All Address Space Info (0xFF-0x00)'
+              TabOrder = 1
+              OnClick = ButtonConfigMemAddressSpaceInfoAllClick
+            end
+            object ButtonConfigMemAddressSpaceInfo: TButton
+              Left = 40
+              Height = 25
+              Top = 360
+              Width = 336
+              Caption = 'Send Get Address Space Info'
+              TabOrder = 2
+              OnClick = ButtonConfigMemAddressSpaceInfoClick
+            end
+            object LabelConfigSpaceAddressInfo: TLabel
+              Left = 24
+              Height = 16
+              Top = 312
+              Width = 108
+              Caption = 'Address To Query'
+            end
+            object ComboBoxConfigMemAddressSpace: TComboBox
+              Left = 40
+              Height = 20
+              Top = 336
+              Width = 336
+              ItemHeight = 19
+              ItemIndex = 0
+              Items.Strings = (
+                '0xFF - Configuration Definition Info (CDI)'
+                '0xFE - All'
+                '0xFD - Confg Memory'
+                '0xFC - ACDI Manufacturer'
+                '0xFB - ACDI User'
+                '0xFA - Function Definition Info'
+                '0xF9 - Function Memory'
+              )
+              Style = csDropDownList
+              TabOrder = 3
+              Text = '0xFF - Configuration Definition Info (CDI)'
+              OnChange = ComboBoxConfigMemAddressSpaceChange
+            end
+            object ButtonConfigMemClearAddressInfo: TButton
+              Left = 24
+              Height = 25
+              Top = 8
+              Width = 75
+              Caption = 'Clear'
+              TabOrder = 4
+              OnClick = ButtonConfigMemClearAddressInfoClick
+            end
+            object ButtonMemConfgAddressSpaceInfoCancel: TButton
+              Left = 196
+              Height = 25
+              Top = 6
+              Width = 75
+              Caption = 'Cancel'
+              TabOrder = 5
+              OnClick = ButtonMemConfgAddressSpaceInfoCancelClick
+            end
+            object ButtonConfigMemAddressSpaceInfoWellKnown: TButton
+              Left = 40
+              Height = 25
+              Top = 400
+              Width = 336
+              Caption = 'Get Well Known Address Space Info (0xFF-0xF9)'
+              TabOrder = 6
+              OnClick = ButtonConfigMemAddressSpaceInfoWellKnownClick
+            end
+          end
+        end
+      end
+      object TabSheetDatagramReadWrite: TTabSheet
+        Caption = 'Datagram Read/Write'
+        ClientHeight = 576
+        ClientWidth = 1137
+        object PanelTabDatagramReadWrite: TPanel
+          Left = 0
+          Height = 576
+          Top = 0
+          Width = 1137
+          Align = alClient
+          TabOrder = 0
+        end
+      end
     end
-    object ButtonCreateNode: TButton
-      Left = 176
+    object Splitter1: TSplitter
+      Left = 298
+      Height = 612
+      Top = 1
+      Width = 5
+    end
+  end
+  object PanelHeader: TPanel
+    Left = 0
+    Height = 50
+    Top = 0
+    Width = 1447
+    Align = alTop
+    ClientHeight = 50
+    ClientWidth = 1447
+    TabOrder = 2
+    object ComboBoxComPorts: TComboBox
+      Left = 16
+      Height = 20
+      Top = 13
+      Width = 256
+      ItemHeight = 19
+      TabOrder = 0
+      Text = 'ComboBoxComPorts'
+    end
+    object ButtonComPortConnect: TButton
+      Left = 392
       Height = 25
-      Top = 304
-      Width = 120
-      Caption = 'Create Node'
+      Top = 8
+      Width = 136
+      Caption = 'Connect...'
+      TabOrder = 1
+      OnClick = ButtonComPortConnectClick
+    end
+    object LabelAliasID: TLabel
+      Left = 552
+      Height = 16
+      Top = 8
+      Width = 29
+      Caption = 'Alias'
+    end
+    object LabelNodeID: TLabel
+      Left = 552
+      Height = 16
+      Top = 24
+      Width = 49
+      Caption = 'Node ID'
+    end
+    object ButtonRefreshComPort: TButton
+      Left = 296
+      Height = 25
+      Top = 8
+      Width = 75
+      Caption = 'Refresh'
       TabOrder = 2
-      OnClick = ButtonCreateNodeClick
+      OnClick = ButtonRefreshComPortClick
     end
   end
 end

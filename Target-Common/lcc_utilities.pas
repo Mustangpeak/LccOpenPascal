@@ -13,47 +13,51 @@ uses
   SysUtils,
   lcc_defines;
 
-  function FormatStrToInt(AStr: string): string;
-  function EqualNodeID(NodeID1: TNodeID; NodeID2: TNodeID; IncludeNullNode: Boolean): Boolean;
-  function EqualNode(NodeID1: TNodeID; Node1AliasID: Word; NodeID2: TNodeID; Node2AliasID: Word; NodeID_OR_Alias: Boolean): Boolean;
-  function EqualEventID(EventID1, EventID2: TEventID): Boolean;
-  procedure NodeIDToEventID(NodeID: TNodeID; LowBytes: Word; var EventID: TEventID);
-  function NullNodeID(ANodeID: TNodeID): Boolean;
-  function EventIDToString(EventID: TEventID; InsertDots: Boolean): String;
-  function NodeIDToString(NodeID: TNodeID; InsertDots: Boolean): String;
-  function NodeAliasToString(AliasID: Word): String;
-  function ValidateIPString(IP4: string): Boolean;
-  function ValidateNodeIDString(NodeIDStr: string): Boolean;
-  function ValidateEventIDString(NodeIDStr: string): Boolean;
-  function ValidatePort(PortStr: string): Boolean; overload;
-  function ValidatePort(Port: Integer): Boolean; overload;
-  procedure NodeIDStringToNodeID(ANodeIDStr: String; var ANodeID: TNodeID);
-  function StrToNodeID(NodeID: string; DotConvention: Boolean = False): TNodeID;
-  function StrToEventID(Event: string): TEventID;
-  function _Lo(Data: DWORD): Byte;
-  function _Hi(Data: DWORD): Byte;
-  function _Higher(Data: DWORD): Byte;
-  function _Highest(Data: DWORD): Byte;
-  function _Highest1(Data: QWord): Byte;
-  function _Highest2(Data: QWord): Byte;
-  function IsPrintableChar(C: Char): Boolean;
-  function IsNumericChar(C: Char): Boolean;
+function FormatStrToInt(AStr: string): string;
+function EqualNodeID(NodeID1: TNodeID; NodeID2: TNodeID;
+  IncludeNullNode: boolean): boolean;
+function EqualNode(NodeID1: TNodeID; Node1AliasID: word; NodeID2: TNodeID;
+  Node2AliasID: word; NodeID_OR_Alias: boolean): boolean;
+function EqualEventID(EventID1, EventID2: TEventID): boolean;
+procedure NodeIDToEventID(NodeID: TNodeID; LowBytes: word; var EventID: TEventID);
+function NullNodeID(ANodeID: TNodeID): boolean;
+function EventIDToString(EventID: TEventID; InsertDots: boolean): string;
+function NodeIDToString(NodeID: TNodeID; InsertDots: boolean): string;
+function NodeAliasToString(AliasID: word): string;
+function ValidateIPString(IP4: string): boolean;
+function ValidateNodeIDString(NodeIDStr: string): boolean;
+function ValidateEventIDString(NodeIDStr: string): boolean;
+function ValidatePort(PortStr: string): boolean; overload;
+function ValidatePort(Port: integer): boolean; overload;
+procedure NodeIDStringToNodeID(ANodeIDStr: string; var ANodeID: TNodeID);
+function StrToNodeID(NodeID: string; DotConvention: boolean = False): TNodeID;
+function StrToEventID(Event: string): TEventID;
+function _Lo(Data: DWORD): byte;
+function _Hi(Data: DWORD): byte;
+function _Higher(Data: DWORD): byte;
+function _Highest(Data: DWORD): byte;
+function _Highest1(Data: QWord): byte;
+function _Highest2(Data: QWord): byte;
+function IsPrintableChar(C: char): boolean;
+function IsNumericChar(C: char): boolean;
+function AddressSpaceToStr(AddressSpace: byte): string;
 
-  function ThreadListCount(AThreadedList: TThreadList): Int64;
-  procedure ThreadListClearObjects(AThreadList: TThreadList);
+function ThreadListCount(AThreadedList: TThreadList): int64;
+procedure ThreadListClearObjects(AThreadList: TThreadList);
 
-  procedure ListClearObjects(AList: TList);
-  procedure ListClearNilObjects(AList: TList);
+procedure ListClearObjects(AList: TList);
+procedure ListClearNilObjects(AList: TList);
 
-  // Delphi stream methods are different than Lazarus
-  function StreamReadByte(AStream: TStream): Byte;
-  procedure StreamWriteByte(AStream: TStream; AByte: Byte);
+// Delphi stream methods are different than Lazarus
+function StreamReadByte(AStream: TStream): byte;
+procedure StreamWriteByte(AStream: TStream; AByte: byte);
 
-  function ValidateExtendedDccAddress(AddressStr: String; var DccAddress: Integer; var IsLong: Boolean): Boolean;
+function ValidateExtendedDccAddress(AddressStr: string; var DccAddress: integer;
+  var IsLong: boolean): boolean;
 
-  function GridConnectToDetailedGridConnect(MessageString: string): string;
+function GridConnectToDetailedGridConnect(MessageString: string): string;
 
-  function FormatComPortString(ComPort: string): string;
+function FormatComPortString(ComPort: string): string;
 
 
 implementation
@@ -61,21 +65,24 @@ implementation
 uses
   lcc_node_messages;
 
-function ValidateExtendedDccAddress(AddressStr: String; var DccAddress: Integer; var IsLong: Boolean): Boolean;
+function ValidateExtendedDccAddress(AddressStr: string; var DccAddress: integer;
+  var IsLong: boolean): boolean;
 var
-  i: Integer;
+  i: integer;
 begin
   Result := True;
 
   DccAddress := 0;
   if AddressStr = '' then
     Result := False
-  else begin
+  else
+  begin
     if Length(AddressStr) = 1 then
     begin
       if not TryStrToInt(AddressStr, DccAddress) then
         Result := False;
-    end else
+    end
+    else
     begin
       for i := 1 to Length(AddressStr) do
       begin
@@ -83,67 +90,75 @@ begin
         begin
           if (AddressStr[i] < '0') or (AddressStr[i] > '9') then
             Result := False;
-        end else
+        end
+        else
         begin
           if (AddressStr[i] >= '0') and (AddressStr[i] <= '9') then
           begin // all numbers
-            if not TryStrToInt(AddressStr, DccAddress) then   // This should always succeed
+            if not TryStrToInt(AddressStr, DccAddress) then
+              // This should always succeed
               Result := False;
-          end else
+          end
+          else
           begin
-            if (AddressStr[i] = 'L') or (AddressStr[i] = 'l') or (AddressStr[i] = 'S') or (AddressStr[i] = 's') then
+            if (AddressStr[i] = 'L') or (AddressStr[i] = 'l') or
+              (AddressStr[i] = 'S') or (AddressStr[i] = 's') then
             begin
               IsLong := (AddressStr[i] = 'L') or (AddressStr[i] = 'l');
               SetLength(AddressStr, Length(AddressStr) - 1);  // strip it off
-              if not TryStrToInt(AddressStr, DccAddress) then   // This should always succeed
+              if not TryStrToInt(AddressStr, DccAddress) then
+                // This should always succeed
                 Result := False;
-            end else
-               Result := False
-          end
+            end
+            else
+              Result := False;
+          end;
         end;
       end;
       Result := (DccAddress > 0) and (DccAddress <= MAX_DCC_ADDRESS);
-    end
+    end;
   end;
 end;
 
 
-function IsPrintableChar(C: Char): Boolean;
+function IsPrintableChar(C: char): boolean;
 begin
-  Result := ((Ord( C) >= 32) and (Ord( C) <= 126)) { or ((Ord( C) >= 128) and (Ord( C) <= 255)) }
+  Result := ((Ord(C) >= 32) and (Ord(C) <= 126));
+  { or ((Ord( C) >= 128) and (Ord( C) <= 255)) }
 end;
 
-function IsNumericChar(C: Char): Boolean;
+function IsNumericChar(C: char): boolean;
 begin
-  Result := (C >= '0') and (C <= '9')
+  Result := (C >= '0') and (C <= '9');
 end;
 
 
 function FormatStrToInt(AStr: string): string;
 begin
-//  {$IFDEF IOS32}
+  //  {$IFDEF IOS32}
   Result := '0x' + AStr;
 
- // {$ELSE}
- // Result := '$' + AStr;
- // {$ENDIF}
+  // {$ELSE}
+  // Result := '$' + AStr;
+  // {$ENDIF}
 
 end;
 
-function ValidateEventIDString(NodeIDStr: string): Boolean;
+function ValidateEventIDString(NodeIDStr: string): boolean;
 var
-  Octet : string;
-  Dots, I : Integer;
+  Octet: string;
+  Dots, I: integer;
 begin
   NodeIDStr := UpperCase(NodeIDStr);
 
-  NodeIDStr := NodeIDStr + '.'; //add a dot. We use a dot to trigger the Octet check, so need the last one
+  NodeIDStr := NodeIDStr + '.';
+  //add a dot. We use a dot to trigger the Octet check, so need the last one
   Dots := 0;
   Octet := '0';
   {$IFDEF LCC_MOBILE}
   For I := 0 To Length(NodeIDStr) - 1 Do
   {$ELSE}
-  for I := 1 To Length(NodeIDStr) do
+  for I := 1 to Length(NodeIDStr) do
   {$ENDIF}
   begin
     if CharInSet(NodeIDStr[I], ['0'..'9', 'A'..'F', '.']) then
@@ -152,50 +167,55 @@ begin
       begin
         Inc(Dots);
         if (length(Octet) = 1) or (StrToInt('$' + Octet) > 255) then
-          Dots := 9; //Either there's no number or it's higher than 255 so push dots out of range to fail below
+          Dots := 9;
+        //Either there's no number or it's higher than 255 so push dots out of range to fail below
         Octet := '0'; // Reset to check the next octet
-      end else// End is a dot   // Else is not a dot so
+      end
+      else// End is a dot   // Else is not a dot so
         Octet := Octet + NodeIDStr[I]; // Add the next character to the octet
-    end else // End is not a dot   // Else Is not in CheckSet so
+    end
+    else // End is not a dot   // Else Is not in CheckSet so
       Dots := 9; // Push dots out of range to fail below
   end;
-  Result := (Dots = 8) // The only way that Dots will equal 8 is if we passed all the tests
+  Result := (Dots = 8);
+  // The only way that Dots will equal 8 is if we passed all the tests
 end;
 
-function ValidatePort(PortStr: string): Boolean;
+function ValidatePort(PortStr: string): boolean;
 var
-  Port: Integer;
+  Port: integer;
 begin
   Result := False;
   if TryStrToInt(PortStr, Port) then
     Result := ValidatePort(Port);
 end;
 
-function ValidatePort(Port: Integer): Boolean;
+function ValidatePort(Port: integer): boolean;
 begin
-  Result := Port < 65535
+  Result := Port < 65535;
 end;
 
-function ValidateNodeIDString(NodeIDStr: string): Boolean;
+function ValidateNodeIDString(NodeIDStr: string): boolean;
 var
-  Octet : string;
-  Dots, I : Integer;
+  Octet: string;
+  Dots, I: integer;
 begin
   NodeIDStr := UpperCase(NodeIDStr);
   if (NodeIDStr[1] = '0') and (NodeIDStr[2] = 'X') then
   begin
     for i := 1 to Length(NodeIDStr) - 2 do
-      NodeIDStr[i] := NodeIDStr[i+2];
+      NodeIDStr[i] := NodeIDStr[i + 2];
     SetLength(NodeIDStr, Length(NodeIDStr) - 2);
   end;
 
-  NodeIDStr := NodeIDStr + '.'; //add a dot. We use a dot to trigger the Octet check, so need the last one
+  NodeIDStr := NodeIDStr + '.';
+  //add a dot. We use a dot to trigger the Octet check, so need the last one
   Dots := 0;
   Octet := '0';
   {$IFDEF LCC_MOBILE}
   For I := 0 To Length(NodeIDStr) - 1 Do
   {$ELSE}
-  for I := 1 To Length(NodeIDStr) do
+  for I := 1 to Length(NodeIDStr) do
   {$ENDIF}
   begin
     if CharInSet(NodeIDStr[I], ['0'..'9', 'A'..'F', '.']) then
@@ -204,58 +224,67 @@ begin
       begin
         Inc(Dots);
         if (length(Octet) = 1) or (StrToInt('$' + Octet) > 255) then
-          Dots := 7; //Either there's no number or it's higher than 255 so push dots out of range to fail below
+          Dots := 7;
+        //Either there's no number or it's higher than 255 so push dots out of range to fail below
         Octet := '0'; // Reset to check the next octet
-      end else// End is a dot   // Else is not a dot so
+      end
+      else// End is a dot   // Else is not a dot so
         Octet := Octet + NodeIDStr[I]; // Add the next character to the octet
-    end else // End is not a dot   // Else Is not in CheckSet so
+    end
+    else // End is not a dot   // Else Is not in CheckSet so
       Dots := 7; // Push dots out of range to fail below
   end;
-  Result := (Dots = 6) // The only way that Dots will equal 6 is if we passed all the tests
+  Result := (Dots = 6);
+  // The only way that Dots will equal 6 is if we passed all the tests
 end;
 
-function ValidateIPString(IP4: string): Boolean; // Coding by Dave Sonsalla
-Var
-  Octet : String;
-  Dots, I : Integer;
-Begin
-  IP4 := IP4+'.'; //add a dot. We use a dot to trigger the Octet check, so need the last one
+function ValidateIPString(IP4: string): boolean; // Coding by Dave Sonsalla
+var
+  Octet: string;
+  Dots, I: integer;
+begin
+  IP4 := IP4 + '.'; //add a dot. We use a dot to trigger the Octet check, so need the last one
   Dots := 0;
   Octet := '0';
   {$IFDEF LCC_MOBILE}
   For I := 0 To Length(IP4) - 1 Do
   {$ELSE}
-  For I := 1 To Length(IP4) Do
+  for I := 1 to Length(IP4) do
   {$ENDIF}
-  Begin
-    If CharInSet(IP4[I], ['0'..'9','.']) Then
-    Begin
-      If IP4[I] = '.' Then //found a dot so inc dots and check octet value
-      Begin
+  begin
+    if CharInSet(IP4[I], ['0'..'9', '.']) then
+    begin
+      if IP4[I] = '.' then //found a dot so inc dots and check octet value
+      begin
         Inc(Dots);
-        If (length(Octet) =1) Or (StrToInt(Octet) > 255) Then Dots := 5; //Either there's no number or it's higher than 255 so push dots out of range
+        if (length(Octet) = 1) or (StrToInt(Octet) > 255) then Dots := 5;
+        //Either there's no number or it's higher than 255 so push dots out of range
         Octet := '0'; // Reset to check the next octet
-      End // End of IP4[I] is a dot
-      Else // Else IP4[I] is not a dot so
-      Octet := Octet + IP4[I]; // Add the next character to the octet
-    End // End of IP4[I] is not a dot
-    Else // Else IP4[I] Is not in CheckSet so
+      end // End of IP4[I] is a dot
+      else // Else IP4[I] is not a dot so
+        Octet := Octet + IP4[I]; // Add the next character to the octet
+    end // End of IP4[I] is not a dot
+    else // Else IP4[I] Is not in CheckSet so
       Dots := 5; // Push dots out of range
-  End;
-  Result := (Dots = 4) // The only way that Dots will equal 4 is if we passed all the tests
+  end;
+  Result := (Dots = 4);
+  // The only way that Dots will equal 4 is if we passed all the tests
 end;
 
-function EqualNodeID(NodeID1: TNodeID; NodeID2: TNodeID; IncludeNullNode: Boolean): Boolean;
+function EqualNodeID(NodeID1: TNodeID; NodeID2: TNodeID;
+  IncludeNullNode: boolean): boolean;
 begin
   if IncludeNullNode then
     Result := (NodeID1[0] = NodeID2[0]) and (NodeID1[1] = NodeID2[1])
   else
-    Result := not NullNodeID(NodeID1) and not NullNodeID(NodeID2) and (NodeID1[0] = NodeID2[0]) and (NodeID1[1] = NodeID2[1])
+    Result := not NullNodeID(NodeID1) and not NullNodeID(NodeID2) and
+      (NodeID1[0] = NodeID2[0]) and (NodeID1[1] = NodeID2[1]);
 end;
 
-function EqualNode(NodeID1: TNodeID; Node1AliasID: Word; NodeID2: TNodeID; Node2AliasID: Word; NodeID_OR_Alias: Boolean): Boolean;
+function EqualNode(NodeID1: TNodeID; Node1AliasID: word; NodeID2: TNodeID;
+  Node2AliasID: word; NodeID_OR_Alias: boolean): boolean;
 var
-  ValidNodeIDs, ValidAliases: Boolean;
+  ValidNodeIDs, ValidAliases: boolean;
 begin
   Result := False;
 
@@ -268,46 +297,44 @@ begin
       Result := (Node1AliasID = Node2AliasID)
     else
     if ValidNodeIDs then
-       Result := EqualNodeID(NodeID1, NodeID2, False);
+      Result := EqualNodeID(NodeID1, NodeID2, False);
   end
-  else begin
+  else
+  begin
     if ValidNodeIDs and ValidAliases then
-      Result := EqualNodeID(NodeID1, NodeID2, False) and (Node1AliasID = Node2AliasID)
+      Result := EqualNodeID(NodeID1, NodeID2, False) and (Node1AliasID = Node2AliasID);
   end;
 end;
 
-function EqualEventID(EventID1, EventID2: TEventID): Boolean;
+function EqualEventID(EventID1, EventID2: TEventID): boolean;
 begin
-  Result := (EventID1[0] = EventID2[0]) and
-            (EventID1[1] = EventID2[1]) and
-            (EventID1[2] = EventID2[2]) and
-            (EventID1[3] = EventID2[3]) and
-            (EventID1[4] = EventID2[4]) and
-            (EventID1[5] = EventID2[5]) and
-            (EventID1[6] = EventID2[6]) and
-            (EventID1[7] = EventID2[7])
+  Result := (EventID1[0] = EventID2[0]) and (EventID1[1] = EventID2[1]) and
+    (EventID1[2] = EventID2[2]) and (EventID1[3] = EventID2[3]) and
+    (EventID1[4] = EventID2[4]) and (EventID1[5] = EventID2[5]) and
+    (EventID1[6] = EventID2[6]) and (EventID1[7] = EventID2[7]);
 end;
 
-procedure NodeIDToEventID(NodeID: TNodeID; LowBytes: Word; var EventID: TEventID);
+procedure NodeIDToEventID(NodeID: TNodeID; LowBytes: word; var EventID: TEventID);
 begin
-  EventID[0] := _Higher( NodeID[1]); // But these all need the 48 Bit Full ID in the Byte Fields
-  EventID[1] := _Hi(     NodeID[1]);
-  EventID[2] := _Lo(     NodeID[1]);
-  EventID[3] := _Higher( NodeID[0]);
-  EventID[4] := _Hi(     NodeID[0]);
-  EventID[5] := _Lo(     NodeID[0]);
+  EventID[0] := _Higher(NodeID[1]);
+  // But these all need the 48 Bit Full ID in the Byte Fields
+  EventID[1] := _Hi(NodeID[1]);
+  EventID[2] := _Lo(NodeID[1]);
+  EventID[3] := _Higher(NodeID[0]);
+  EventID[4] := _Hi(NodeID[0]);
+  EventID[5] := _Lo(NodeID[0]);
   EventID[6] := _Hi(LowBytes);
   EventID[7] := _Lo(LowBytes);
 end;
 
-function NullNodeID(ANodeID: TNodeID): Boolean;
+function NullNodeID(ANodeID: TNodeID): boolean;
 begin
-  Result := (ANodeID[0] = 0) and (ANodeID[1] = 0)
+  Result := (ANodeID[0] = 0) and (ANodeID[1] = 0);
 end;
 
-function EventIDToString(EventID: TEventID; InsertDots: Boolean): String;
+function EventIDToString(EventID: TEventID; InsertDots: boolean): string;
 var
-  i: Integer;
+  i: integer;
 begin
   Result := '';
   if InsertDots then
@@ -319,16 +346,17 @@ begin
       else
         Result := Result + IntToHex(EventID[i], 2);
     end;
-  end else
+  end
+  else
   begin
     for i := 0 to LEN_EVENT_MAX - 1 do
       Result := Result + IntToHex(EventID[i], 2);
   end;
 end;
 
-function NodeIDToString(NodeID: TNodeID; InsertDots: Boolean): String;
+function NodeIDToString(NodeID: TNodeID; InsertDots: boolean): string;
 var
-  i: Integer;
+  i: integer;
 begin
   Result := '';
   if InsertDots then
@@ -338,22 +366,24 @@ begin
       if i > 0 then
       begin
         if i < LEN_NODEID_MAX div 2 then
-          Result := Result + IntToHex(((NodeID[0] shr (i*8)) and $0000FF), 2) + '.'
+          Result := Result + IntToHex(((NodeID[0] shr (i * 8)) and $0000FF), 2) + '.'
         else
-          Result := Result + IntToHex(((NodeID[1] shr ((i-3)*8)) and $0000FF), 2) + '.'
-      end else
+          Result := Result + IntToHex(((NodeID[1] shr ((i - 3) * 8)) and $0000FF), 2) + '.';
+      end
+      else
       begin
-         if i < LEN_NODEID_MAX div 2 then
-          Result := Result + IntToHex(((NodeID[0] shr (i*8)) and $0000FF), 2)
+        if i < LEN_NODEID_MAX div 2 then
+          Result := Result + IntToHex(((NodeID[0] shr (i * 8)) and $0000FF), 2)
         else
-          Result := Result + IntToHex(((NodeID[1] shr ((i-3)*8)) and $0000FF), 2)
+          Result := Result + IntToHex(((NodeID[1] shr ((i - 3) * 8)) and $0000FF), 2);
       end;
     end;
-  end else
+  end
+  else
   begin
     Result := IntToHex(NodeID[1], 6);
     Result := Result + IntToHex(NodeID[0], 6);
-    Result := '0x' + Result
+    Result := '0x' + Result;
 
    { for i := LEN_NODEID_MAX - 1 downto 0 do
     begin
@@ -365,34 +395,34 @@ begin
   end;
 end;
 
-function NodeAliasToString(AliasID: Word): String;
+function NodeAliasToString(AliasID: word): string;
 begin
   Result := '0x' + IntToHex(AliasID, 4);
 end;
 
-procedure NodeIDStringToNodeID(ANodeIDStr: String; var ANodeID: TNodeID);
+procedure NodeIDStringToNodeID(ANodeIDStr: string; var ANodeID: TNodeID);
 var
-  TempStr: String;
+  TempStr: string;
   TempNodeID: QWord;
 begin
-  ANodeIDStr := Trim( String( ANodeIDStr));
-  TempStr := StringReplace(String( ANodeIDStr), '0x', '', [rfReplaceAll, rfIgnoreCase]);
-  TempStr := StringReplace(String( TempStr), '$', '', [rfReplaceAll, rfIgnoreCase]);
+  ANodeIDStr := Trim(string(ANodeIDStr));
+  TempStr := StringReplace(string(ANodeIDStr), '0x', '', [rfReplaceAll, rfIgnoreCase]);
+  TempStr := StringReplace(string(TempStr), '$', '', [rfReplaceAll, rfIgnoreCase]);
   try
-    TempNodeID := StrToInt64('$' + String( TempStr));
-    ANodeID[0] := DWord( TempNodeID and $0000000000FFFFFF);
-    ANodeID[1] := DWord( (TempNodeID shr 24) and $0000000000FFFFFF);
+    TempNodeID := StrToInt64('$' + string(TempStr));
+    ANodeID[0] := DWord(TempNodeID and $0000000000FFFFFF);
+    ANodeID[1] := DWord((TempNodeID shr 24) and $0000000000FFFFFF);
   except
     ANodeID[0] := 0;
-    ANodeID[1]  := 0;
+    ANodeID[1] := 0;
   end;
 end;
 
 function StrToEventID(Event: string): TEventID;
 var
   TempEvent: string;
-  TempChar: Char;
-  i: Integer;
+  TempChar: char;
+  i: integer;
 begin
   Event := Trim(Event);
   if Length(Event) = 23 then
@@ -432,17 +462,18 @@ begin
     Result[6] := StrToInt('0x' + Event[13] + Event[14]);
     Result[7] := StrToInt('0x' + Event[15] + Event[16]);
     {$ENDIF}
-  end else
+  end
+  else
   begin
     for i := 0 to LEN_EVENT_MAX - 1 do
-      Result[i] := 0
-  end
+      Result[i] := 0;
+  end;
 end;
 
-function StrToNodeID(NodeID: string; DotConvention: Boolean = False): TNodeID;
+function StrToNodeID(NodeID: string; DotConvention: boolean = False): TNodeID;
 var
   TempQ: QWord;
-  i: Integer;
+  i: integer;
   TempStr: string;
 begin
   NodeID := Trim(NodeID);
@@ -460,7 +491,8 @@ begin
         TempStr := TempStr + NodeID[i];
     end;
 
-  end else
+  end
+  else
     TempStr := NodeID;
 
   {$IFDEF LCC_FPC}
@@ -468,120 +500,124 @@ begin
   {$ELSE}
   TempQ := StrToUInt64('$' + TempStr);
   {$ENDIF}
-  Result[0] :=  TempQ and $0000000000FFFFFF;
-  Result[1] := (TempQ and $FFFFFFFFFF000000) shr 24;  // allow the upper nibble to be part of it to catch incorrect node id values
+  Result[0] := TempQ and $0000000000FFFFFF;
+  Result[1] := (TempQ and $FFFFFFFFFF000000) shr 24;
+  // allow the upper nibble to be part of it to catch incorrect node id values
 end;
 
-function _Lo(Data: DWORD): Byte;
+function _Lo(Data: DWORD): byte;
 begin
-  Result := Byte(Data) and $000000FF;
+  Result := byte(Data) and $000000FF;
 end;
 
-function _Hi(Data: DWORD): Byte;
+function _Hi(Data: DWORD): byte;
 begin
-  Result := Byte((Data shr 8) and $000000FF);
+  Result := byte((Data shr 8) and $000000FF);
 end;
 
-function _Higher(Data: DWORD): Byte;
+function _Higher(Data: DWORD): byte;
 begin
-  Result := Byte((Data shr 16) and $000000FF);
+  Result := byte((Data shr 16) and $000000FF);
 end;
 
-function _Highest(Data: DWORD): Byte;
+function _Highest(Data: DWORD): byte;
 begin
-  Result := Byte((Data shr 24) and $000000FF);
+  Result := byte((Data shr 24) and $000000FF);
 end;
 
-function _Highest1(Data: QWord): Byte;
+function _Highest1(Data: QWord): byte;
 begin
-  Result := Byte((Data shr 32) and $00000000000000FF);
+  Result := byte((Data shr 32) and $00000000000000FF);
 end;
 
-function _Highest2(Data: QWord): Byte;
+function _Highest2(Data: QWord): byte;
 begin
-  Result := Byte((Data shr 40) and $00000000000000FF);
+  Result := byte((Data shr 40) and $00000000000000FF);
 end;
 
 function MTI_ToString(MTI: DWord): string;
-
 begin
   case MTI of
-    MTI_CAN_CID0 : Result := 'Check ID 0';
-    MTI_CAN_CID1 : Result := 'Check ID 1';
-    MTI_CAN_CID2 : Result := 'Check ID 2';
-    MTI_CAN_CID3 : Result := 'Check ID 3';
-    MTI_CAN_CID4 : Result := 'Check ID 4';
-    MTI_CAN_CID5 : Result := 'Check ID 5';
-    MTI_CAN_CID6 : Result := 'Check ID 6';
+    MTI_CAN_CID0: Result := 'Check ID 0';
+    MTI_CAN_CID1: Result := 'Check ID 1';
+    MTI_CAN_CID2: Result := 'Check ID 2';
+    MTI_CAN_CID3: Result := 'Check ID 3';
+    MTI_CAN_CID4: Result := 'Check ID 4';
+    MTI_CAN_CID5: Result := 'Check ID 5';
+    MTI_CAN_CID6: Result := 'Check ID 6';
 
-    MTI_CAN_RID : Result := 'Reserve ID [RID]';
-    MTI_CAN_AMD : Result := 'Alias Map Definition [AMD]';
-    MTI_CAN_AME : Result := 'Alias Map Enquiry [AME]';
-    MTI_CAN_AMR : Result := 'Alias Map Reset [AMR]';
+    MTI_CAN_RID: Result := 'Reserve ID [RID]';
+    MTI_CAN_AMD: Result := 'Alias Map Definition [AMD]';
+    MTI_CAN_AME: Result := 'Alias Map Enquiry [AME]';
+    MTI_CAN_AMR: Result := 'Alias Map Reset [AMR]';
 
-    MTI_CAN_FRAME_TYPE_DATAGRAM_FRAME_ONLY : begin
-                                           Result := 'Datagram Single Frame:';
+    MTI_CAN_FRAME_TYPE_DATAGRAM_FRAME_ONLY: begin
+      Result := 'Datagram Single Frame:';
 
-                                         end;
-    MTI_CAN_FRAME_TYPE_DATAGRAM_FRAME_START : begin
-                                           Result := 'Datagram Start Frame:';
+    end;
+    MTI_CAN_FRAME_TYPE_DATAGRAM_FRAME_START: begin
+      Result := 'Datagram Start Frame:';
 
-                                         end;
-    MTI_CAN_FRAME_TYPE_DATAGRAM_FRAME : Result := 'Datagram Frame';
-    MTI_CAN_FRAME_TYPE_DATAGRAM_FRAME_END : Result := 'Datagram End Frame';
+    end;
+    MTI_CAN_FRAME_TYPE_DATAGRAM_FRAME: Result := 'Datagram Frame';
+    MTI_CAN_FRAME_TYPE_DATAGRAM_FRAME_END: Result := 'Datagram End Frame';
 
-    MTI_INITIALIZATION_COMPLETE : Result := 'Initialization Complete';
-    MTI_VERIFY_NODE_ID_NUMBER_DEST : Result := 'Verify Node ID with Destination Address';
-    MTI_VERIFY_NODE_ID_NUMBER      : Result := 'Verify Node ID Global';
-    MTI_VERIFIED_NODE_ID_NUMBER    : Result := 'Verified Node ID';
-    MTI_OPTIONAL_INTERACTION_REJECTED : Result := 'Optional Interaction Rejected';
-    MTI_TERMINATE_DUE_TO_ERROR        : Result := 'Terminate Due to Error';
+    MTI_INITIALIZATION_COMPLETE: Result := 'Initialization Complete';
+    MTI_VERIFY_NODE_ID_NUMBER_DEST: Result := 'Verify Node ID with Destination Address';
+    MTI_VERIFY_NODE_ID_NUMBER: Result := 'Verify Node ID Global';
+    MTI_VERIFIED_NODE_ID_NUMBER: Result := 'Verified Node ID';
+    MTI_OPTIONAL_INTERACTION_REJECTED: Result := 'Optional Interaction Rejected';
+    MTI_TERMINATE_DUE_TO_ERROR: Result := 'Terminate Due to Error';
 
-    MTI_PROTOCOL_SUPPORT_INQUIRY  : Result := 'Protocol Support Inquiry';
-    MTI_PROTOCOL_SUPPORT_REPLY    : Result := 'Protocol Support Reply';
+    MTI_PROTOCOL_SUPPORT_INQUIRY: Result := 'Protocol Support Inquiry';
+    MTI_PROTOCOL_SUPPORT_REPLY: Result := 'Protocol Support Reply';
 
-    MTI_CONSUMER_IDENTIFY              : Result := 'Consumer Identify';
-    MTI_CONSUMER_IDENTIFY_RANGE        : Result := 'Consumer Identify Range';
-    MTI_CONSUMER_IDENTIFIED_UNKNOWN    : Result := 'Consumer Identified Unknown';
-    MTI_CONSUMER_IDENTIFIED_SET        : Result := 'Consumer Identified Valid';
-    MTI_CONSUMER_IDENTIFIED_CLEAR      : Result := 'Consumer Identified Clear';
-    MTI_CONSUMER_IDENTIFIED_RESERVED   : Result := 'Consumer Identified Reserved';
-    MTI_PRODUCER_IDENDIFY              : Result := 'Producer Identify';
-    MTI_PRODUCER_IDENTIFY_RANGE        : Result := 'Producer Identify Range';
-    MTI_PRODUCER_IDENTIFIED_UNKNOWN    : Result := 'Producer Identified Unknown';
-    MTI_PRODUCER_IDENTIFIED_SET        : Result := 'Producer Identified Valid';
-    MTI_PRODUCER_IDENTIFIED_CLEAR      : Result := 'Producer Identified Clear';
-    MTI_PRODUCER_IDENTIFIED_RESERVED   : Result := 'Producer Identified Reserved';
-    MTI_EVENTS_IDENTIFY_DEST           : Result := 'Events Identify with Destination Address';
-    MTI_EVENTS_IDENTIFY                : Result := 'Events Identify Global';
-    MTI_EVENT_LEARN                    : Result := 'Event Learn';
-    MTI_PC_EVENT_REPORT                : Result := 'Producer/Consumer Event Report [PCER] ';
+    MTI_CONSUMER_IDENTIFY: Result := 'Consumer Identify';
+    MTI_CONSUMER_IDENTIFY_RANGE: Result := 'Consumer Identify Range';
+    MTI_CONSUMER_IDENTIFIED_UNKNOWN: Result := 'Consumer Identified Unknown';
+    MTI_CONSUMER_IDENTIFIED_SET: Result := 'Consumer Identified Valid';
+    MTI_CONSUMER_IDENTIFIED_CLEAR: Result := 'Consumer Identified Clear';
+    MTI_CONSUMER_IDENTIFIED_RESERVED: Result := 'Consumer Identified Reserved';
+    MTI_PRODUCER_IDENDIFY: Result := 'Producer Identify';
+    MTI_PRODUCER_IDENTIFY_RANGE: Result := 'Producer Identify Range';
+    MTI_PRODUCER_IDENTIFIED_UNKNOWN: Result := 'Producer Identified Unknown';
+    MTI_PRODUCER_IDENTIFIED_SET: Result := 'Producer Identified Valid';
+    MTI_PRODUCER_IDENTIFIED_CLEAR: Result := 'Producer Identified Clear';
+    MTI_PRODUCER_IDENTIFIED_RESERVED: Result := 'Producer Identified Reserved';
+    MTI_EVENTS_IDENTIFY_DEST: Result :=
+        'Events Identify with Destination Address';
+    MTI_EVENTS_IDENTIFY: Result := 'Events Identify Global';
+    MTI_EVENT_LEARN: Result := 'Event Learn';
+    MTI_PC_EVENT_REPORT: Result :=
+        'Producer/Consumer Event Report [PCER] ';
 
-    MTI_SIMPLE_NODE_INFO_REQUEST       : Result := 'Simple Node Info Request [SNIP]';
-    MTI_SIMPLE_NODE_INFO_REPLY         : Result := 'Simple Node Info Reply [SNIP]';
+    MTI_SIMPLE_NODE_INFO_REQUEST: Result := 'Simple Node Info Request [SNIP]';
+    MTI_SIMPLE_NODE_INFO_REPLY: Result := 'Simple Node Info Reply [SNIP]';
 
-    MTI_TRACTION_SIMPLE_TRAIN_INFO_REQUEST       : Result := 'Simple Train Node Info Request [STNIP]';
-    MTI_TRACTION_SIMPLE_TRAIN_INFO_REPLY         : Result := 'Simple Train Node Info Reply [STNIP]';
+    MTI_TRACTION_SIMPLE_TRAIN_INFO_REQUEST: Result :=
+        'Simple Train Node Info Request [STNIP]';
+    MTI_TRACTION_SIMPLE_TRAIN_INFO_REPLY: Result :=
+        'Simple Train Node Info Reply [STNIP]';
 
-    MTI_DATAGRAM                       : Result := 'Datagram';
-    MTI_DATAGRAM_OK_REPLY              : Result := 'Datagram Reply OK';
-    MTI_DATAGRAM_REJECTED_REPLY        : Result := 'Datagram Rejected Reply';
+    MTI_DATAGRAM: Result := 'Datagram';
+    MTI_DATAGRAM_OK_REPLY: Result := 'Datagram Reply OK';
+    MTI_DATAGRAM_REJECTED_REPLY: Result := 'Datagram Rejected Reply';
 
-    MTI_TRACTION_REQUEST               : Result := 'Traction Protocol';
-    MTI_TRACTION_REPLY                 : Result := 'Traction Reply';
-    MTI_STREAM_INIT_REQUEST            : Result := 'Stream Init Request';
-    MTI_STREAM_INIT_REPLY              : Result := 'Stream Init Reply';
-    MTI_CAN_FRAME_TYPE_CAN_STREAM_SEND     : Result := 'Stream Send - CAN Frame';
-    MTI_STREAM_PROCEED                 : Result := 'Stream Proceed';
-    MTI_STREAM_COMPLETE                : Result := 'Stream Complete';
-   else
-    Result := 'Unknown MTI';
+    MTI_TRACTION_REQUEST: Result := 'Traction Protocol';
+    MTI_TRACTION_REPLY: Result := 'Traction Reply';
+    MTI_STREAM_INIT_REQUEST: Result := 'Stream Init Request';
+    MTI_STREAM_INIT_REPLY: Result := 'Stream Init Reply';
+    MTI_CAN_FRAME_TYPE_CAN_STREAM_SEND: Result := 'Stream Send - CAN Frame';
+    MTI_STREAM_PROCEED: Result := 'Stream Proceed';
+    MTI_STREAM_COMPLETE: Result := 'Stream Complete';
+    else
+      Result := 'Unknown MTI';
   end;
 end;
 
-function RawHelperDataToStr(Message: TLccMessage; ASCII: Boolean): string;
+function RawHelperDataToStr(Message: TLccMessage; ASCII: boolean): string;
 var
-  j, iStart: Integer;
+  j, iStart: integer;
 begin
   Result := '';
   iStart := 0;
@@ -590,50 +626,51 @@ begin
   begin
     if ASCII then
     begin
-      if IsPrintableChar( Chr( Message.DataArray[j])) then
-        Result := Result + Chr( Message.DataArray[j])
+      if IsPrintableChar(Chr(Message.DataArray[j])) then
+        Result := Result + Chr(Message.DataArray[j])
       else
         Result := Result + '.';
-    end else
+    end
+    else
     begin
       Result := Result + IntToHex(Message.DataArray[j], 2);
       if j < Message.DataCount then
-        Result := Result + '.'
+        Result := Result + '.';
     end;
   end;
   Result := Result + ']';
 end;
 
-function StreamReadByte(AStream: TStream): Byte;
+function StreamReadByte(AStream: TStream): byte;
 begin
   {$IFDEF LCC_FPC}
     Result := AStream.ReadByte;
   {$ELSE}
-    Result := 0;
-    AStream.Read(Result, 1);
+  Result := 0;
+  AStream.Read(Result, 1);
   {$ENDIF}
 end;
 
-procedure StreamWriteByte(AStream: TStream; AByte: Byte);
+procedure StreamWriteByte(AStream: TStream; AByte: byte);
 begin
   {$IFDEF LCC_FPC}
     AStream.WriteByte(AByte);
   {$ELSE}
-    AStream.Write(AByte, 1)
+  AStream.Write(AByte, 1);
   {$ENDIF}
 end;
 
 function GridConnectToDetailedGridConnect(MessageString: string): string;
 var
-  j, S_Len: Integer;
-//  f: single;
-//  Half: Word;
+  j, S_Len: integer;
+  //  f: single;
+  //  Half: Word;
   Message: TLccMessage;
 
-//  MultiFrame: TMultiFrameBuffer;
-//  LocalHelper: TLccMessageHelper;
+  //  MultiFrame: TMultiFrameBuffer;
+  //  LocalHelper: TLccMessageHelper;
 begin
-//  LocalHelper := TLccMessageHelper.Create;
+  //  LocalHelper := TLccMessageHelper.Create;
 
   Message := TLccMessage.Create;
   try
@@ -641,28 +678,50 @@ begin
     begin
       Result := MessageString;
       S_Len := Length(Result);
-      for j := 0 to (28-S_Len) do
-        Result := Result + ' ' ;
+      for j := 0 to (28 - S_Len) do
+        Result := Result + ' ';
 
       if Message.HasDestination then
-        Result := Result + '0x' + IntToHex( Message.SourceAlias, 4) + ' -> ' + '0x' + IntToHex( Message.DestAlias, 4)
+        Result := Result + '0x' + IntToHex(Message.SourceAlias, 4) +
+          ' -> ' + '0x' + IntToHex(Message.DestAlias, 4)
       else
-        Result := Result + '0x' + IntToHex( Message.SourceAlias, 4);
+        Result := Result + '0x' + IntToHex(Message.SourceAlias, 4);
 
       if Message.MTI = MTI_DATAGRAM then
-        Result := Result + RawHelperDataToStr(Message, True) + ' MTI: ' + MTI_ToString(Message.MTI)
+        Result := Result + RawHelperDataToStr(Message, True) + ' MTI: ' +
+          MTI_ToString(Message.MTI)
       else
         Result := Result + '   MTI: ' + MTI_ToString(Message.MTI) + ' - ';
 
       if Message.MTI = MTI_STREAM_SEND then
       begin
         case Message.MTI of
-          MTI_STREAM_INIT_REQUEST            : Result := Result + ' Suggested Bufer Size: ' + IntToStr((Message.DataArray[2] shl 8) or Message.DataArray[3]) + ' Flags: 0x' + IntToHex(Message.DataArray[4], 2) + ' Additional Flags: 0x' + IntToHex(Message.DataArray[5], 2) + ' Source Stream ID: ' + IntToStr(Message.DataArray[6]);
-          MTI_STREAM_INIT_REPLY              : Result := Result + ' Negotiated Bufer Size: ' + IntToStr((Message.DataArray[2] shl 8) or Message.DataArray[3]) + ' Flags: 0x' + IntToHex(Message.DataArray[4], 2) + ' Additional Flags: 0x' + IntToHex(Message.DataArray[5], 2) + ' Source Stream ID: ' + IntToStr(Message.DataArray[6]) + ' Destination Stream ID: ' + IntToStr(Message.DataArray[7]);
-          MTI_STREAM_SEND                    : begin end;
-          MTI_STREAM_PROCEED                 : Result := Result + ' Source Stream ID: ' + IntToStr(Message.DataArray[2]) + ' Destination Stream ID: ' + IntToStr(Message.DataArray[3]) + ' Flags: 0x' + IntToHex(Message.DataArray[4], 2) + ' Additional Flags: 0x' + IntToHex(Message.DataArray[5], 2);
-          MTI_STREAM_COMPLETE                : Result := Result + ' Source Stream ID: ' + IntToStr(Message.DataArray[2]) + ' Destination Stream ID: ' + IntToStr(Message.DataArray[3]) + ' Flags: 0x' + IntToHex(Message.DataArray[4], 2) + ' Additional Flags: 0x' + IntToHex(Message.DataArray[5], 2);
-        end
+          MTI_STREAM_INIT_REQUEST: Result :=
+              Result + ' Suggested Bufer Size: ' + IntToStr(
+              (Message.DataArray[2] shl 8) or Message.DataArray[3]) + ' Flags: 0x' +
+              IntToHex(Message.DataArray[4], 2) + ' Additional Flags: 0x' +
+              IntToHex(Message.DataArray[5], 2) + ' Source Stream ID: ' +
+              IntToStr(Message.DataArray[6]);
+          MTI_STREAM_INIT_REPLY: Result :=
+              Result + ' Negotiated Bufer Size: ' + IntToStr(
+              (Message.DataArray[2] shl 8) or Message.DataArray[3]) + ' Flags: 0x' +
+              IntToHex(Message.DataArray[4], 2) + ' Additional Flags: 0x' +
+              IntToHex(Message.DataArray[5], 2) + ' Source Stream ID: ' +
+              IntToStr(Message.DataArray[6]) + ' Destination Stream ID: ' +
+              IntToStr(Message.DataArray[7]);
+          MTI_STREAM_SEND: begin
+          end;
+          MTI_STREAM_PROCEED: Result :=
+              Result + ' Source Stream ID: ' + IntToStr(Message.DataArray[2]) +
+              ' Destination Stream ID: ' + IntToStr(Message.DataArray[3]) +
+              ' Flags: 0x' + IntToHex(Message.DataArray[4], 2) + ' Additional Flags: 0x' +
+              IntToHex(Message.DataArray[5], 2);
+          MTI_STREAM_COMPLETE: Result :=
+              Result + ' Source Stream ID: ' + IntToStr(Message.DataArray[2]) +
+              ' Destination Stream ID: ' + IntToStr(Message.DataArray[3]) +
+              ' Flags: 0x' + IntToHex(Message.DataArray[4], 2) + ' Additional Flags: 0x' +
+              IntToHex(Message.DataArray[5], 2);
+        end;
       end;
 
       if Message.MTI = MTI_OPTIONAL_INTERACTION_REJECTED then
@@ -678,11 +737,17 @@ begin
         Result := Result + RawHelperDataToStr(Message, True);
 
       // Events
-      if (Message.MTI = MTI_PRODUCER_IDENDIFY) or (Message.MTI = MTI_PRODUCER_IDENTIFIED_SET) or (Message.MTI = MTI_PRODUCER_IDENTIFIED_CLEAR) or
-        (Message.MTI = MTI_PRODUCER_IDENTIFIED_UNKNOWN) or (Message.MTI = MTI_CONSUMER_IDENTIFY) or (Message.MTI = MTI_CONSUMER_IDENTIFIED_SET) or
-        (Message.MTI = MTI_CONSUMER_IDENTIFIED_CLEAR) or (Message.MTI = MTI_CONSUMER_IDENTIFIED_UNKNOWN) or (Message.MTI = MTI_PC_EVENT_REPORT)
-      then begin
-          Result := Result + 'EventID: ' + EventIDToString(Message.ExtractDataBytesAsEventID(0), False);
+      if (Message.MTI = MTI_PRODUCER_IDENDIFY) or
+        (Message.MTI = MTI_PRODUCER_IDENTIFIED_SET) or
+        (Message.MTI = MTI_PRODUCER_IDENTIFIED_CLEAR) or
+        (Message.MTI = MTI_PRODUCER_IDENTIFIED_UNKNOWN) or
+        (Message.MTI = MTI_CONSUMER_IDENTIFY) or (Message.MTI = MTI_CONSUMER_IDENTIFIED_SET) or
+        (Message.MTI = MTI_CONSUMER_IDENTIFIED_CLEAR) or
+        (Message.MTI = MTI_CONSUMER_IDENTIFIED_UNKNOWN) or
+        (Message.MTI = MTI_PC_EVENT_REPORT) then
+      begin
+        Result := Result + 'EventID: ' +
+          EventIDToString(Message.ExtractDataBytesAsEventID(0), False);
       end;
 
     (*
@@ -881,7 +946,7 @@ end;
 function FormatComPortString(ComPort: string): string;
 begin
   {$IFDEF MSWINDOWS}
-    Result := ComPort;
+  Result := ComPort;
   {$ELSE}
     {$IFDEF DARWIN}
     Result := PATH_OSX_DEV + ComPort;
@@ -891,83 +956,106 @@ begin
   {$ENDIF}
 end;
 
-  {$IFNDEF LCC_MOBILE}
-    function GridConnectToJMRI(GridStr: string): string;
-    var
-      NPos: integer;
-      Header: PChar;
-      i: Integer;
-    begin
-      Result := GridStr;
-      NPos := Pos('N', string( GridStr));
-      GridStr[NPos] := #0;
-      Header := @GridStr[3];
-      Result := '[' + Header + ']';
-      Header := @GridStr[NPos];
-      Inc(Header);
-      if Header^ <> ';' then
-        Result := Result + ' ';
-      while Header^ <> ';' do
-      begin
-        Result := Result + Header^;
-        Inc(Header);
-        if Header^ = ';' then
-          Break;
-        Result := Result + Header^ + ' ';
-        Inc(Header);
-      end;
-      Result := Trim(string( Result));
-      for i := 0 to (40 - Length(Result)) do
-        Result := Result + ' ';  // Pad them all to the same length
-    end;
-  {$ENDIF}
-
-  function ThreadListCount(AThreadedList: TThreadList): Int64;
-  var
-    L: TList;
+{$IFNDEF LCC_MOBILE}
+function GridConnectToJMRI(GridStr: string): string;
+var
+  NPos: integer;
+  Header: pchar;
+  i: integer;
+begin
+  Result := GridStr;
+  NPos := Pos('N', string(GridStr));
+  GridStr[NPos] := #0;
+  Header := @GridStr[3];
+  Result := '[' + Header + ']';
+  Header := @GridStr[NPos];
+  Inc(Header);
+  if Header^ <> ';' then
+    Result := Result + ' ';
+  while Header^ <> ';' do
   begin
-    L := AThreadedList.LockList;
-    try
-      Result := L.Count;
-    finally
-      AThreadedList.UnlockList;
-    end;
+    Result := Result + Header^;
+    Inc(Header);
+    if Header^ = ';' then
+      Break;
+    Result := Result + Header^ + ' ';
+    Inc(Header);
   end;
+  Result := Trim(string(Result));
+  for i := 0 to (40 - Length(Result)) do
+    Result := Result + ' ';  // Pad them all to the same length
+end;
+{$ENDIF}
 
-  procedure ThreadListClearObjects(AThreadList: TThreadList);
-  var
-    L: TList;
-    i: Integer;
-  begin
-    L := AThreadList.LockList;
-    try
-      for i := 0 to L.Count - 1 do
-        TObject( L[i]).Free;
-    finally
-      L.Clear;
-      AThreadList.UnlockList;
-    end;
+function ThreadListCount(AThreadedList: TThreadList): int64;
+var
+  L: TList;
+begin
+  L := AThreadedList.LockList;
+  try
+    Result := L.Count;
+  finally
+    AThreadedList.UnlockList;
   end;
+end;
 
-  procedure ListClearObjects(AList: TList);
-  var
-    i: Integer;
-  begin
-    try
-      for i := 0 to AList.Count - 1 do
-        TObject( AList[i]).Free;
-    finally
-      AList.Clear;
-    end;
+procedure ThreadListClearObjects(AThreadList: TThreadList);
+var
+  L: TList;
+  i: integer;
+begin
+  L := AThreadList.LockList;
+  try
+    for i := 0 to L.Count - 1 do
+      TObject(L[i]).Free;
+  finally
+    L.Clear;
+    AThreadList.UnlockList;
   end;
+end;
 
-  procedure ListClearNilObjects(AList: TList);
-  var
-    i: Integer;
-  begin
-    for i := AList.Count - 1 downto 0 do
-      if AList[i] = nil then
-        AList.Delete(i);
+procedure ListClearObjects(AList: TList);
+var
+  i: integer;
+begin
+  try
+    for i := 0 to AList.Count - 1 do
+      TObject(AList[i]).Free;
+  finally
+    AList.Clear;
   end;
+end;
+
+procedure ListClearNilObjects(AList: TList);
+var
+  i: integer;
+begin
+  for i := AList.Count - 1 downto 0 do
+    if AList[i] = nil then
+      AList.Delete(i);
+end;
+
+function AddressSpaceToStr(AddressSpace: byte): string;
+begin
+  case AddressSpace of
+
+    ADDRESS_SPACE_CONFIG_DEFINITION_INFO:
+      Result := 'Configuration Definition Info (CDI) Space';
+    ADDRESS_SPACE_ALL:
+      Result := 'All Space';
+    ADDRESS_SPACE_CONFIG_MEMORY:
+      Result := 'Configuration Memory Space';
+    ADDRESS_SPACE_ACDI_MFG:
+      Result := 'Abbreviated Configuration Definition Info Manufacturer (ACDI) Space';
+    ADDRESS_SPACE_ACDI_USER:
+      Result := 'Abbreviated Configuration Definition Info User (ACDI) Space';
+    ADDRESS_SPACE_FUNCTION_DEFINITION_INFO:
+      Result := 'Function Definition Info (FDI) Space';
+    ADDRESS_SPACE_FUNCTION_MEMORY:
+      Result := 'Function Memory Space';
+    else
+      Result := '[Unknown]';
+  end;
+end;
 
 end.

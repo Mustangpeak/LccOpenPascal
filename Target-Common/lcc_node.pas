@@ -2636,8 +2636,8 @@ begin
                        MCP_OP_LOCK               : HandleOperationLock(SourceMessage);
                        MCP_OP_GET_UNIQUEID       : HandleOperationGetUniqueID(SourceMessage);
                        MCP_OP_FREEZE             : HandleOperationFreeze(SourceMessage);
-                       MCP_OP_INDICATE           : HandleOperationIndicate(SourceMessage);
-                       MCP_OP_RESETS             : HandleOperationReset(SourceMessage);
+                  //     MCP_OP_INDICATE           : HandleOperationIndicate(SourceMessage);
+                  //     MCP_OP_RESETS             : HandleOperationReset(SourceMessage);
                      end // case
                    end;
                end
