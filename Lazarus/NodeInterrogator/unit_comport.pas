@@ -16,7 +16,8 @@ type
 
   TLccComPort = class;    // forward;
 
-  TOnComPortString = procedure(Sender: TObject; GridConnectString: ansistring) of object;
+  TOnComPortReceiveGridConnectString = procedure(Sender: TObject; GridConnectString: ansistring) of object;
+  TOnComPortReceiveMessage = procedure(Sender: TObject; AMessage: TLccMessage) of object;
   TOnComPortError = procedure(Sender: TObject; ErrorString: string; ErrorCode: word) of object;
   TOnComPortLogIn = procedure(Sender: TObject) of object;
 
@@ -28,7 +29,10 @@ type
     FConnected: boolean;
     FErrorCode: word;
     FErrorMsg: string;
+    FGridConnectAssembler: TLccGridConnectMessageAssembler;
+    FGridConnectDisassembler: TLccGridConnectMessageDisAssembler;
     FGridConnectHelper: TGridConnectDecodeStateMachine;
+    FWorkerMsg: TLccMessage;
     FIncomingMsg: string;
     FOutgoingGridConnectList: TThreadStringList;
     FOwner: TLccComPort;
@@ -39,7 +43,9 @@ type
   protected
     procedure Execute; override;
     procedure ReceiveMessage;  // For Syncronize
+    procedure ReceiveGridConnectStr;  // ForSyncronize
     procedure ErrorMessage;    // For Syncronize;
+    procedure AssemblerErrorMessageReply; // For Syncronize;
     procedure LogIn; // For Syncronize
     procedure LogOut; // For Syncronize
 
@@ -48,6 +54,7 @@ type
     property IncomingMsg: string read FIncomingMsg write FIncomingMsg;
     property ErrorMsg: string read FErrorMsg write FErrorMsg;
     property ErrorCode: word read FErrorCode write FErrorCode;
+    property WorkerMsg: TLccMessage read FWorkerMsg write FWorkerMsg;
   public
     property Connected: boolean read FConnected;
     property RawData: boolean read FRawData write FRawData;
@@ -55,6 +62,8 @@ type
     property Port: string read FPort write FPort;
     property OutgoingGridConnectList: TThreadStringList read FOutgoingGridConnectList write FOutgoingGridConnectList;
     property GridConnectHelper: TGridConnectDecodeStateMachine read FGridConnectHelper write FGridConnectHelper;
+    property GridConnectDisassembler: TLccGridConnectMessageDisAssembler read FGridConnectDisassembler write FGridConnectDisassembler;
+    property GridConnectAssembler: TLccGridConnectMessageAssembler read FGridConnectAssembler write FGridConnectAssembler;
 
   end;
 
@@ -62,20 +71,26 @@ type
 
   private
     FOnComPortError: TOnComPortError;
+    FOnComPortGridConnectString: TOnComPortReceiveGridConnectString;
     FOnComPortLogIn: TOnComPortLogIn;
     FOnComPortLogOut: TOnComPortLogIn;
-    FOnComPortString: TOnComPortString;
+    FOnComPortMessage: TOnComPortReceiveMessage;
+    FOnComPortAssemblerErrorReply: TOnComPortReceiveMessage;
     FThread: TLccComPortThread;
   protected
     procedure DoComPortError(ErrorString: string; ErrorCode: word);
-    procedure DoComPortString(AGridConnectString: ansistring);
+    procedure DoComPortReceive(AMessage: TLccMessage);
+    procedure DoComPortReceiveGridConnectStr(AGridConnectString: ansistring);
+    procedure DoComPortAssemblerErrorReply(AMessage: TLccMessage);
     procedure DoComPortLogIn;
     procedure DoComPortLogOut;
     function FormatComPortString(AComPort: ansistring): ansistring;
   public
 
     property Thread: TLccComPortThread read FThread write FThread;
-    property OnComPortString: TOnComPortString read FOnComPortString write FOnComPortString;
+    property OnComPortGridConnectString: TOnComPortReceiveGridConnectString read FOnComPortGridConnectString write FOnComPortGridConnectString;
+    property OnComPortMessage: TOnComPortReceiveMessage read FOnComPortMessage write FOnComPortMessage;
+    property OnComPortAssemblerErrorReply: TOnComPortReceiveMessage read FOnComPortAssemblerErrorReply write FOnComPortAssemblerErrorReply;
     property OnComPortError: TOnComPortError read FOnComPortError write FOnComPortError;
     property OnComPortLogIn: TOnComPortLogIn read FOnComPortLogIn write FOnComPortLogIn;
     property OnComPortLogOut: TOnComPortLogIn read FOnComPortLogOut write FOnComPortLogOut;
@@ -176,15 +191,24 @@ begin
               begin
                 GridConnectStrPtr := nil;
 
-                if GridConnectHelper.GridConnect_DecodeMachine(Ord(RcvStr[i]),
-                  GridConnectStrPtr) then
+                if GridConnectHelper.GridConnect_DecodeMachine(Ord(RcvStr[i]), GridConnectStrPtr) then
                 begin
                   IncomingMsg := GridConnectBufferToString(GridConnectStrPtr^);
+                  WorkerMsg.LoadByGridConnectStr(IncomingMsg);
+
+                  Synchronize(@ReceiveGridConnectStr);
+
+                  case GridConnectAssembler.IncomingMessageGridConnect(WorkerMsg) of
+                    imgcr_True         : Synchronize(@ReceiveMessage);
+                    imgcr_ErrorToSend  : Synchronize(@AssemblerErrorMessageReply);
+                    imgcr_False,
+                    imgcr_UnknownError : begin end;
+                  end;
 
                   //    if not RawData then
                   //     ConnectionInfo.LccMessage.LoadByGridConnectStr(ConnectionInfo.MessageStr);
 
-                  Synchronize(@ReceiveMessage);
+
                 end;
               end;
 
@@ -213,13 +237,25 @@ end;
 procedure TLccComPortThread.ReceiveMessage;
 begin
   if Assigned(Owner) then
-    Owner.DoComPortString(IncomingMsg);
+    Owner.DoComPortReceive(WorkerMsg);
+end;
+
+procedure TLccComPortThread.ReceiveGridConnectStr;
+begin
+  if Assigned(Owner) then
+    Owner.DoComPortReceiveGridConnectStr(IncomingMsg);
 end;
 
 procedure TLccComPortThread.ErrorMessage;
 begin
   if Assigned(Owner) then
     Owner.DoComPortError(ErrorMsg, ErrorCode);
+end;
+
+procedure TLccComPortThread.AssemblerErrorMessageReply;
+begin
+  if Assigned(Owner) then
+    Owner.DoComPortAssemblerErrorReply(WorkerMsg);
 end;
 
 procedure TLccComPortThread.LogIn;
@@ -240,10 +276,22 @@ begin
     OnComPortError(Self, ErrorString, ErrorCode);
 end;
 
-procedure TLccComPort.DoComPortString(AGridConnectString: ansistring);
+procedure TLccComPort.DoComPortReceive(AMessage: TLccMessage);
 begin
-  if Assigned(OnComPortString) then
-    OnComPortString(Self, AGridConnectString);
+  if Assigned(OnComPortMessage) then
+    OnComPortMessage(Self, AMessage);
+end;
+
+procedure TLccComPort.DoComPortReceiveGridConnectStr(AGridConnectString: ansistring);
+begin
+  if Assigned(OnComPortGridConnectString) then
+    OnComPortGridConnectString(Self, AGridConnectString);
+end;
+
+procedure TLccComPort.DoComPortAssemblerErrorReply(AMessage: TLccMessage);
+begin
+  if Assigned(OnComPortAssemblerErrorReply) then
+    OnComPortAssemblerErrorReply(Self, AMessage);
 end;
 
 procedure TLccComPort.DoComPortLogIn();
@@ -283,6 +331,9 @@ begin
   Thread := TLccComPortThread.Create(True);
   Thread.GridConnectHelper := TGridConnectDecodeStateMachine.Create;
   Thread.OutgoingGridConnectList := TThreadStringList.Create;
+  Thread.GridConnectDisassembler := TLccGridConnectMessageDisAssembler.Create;
+  Thread.GridConnectAssembler := TLccGridConnectMessageAssembler.Create;
+  Thread.WorkerMsg := TLccMessage.Create;
   Thread.Owner := Self;
   Thread.Port := FormatComPortString(ComPortPath);
   Thread.Suspended := False;
@@ -302,6 +353,9 @@ begin
 
     Thread.GridConnectHelper.Free;
     Thread.OutgoingGridConnectList.Free;
+    Thread.GridConnectDisassembler.Free;
+    Thread.GridConnectAssembler.Free;
+    Thread.WorkerMsg.Free;
     Thread.Free;
     Thread := nil;
   end;

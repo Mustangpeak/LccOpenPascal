@@ -1,10 +1,10 @@
 object Form1: TForm1
-  Left = 645
-  Height = 682
-  Top = 199
+  Left = 629
+  Height = 686
+  Top = 184
   Width = 1447
   Caption = 'Form1'
-  ClientHeight = 682
+  ClientHeight = 686
   ClientWidth = 1447
   LCLVersion = '4.0.0.1'
   OnCloseQuery = FormCloseQuery
@@ -14,7 +14,7 @@ object Form1: TForm1
   object StatusBarMain: TStatusBar
     Left = 0
     Height = 18
-    Top = 664
+    Top = 668
     Width = 1447
     Panels = <    
       item
@@ -25,28 +25,28 @@ object Form1: TForm1
       end>
     SimplePanel = False
   end
-  object PanelLogging: TPanel
+  object PanelMain: TPanel
     Left = 0
-    Height = 614
+    Height = 618
     Top = 50
     Width = 1447
     Align = alClient
-    ClientHeight = 614
+    ClientHeight = 618
     ClientWidth = 1447
     TabOrder = 1
     object PanelMemo: TPanel
       Left = 1
-      Height = 612
+      Height = 616
       Top = 1
       Width = 297
       Align = alLeft
       Caption = 'PanelMemo'
-      ClientHeight = 612
+      ClientHeight = 616
       ClientWidth = 297
       TabOrder = 0
       object MemoComPort: TMemo
         Left = 1
-        Height = 500
+        Height = 504
         Top = 111
         Width = 295
         Align = alClient
@@ -103,24 +103,24 @@ object Form1: TForm1
     end
     object PageControlMain: TPageControl
       Left = 303
-      Height = 612
+      Height = 616
       Top = 1
       Width = 1143
-      ActivePage = TabSheetConfigMem
+      ActivePage = TabSheetDatagramRead
       Align = alClient
-      TabIndex = 2
+      TabIndex = 3
       TabOrder = 1
       object TabSheetMessageNetwork: TTabSheet
         Caption = 'Message Network'
-        ClientHeight = 576
+        ClientHeight = 580
         ClientWidth = 1137
         object PanelTabMessageNetwork: TPanel
           Left = 0
-          Height = 576
+          Height = 580
           Top = 0
           Width = 1137
           Align = alClient
-          ClientHeight = 576
+          ClientHeight = 580
           ClientWidth = 1137
           TabOrder = 0
           object ButtonVerifyNodesGlobal: TButton
@@ -139,17 +139,17 @@ object Form1: TForm1
             Width = 214
             Caption = 'Verify Nodes Addressed'
             TabOrder = 1
-            OnClick = ButtonVerifyNodesGlobalClick
+            OnClick = ButtonVerifyNodesAddressedClick
           end
         end
       end
       object TabSheetEvents: TTabSheet
         Caption = 'Events'
-        ClientHeight = 576
+        ClientHeight = 580
         ClientWidth = 1137
         object PanelTabEvents: TPanel
           Left = 0
-          Height = 576
+          Height = 580
           Top = 0
           Width = 1137
           Align = alClient
@@ -158,24 +158,24 @@ object Form1: TForm1
       end
       object TabSheetConfigMem: TTabSheet
         Caption = 'Config Memory Info'
-        ClientHeight = 576
+        ClientHeight = 580
         ClientWidth = 1137
         object PanelTabSheetConfigMem: TPanel
           Left = 0
-          Height = 576
+          Height = 580
           Top = 0
           Width = 1137
           Align = alClient
-          ClientHeight = 576
+          ClientHeight = 580
           ClientWidth = 1137
           TabOrder = 0
           object GroupBoxConfMemOptions: TGroupBox
             Left = 16
-            Height = 464
+            Height = 504
             Top = 8
             Width = 628
             Caption = 'Configuration Options'
-            ClientHeight = 437
+            ClientHeight = 477
             ClientWidth = 618
             TabOrder = 0
             object EditConfigMemHighestAddressSpace: TEdit
@@ -481,23 +481,670 @@ object Form1: TForm1
           end
         end
       end
-      object TabSheetDatagramReadWrite: TTabSheet
-        Caption = 'Datagram Read/Write'
-        ClientHeight = 576
+      object TabSheetDatagramRead: TTabSheet
+        Caption = 'Datagram Read'
+        ClientHeight = 580
         ClientWidth = 1137
-        object PanelTabDatagramReadWrite: TPanel
+        object PanelTabDatagramRead: TPanel
           Left = 0
-          Height = 576
+          Height = 580
           Top = 0
           Width = 1137
           Align = alClient
+          ClientHeight = 580
+          ClientWidth = 1137
           TabOrder = 0
+          OnClick = PanelTabDatagramReadClick
+          object GroupBoxDatagramRead: TGroupBox
+            Left = 1
+            Height = 159
+            Top = 137
+            Width = 1135
+            Align = alTop
+            Anchors = [akTop, akLeft, akRight, akBottom]
+            Caption = 'Read Datagram'
+            ClientHeight = 132
+            ClientWidth = 1125
+            TabOrder = 0
+            object ButtonDatagramRead: TButton
+              Left = 8
+              Height = 25
+              Top = 8
+              Width = 162
+              Caption = 'Read...'
+              TabOrder = 1
+              OnClick = ButtonDatagramReadClick
+            end
+            object EditDatagramRead: TEdit
+              Left = 40
+              Height = 22
+              Top = 40
+              Width = 725
+              AutoSize = False
+              ReadOnly = True
+              TabOrder = 5
+            end
+            object RadioGroupDatagramRead_MessageOptions: TRadioGroup
+              Left = 784
+              Height = 72
+              Top = 0
+              Width = 305
+              AutoFill = True
+              Caption = 'Message Options'
+              ChildSizing.LeftRightSpacing = 6
+              ChildSizing.EnlargeHorizontal = crsHomogenousChildResize
+              ChildSizing.EnlargeVertical = crsHomogenousChildResize
+              ChildSizing.ShrinkHorizontal = crsScaleChilds
+              ChildSizing.ShrinkVertical = crsScaleChilds
+              ChildSizing.Layout = cclLeftToRightThenTopToBottom
+              ChildSizing.ControlsPerLine = 1
+              ClientHeight = 45
+              ClientWidth = 295
+              ItemIndex = 0
+              Items.Strings = (
+                'Use 0xFF/0xFE/0xFD Specific Message'
+                'Force use of Byte 6 Always'
+              )
+              TabOrder = 0
+            end
+            object EditDatagramRead_Space: TEdit
+              Left = 256
+              Height = 22
+              Top = 8
+              Width = 80
+              TabOrder = 2
+              Text = '0xFF'
+            end
+            object LabelDatagramRead_Space: TLabel
+              Left = 192
+              Height = 16
+              Top = 14
+              Width = 41
+              Caption = 'Space:'
+            end
+            object LabelDatagramRead_Address: TLabel
+              Left = 360
+              Height = 16
+              Top = 14
+              Width = 86
+              Caption = 'Start Address:'
+            end
+            object EditDatagramRead_StartAddress: TEdit
+              Left = 456
+              Height = 22
+              Top = 8
+              Width = 80
+              TabOrder = 3
+              Text = '0x00'
+            end
+            object LabelDatagramRead_Count: TLabel
+              Left = 560
+              Height = 16
+              Top = 14
+              Width = 113
+              Caption = 'Read Count (1-64)'
+            end
+            object EditDatagramRead_Count: TEdit
+              Left = 685
+              Height = 22
+              Top = 8
+              Width = 80
+              TabOrder = 4
+              Text = '16'
+            end
+            object RadioGroupDatagramRead_ViewOptions: TRadioGroup
+              Left = 55
+              Height = 42
+              Top = 70
+              Width = 505
+              AutoFill = True
+              Caption = 'View Options'
+              ChildSizing.LeftRightSpacing = 6
+              ChildSizing.EnlargeHorizontal = crsHomogenousChildResize
+              ChildSizing.EnlargeVertical = crsHomogenousChildResize
+              ChildSizing.ShrinkHorizontal = crsScaleChilds
+              ChildSizing.ShrinkVertical = crsScaleChilds
+              ChildSizing.Layout = cclLeftToRightThenTopToBottom
+              ChildSizing.ControlsPerLine = 3
+              ClientHeight = 15
+              ClientWidth = 495
+              Columns = 3
+              ItemIndex = 0
+              Items.Strings = (
+                'View in Hex'
+                'View in Decimal'
+                'View as String'
+              )
+              TabOrder = 6
+              OnClick = RadioGroupDatagramRead_ViewOptionsClick
+            end
+            object CheckBoxDatagramRead_UseDots: TCheckBox
+              Left = 584
+              Height = 18
+              Top = 92
+              Width = 124
+              Caption = 'Use Dot Notation'
+              Checked = True
+              State = cbChecked
+              TabOrder = 7
+              OnChange = CheckBoxDatagramRead_UseDotsChange
+            end
+          end
+          object GroupBoxDatagram_ReadAck: TGroupBox
+            Left = 1
+            Height = 192
+            Top = 296
+            Width = 1135
+            Align = alTop
+            Caption = 'Read Datagram Reponse'
+            ClientHeight = 165
+            ClientWidth = 1125
+            TabOrder = 1
+            object CheckBoxDatagramRead_AckOk: TCheckBox
+              Left = 16
+              Height = 18
+              Top = 32
+              Width = 132
+              Caption = 'Ack Datagram Ok'
+              TabOrder = 0
+            end
+            object CheckBoxDatagramRead_AckRejected: TCheckBox
+              Left = 224
+              Height = 18
+              Top = 32
+              Width = 169
+              Caption = 'Ack Datagram Rejected'
+              TabOrder = 1
+            end
+            object CheckBoxDatagramRead_AckReplyPending: TCheckBox
+              Left = 48
+              Height = 18
+              Top = 56
+              Width = 126
+              Caption = 'Reply is Pending'
+              TabOrder = 2
+            end
+            object LabelDatagramRead_ErrorCode: TLabel
+              Left = 256
+              Height = 16
+              Top = 72
+              Width = 69
+              Caption = 'Error Code:'
+            end
+            object LabelDatagramRead_Waittime: TLabel
+              Left = 48
+              Height = 16
+              Top = 88
+              Width = 118
+              Caption = 'Estimated wait time'
+            end
+            object EditDatagramRead_AckEstimatedWaitTime: TEdit
+              Left = 72
+              Height = 22
+              Top = 112
+              Width = 80
+              ReadOnly = True
+              TabOrder = 3
+            end
+            object CheckBoxDatagramRead_AckReservedBitsClear: TCheckBox
+              Left = 56
+              Height = 18
+              Top = 144
+              Width = 142
+              Caption = 'Reserved bits clear'
+              TabOrder = 4
+            end
+            object EditDatagramRead_AckDataBytes: TEdit
+              Left = 144
+              Height = 22
+              Top = 0
+              Width = 80
+              ReadOnly = True
+              TabOrder = 5
+            end
+            object LabelDatagramRead_BytesOfData: TLabel
+              Left = 24
+              Height = 16
+              Top = 0
+              Width = 80
+              Caption = 'Bytes of data'
+            end
+            object EditDatagramRead_AckAdditionalInfo: TEdit
+              Left = 368
+              Height = 22
+              Top = 96
+              Width = 312
+              ReadOnly = True
+              TabOrder = 6
+            end
+            object LabelDatagramRead_AdditionalInfo: TLabel
+              Left = 256
+              Height = 16
+              Top = 101
+              Width = 87
+              Caption = 'Additional Info'
+            end
+            object EditDatagramRead_AckErrorCode: TEdit
+              Left = 368
+              Height = 22
+              Top = 66
+              Width = 312
+              ReadOnly = True
+              TabOrder = 7
+            end
+            object LabelDatagramRead_RawData: TLabel
+              Left = 263
+              Height = 16
+              Top = 2
+              Width = 101
+              Caption = 'Raw Return Data'
+            end
+            object EditDatagramRead_RawData: TEdit
+              Left = 392
+              Height = 22
+              Top = 0
+              Width = 320
+              ReadOnly = True
+              TabOrder = 8
+            end
+          end
+          object GroupBoxDatagramRead_AddressSpaceScan: TGroupBox
+            Left = 1
+            Height = 136
+            Top = 1
+            Width = 1135
+            Align = alTop
+            Caption = 'Address Space Scan'
+            ClientHeight = 109
+            ClientWidth = 1125
+            TabOrder = 2
+            object ComboBoxDatagramRead_WriteableAddressSpaces: TComboBox
+              Left = 24
+              Height = 20
+              Top = 72
+              Width = 536
+              ItemHeight = 19
+              Style = csDropDownList
+              TabOrder = 0
+            end
+            object ButtonDatagramRead_FindWritableAddressSpaces: TButton
+              Left = 24
+              Height = 25
+              Top = 8
+              Width = 256
+              Caption = 'Scan Address Spaces'
+              TabOrder = 1
+              OnClick = ButtonDatagramRead_FindWritableAddressSpacesClick
+            end
+            object ComboBoxDatagramRead_ReadableAddressSpaces: TComboBox
+              Left = 568
+              Height = 20
+              Top = 72
+              Width = 536
+              ItemHeight = 19
+              Style = csDropDownList
+              TabOrder = 2
+            end
+            object LabelDatagramRead_WritableAddressSpaces: TLabel
+              Left = 24
+              Height = 16
+              Top = 48
+              Width = 151
+              Caption = 'Writable Address Spaces'
+            end
+            object LabelDatagramRead_ReadableAddressSpaces: TLabel
+              Left = 568
+              Height = 16
+              Top = 48
+              Width = 157
+              Caption = 'Readable Address Spaces'
+            end
+            object ButtonDatagramRead_ScanAddressSpacesCancel: TButton
+              Left = 304
+              Height = 25
+              Top = 8
+              Width = 75
+              Caption = 'Cancel'
+              TabOrder = 3
+              OnClick = ButtonDatagramRead_ScanAddressSpacesCancelClick
+            end
+          end
+        end
+      end
+      object TabSheetDatagramWrite: TTabSheet
+        Caption = 'Datagram Write'
+        ClientHeight = 580
+        ClientWidth = 1137
+        object PanelTabDatagramWrite: TPanel
+          Left = 0
+          Height = 580
+          Top = 0
+          Width = 1137
+          Align = alClient
+          ClientHeight = 580
+          ClientWidth = 1137
+          TabOrder = 0
+          OnClick = PanelTabDatagramReadClick
+          object GroupBoxDatagram_Write: TGroupBox
+            Left = 1
+            Height = 159
+            Top = 137
+            Width = 1135
+            Align = alTop
+            Anchors = [akTop, akLeft, akRight, akBottom]
+            Caption = 'Read Datagram'
+            ClientHeight = 132
+            ClientWidth = 1125
+            TabOrder = 0
+            object ButtonDatagram_Write: TButton
+              Left = 8
+              Height = 25
+              Top = 8
+              Width = 162
+              Caption = 'Write...'
+              TabOrder = 1
+              OnClick = ButtonDatagram_WriteClick
+            end
+            object EditDatagramWrite: TEdit
+              Left = 40
+              Height = 22
+              Top = 40
+              Width = 725
+              AutoSize = False
+              ReadOnly = True
+              TabOrder = 5
+            end
+            object RadioGroupDatagramWrite_MessageOptions: TRadioGroup
+              Left = 784
+              Height = 72
+              Top = 0
+              Width = 305
+              AutoFill = True
+              Caption = 'Message Options'
+              ChildSizing.LeftRightSpacing = 6
+              ChildSizing.EnlargeHorizontal = crsHomogenousChildResize
+              ChildSizing.EnlargeVertical = crsHomogenousChildResize
+              ChildSizing.ShrinkHorizontal = crsScaleChilds
+              ChildSizing.ShrinkVertical = crsScaleChilds
+              ChildSizing.Layout = cclLeftToRightThenTopToBottom
+              ChildSizing.ControlsPerLine = 1
+              ClientHeight = 45
+              ClientWidth = 295
+              ItemIndex = 0
+              Items.Strings = (
+                'Use 0xFF/0xFE/0xFD Specific Message'
+                'Force use of Byte 6 Always'
+              )
+              TabOrder = 0
+            end
+            object EditDatagramWrite_Space: TEdit
+              Left = 256
+              Height = 22
+              Top = 8
+              Width = 80
+              TabOrder = 2
+              Text = '0xFD'
+            end
+            object LabelDatagramWrite_Space: TLabel
+              Left = 192
+              Height = 16
+              Top = 14
+              Width = 41
+              Caption = 'Space:'
+            end
+            object LabelDatagramWrite_Address: TLabel
+              Left = 360
+              Height = 16
+              Top = 14
+              Width = 86
+              Caption = 'Start Address:'
+            end
+            object EditDatagramWrite_StartAddress: TEdit
+              Left = 456
+              Height = 22
+              Top = 8
+              Width = 80
+              TabOrder = 3
+              Text = '0x00'
+            end
+            object LabelDatagramWrite_Count: TLabel
+              Left = 560
+              Height = 16
+              Top = 14
+              Width = 113
+              Caption = 'Read Count (1-64)'
+            end
+            object EditDatagramWrite_Count: TEdit
+              Left = 685
+              Height = 22
+              Top = 8
+              Width = 80
+              TabOrder = 4
+              Text = '16'
+            end
+            object RadioGroupDatagramWrite_ViewOptions: TRadioGroup
+              Left = 55
+              Height = 42
+              Top = 70
+              Width = 505
+              AutoFill = True
+              Caption = 'View Options'
+              ChildSizing.LeftRightSpacing = 6
+              ChildSizing.EnlargeHorizontal = crsHomogenousChildResize
+              ChildSizing.EnlargeVertical = crsHomogenousChildResize
+              ChildSizing.ShrinkHorizontal = crsScaleChilds
+              ChildSizing.ShrinkVertical = crsScaleChilds
+              ChildSizing.Layout = cclLeftToRightThenTopToBottom
+              ChildSizing.ControlsPerLine = 3
+              ClientHeight = 15
+              ClientWidth = 495
+              Columns = 3
+              ItemIndex = 0
+              Items.Strings = (
+                'View in Hex'
+                'View in Decimal'
+                'View as String'
+              )
+              TabOrder = 6
+              OnClick = RadioGroupDatagramWrite_ViewOptionsClick
+            end
+            object CheckBoxDatagramWrite_UseDots: TCheckBox
+              Left = 584
+              Height = 18
+              Top = 92
+              Width = 124
+              Caption = 'Use Dot Notation'
+              Checked = True
+              State = cbChecked
+              TabOrder = 7
+              OnChange = CheckBoxDatagramWrite_UseDotsChange
+            end
+          end
+          object GroupBoxDatagramWrite_Ack: TGroupBox
+            Left = 1
+            Height = 192
+            Top = 296
+            Width = 1135
+            Align = alTop
+            Caption = 'Read Datagram Reponse'
+            ClientHeight = 165
+            ClientWidth = 1125
+            TabOrder = 1
+            object CheckBoxDatagramWrite_AckOk: TCheckBox
+              Left = 16
+              Height = 18
+              Top = 32
+              Width = 125
+              Caption = 'Ack Datagram Ok'
+              TabOrder = 0
+            end
+            object CheckBoxDatagramWrite_AckRejected: TCheckBox
+              Left = 224
+              Height = 18
+              Top = 32
+              Width = 159
+              Caption = 'Ack Datagram Rejected'
+              TabOrder = 1
+            end
+            object CheckBoxDatagramWrite_AckReplyPending: TCheckBox
+              Left = 48
+              Height = 18
+              Top = 56
+              Width = 120
+              Caption = 'Reply is Pending'
+              TabOrder = 2
+            end
+            object LabelDatagramWrite_ErrorCode: TLabel
+              Left = 256
+              Height = 16
+              Top = 72
+              Width = 69
+              Caption = 'Error Code:'
+            end
+            object LabelDatagramWrite_Waittime: TLabel
+              Left = 48
+              Height = 16
+              Top = 88
+              Width = 118
+              Caption = 'Estimated wait time'
+            end
+            object EditDatagramWrite_AckEstimatedWaitTime: TEdit
+              Left = 72
+              Height = 22
+              Top = 112
+              Width = 80
+              ReadOnly = True
+              TabOrder = 3
+            end
+            object CheckBoxDatagramWrite_AckReservedBitsClear: TCheckBox
+              Left = 56
+              Height = 18
+              Top = 144
+              Width = 135
+              Caption = 'Reserved bits clear'
+              TabOrder = 4
+            end
+            object EditDatagramWrite_AckDataBytes: TEdit
+              Left = 144
+              Height = 22
+              Top = 0
+              Width = 80
+              ReadOnly = True
+              TabOrder = 5
+            end
+            object LabelDatagramWrite_BytesOfData: TLabel
+              Left = 24
+              Height = 16
+              Top = 0
+              Width = 80
+              Caption = 'Bytes of data'
+            end
+            object EditDatagramWrite_AckAdditionalInfo: TEdit
+              Left = 368
+              Height = 22
+              Top = 96
+              Width = 312
+              ReadOnly = True
+              TabOrder = 6
+            end
+            object LabelDatagramWrite_AdditionalInfo: TLabel
+              Left = 256
+              Height = 16
+              Top = 101
+              Width = 87
+              Caption = 'Additional Info'
+            end
+            object EditDatagramWrite_AckErrorCode: TEdit
+              Left = 368
+              Height = 22
+              Top = 66
+              Width = 312
+              ReadOnly = True
+              TabOrder = 7
+            end
+            object LabelDatagramWrite_RawData: TLabel
+              Left = 263
+              Height = 16
+              Top = 2
+              Width = 101
+              Caption = 'Raw Return Data'
+            end
+            object EditDatagramWrite_RawData: TEdit
+              Left = 392
+              Height = 22
+              Top = 0
+              Width = 320
+              ReadOnly = True
+              TabOrder = 8
+            end
+          end
+          object GroupBoxDatagramWrite_AddressSpaceScan: TGroupBox
+            Left = 1
+            Height = 136
+            Top = 1
+            Width = 1135
+            Align = alTop
+            Caption = 'Address Space Scan'
+            ClientHeight = 109
+            ClientWidth = 1125
+            TabOrder = 2
+            object ComboBoxDatagramWrite_WriteableAddressSpaces: TComboBox
+              Left = 24
+              Height = 20
+              Top = 72
+              Width = 536
+              ItemHeight = 19
+              Style = csDropDownList
+              TabOrder = 0
+            end
+            object ButtonDatagramWrite_FindWritableAddressSpaces: TButton
+              Left = 24
+              Height = 25
+              Top = 8
+              Width = 256
+              Caption = 'Scan Address Spaces'
+              TabOrder = 1
+              OnClick = ButtonDatagramRead_FindWritableAddressSpacesClick
+            end
+            object ComboBoxDatagramWrite_ReadableAddressSpaces: TComboBox
+              Left = 568
+              Height = 20
+              Top = 72
+              Width = 536
+              ItemHeight = 19
+              Style = csDropDownList
+              TabOrder = 2
+            end
+            object LabelDatagramWrite_WritableAddressSpaces: TLabel
+              Left = 24
+              Height = 16
+              Top = 48
+              Width = 151
+              Caption = 'Writable Address Spaces'
+            end
+            object LabelDatagramWrite_ReadableAddressSpaces: TLabel
+              Left = 568
+              Height = 16
+              Top = 48
+              Width = 157
+              Caption = 'Readable Address Spaces'
+            end
+            object ButtonDatagramWrite_ScanAddressSpacesCancel: TButton
+              Left = 304
+              Height = 25
+              Top = 8
+              Width = 75
+              Caption = 'Cancel'
+              TabOrder = 3
+              OnClick = ButtonDatagramRead_ScanAddressSpacesCancelClick
+            end
+          end
         end
       end
     end
     object Splitter1: TSplitter
       Left = 298
-      Height = 612
+      Height = 616
       Top = 1
       Width = 5
     end

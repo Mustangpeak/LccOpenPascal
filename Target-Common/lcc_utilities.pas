@@ -11,6 +11,7 @@ interface
 uses
   Classes,
   SysUtils,
+  strutils,
   lcc_defines;
 
 function FormatStrToInt(AStr: string): string;
@@ -41,6 +42,12 @@ function _Highest2(Data: QWord): byte;
 function IsPrintableChar(C: char): boolean;
 function IsNumericChar(C: char): boolean;
 function AddressSpaceToStr(AddressSpace: byte): string;
+function UnknownStrToInt(Str: string): Integer;
+function ErrorCodeToStr(Code: Word): string;
+function ByteArrayAsHexStr(ADataArray: TLccDynamicByteArray; Dots: Boolean): String;
+function ByteArrayAsDecStr(ADataArray: TLccDynamicByteArray; Dots: Boolean): String;
+function ByteArrayAsCharStr(ADataArray: TLccDynamicByteArray; Dots: Boolean): String;
+
 
 function ThreadListCount(AThreadedList: TThreadList): int64;
 procedure ThreadListClearObjects(AThreadList: TThreadList);
@@ -1057,5 +1064,119 @@ begin
       Result := '[Unknown]';
   end;
 end;
+
+function UnknownStrToInt(Str: string): Integer;
+begin
+   Str := Trim( StringReplace(Str, '0x', '$', [rfReplaceAll, rfIgnoreCase]));
+   if Str[1] = '$' then
+     Result := Hex2Dec(Str)
+   else
+     Result := StrToInt(Str);
+end;
+
+function ErrorCodeToStr(Code: Word): string;
+begin
+  Result := '';
+
+    // Very specific codes
+    case Code of
+
+      // Permanent error modifier
+                                                                                          //             of the expected range, or do not match the expectations of the receiving node.
+    ERROR_CODE_PERMANENT_SUBCOMMAND_UNKNOWN    : Result := 'Permanent Error - Unknown subcommand';     // $1041; // complete code: Not implemented, subcommand is unknown.
+    ERROR_CODE_PERMANENT_TYPE_UNKNOWN          : Result := 'Permanent Error - type unknown';           // $1042; // complete code: Not implemented, Datagram-type, Stream-type, or command is unknown.
+    ERROR_CODE_PERMANENT_MTI_TRANSPORT_UNKNOWN : Result := 'Permanent Error - MTI transport unknown';  // $1043; // complete code: Not implemented, unknown MTI, or Transport protocol (datagrams/streams) is not supported.
+
+    // Temporary error modifier
+
+    ERROR_CODE_TEMPORARY_TIMEOUT_OF_END_FRAME  : Result := 'Temporary Error - Timeout waiting for end frame';  // $2011;  // complete code: Time-out, waiting for End-frame.
+    ERROR_CODE_OUT_OF_ORDER_NO_START_FRAME     : Result := 'Temporary Error - Outof order no start frame';     // $2041;  // complete code: Out of Order, Middle- or End-frame without a Start-frame.
+    ERROR_CODE_OUT_OF_ORDER_START_BEFORE_END   : Result := 'Temporary Error - Out of order, new start frame before finshing previous message';   // $2042;  // complete code: Out of Orde
+
+  end;
+
+  if Result <> '' then
+    Exit;
+
+  // More general codes that may have custer first nibble
+  case Code and $FFF0 of
+
+      // Permanent error modifier
+    ERROR_CODE_PERMANENT                       : Result := 'Permanent Error';                          // $1000; // major code: Permanent error.
+    ERROR_CODE_PERMANENT_NOT_FOUND             : Result := 'Permanent Error - Not found';
+    ERROR_CODE_PERMANENT_SOURCE_NOT_PERMITED   : Result := 'Permanent Error - Source not permited';    // $1020; // major code: Source not permitted.
+    ERROR_CODE_PERMANENT_NOT_IMPLEMENTED       : Result := 'Permanent Error - Not implemented';        // $1040; // major code: Not implemented.
+    ERROR_CODE_PERMANENT_INVALID_ARGUMENTS     : Result := 'Permanent Error - Invalid arguments';      // $1080; // major code: Invalid arguments. Some of the values sent in the message fall outside
+                                                                                                       //             of the expected range, or do not match the expectations of the receiving node.
+    // Temporary error modifier
+    ERROR_CODE_TEMPORARY                       : Result := 'Temporary Error';                          // $2000; // major code: Temporary error, not further not specified
+    ERROR_CODE_TEMPORARY_TIMEOUT               : Result := 'Temporary Error - Timeout';                // $2010; // major code: Timeout, the expected message or message-part did not arrive in time.
+    ERROR_CODE_TEMPORARY_BUFFER_UNAVAILABLE    : Result := 'Temporary Error - Buffer unavailable';     // $2020; // major code: Buffer unavailable or destination node busy.
+    ERROR_CODE_TEMPORARY_NOT_EXPECTED          : Result := 'Temporary Error - Not expected';           // $2040; // major code: Not expected, Out of order. An inconsistency was found in the message or frame
+
+    ERROR_CODE_TEMPORARY_TRANSFER_ERROR        : Result := 'Temporary Error - Transfer error';         // $2080; // major code: Transfer error. The message or received message was ill-formed, failed checksum, or is
+
+    else
+      Result := '[Unknown Error Code]';
+  end;
+end;
+
+function ByteArrayAsHexStr(ADataArray: TLccDynamicByteArray; Dots: Boolean): String;
+var
+  i: Integer;
+begin
+  Result := '';
+
+  for i := 0 to Length(ADataArray) - 1 do
+  begin
+    Result := Result + IntToHex(ADataArray[i]);
+    if Dots then
+    begin
+      if i < Length(ADataArray) - 1 then
+        Result := Result + '.'
+    end;
+  end;
+end;
+
+function ByteArrayAsDecStr(ADataArray: TLccDynamicByteArray; Dots: Boolean): String;
+var
+  i: Integer;
+begin
+  Result := '';
+
+  for i := 0 to Length(ADataArray) - 1 do
+  begin
+    Result := Result + IntToStr(ADataArray[i]);
+    if Dots then
+    begin
+      if i < Length(ADataArray) - 1 then
+        Result := Result + '.'
+    end;
+  end;
+
+end;
+
+function ByteArrayAsCharStr(ADataArray: TLccDynamicByteArray; Dots: Boolean): String;
+var
+  i: Integer;
+begin
+  Result := '';
+
+  for i := 0 to Length(ADataArray) - 1 do
+  begin
+    if (ADataArray[i] > $20) and (ADataArray[i] < $7F) then
+      Result := Result + Char(ADataArray[i])
+    else
+      Result := Result + '.';
+
+    if Dots then
+    begin
+      if i < Length(ADataArray) - 1 then
+        Result := Result + '.'
+    end;
+  end;
+
+end;
+
 
 end.

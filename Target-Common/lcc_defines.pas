@@ -400,7 +400,7 @@ const
   MCP_WRITE_CDI                       = $03;
 
   MCP_WRITE_REPLY                     = $10;                                    // MemoryConfigurationProtocol - Read Reply Mask [Does not include the Address Space Mask "or" it with the the Address space masks below]
-  MCP_WRITE_REPLY_CONFIGURATION       = $11;
+  MCP_WRITE_REPLY_CONFIG              = $11;
   MCP_WRITE_REPLY_ALL                 = $12;
   MCP_WRITE_REPLY_CDI                 = $13;
   MCP_WRITE_REPLY_FAILURE             = $18;
@@ -568,6 +568,7 @@ const
   // Permanent error modifier
   ERROR_CODE_PERMANENT                       = $1000; // major code: Permanent error.
   ERROR_CODE_PERMANENT_SOURCE_NOT_PERMITED   = $1020; // major code: Source not permitted.
+  ERROR_CODE_PERMANENT_NOT_FOUND             = $1030;
   ERROR_CODE_PERMANENT_NOT_IMPLEMENTED       = $1040; // major code: Not implemented.
   ERROR_CODE_PERMANENT_INVALID_ARGUMENTS     = $1080; // major code: Invalid arguments. Some of the values sent in the message fall outside
                                                       //             of the expected range, or do not match the expectations of the receiving node.
@@ -599,6 +600,10 @@ const
   DATAGRAM_PROTOCOL_TRAINCONTROL           = $30;
   DATAGRAM_PROTOCOL_TWOBYTE                = $E0;
   DATAGRAM_PROTOCOL_SIXBYTE                = $F0;
+
+  ACK_REPLY_PENDING_MASK                   = $80;
+  ACK_REPLY_TIMEOUT_MASK                   = $0F;
+  ACK_REPLY_RESERVED_MASK                  = $70;
 
   ACDI_MFG_SIZE_VERSION                    = 1;
   ACDI_MFG_SIZE_MANUFACTURER               = 41;

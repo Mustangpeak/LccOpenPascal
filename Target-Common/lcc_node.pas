@@ -1422,7 +1422,7 @@ begin
               begin
                 case SourceMessage.DataArray[1] of
                  MCP_WRITE_REPLY,  // This only happens if the write can take a while (like a CV write).  In that case a special Datagram OK message is sent.. see MTI_DATAGRAM_OK_REPLY above
-                 MCP_WRITE_REPLY_CONFIGURATION,
+                 MCP_WRITE_REPLY_CONFIG,
                  MCP_WRITE_REPLY_ALL,
                  MCP_WRITE_REPLY_CDI :
                    begin

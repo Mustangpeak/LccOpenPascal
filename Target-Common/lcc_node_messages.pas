@@ -130,7 +130,9 @@ public
   function ExtractDataBytesAsWord(StartIndex: Integer): Word;
   function ExtractDataBytesAsDWord(StartIndex: Integer): DWORD;
   function ExtractDataBytesAsHex(StartByteIndex, EndByteIndex: Integer): string;
+  function ExtractDataByteArrayAsHex(Dots: Boolean): string;
   function DestinationMatchs(TestAliasID: Word; TestNodeID: TNodeID): Boolean;
+  procedure CopyDataToDataArray(var ADataArray: TLccDynamicByteArray);
 
   function ValidateAndRequestIfNecessaryAliasMappings(var ProblemAliasArray: TLccAliasIDArray; RequestMappingCallback: TLccMessageRequestMappingCallback): Boolean;
   function ValidateByNodeID(RequestMappingCallback: TLccMessageRequestMappingCallback; ANodeID: TNodeID): TLccAliasMapping;
@@ -987,7 +989,23 @@ end;
 
 function TLccMessage.ExtractDataBytesAsHex(StartByteIndex, EndByteIndex: Integer): string;
 begin
-  Result := IntToHex(ExtractDataBytesAsInt(StartByteIndex, EndByteIndex), EndByteIndex-StartByteIndex);
+  Result := IntToHex( ExtractDataBytesAsInt(StartByteIndex, EndByteIndex), EndByteIndex-StartByteIndex);
+end;
+
+function TLccMessage.ExtractDataByteArrayAsHex(Dots: Boolean): string;
+var
+  i: Integer;
+begin
+  Result := '';
+  for i := 0 to DataCount - 1 do
+  begin
+    Result := Result + IntToHex(DataArray[i], 2);
+    if Dots then
+    begin
+      if i < DataCount - 1 then
+        Result := Result + '.'
+    end;
+  end;
 end;
 
 procedure TLccMessage.ExtractSimpleTrainNodeIdentInfo(var Version: Byte;
@@ -1437,6 +1455,16 @@ begin
     Result := TestAliasID = DestAlias
   else
     Result := (TestNodeID[0] = DestID[0]) and (TestNodeID[1] = DestID[1]);
+end;
+
+procedure TLccMessage.CopyDataToDataArray(var ADataArray: TLccDynamicByteArray);
+var
+  i: Integer;
+begin
+  SetLength(ADataArray, DataCount);
+
+  for i := 0 to DataCount - 1 do
+    ADataArray[i] := DataArray[i];
 end;
 
 function TLccMessage.ValidateAndRequestIfNecessaryAliasMappings(

@@ -238,7 +238,7 @@ begin                                                                           
                 Result := imgcr_True
               end else
               begin
-                // Reuse the Message to load up the rejection mession and send it back
+                // Reuse the Message to load up the rejection message and send it back
                 ALccMessage.LoadDatagramRejected(ALccMessage.DestID, ALccMessage.DestAlias, ALccMessage.SourceID, ALccMessage.SourceAlias, ERROR_CODE_TEMPORARY_BUFFER_UNAVAILABLE);
                 // Don't dispatch this message back to the target node
                 Result := imgcr_ErrorToSend
