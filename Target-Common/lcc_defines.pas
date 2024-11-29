@@ -319,32 +319,7 @@ const
   STREAM_REPLY_SOURCE_NOT_PERMITTED                       = $40;                // if Error is permanent then these are the possible reasons
   STREAM_REPLY_STREAM_NOT_ACCEPTED                        = $80;                // if Error is permanent then these are the possible reasons
 
-  MASK_SOURCE_ALIAS                  = $00000FFF;
-
- PSI_SIMPLE                        = $800000;
- PSI_DATAGRAM                      = $400000;
- PSI_STREAM                        = $200000;
- PSI_MEMORY_CONFIGURATION          = $100000;
-
- PSI_RESERVATION                   = $080000;
- PSI_EVENT_EXCHANGE                = $040000;
- PSI_IDENTIFICATION                = $020000;
- PSI_TEACHING_LEARNING             = $010000;
-
- PSI_REMOTE_BUTTON                 = $008000;
- PSI_ABBREVIATED_DEFAULT_CDI       = $004000;
- PSI_DISPLAY                       = $002000;
- PSI_SIMPLE_NODE_INFORMATION       = $001000;
-
- PSI_CONFIGURATION_DESCRIPTION_INFO = $000800;
- PSI_TRAIN_CONTROL                 = $000400;
- PSI_FUNCTION_DESCRIPTION          = $000200;
- PSI_RESERVED_0                    = $000100;
-
- PSI_RESERVED_1                    = $000080;
- PSI_FUNCTION_CONFIGURATION        = $000040;
- PSI_FIRMWARE_UPGRADE              = $000020;
- PSI_FIRMWARE_UPGRADE_ACTIVE       = $000010;// Masks out just the Source Alias Address
+  MASK_SOURCE_ALIAS                  = $00000FFF;                                // Masks out just the Source Alias Address
 
   // Byte 3
   PIP_SIMPLENODE                     = $80;

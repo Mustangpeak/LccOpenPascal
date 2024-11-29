@@ -10,7 +10,7 @@ uses
   lcc_node_messages, lcc_node_commandstation, lcc_node_controller,
   lcc_node_train, lcc_comport, lcc_alias_server,
   lcc_node_messages_can_assembler_disassembler, lcc_alias_server_thread,
-  LazSynaSer, lcc_connection_common, unit_comport, LCLType, contnrs;
+  LazSynaSer, lcc_connection_common, unit_comport;
 
 const
   MAX_LOGGING_LINES = 200;
@@ -49,11 +49,11 @@ type
   private
     FEnumerating: Boolean;
     FEnumeratingWellKnown: Boolean;
-    FAddressSpaceQueried: Byte;
+    FQueried: Byte;
 
   public
 
-    property AddressSpaceQueried: Byte read FAddressSpaceQueried write FAddressSpaceQueried;
+    property Queried: Byte read FQueried write FQueried;
     property Enumerating: Boolean read FEnumerating write FEnumerating;
     property EnumeratingWellKnown: Boolean read FEnumeratingWellKnown write FEnumeratingWellKnown;
 
@@ -72,39 +72,9 @@ type
     property Data: TLccDynamicByteArray read FData write FData;
   end;
 
+  { StateVariablesTWriteDatagram }
 
-  { TStateVariableResultOIR }
-
-  TStateVariableResultOIR = class
-  private
-    FErrorCode: Word;
-    FMti: Word;
-    FOptional: TLccDynamicByteArray;
-  public
-    property ErrorCode: Word read FErrorCode write FErrorCode;
-    property Mti: Word read FMti write FMti;
-    property Optional: TLccDynamicByteArray read FOptional write FOptional;
-  end;
-
-  { TStateVariableOIR }
-
-  TStateVariableOIR = class
-  private
-    FEnumerating: Boolean;
-    FMtiQueried: Word;
-    FResults: TObjectList;
-  public
-     constructor Create;
-     destructor Destroy; override;
-
-     property Enumerating: Boolean read FEnumerating write FEnumerating;
-     property MtiQueried: Word read FMtiQueried write FMtiQueried;
-     property Results: TObjectList read FResults write FResults;
-  end;
-
-  { TStateVariablesTWriteDatagram }
-
-  TStateVariablesTWriteDatagram = class
+  StateVariablesTWriteDatagram = class
 
   private
     FData: TLccDynamicByteArray;
@@ -115,57 +85,9 @@ type
     property Data: TLccDynamicByteArray read FData write FData;
   end;
 
-  { TStateVariabledSnip }
+  { TForm1 }
 
-  TStateVariabledSnip = class
-  private
-    FData: TLccDynamicByteArray;
-  published
-
-    property Data: TLccDynamicByteArray read FData write FData;
-
-  end;
-
-  { TStateVariableCdi }
-
-  TStateVariableCdi = class
-
-  private
-    FCurrentAddressPointer: DWord;
-    FData: TLccDynamicByteArray;
-    FStartingAddress: DWord;
-    FWaitingForCdi: Boolean;
-    FWaitingForSpaceInfo: Boolean;
-  public
-
-    property WaitingForSpaceInfo: Boolean read FWaitingForSpaceInfo write FWaitingForSpaceInfo;
-    property WaitingForCdi: Boolean read FWaitingForCdi write FWaitingForCdi;
-    property StartingAddress: DWord read FStartingAddress write FStartingAddress;
-    property CurrentAddressPointer: DWord read FCurrentAddressPointer write FCurrentAddressPointer;
-
-    property Data: TLccDynamicByteArray read FData write FData;
-  end;
-
-  { TFormNodeInterrogator }
-
-  TFormNodeInterrogator = class(TForm)
-    ButtonSelector_FindNodes: TButton;
-    ButtonCdi_Read: TButton;
-    ButtonMultiFrame_DatagramFirst: TButton;
-    ButtonMultiFrame_SnipFirst: TButton;
-    ButtonMultiFrame_SnipLast: TButton;
-    ButtonMultiFrame_DatagramMiddle: TButton;
-    ButtonMultiFrame_DatagramLast: TButton;
-    ButtonMultiFrame_SnipMiddle: TButton;
-    ButtonMultiframe_DatagramSendSequence: TButton;
-    ButtonMultiframe_SnipSendSequence: TButton;
-    ButtonOptionalInteractionRejected_ExpandAll: TButton;
-    ButtonOptionalInteractionRejected_CollapseAll: TButton;
-    ButtonOptionalInteractionRejected_Cancel: TButton;
-    ButtonOptionalInteractionRejected_Clear: TButton;
-    ButtonOptionalInteractionRejected_Run: TButton;
-    ButtonProtocolSupport_Request: TButton;
-    ButtonSnip_Request: TButton;
+  TForm1 = class(TForm)
     ButtonDatagramRead: TButton;
     ButtonDatagram_Write: TButton;
     ButtonDatagramWrite_FindWritableAddressSpaces: TButton;
@@ -184,8 +106,6 @@ type
     ButtonRefreshComPort: TButton;
     ButtonComPortConnect: TButton;
     ButtonVerifyNodesAddressed: TButton;
-    CheckBox1: TCheckBox;
-    CheckBoxProtcolSupport_ReservedBitClear: TCheckBox;
     CheckBoxDatagramWrite_AckOk: TCheckBox;
     CheckBoxDatagramWrite_AckRejected: TCheckBox;
     CheckBoxDatagramWrite_AckReplyPending: TCheckBox;
@@ -210,37 +130,13 @@ type
     CheckBoxConfigMemOpAllBitsZero: TCheckBox;
     CheckBoxDatagramRead_AckRejected: TCheckBox;
     CheckBoxDatagramWrite_UseDots: TCheckBox;
-    CheckBoxSnip_UseDots: TCheckBox;
-    CheckBoxCdi_UseDots: TCheckBox;
-    CheckGroupProtocolSupport: TCheckGroup;
-    ComboBoxDatagramRead_AcdiOffsets: TComboBox;
-    ComboBoxDatagramWrite_AcdiOffsets: TComboBox;
     ComboBoxDatagramWrite_ReadableAddressSpaces: TComboBox;
     ComboBoxDatagramRead_WriteableAddressSpaces: TComboBox;
     ComboBoxDatagramRead_ReadableAddressSpaces: TComboBox;
     ComboBoxConfigMemAddressSpace: TComboBox;
     ComboBoxDatagramWrite_WriteableAddressSpaces: TComboBox;
-    ComboBoxSelector: TComboBox;
+    ComboBoxNodeList: TComboBox;
     ComboBoxComPorts: TComboBox;
-    Edit2: TEdit;
-    EditMultiFrame_MfgName: TEdit;
-    EditMultiFrame_MfgHardwareVersion: TEdit;
-    EditMultiFrame_MfgSoftwareVersion: TEdit;
-    EEditMultiFrame_Mfg: TEdit;
-    Edit7: TEdit;
-    EditMultiFrame_UserDescription: TEdit;
-    EditMultiFrameDatagram_Sequence: TEdit;
-    EditMultiFrame_SnipSequence: TEdit;
-    EditMultiFrame_DatagramData: TEdit;
-    EditProtocolSupport_RawData: TEdit;
-    EditSnip_ManufacturerVersion: TEdit;
-    EditSnip_Manufacturer: TEdit;
-    EditSnip_ManufacturerModel: TEdit;
-    EditSnip_ManufacturerHardwareVersion: TEdit;
-    EditSnip_ManufacturerSoftwareVersion: TEdit;
-    EditSnip_UserDescription: TEdit;
-    EditSnip_UserVersion: TEdit;
-    EditSnip_UserName: TEdit;
     EditDatagramWrite: TEdit;
     EditDatagramWrite_AckEstimatedWaitTime: TEdit;
     EditDatagramWrite_AckAdditionalInfo: TEdit;
@@ -262,13 +158,6 @@ type
     EditConfigMemHighestAddressSpace: TEdit;
     EditConfigMemLowestAddressSpace: TEdit;
     EditDatagramWrite_StartAddress: TEdit;
-    GroupBox1: TGroupBox;
-    GroupBoxMultiFrame_User: TGroupBox;
-    GroupBoxMultiFrame_Manufacturer: TGroupBox;
-    GroupBoxMultiFrame_Datagrams: TGroupBox;
-    GroupBoxMultiFrame_Snip: TGroupBox;
-    GroupBoxOptionalInteractionRejected: TGroupBox;
-    GroupBoxDataRead_ReplyMessage: TGroupBox;
     GroupBoxDatagramRead_AddressSpaceScan: TGroupBox;
     GroupBoxDatagramWrite_AddressSpaceScan: TGroupBox;
     GroupBoxDatagramRead: TGroupBox;
@@ -279,37 +168,7 @@ type
     GroupBoxConfigMemWriteLenghts: TGroupBox;
     GroupBoxConfigMemAvailableCommands: TGroupBox;
     GroupBoxDatagramWrite_Ack: TGroupBox;
-    GroupBoxDataWrite_ReplyMessage: TGroupBox;
-    ImageDatagramRead_Ok: TImage;
-    ImageDatagramWrite_Ok: TImage;
-    ImageDatagram_ReadRejected: TImage;
-    ImageDatagram_WriteRejected: TImage;
-    ImageListMain: TImageList;
-    LabelSelector: TLabel;
-    Label2: TLabel;
-    Label3: TLabel;
-    LabelMultiFrame_UserDescription: TLabel;
-    LabelMultiFrame_UserName: TLabel;
-    LabelMultiFrame_ManufacturerSoftwareVersion: TLabel;
-    LabelMultiFrame_ManufacturerHardwareVersion: TLabel;
-    LabelMultiFrame_ManufacturerVersion: TLabel;
-    LabelMultiFrame_Manufacturer: TLabel;
-    LabelMultiFrame_ManufacturerName: TLabel;
-    LabelMultiFrame_DatagramSequence: TLabel;
-    LabelMultiFrame_DatagramData: TLabel;
-    LabelMultiFrame_DatagramSequence1: TLabel;
-    LabelProtocolSupport_RawData: TLabel;
-    LabelSnip_RawData: TLabel;
-    LabelSnip_Manufacturer: TLabel;
-    LabelSnip_ManufacturerModel: TLabel;
-    LabelSnip_ManufacturerHardwareVersion: TLabel;
-    LabelSnip_ManufacturerSoftwareVersion: TLabel;
-    LabelSnip_UserVersion: TLabel;
-    LabelSnip_UserName: TLabel;
-    LabelSnip_UserDescription: TLabel;
-    LabelSnip_ManufacturerVersion: TLabel;
-    LabelDatagramRead_AcdiOffsets: TLabel;
-    LabelDatagramWrite_AcdiOffsets: TLabel;
+    Label1: TLabel;
     LabelDatagramWrite_AdditionalInfo: TLabel;
     LabelDatagramWrite_Address: TLabel;
     LabelDatagramWrite_BytesOfData: TLabel;
@@ -338,13 +197,8 @@ type
     LabelAliasID: TLabel;
     LabelDatagramWrite_WritableAddressSpaces: TLabel;
     LabelNodeID: TLabel;
-    MemoCdi_RawData: TMemo;
-    MemoSnip_RawData: TMemo;
     MemoComPort: TMemo;
     PageControlMain: TPageControl;
-    PanelCdi: TPanel;
-    PanelDatagramTransport: TPanel;
-    PanelTabSnip: TPanel;
     PanelNodeList: TPanel;
     PanelHeader: TPanel;
     PanelMain: TPanel;
@@ -355,39 +209,18 @@ type
     PanelTabSheetConfigMem: TPanel;
     PanelMemo: TPanel;
     PanelTabMessageNetwork: TPanel;
-    RadioGroupDatagramRead_ReplyMessage: TRadioGroup;
-    RadioGroupDatagramWrite_ReplyMessage: TRadioGroup;
     RadioGroupDatagramWrite_MessageOptions: TRadioGroup;
     RadioGroupDatagramRead_ViewOptions: TRadioGroup;
     RadioGroupDatagramRead_MessageOptions: TRadioGroup;
     RadioGroupDatagramWrite_ViewOptions: TRadioGroup;
-    RadioGroupSnip_ViewOptions: TRadioGroup;
-    RadioGroupCdi_ViewOptions: TRadioGroup;
     Splitter1: TSplitter;
     StatusBarMain: TStatusBar;
-    TabSheetCdi: TTabSheet;
-    TabSheetMultiFrame: TTabSheet;
-    TabSheetSnip: TTabSheet;
     TabSheetDatagramWrite: TTabSheet;
     TabSheetEvents: TTabSheet;
     TabSheetMessageNetwork: TTabSheet;
     TabSheetConfigMem: TTabSheet;
     TabSheetDatagramRead: TTabSheet;
-    TreeViewOptionalInteractionRejected: TTreeView;
     TreeViewConfigMemAddressSpaceInfo: TTreeView;
-    procedure ButtonCdi_ReadClick(Sender: TObject);
-    procedure ButtonMultiFrame_DatagramFirstClick(Sender: TObject);
-    procedure ButtonMultiFrame_DatagramLastClick(Sender: TObject);
-    procedure ButtonMultiFrame_DatagramMiddleClick(Sender: TObject);
-    procedure ButtonMultiframe_DatagramSendSequenceClick(Sender: TObject);
-    procedure ButtonMultiFrame_SnipFirstClick(Sender: TObject);
-    procedure ButtonMultiFrame_SnipLastClick(Sender: TObject);
-    procedure ButtonMultiFrame_SnipMiddleClick(Sender: TObject);
-    procedure ButtonMultiframe_SnipSendSequenceClick(Sender: TObject);
-    procedure ButtonOptionalInteractionRejected_CancelClick(Sender: TObject);
-    procedure ButtonOptionalInteractionRejected_CollapseAllClick(Sender: TObject);
-    procedure ButtonOptionalInteractionRejected_ExpandAllClick(Sender: TObject);
-    procedure ButtonOptionalInteractionRejected_RunClick(Sender: TObject);
     procedure ButtonConfigMemAddressSpaceInfoAllClick(Sender: TObject);
     procedure ButtonConfigMemAddressSpaceInfoClick(Sender: TObject);
     procedure ButtonConfigMemAddressSpaceInfoWellKnownClick(Sender: TObject);
@@ -398,47 +231,33 @@ type
     procedure ButtonDatagramRead_ScanAddressSpacesCancelClick(Sender: TObject);
     procedure ButtonDatagram_WriteClick(Sender: TObject);
     procedure ButtonMemConfgAddressSpaceInfoCancelClick(Sender: TObject);
-    procedure ButtonProtocolSupport_RequestClick(Sender: TObject);
-    procedure ButtonSelector_FindNodesClick(Sender: TObject);
     procedure ButtonSendConfigMemConfigOptionsClick(Sender: TObject);
-    procedure ButtonSnip_RequestClick(Sender: TObject);
     procedure ButtonVerifyNodesAddressedClick(Sender: TObject);
     procedure ButtonVerifyNodesGlobalClick(Sender: TObject);
     procedure ButtonClearMemoClick(Sender: TObject);
     procedure ButtonCreateNodeClick(Sender: TObject);
     procedure ButtonRefreshComPortClick(Sender: TObject);
     procedure ButtonComPortConnectClick(Sender: TObject);
-    procedure CheckBoxCdi_UseDotsClick(Sender: TObject);
     procedure CheckBoxDatagramRead_UseDotsChange(Sender: TObject);
     procedure CheckBoxDatagramWrite_UseDotsChange(Sender: TObject);
-    procedure CheckBoxSnip_UseDotsClick(Sender: TObject);
     procedure ComboBoxConfigMemAddressSpaceChange(Sender: TObject);
-    procedure ComboBoxDatagramRead_AcdiOffsetsChange(Sender: TObject);
-    procedure ComboBoxDatagramWrite_AcdiOffsetsChange(Sender: TObject);
     procedure FormCloseQuery(Sender: TObject; var CanClose: boolean);
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure FormShow(Sender: TObject);
     procedure PanelTabDatagramReadClick(Sender: TObject);
-    procedure PanelTabSnipClick(Sender: TObject);
-    procedure RadioGroupCdi_ViewOptionsClick(Sender: TObject);
     procedure RadioGroupDatagramRead_ViewOptionsClick(Sender: TObject);
     procedure RadioGroupDatagramWrite_ViewOptionsClick(Sender: TObject);
-    procedure RadioGroupSnip_ViewOptionsClick(Sender: TObject);
 
   private
     FAckWorker: TLccMessage;
-    FKnownMtiList: TStringList;
-    FStateCdi: TStateVariableCdi;
-    FStateOIR: TStateVariableOIR;
     FStatesAddressSpace: TStateVariablesAddressSpaceMessage;
     FStatesDatagramRead: TStateVariablesReadDatagram;
-    FStatesDatagramWrite: TStateVariablesTWriteDatagram;
+    FStatesDatagramWrite: StateVariablesTWriteDatagram;
     FEmulateCANBus: boolean;
     FNodeManager: TLccNodeManager;
 
     FSerialLink: TLccComPort;
-    FStateSnip: TStateVariabledSnip;
     FTargetReplyEdit: TEdit;
     FWorkerMessage: TLccMessage;
     function GetNode: TLccNode;
@@ -448,10 +267,7 @@ type
 
     property StatesAddressSpace: TStateVariablesAddressSpaceMessage read FStatesAddressSpace write FStatesAddressSpace;
     property StatesDatagramRead: TStateVariablesReadDatagram read FStatesDatagramRead write FStatesDatagramRead;
-    property StatesDatagramWrite: TStateVariablesTWriteDatagram read FStatesDatagramWrite write FStatesDatagramWrite;
-    property StatesSnip: TStateVariabledSnip read FStateSnip write FStateSnip;
-    property StateOIR: TStateVariableOIR read FStateOIR write FStateOIR;
-    property StateCdi: TStateVariableCdi read FStateCdi write FStateCdi;
+    property StatesDatagramWrite: StateVariablesTWriteDatagram read FStatesDatagramWrite write FStatesDatagramWrite;
 
     // Datagram Read/Write States
     property TargetReplyEdit: TEdit read FTargetReplyEdit write FTargetReplyEdit;
@@ -478,15 +294,10 @@ type
     procedure SendMessage(AMessage: TLccMessage);
     procedure SendAck(Message: TLccMessage);
     procedure SendAddressSpaceQuery(AddressSpace: Byte);
-    procedure ClearConfigMemOperationTab;
-    procedure ClearSnipTab;
+    procedure ClearConfigMemOperation;
     procedure DisconnectSerialLink;
     procedure PrintReadDataArray;
     procedure PrintWriteDataArray;
-    procedure PrintSnipDataArray;
-    procedure LoadKnownMtiList;
-    function NextOIR_MtiMessage(MTI: Word): Word;
-    procedure PrintCdiDataArray;
 
     procedure HandleVerifiedNode(ReceivedMessage: TLccMessage);
     procedure HandleGetConfigOptionsReply(ReceivedMessage: TLccMessage);
@@ -508,15 +319,10 @@ type
     procedure HandleWriteReplyFailureConfig(ReceivedMessage: TLccMessage);
     procedure HandleDatagramAckOk(ReceivedMessage: TLccMessage);
     procedure HandleDatagramAckRejected(ReceivedMessage: TLccMessage);
-    procedure HandleSnipReply(ReceivedMessage: TLccMessage);
-    procedure HandleProtocolSupportReply(ReceivedMessage: TLccMessage);
-    procedure HandleProtocolOIR(ReceivedMessage: TLccMessage);
+
     procedure HandleGetAddressSpaceInfoPresentReply(ReceivedMessage: TLccMessage);
     procedure HandleGetAddressSpaceInfoNotPresentReply(ReceivedMessage: TLccMessage);
 
-
-    procedure HandleStateCdi_ReadCdi(ReceivedMessage: TLccMessage);
-    procedure HandleStateCdi_ReadCdiFailure(ReceivedMessage: TLccMessage);
 
 
   public
@@ -526,7 +332,6 @@ type
 
     property EmulateCANBus: boolean read FEmulateCANBus write FEmulateCANBus;
 
-    property KnownMtiList: TStringList read FKnownMtiList write FKnownMtiList;
     property WorkerMessage: TLccMessage read FWorkerMessage write FWorkerMessage;
     property AckWorker: TLccMessage read FAckWorker write FAckWorker;
     property Node: TLccNode read GetNode;
@@ -535,7 +340,7 @@ type
   end;
 
 var
-  FormNodeInterrogator: TFormNodeInterrogator;
+  Form1: TForm1;
 
 implementation
 
@@ -567,24 +372,10 @@ begin
 
 end;
 
-{ TStateVariableOIR }
 
-constructor TStateVariableOIR.Create;
-begin
-  FResults := TObjectList.Create;
-  Results.OwnsObjects := True;
-end;
+{ TForm1 }
 
-destructor TStateVariableOIR.Destroy;
-begin
-  Results.Free;
-  inherited Destroy;
-end;
-
-
-{ TFormNodeInterrogator }
-
-procedure TFormNodeInterrogator.FormCreate(Sender: TObject);
+procedure TForm1.FormCreate(Sender: TObject);
 begin
 
   EmulateCANBus := True;
@@ -608,20 +399,14 @@ begin
   AckWorker := TLccMessage.Create;
   WorkerMessage := TLccMessage.Create;
 
-  KnownMtiList := TStringList.Create;
-  LoadKnownMtiList;
-
   StatesAddressSpace := TStateVariablesAddressSpaceMessage.Create;
   StatesDatagramRead := TStateVariablesReadDatagram.Create;
-  StatesDatagramWrite := TStateVariablesTWriteDatagram.Create;
-  StatesSnip := TStateVariabledSnip.Create;
-  StateOIR := TStateVariableOIR.Create;
-  StateCdi := TStateVariableCdi.Create;
+  StatesDatagramWrite := StateVariablesTWriteDatagram.Create;
 
   ConnectionFactory.OnLccMessageSend := @OnConnectionFactorySendMessage;
 end;
 
-procedure TFormNodeInterrogator.FormDestroy(Sender: TObject);
+procedure TForm1.FormDestroy(Sender: TObject);
 begin
   SerialLink.Free;
   AckWorker.Free;
@@ -629,18 +414,14 @@ begin
   StatesAddressSpace.Free;
   StatesDatagramRead.Free;
   StatesDatagramWrite.Free;
-  StatesSnip.Free;
-  KnownMtiList.Free;
-  StateOIR.Free;
-  StateCdi.Free;
 end;
 
-procedure TFormNodeInterrogator.FormCloseQuery(Sender: TObject; var CanClose: boolean);
+procedure TForm1.FormCloseQuery(Sender: TObject; var CanClose: boolean);
 begin
   DisconnectSerialLink
 end;
 
-procedure TFormNodeInterrogator.ButtonComPortConnectClick(Sender: TObject);
+procedure TForm1.ButtonComPortConnectClick(Sender: TObject);
 var
   AComPort: string;
 begin
@@ -662,67 +443,39 @@ begin
 
 end;
 
-procedure TFormNodeInterrogator.CheckBoxCdi_UseDotsClick(Sender: TObject);
-begin
-  PrintCdiDataArray;
-end;
-
-procedure TFormNodeInterrogator.CheckBoxDatagramRead_UseDotsChange(Sender: TObject);
+procedure TForm1.CheckBoxDatagramRead_UseDotsChange(Sender: TObject);
 begin
   PrintReadDataArray;
 end;
 
-procedure TFormNodeInterrogator.CheckBoxDatagramWrite_UseDotsChange(Sender: TObject);
+procedure TForm1.CheckBoxDatagramWrite_UseDotsChange(Sender: TObject);
 begin
   PrintWriteDataArray;
 end;
 
-procedure TFormNodeInterrogator.CheckBoxSnip_UseDotsClick(Sender: TObject);
-begin
-  PrintSnipDataArray;
-end;
-
-procedure TFormNodeInterrogator.ComboBoxConfigMemAddressSpaceChange(Sender: TObject);
+procedure TForm1.ComboBoxConfigMemAddressSpaceChange(Sender: TObject);
 begin
 
 end;
 
-procedure TFormNodeInterrogator.ComboBoxDatagramRead_AcdiOffsetsChange(Sender: TObject);
-begin
-  begin
-  case ComboBoxDatagramRead_AcdiOffsets.ItemIndex of
-    0: EditDatagramRead_StartAddress.Text := '0x00';
-    1: EditDatagramRead_StartAddress.Text := '0x01';
-    2: EditDatagramRead_StartAddress.Text := '0x2A';
-    3: EditDatagramRead_StartAddress.Text := '0x53';
-    4: EditDatagramRead_StartAddress.Text := '0x68';
-    5: EditDatagramRead_StartAddress.Text := '0x00';
-    6: EditDatagramRead_StartAddress.Text := '0x01';
-    7: EditDatagramRead_StartAddress.Text := '0x40';
-  end;
-end;
-end;
-
-procedure TFormNodeInterrogator.ComboBoxDatagramWrite_AcdiOffsetsChange(Sender: TObject);
-begin
-  case ComboBoxDatagramWrite_AcdiOffsets.ItemIndex of
-    0: EditDatagramWrite_StartAddress.Text := '0x01';
-    1: EditDatagramWrite_StartAddress.Text := '0x40';
-  end;
-end;
-
-procedure TFormNodeInterrogator.ButtonRefreshComPortClick(Sender: TObject);
+procedure TForm1.ButtonRefreshComPortClick(Sender: TObject);
 begin
   ComboBoxComPorts.Items.DelimitedText := GetSerialPortNames;
 end;
 
-procedure TFormNodeInterrogator.ButtonClearMemoClick(Sender: TObject);
+procedure TForm1.ButtonClearMemoClick(Sender: TObject);
 begin
   MemoComPort.Clear;
 end;
 
-procedure TFormNodeInterrogator.ButtonVerifyNodesGlobalClick(Sender: TObject);
+procedure TForm1.ButtonVerifyNodesGlobalClick(Sender: TObject);
+var
+  i: Integer;
 begin
+  for i := 0 to ComboBoxNodeList.Items.Count - 1 do
+    ComboBoxNodeList.Items.Objects[i].Free;
+
+  ComboBoxNodeList.Clear;
 
   if Assigned(Node) then
   begin
@@ -733,38 +486,25 @@ begin
   end;
 end;
 
-procedure TFormNodeInterrogator.ButtonSendConfigMemConfigOptionsClick(Sender: TObject);
+procedure TForm1.ButtonSendConfigMemConfigOptionsClick(Sender: TObject);
 begin
   if Assigned(TargetNode) and Assigned(Node) then
   begin
-     ClearConfigMemOperationTab;
+     ClearConfigMemOperation;
      WorkerMessage.LoadConfigMemOptions(Node.NodeID, Node.AliasID, TargetNode.NodeID, TargetNode.Alias);
      SendMessage(WorkerMessage);
   end else
     ShowNoTargetMessage;
 end;
 
-procedure TFormNodeInterrogator.ButtonSnip_RequestClick(Sender: TObject);
+procedure TForm1.ButtonVerifyNodesAddressedClick(Sender: TObject);
+
 begin
-  if Assigned(TargetNode) and Assigned(Node) then
-  begin
-     ClearSnipTab;
-     WorkerMessage.LoadSimpleNodeIdentInfoRequest(Node.NodeID, Node.AliasID, TargetNode.NodeID, TargetNode.Alias);
-     SendMessage(WorkerMessage);
-  end else
-    ShowNoTargetMessage;
+
+
 end;
 
-procedure TFormNodeInterrogator.ButtonVerifyNodesAddressedClick(Sender: TObject);
-begin
-  if Assigned(TargetNode) and Assigned(Node) then
-    begin
-       ShowMessage('Working on it');
-    end else
-      ShowNoTargetMessage;
-end;
-
-procedure TFormNodeInterrogator.ButtonConfigMemAddressSpaceInfoClick(Sender: TObject);
+procedure TForm1.ButtonConfigMemAddressSpaceInfoClick(Sender: TObject);
 
   function IndexToAddressSpace(AnIndex: Integer): Byte;
   begin
@@ -777,36 +517,36 @@ begin
      StatesAddressSpace.Enumerating := False;
      StatesAddressSpace.EnumeratingWellKnown := False;
      TreeViewConfigMemAddressSpaceInfo.Items.Clear;
-     StatesAddressSpace.AddressSpaceQueried := IndexToAddressSpace(ComboBoxConfigMemAddressSpace.ItemIndex);
-     SendAddressSpaceQuery(StatesAddressSpace.AddressSpaceQueried);
+     StatesAddressSpace.Queried := IndexToAddressSpace(ComboBoxConfigMemAddressSpace.ItemIndex);
+     SendAddressSpaceQuery(StatesAddressSpace.Queried);
   end else
     ShowNoTargetMessage;
 end;
 
-procedure TFormNodeInterrogator.ButtonConfigMemAddressSpaceInfoWellKnownClick(Sender: TObject);
+procedure TForm1.ButtonConfigMemAddressSpaceInfoWellKnownClick(Sender: TObject);
 begin
   if Assigned(TargetNode) and Assigned(Node) then
   begin
      StatesAddressSpace.EnumeratingWellKnown := True;
      StatesAddressSpace.Enumerating := False;
      TreeViewConfigMemAddressSpaceInfo.Items.Clear;
-     StatesAddressSpace.AddressSpaceQueried := $FF;
-     SendAddressSpaceQuery(StatesAddressSpace.AddressSpaceQueried);
+     StatesAddressSpace.Queried := $FF;
+     SendAddressSpaceQuery(StatesAddressSpace.Queried);
   end else
     ShowNoTargetMessage;
 end;
 
-procedure TFormNodeInterrogator.ButtonConfigMemClearAddressInfoClick(Sender: TObject);
+procedure TForm1.ButtonConfigMemClearAddressInfoClick(Sender: TObject);
 begin
   TreeViewConfigMemAddressSpaceInfo.Items.Clear;
 end;
 
-procedure TFormNodeInterrogator.ButtonConfigMemOpClearClick(Sender: TObject);
+procedure TForm1.ButtonConfigMemOpClearClick(Sender: TObject);
 begin
-  ClearConfigMemOperationTab;
+  ClearConfigMemOperation;
 end;
 
-procedure TFormNodeInterrogator.ButtonDatagramRead_FindWritableAddressSpacesClick(Sender: TObject);
+procedure TForm1.ButtonDatagramRead_FindWritableAddressSpacesClick(Sender: TObject);
 begin
   ComboBoxDatagramRead_ReadableAddressSpaces.Clear;
   ComboBoxDatagramRead_WriteableAddressSpaces.Clear;
@@ -815,7 +555,7 @@ begin
   ButtonConfigMemAddressSpaceInfoAllClick(Sender);
 end;
 
-procedure TFormNodeInterrogator.ButtonDatagramReadClick(Sender: TObject);
+procedure TForm1.ButtonDatagramReadClick(Sender: TObject);
 var
   AddressSpace: Byte;
 begin
@@ -833,7 +573,6 @@ begin
     EditDatagramRead_AckDataBytes.Text := '';
     EditDatagramRead_RawData.Text := '';
     EditDatagramRead.Text := '';
-    RadioGroupDatagramRead_ReplyMessage.ItemIndex := -1;
 
     StatesDatagramRead.WaitingForAck := True;
 
@@ -882,21 +621,18 @@ begin
     ShowNoTargetMessage;
 end;
 
-procedure TFormNodeInterrogator.ButtonDatagramRead_ScanAddressSpacesCancelClick(Sender: TObject);
+procedure TForm1.ButtonDatagramRead_ScanAddressSpacesCancelClick(Sender: TObject);
 begin
   StatesAddressSpace.Enumerating := False;
 end;
 
-procedure TFormNodeInterrogator.ButtonDatagram_WriteClick(Sender: TObject);
+procedure TForm1.ButtonDatagram_WriteClick(Sender: TObject);
 var
   AddressSpace: Byte;
 begin
 
   if Assigned(TargetNode) and Assigned(Node) then
   begin
-
-    if DefaultMessageBox('WARNING: Are you sure you want to write to this Node. It could cause unintended consquences!', 'WARNING', MB_OKCANCEL) <> mrOK then
-      Exit;
 
     CheckBoxDatagramWrite_AckOk.Checked := False;
     CheckBoxDatagramWrite_AckRejected.Checked := False;
@@ -908,7 +644,6 @@ begin
     EditDatagramWrite_AckDataBytes.Text := '';
     EditDatagramWrite_RawData.Text := '';
     EditDatagramWrite.Text := '';
-    RadioGroupDatagramWrite_ReplyMessage.ItemIndex := -1;
 
     StatesDatagramWrite.WaitingForAck := True;
 
@@ -957,227 +692,53 @@ begin
     ShowNoTargetMessage;
 end;
 
-procedure TFormNodeInterrogator.ButtonMemConfgAddressSpaceInfoCancelClick(Sender: TObject);
+procedure TForm1.ButtonMemConfgAddressSpaceInfoCancelClick(Sender: TObject);
 begin
   StatesAddressSpace.Enumerating := False;
   StatesAddressSpace.EnumeratingWellKnown := False;
 end;
 
-procedure TFormNodeInterrogator.ButtonProtocolSupport_RequestClick(Sender: TObject);
-var
-  i: Integer;
-begin
-  if Assigned(TargetNode) and Assigned(Node) then
-  begin
-    for i := 0 to CheckGroupProtocolSupport.ControlCount - 1 do
-      CheckGroupProtocolSupport.Buttons[i].Checked := False;
-      WorkerMessage.LoadProtocolIdentifyInquiry(Node.NodeID, Node.AliasID, TargetNode.NodeID, TargetNode.Alias);
-      SendMessage(WorkerMessage);
-  end else
-    ShowNoTargetMessage;
-
-end;
-
-procedure TFormNodeInterrogator.ButtonSelector_FindNodesClick(Sender: TObject);
-var
-  i: Integer;
-begin
-  for i := 0 to ComboBoxSelector.Items.Count - 1 do
-    ComboBoxSelector.Items.Objects[i].Free;
-
-  ComboBoxSelector.Clear;
-
-  if Assigned(Node) then
-  begin
-    WorkerMessage.LoadVerifyNodeID(Node.NodeID, Node.AliasID, NULL_NODE_ID);
-
-    SendMessage(WorkerMessage);
-
-  end;
-end;
-
-procedure TFormNodeInterrogator.ButtonConfigMemAddressSpaceInfoAllClick(Sender: TObject);
+procedure TForm1.ButtonConfigMemAddressSpaceInfoAllClick(Sender: TObject);
 begin
   if Assigned(TargetNode) and Assigned(Node) then
   begin
      StatesAddressSpace.Enumerating := True;
      StatesAddressSpace.EnumeratingWellKnown := False;
      TreeViewConfigMemAddressSpaceInfo.Items.Clear;
-     StatesAddressSpace.AddressSpaceQueried := $FF;
-     SendAddressSpaceQuery(StatesAddressSpace.AddressSpaceQueried);
+     StatesAddressSpace.Queried := $FF;
+     SendAddressSpaceQuery(StatesAddressSpace.Queried);
   end else
     ShowNoTargetMessage;
 end;
 
-procedure TFormNodeInterrogator.ButtonOptionalInteractionRejected_RunClick(Sender: TObject);
-
-begin
-  if Assigned(TargetNode) and Assigned(Node) then
-    begin
-      StateOIR.Enumerating := True;
-      StateOir.MtiQueried := NextOIR_MtiMessage($1000);
-      StateOIR.Results.Clear;
-      WorkerMessage.SourceID := Node.NodeID;
-      WorkerMessage.SourceAlias := Node.AliasID;
-      WorkerMessage.DestID := TargetNode.NodeID;
-      WorkerMessage.DestAlias := TargetNode.Alias;
-      WorkerMessage.MTI := StateOir.MtiQueried;
-      WorkerMessage.DataCount := 0;
-      SendMessage(WorkerMessage);
-    end else
-      ShowNoTargetMessage;
-
-end;
-
-procedure TFormNodeInterrogator.ButtonOptionalInteractionRejected_CancelClick(Sender: TObject);
-begin
-  StateOIR.Enumerating := False;
-end;
-
-procedure TFormNodeInterrogator.ButtonMultiFrame_DatagramFirstClick(Sender: TObject);
-begin
-  if Assigned(TargetNode) and Assigned(Node) then
-    begin
-       ShowMessage('Working on it');
-    end else
-      ShowNoTargetMessage;
-end;
-
-procedure TFormNodeInterrogator.ButtonCdi_ReadClick(Sender: TObject);
-begin
-  if Assigned(TargetNode) and Assigned(Node) then
-    begin
-      MemoCdi_RawData.Clear;
-      StateCdi.WaitingForSpaceInfo := True;
-      WorkerMessage.LoadConfigMemAddressSpaceInfo(Node.NodeID, Node.AliasID, TargetNode.NodeID, TargetNode.Alias, ADDRESS_SPACE_CONFIG_DEFINITION_INFO);
-      SendMessage(WorkerMessage);
-    end else
-      ShowNoTargetMessage;
-end;
-
-procedure TFormNodeInterrogator.ButtonMultiFrame_DatagramLastClick(Sender: TObject);
-begin
-  if Assigned(TargetNode) and Assigned(Node) then
-    begin
-       ShowMessage('Working on it');
-    end else
-      ShowNoTargetMessage;
-end;
-
-procedure TFormNodeInterrogator.ButtonMultiFrame_DatagramMiddleClick(Sender: TObject);
-begin
-  if Assigned(TargetNode) and Assigned(Node) then
-  begin
-     ShowMessage('Working on it');
-  end else
-    ShowNoTargetMessage;
-end;
-
-procedure TFormNodeInterrogator.ButtonMultiframe_DatagramSendSequenceClick(Sender: TObject);
-begin
-  if Assigned(TargetNode) and Assigned(Node) then
-    begin
-       ShowMessage('Working on it');
-    end else
-      ShowNoTargetMessage;
-end;
-
-procedure TFormNodeInterrogator.ButtonMultiFrame_SnipFirstClick(Sender: TObject);
-begin
-  if Assigned(TargetNode) and Assigned(Node) then
-    begin
-       ShowMessage('Working on it');
-    end else
-      ShowNoTargetMessage;
-end;
-
-procedure TFormNodeInterrogator.ButtonMultiFrame_SnipLastClick(Sender: TObject);
-begin
-  if Assigned(TargetNode) and Assigned(Node) then
-    begin
-       ShowMessage('Working on it');
-    end else
-      ShowNoTargetMessage;
-end;
-
-procedure TFormNodeInterrogator.ButtonMultiFrame_SnipMiddleClick(Sender: TObject);
-begin
-  if Assigned(TargetNode) and Assigned(Node) then
-    begin
-       ShowMessage('Working on it');
-    end else
-      ShowNoTargetMessage;
-end;
-
-procedure TFormNodeInterrogator.ButtonMultiframe_SnipSendSequenceClick(Sender: TObject);
-begin
-  if Assigned(TargetNode) and Assigned(Node) then
-    begin
-       ShowMessage('Working on it');
-    end else
-      ShowNoTargetMessage;
-end;
-
-procedure TFormNodeInterrogator.ButtonOptionalInteractionRejected_CollapseAllClick(
-  Sender: TObject);
-begin
-  TreeViewOptionalInteractionRejected.FullCollapse;
-end;
-
-procedure TFormNodeInterrogator.ButtonOptionalInteractionRejected_ExpandAllClick(
-  Sender: TObject);
-begin
-  TreeViewOptionalInteractionRejected.FullExpand;
-end;
-
-procedure TFormNodeInterrogator.ButtonCreateNodeClick(Sender: TObject);
+procedure TForm1.ButtonCreateNodeClick(Sender: TObject);
 begin
 
 end;
 
-procedure TFormNodeInterrogator.FormShow(Sender: TObject);
+procedure TForm1.FormShow(Sender: TObject);
 begin
   ComboBoxComPorts.Items.Delimiter := ';';
   ComboBoxComPorts.Items.DelimitedText := StringReplace(GetSerialPortNames, ',', ';', [rfReplaceAll, rfIgnoreCase]);
   ComboBoxComPorts.ItemIndex := 2;
-
-  ImageDatagramRead_Ok.ImageIndex := -1;
-  ImageDatagram_ReadRejected.ImageIndex := -1;
-  ImageDatagramWrite_Ok.ImageIndex := -1;
-  ImageDatagram_WriteRejected.ImageIndex := -1;
 end;
 
-procedure TFormNodeInterrogator.PanelTabDatagramReadClick(Sender: TObject);
+procedure TForm1.PanelTabDatagramReadClick(Sender: TObject);
 begin
 
 end;
 
-procedure TFormNodeInterrogator.PanelTabSnipClick(Sender: TObject);
-begin
-  PrintSnipDataArray;
-end;
-
-procedure TFormNodeInterrogator.RadioGroupCdi_ViewOptionsClick(Sender: TObject);
-begin
-  PrintCdiDataArray;
-end;
-
-procedure TFormNodeInterrogator.RadioGroupDatagramRead_ViewOptionsClick(Sender: TObject);
+procedure TForm1.RadioGroupDatagramRead_ViewOptionsClick(Sender: TObject);
 begin
     PrintReadDataArray;
 end;
 
-procedure TFormNodeInterrogator.RadioGroupDatagramWrite_ViewOptionsClick(Sender: TObject);
+procedure TForm1.RadioGroupDatagramWrite_ViewOptionsClick(Sender: TObject);
 begin
    PrintWriteDataArray;
 end;
 
-procedure TFormNodeInterrogator.RadioGroupSnip_ViewOptionsClick(Sender: TObject);
-begin
-  PrintSnipDataArray;
-end;
-
-function TFormNodeInterrogator.GetNode: TLccNode;
+function TForm1.GetNode: TLccNode;
 begin
   if NodeManager.Nodes.Count > 0 then
     Result := NodeManager.Node[0]
@@ -1185,18 +746,18 @@ begin
     Result := nil;
 end;
 
-function TFormNodeInterrogator.GetTargetNode: TNodeInfoObject;
+function TForm1.GetTargetNode: TNodeInfoObject;
 begin
-  if ComboBoxSelector.ItemIndex < 0 then
+  if ComboBoxNodeList.ItemIndex < 0 then
   begin
     result := nil;
     exit;
   end;
 
-   Result := ComboBoxSelector.Items.Objects[ComboBoxSelector.ItemIndex] as TNodeInfoObject;
+   Result := ComboBoxNodeList.Items.Objects[ComboBoxNodeList.ItemIndex] as TNodeInfoObject;
 end;
 
-procedure TFormNodeInterrogator.OnComPortRecieveGridConnectStr(Sender: TObject; ReceiveGridConnectStr: ansistring);
+procedure TForm1.OnComPortRecieveGridConnectStr(Sender: TObject; ReceiveGridConnectStr: ansistring);
 begin
   MemoComPort.Lines.BeginUpdate;
   try
@@ -1213,7 +774,7 @@ begin
   end;
 end;
 
-procedure TFormNodeInterrogator.OnComPortRecieveMessage(Sender: TObject; ReceiveMessage: TLccMessage);
+procedure TForm1.OnComPortRecieveMessage(Sender: TObject; ReceiveMessage: TLccMessage);
 begin
 
   // Always handle this message to load the selection of nodes
@@ -1230,7 +791,7 @@ begin
 
       MTI_PROTOCOL_SUPPORT_REPLY:
       begin
-        HandleProtocolSupportReply(ReceiveMessage);
+
       end;
 
       MTI_PRODUCER_IDENTIFIED_CLEAR:
@@ -1259,7 +820,6 @@ begin
 
       MTI_SIMPLE_NODE_INFO_REPLY:
       begin
-        HandleSnipReply(ReceiveMessage);
       end;
 
       MTI_DATAGRAM_OK_REPLY:
@@ -1270,11 +830,6 @@ begin
       MTI_DATAGRAM_REJECTED_REPLY:
       begin
         HandleDatagramAckRejected(ReceiveMessage);
-      end;
-
-      MTI_OPTIONAL_INTERACTION_REJECTED:
-      begin
-        HandleProtocolOIR(ReceiveMessage);
       end;
 
       MTI_DATAGRAM:
@@ -1400,30 +955,30 @@ begin
     end;
 end;
 
-procedure TFormNodeInterrogator.OnComPortAssemblerErrorReply(Sender: TObject; ReceiveMessage: TLccMessage);
+procedure TForm1.OnComPortAssemblerErrorReply(Sender: TObject; ReceiveMessage: TLccMessage);
 begin
   // TODO:  Signal user somehow that this occured
    SendMessage(ReceiveMessage);
 end;
 
-procedure TFormNodeInterrogator.OnComPortError(Sender: TObject; ErrorString: string; ErrorCode: word);
+procedure TForm1.OnComPortError(Sender: TObject; ErrorString: string; ErrorCode: word);
 begin
 
   ShowMessage('ComPort Error: ' + ErrorString + '.  Error Code: ' + IntToStr(ErrorCode));
 
 end;
 
-procedure TFormNodeInterrogator.OnComPortLogIn(Sender: TObject);
+procedure TForm1.OnComPortLogIn(Sender: TObject);
 begin
   NodeManager.AddNodeByClass('', TInterrogatorNode, True, NULL_NODE_ID);
 end;
 
-procedure TFormNodeInterrogator.OnComPortLogOut(Sender: TObject);
+procedure TForm1.OnComPortLogOut(Sender: TObject);
 begin
 
 end;
 
-procedure TFormNodeInterrogator.OnConnectionFactorySendMessage(Sender: TObject; LccMessage: TLccMessage);
+procedure TForm1.OnConnectionFactorySendMessage(Sender: TObject; LccMessage: TLccMessage);
 begin
 
   SerialLink.SendString(LccMessage.ConvertToGridConnectStr(#10));
@@ -1443,27 +998,27 @@ begin
   end;
 end;
 
-procedure TFormNodeInterrogator.OnNodeManagerAliasIDChanged(Sender: TObject; LccSourceNode: TLccNode);
+procedure TForm1.OnNodeManagerAliasIDChanged(Sender: TObject; LccSourceNode: TLccNode);
 begin
   LabelAliasID.Caption := LccSourceNode.AliasIDStr;
 end;
 
-procedure TFormNodeInterrogator.OnNodeManagerIDChanged(Sender: TObject; LccSourceNode: TLccNode);
+procedure TForm1.OnNodeManagerIDChanged(Sender: TObject; LccSourceNode: TLccNode);
 begin
   LabelNodeID.Caption := LccSourceNode.NodeIDStr[True];
 end;
 
-procedure TFormNodeInterrogator.OnNodeManagerNodeLogin(Sender: TObject; LccSourceNode: TLccNode);
+procedure TForm1.OnNodeManagerNodeLogin(Sender: TObject; LccSourceNode: TLccNode);
 begin
   ButtonVerifyNodesGlobalClick(Self);
 end;
 
-procedure TFormNodeInterrogator.OnNodeManagerAliasRelease(Sender: TObject; ALccNode: TLccNode);
+procedure TForm1.OnNodeManagerAliasRelease(Sender: TObject; ALccNode: TLccNode);
 begin
   LabelNodeID.Caption := '[None]';
 end;
 
-procedure TFormNodeInterrogator.OnNodeManagerNodeDestroy(Sender: TObject; ALccNode: TLccNode);
+procedure TForm1.OnNodeManagerNodeDestroy(Sender: TObject; ALccNode: TLccNode);
 begin
 
   LabelAliasID.Caption := '[None]';
@@ -1471,34 +1026,34 @@ begin
 
 end;
 
-procedure TFormNodeInterrogator.OnComPortSendMessage(Sender: TObject; var GridConnectStyleMessage: string);
+procedure TForm1.OnComPortSendMessage(Sender: TObject; var GridConnectStyleMessage: string);
 begin
 
 end;
 
-procedure TFormNodeInterrogator.ShowNoTargetMessage;
+procedure TForm1.ShowNoTargetMessage;
 begin
   ShowMessage('There is no target Node selected... please select a node to test');
 end;
 
-procedure TFormNodeInterrogator.SendMessage(AMessage: TLccMessage);
+procedure TForm1.SendMessage(AMessage: TLccMessage);
 begin
   OnConnectionFactorySendMessage(Self, AMessage);
 end;
 
-procedure TFormNodeInterrogator.SendAck(Message: TLccMessage);
+procedure TForm1.SendAck(Message: TLccMessage);
 begin
   AckWorker.LoadDatagramAck(Message.DestID, Message.DestAlias, Message.SourceID, Message.SourceAlias, True, False, 0);
   SendMessage(AckWorker);
 end;
 
-procedure TFormNodeInterrogator.SendAddressSpaceQuery(AddressSpace: Byte);
+procedure TForm1.SendAddressSpaceQuery(AddressSpace: Byte);
 begin
   WorkerMessage.LoadConfigMemAddressSpaceInfo(Node.NodeID, Node.AliasID, TargetNode.NodeID, TargetNode.Alias, AddressSpace);
   SendMessage(WorkerMessage);
 end;
 
-procedure TFormNodeInterrogator.ClearConfigMemOperationTab;
+procedure TForm1.ClearConfigMemOperation;
 begin
   EditConfigMemHighestAddressSpace.Clear;
   EditConfigMemLowestAddressSpace.Clear;
@@ -1521,27 +1076,14 @@ begin
   CheckBoxConfigMemUnalignedWrite.Checked := False;
 end;
 
-procedure TFormNodeInterrogator.ClearSnipTab;
-begin
-  EditSnip_Manufacturer.Text := '';
-  EditSnip_ManufacturerHardwareVersion.Text := '';
-  EditSnip_ManufacturerModel.Text := '';
-  EditSnip_ManufacturerSoftwareVersion.Text := '';
-  EditSnip_ManufacturerVersion.Text := '';
-  EditSnip_UserDescription.Text := '';
-  EditSnip_UserName.Text := '';
-  EditSnip_UserVersion.Text := '';
-  MemoSnip_RawData.Clear;
-end;
-
-procedure TFormNodeInterrogator.DisconnectSerialLink;
+procedure TForm1.DisconnectSerialLink;
 begin
   NodeManager.Clear;
   Sleep(500);
   SerialLink.Disconnect;
 end;
 
-procedure TFormNodeInterrogator.PrintReadDataArray();
+procedure TForm1.PrintReadDataArray();
 begin
   case RadioGroupDatagramRead_ViewOptions.ItemIndex of
     0: EditDatagramRead.Text := ByteArrayAsHexStr(StatesDatagramRead.Data, CheckBoxDatagramRead_UseDots.Checked);
@@ -1550,7 +1092,7 @@ begin
   end;
 end;
 
-procedure TFormNodeInterrogator.PrintWriteDataArray;
+procedure TForm1.PrintWriteDataArray;
 begin
   case RadioGroupDatagramWrite_ViewOptions.ItemIndex of
     0: EditDatagramWrite.Text := ByteArrayAsHexStr(StatesDatagramWrite.Data, CheckBoxDatagramWrite_UseDots.Checked);
@@ -1559,112 +1101,8 @@ begin
   end;
 end;
 
-procedure TFormNodeInterrogator.PrintSnipDataArray;
-begin
-   case RadioGroupSnip_ViewOptions.ItemIndex of
-    0: MemoSnip_RawData.Text := ByteArrayAsHexStr(StatesSnip.Data, CheckBoxSnip_UseDots.Checked);
-    1: MemoSnip_RawData.Text := ByteArrayAsDecStr(StatesSnip.Data, CheckBoxSnip_UseDots.Checked);
-    2: MemoSnip_RawData.Text := ByteArrayAsCharStr(StatesSnip.Data, CheckBoxSnip_UseDots.Checked);
-  end;
-end;
 
-procedure TFormNodeInterrogator.LoadKnownMtiList;
-begin
-  KnownMtiList.Sorted := True;
-
-  // Basic
-  KnownMtiList.Add( IntToStr($0100));
-  KnownMtiList.Add( IntToStr($0488));
-  KnownMtiList.Add( IntToStr($0490));
-  KnownMtiList.Add( IntToStr($0170));
-  KnownMtiList.Add( IntToStr($0068));
-  KnownMtiList.Add( IntToStr($00A8));
-  // Protocol Support
-  KnownMtiList.Add( IntToStr($0828));
-  KnownMtiList.Add( IntToStr($0668));
-  // Event Exchange
-  KnownMtiList.Add( IntToStr($08F4));
-  KnownMtiList.Add( IntToStr($04A4));
-  KnownMtiList.Add( IntToStr($04C7));
-  KnownMtiList.Add( IntToStr($04C4));
-  KnownMtiList.Add( IntToStr($04C5));
-  KnownMtiList.Add( IntToStr($04C6));
-  KnownMtiList.Add( IntToStr($0914));
-  KnownMtiList.Add( IntToStr($0524));
-  KnownMtiList.Add( IntToStr($0547));
-  KnownMtiList.Add( IntToStr($0544));
-  KnownMtiList.Add( IntToStr($0545));
-  KnownMtiList.Add( IntToStr($0546));
-  KnownMtiList.Add( IntToStr($0968));
-  KnownMtiList.Add( IntToStr($0970));
-  KnownMtiList.Add( IntToStr($0594));
-  KnownMtiList.Add( IntToStr($05B4));
-  KnownMtiList.Add( IntToStr($0F14));
-  KnownMtiList.Add( IntToStr($0F15));
-  KnownMtiList.Add( IntToStr($0F16));
-  // Traction
-  KnownMtiList.Add( IntToStr($05E8));
-  KnownMtiList.Add( IntToStr($01E8));
-  KnownMtiList.Add( IntToStr($09E9));
-  KnownMtiList.Add( IntToStr($05E9));
-  // Other
-  KnownMtiList.Add( IntToStr($0820));
-  // Remote Button
-  KnownMtiList.Add( IntToStr($0948));
-  KnownMtiList.Add( IntToStr($0549));
-  //Traction SNIP
-  KnownMtiList.Add( IntToStr($0DA8));
-  KnownMtiList.Add( IntToStr($09C8));
-  // Node Ident SNIP
-  KnownMtiList.Add( IntToStr($0DE8));
-  KnownMtiList.Add( IntToStr($0A08));
-  // Datagram
-  KnownMtiList.Add( IntToStr($1C48));
-  KnownMtiList.Add( IntToStr($0A28));
-  KnownMtiList.Add( IntToStr($0A48));
-  // Stream
-  KnownMtiList.Add( IntToStr($0A28));
-  KnownMtiList.Add( IntToStr($0A48));
-  KnownMtiList.Add( IntToStr($0CC8));
-  KnownMtiList.Add( IntToStr($0868));
-  KnownMtiList.Add( IntToStr($0888));
-  KnownMtiList.Add( IntToStr($08A8));
-  // Extra
-  KnownMtiList.Add( IntToStr($2000));
-  KnownMtiList.Add( IntToStr($2020));
-
-end;
-
-function TFormNodeInterrogator.NextOIR_MtiMessage(MTI: Word): Word;
-var
-  S: String;
-  Index: Integer;
-begin
-  MTI := MTI - 1;
-  S := IntToStr(MTI);
-  while ((MTI and MTI_ADDRESSED_MASK <> MTI_ADDRESSED_MASK) or (KnownMtiList.Find(S, Index))) and (MTI > 0) do
-  begin
-    MTI := MTI - 1;
-    S := IntToStr(MTI);
-  end;
-
-  if MTI = 0 then
-    beep;
-
-  Result := MTI;
-end;
-
-procedure TFormNodeInterrogator.PrintCdiDataArray;
-begin
-   case RadioGroupCdi_ViewOptions.ItemIndex of
-    0: MemoCdi_RawData.Text := ByteArrayAsHexStr(StateCdi.Data, CheckBoxCdi_UseDots.Checked);
-    1: MemoCdi_RawData.Text := ByteArrayAsDecStr(StateCdi.Data, CheckBoxCdi_UseDots.Checked);
-    2: MemoCdi_RawData.Text := ByteArrayAsCharStr(StateCdi.Data, CheckBoxCdi_UseDots.Checked);
-  end;
-end;
-
-
-procedure TFormNodeInterrogator.HandleVerifiedNode(ReceivedMessage: TLccMessage);
+procedure TForm1.HandleVerifiedNode(ReceivedMessage: TLccMessage);
 var
   NodeID: TNodeID;
   Str: string;
@@ -1677,13 +1115,13 @@ begin
   NodeObj :=  TNodeInfoObject.Create(ReceivedMessage.ExtractDataBytesAsNodeID(0, NodeID), ReceivedMessage.SourceAlias);
   Str := '[0x' + IntToHex(ReceivedMessage.SourceAlias) + '] 0x' + NodeIDToString(NodeID, True);
 
-  ComboBoxSelector.Items.AddObject(Str, NodeObj);
+  ComboBoxNodeList.Items.AddObject(Str, NodeObj);
 
-  if ComboBoxSelector.ItemIndex < 0 then
-    ComboBoxSelector.ItemIndex := 0;
+  if ComboBoxNodeList.ItemIndex < 0 then
+    ComboBoxNodeList.ItemIndex := 0;
 end;
 
-procedure TFormNodeInterrogator.HandleGetConfigOptionsReply(ReceivedMessage: TLccMessage);
+procedure TForm1.HandleGetConfigOptionsReply(ReceivedMessage: TLccMessage);
 var
   Commands: Word;
   StringLen: LongInt;
@@ -1731,129 +1169,96 @@ begin
 
 end;
 
-procedure TFormNodeInterrogator.HandleReadReply(ReceivedMessage: TLccMessage);
+procedure TForm1.HandleReadReply(ReceivedMessage: TLccMessage);
 begin
-  RadioGroupDatagramRead_ReplyMessage.ItemIndex := 0;
-  ReceivedMessage.CopyDataToDataArray(StatesDatagramRead.FData, 0);
-  PrintReadDataArray;
-
-  HandleStateCdi_ReadCdi(ReceivedMessage);
-
-end;
-
-procedure TFormNodeInterrogator.HandleReadReplyCDI(ReceivedMessage: TLccMessage);
-begin
-  RadioGroupDatagramRead_ReplyMessage.ItemIndex := 1;
-  ReceivedMessage.CopyDataToDataArray(StatesDatagramRead.FData, 0);
-  PrintReadDataArray;
-
-  HandleStateCdi_ReadCdi(ReceivedMessage);
-
-end;
-
-procedure TFormNodeInterrogator.HandleReadReplyAll(ReceivedMessage: TLccMessage);
-begin
-  RadioGroupDatagramRead_ReplyMessage.ItemIndex := 2;
-  ReceivedMessage.CopyDataToDataArray(StatesDatagramRead.FData, 0);
+  // TODO: Set a user Flag for which version was used.....
+  ReceivedMessage.CopyDataToDataArray(StatesDatagramRead.FData);
   PrintReadDataArray;
 end;
 
-procedure TFormNodeInterrogator.HandleReadReplyConfig(ReceivedMessage: TLccMessage);
+procedure TForm1.HandleReadReplyCDI(ReceivedMessage: TLccMessage);
 begin
-  RadioGroupDatagramRead_ReplyMessage.ItemIndex := 3;
-  ReceivedMessage.CopyDataToDataArray(StatesDatagramRead.FData, 0);
+  ReceivedMessage.CopyDataToDataArray(StatesDatagramRead.FData);
   PrintReadDataArray;
 end;
 
-procedure TFormNodeInterrogator.HandleReadReplyFailure(ReceivedMessage: TLccMessage);
+procedure TForm1.HandleReadReplyAll(ReceivedMessage: TLccMessage);
 begin
-  RadioGroupDatagramRead_ReplyMessage.ItemIndex := 4;
-  ReceivedMessage.CopyDataToDataArray(StatesDatagramRead.FData, 0);
-  PrintReadDataArray;
-
-  HandleStateCdi_ReadCdiFailure(ReceivedMessage);
-end;
-
-procedure TFormNodeInterrogator.HandleReadReplyFailureCDI(ReceivedMessage: TLccMessage);
-begin
-  RadioGroupDatagramRead_ReplyMessage.ItemIndex := 5;
-  ReceivedMessage.CopyDataToDataArray(StatesDatagramRead.FData, 0);
-  PrintReadDataArray;
-
-  HandleStateCdi_ReadCdiFailure(ReceivedMessage);
-end;
-
-procedure TFormNodeInterrogator.HandleReadReplyFailureAll(ReceivedMessage: TLccMessage);
-begin
-  RadioGroupDatagramRead_ReplyMessage.ItemIndex := 6;
-  ReceivedMessage.CopyDataToDataArray(StatesDatagramRead.FData, 0);
+  ReceivedMessage.CopyDataToDataArray(StatesDatagramRead.FData);
   PrintReadDataArray;
 end;
 
-procedure TFormNodeInterrogator.HandleReadReplyFailureConfig(ReceivedMessage: TLccMessage);
+procedure TForm1.HandleReadReplyConfig(ReceivedMessage: TLccMessage);
 begin
-  RadioGroupDatagramRead_ReplyMessage.ItemIndex := 7;
-  ReceivedMessage.CopyDataToDataArray(StatesDatagramRead.FData, 0);
+  ReceivedMessage.CopyDataToDataArray(StatesDatagramRead.FData);
   PrintReadDataArray;
 end;
 
-procedure TFormNodeInterrogator.HandleWriteReply(ReceivedMessage: TLccMessage);
+procedure TForm1.HandleReadReplyFailure(ReceivedMessage: TLccMessage);
 begin
-  RadioGroupDatagramWrite_ReplyMessage.ItemIndex := 0;
-  ReceivedMessage.CopyDataToDataArray(StatesDatagramWrite.FData, 0);
-  PrintWriteDataArray;
+  ReceivedMessage.CopyDataToDataArray(StatesDatagramRead.FData);
+  PrintReadDataArray;
 end;
 
-procedure TFormNodeInterrogator.HandleWriteReplyCDI(ReceivedMessage: TLccMessage);
+procedure TForm1.HandleReadReplyFailureCDI(ReceivedMessage: TLccMessage);
 begin
-  RadioGroupDatagramWrite_ReplyMessage.ItemIndex := 1;
-  ReceivedMessage.CopyDataToDataArray(StatesDatagramWrite.FData, 0);
-  PrintWriteDataArray;
+  ReceivedMessage.CopyDataToDataArray(StatesDatagramRead.FData);
+  PrintReadDataArray;
 end;
 
-procedure TFormNodeInterrogator.HandleWriteReplyAll(ReceivedMessage: TLccMessage);
+procedure TForm1.HandleReadReplyFailureAll(ReceivedMessage: TLccMessage);
 begin
-  RadioGroupDatagramWrite_ReplyMessage.ItemIndex := 2;
-  ReceivedMessage.CopyDataToDataArray(StatesDatagramWrite.FData, 0);
-  PrintWriteDataArray;
+  ReceivedMessage.CopyDataToDataArray(StatesDatagramRead.FData);
+  PrintReadDataArray;
 end;
 
-procedure TFormNodeInterrogator.HandleWriteReplyConfig(ReceivedMessage: TLccMessage);
+procedure TForm1.HandleReadReplyFailureConfig(ReceivedMessage: TLccMessage);
 begin
-  RadioGroupDatagramWrite_ReplyMessage.ItemIndex := 3;
-  ReceivedMessage.CopyDataToDataArray(StatesDatagramWrite.FData, 0);
-  PrintWriteDataArray;
+  ReceivedMessage.CopyDataToDataArray(StatesDatagramRead.FData);
+  PrintReadDataArray;
 end;
 
-procedure TFormNodeInterrogator.HandleWriteReplyFailure(ReceivedMessage: TLccMessage);
+procedure TForm1.HandleWriteReply(ReceivedMessage: TLccMessage);
 begin
-  RadioGroupDatagramWrite_ReplyMessage.ItemIndex := 4;
-  ReceivedMessage.CopyDataToDataArray(StatesDatagramWrite.FData, 0);
-  PrintWriteDataArray;
+
 end;
 
-procedure TFormNodeInterrogator.HandleWriteReplyFailureCDI(ReceivedMessage: TLccMessage);
+procedure TForm1.HandleWriteReplyCDI(ReceivedMessage: TLccMessage);
 begin
-  RadioGroupDatagramWrite_ReplyMessage.ItemIndex := 5;
-  ReceivedMessage.CopyDataToDataArray(StatesDatagramWrite.FData, 0);
-  PrintWriteDataArray;
+
 end;
 
-procedure TFormNodeInterrogator.HandleWriteReplyFailureAll(ReceivedMessage: TLccMessage);
+procedure TForm1.HandleWriteReplyAll(ReceivedMessage: TLccMessage);
 begin
-  RadioGroupDatagramWrite_ReplyMessage.ItemIndex := 6;
-  ReceivedMessage.CopyDataToDataArray(StatesDatagramWrite.FData, 0);
-  PrintWriteDataArray;
+
 end;
 
-procedure TFormNodeInterrogator.HandleWriteReplyFailureConfig(ReceivedMessage: TLccMessage);
+procedure TForm1.HandleWriteReplyConfig(ReceivedMessage: TLccMessage);
 begin
-  RadioGroupDatagramWrite_ReplyMessage.ItemIndex := 7;
-  ReceivedMessage.CopyDataToDataArray(StatesDatagramWrite.FData, 0);
-  PrintWriteDataArray;
+
 end;
 
-procedure TFormNodeInterrogator.HandleDatagramAckOk(ReceivedMessage: TLccMessage);
+procedure TForm1.HandleWriteReplyFailure(ReceivedMessage: TLccMessage);
+begin
+
+end;
+
+procedure TForm1.HandleWriteReplyFailureCDI(ReceivedMessage: TLccMessage);
+begin
+
+end;
+
+procedure TForm1.HandleWriteReplyFailureAll(ReceivedMessage: TLccMessage);
+begin
+
+end;
+
+procedure TForm1.HandleWriteReplyFailureConfig(ReceivedMessage: TLccMessage);
+begin
+
+end;
+
+procedure TForm1.HandleDatagramAckOk(ReceivedMessage: TLccMessage);
 begin
   // Datagram Read Created the ACK
   if StatesDatagramRead.WaitingForAck then
@@ -1868,10 +1273,6 @@ begin
         EditDatagramRead_AckEstimatedWaitTime.Text := IntToStr(ReceivedMessage.DataArray[0] and ACK_REPLY_TIMEOUT_MASK);
         CheckBoxDatagramRead_AckReservedBitsClear.Checked :=  ReceivedMessage.DataArray[0] and ACK_REPLY_RESERVED_MASK = 0;
     end;
-
-    ImageDatagramRead_Ok.ImageIndex := 0;
-    ImageDatagram_ReadRejected.ImageIndex := -1;
-
     StatesDatagramRead.WaitingForAck := False;
   end;
 
@@ -1888,15 +1289,11 @@ begin
         EditDatagramWrite_AckEstimatedWaitTime.Text := IntToStr(ReceivedMessage.DataArray[0] and ACK_REPLY_TIMEOUT_MASK);
         CheckBoxDatagramWrite_AckReservedBitsClear.Checked :=  ReceivedMessage.DataArray[0] and ACK_REPLY_RESERVED_MASK = 0;
     end;
-
-    ImageDatagramWrite_Ok.ImageIndex := 0;
-    ImageDatagram_WriteRejected.ImageIndex := -1;
-
     StatesDatagramWrite.WaitingForAck := False;
   end;
 end;
 
-procedure TFormNodeInterrogator.HandleDatagramAckRejected(ReceivedMessage: TLccMessage);
+procedure TForm1.HandleDatagramAckRejected(ReceivedMessage: TLccMessage);
 var
   i: Integer;
   s: String;
@@ -1924,9 +1321,6 @@ begin
         end;
         EditDatagramRead_AckAdditionalInfo.Text := s;
       end;
-
-      ImageDatagramRead_Ok.ImageIndex := -1;
-      ImageDatagram_ReadRejected.ImageIndex := 1;
 
       EditDatagramRead_AckErrorCode.Text := '[0x' + IntToHex(ReceivedMessage.ExtractDataBytesAsWord(0), 4) + '] ' + ErrorCodeToStr( ReceivedMessage.ExtractDataBytesAsWord(0));
     end;
@@ -1958,9 +1352,6 @@ begin
         EditDatagramWrite_AckAdditionalInfo.Text := s;
       end;
 
-      ImageDatagramWrite_Ok.ImageIndex := -1;
-      ImageDatagram_WriteRejected.ImageIndex := 1;
-
       EditDatagramWrite_AckErrorCode.Text := '[0x' + IntToHex(ReceivedMessage.ExtractDataBytesAsWord(0), 4) + '] ' + ErrorCodeToStr( ReceivedMessage.ExtractDataBytesAsWord(0));
     end;
     StatesDatagramWrite.WaitingForAck := False;
@@ -1969,120 +1360,7 @@ begin
 
 end;
 
-procedure TFormNodeInterrogator.HandleSnipReply(ReceivedMessage: TLccMessage);
-var
-  MfgVersion, UserVersion: Byte;
-  Manufacturer, Model, HardwareVersion, SoftwareVersion, UserName, UserDescription: String;
-begin
-
-  ReceivedMessage.CopyDataToDataArray(StatesSnip.FData, 0);
-
-  PrintSnipDataArray;
-
-  MfgVersion := 0;
-  Manufacturer := '';
-  Model := '';
-  HardwareVersion := '';
-  SoftwareVersion := '';
-  UserVersion := 0;
-  UserName := '';
-  UserDescription := '';
-
-  ReceivedMessage.ExtractSimpleNodeIdentInfo(MfgVersion, Manufacturer, Model, HardwareVersion, SoftwareVersion, UserVersion, UserName, UserDescription);
-
-  EditSnip_UserVersion.Text := IntToStr(UserVersion);
-  EditSnip_UserName.Text := UserName;
-  EditSnip_UserDescription.Text := UserDescription;
-  EditSnip_ManufacturerVersion.Text := IntToStr(MfgVersion);
-  EditSnip_Manufacturer.Text := Manufacturer;
-  EditSnip_ManufacturerModel.Text := Model;
-  EditSnip_ManufacturerHardwareVersion.Text := HardwareVersion;
-  EditSnip_ManufacturerSoftwareVersion.Text := SoftwareVersion;
-end;
-
-procedure TFormNodeInterrogator.HandleProtocolSupportReply(ReceivedMessage: TLccMessage);
-var
-  Value: DWord;
-begin
-  Value := ReceivedMessage.ExtractDataBytesAsInt(0, 2);
-  CheckGroupProtocolSupport.Buttons[0].Checked := Value and PSI_SIMPLE = PSI_SIMPLE;
-  CheckGroupProtocolSupport.Buttons[1].Checked := Value and PSI_DATAGRAM = PSI_DATAGRAM;
-  CheckGroupProtocolSupport.Buttons[2].Checked := Value and PSI_STREAM = PSI_STREAM;
-  CheckGroupProtocolSupport.Buttons[3].Checked := Value and PSI_MEMORY_CONFIGURATION = PSI_MEMORY_CONFIGURATION;
-  CheckGroupProtocolSupport.Buttons[4].Checked := Value and PSI_RESERVATION = PSI_RESERVATION;
-  CheckGroupProtocolSupport.Buttons[5].Checked := Value and PSI_EVENT_EXCHANGE = PSI_EVENT_EXCHANGE;
-  CheckGroupProtocolSupport.Buttons[6].Checked := Value and PSI_IDENTIFICATION = PSI_IDENTIFICATION;
-  CheckGroupProtocolSupport.Buttons[7].Checked := Value and PSI_TEACHING_LEARNING = PSI_TEACHING_LEARNING;
-  CheckGroupProtocolSupport.Buttons[8].Checked := Value and PSI_REMOTE_BUTTON = PSI_REMOTE_BUTTON;
-  CheckGroupProtocolSupport.Buttons[9].Checked := Value and PSI_ABBREVIATED_DEFAULT_CDI = PSI_ABBREVIATED_DEFAULT_CDI;
-  CheckGroupProtocolSupport.Buttons[10].Checked := Value and PSI_DISPLAY = PSI_DISPLAY;
-  CheckGroupProtocolSupport.Buttons[11].Checked := Value and PSI_SIMPLE_NODE_INFORMATION = PSI_SIMPLE_NODE_INFORMATION;
-  CheckGroupProtocolSupport.Buttons[12].Checked := Value and PSI_CONFIGURATION_DESCRIPTION_INFO = PSI_CONFIGURATION_DESCRIPTION_INFO;
-  CheckGroupProtocolSupport.Buttons[13].Checked := Value and PSI_TRAIN_CONTROL = PSI_TRAIN_CONTROL;
-  CheckGroupProtocolSupport.Buttons[14].Checked := Value and PSI_FUNCTION_DESCRIPTION = PSI_FUNCTION_DESCRIPTION;
-  CheckGroupProtocolSupport.Buttons[15].Checked := Value and PSI_FUNCTION_CONFIGURATION = PSI_FUNCTION_CONFIGURATION;
-  CheckGroupProtocolSupport.Buttons[16].Checked := Value and PSI_FIRMWARE_UPGRADE = PSI_FIRMWARE_UPGRADE;
-  CheckGroupProtocolSupport.Buttons[17].Checked := Value and PSI_FIRMWARE_UPGRADE_ACTIVE = PSI_FIRMWARE_UPGRADE_ACTIVE;
-
-  EditProtocolSupport_RawData.Text := ReceivedMessage.ExtractDataBytesAsHex(0, 2);
-  CheckBoxProtcolSupport_ReservedBitClear.Checked := Value and $180 = 0;
-end;
-
-procedure TFormNodeInterrogator.HandleProtocolOIR(ReceivedMessage: TLccMessage);
-var
-  TreeNode: TTreeNode;
-  NextMTI: Word;
-  OirResult: TStateVariableResultOIR;
-begin
-  if StateOIR.Enumerating then
-    begin
-      OirResult := TStateVariableResultOIR.Create;
-      StateOIR.Results.Add(OirResult);
-
-      TreeNode := TreeViewOptionalInteractionRejected.Items.Add(NIL, 'MTI: ' + IntToHex(StateOIR.MtiQueried, 4));
-
-      if ReceivedMessage.DataCount < 4 then
-      begin
-         TreeViewOptionalInteractionRejected.Items.AddChild(TreeNode, 'Missing Error Code and/or Mti in reply');
-         TreeNode.ImageIndex := 1;
-         OirResult.ErrorCode := 0;
-         OirResult.Mti := 0;
-         SetLength(OirResult.FOptional, 0);
-      end else
-      begin
-        OirResult.ErrorCode := ReceivedMessage.ExtractDataBytesAsWord(0);
-        OirResult.Mti := ReceivedMessage.ExtractDataBytesAsWord(2);
-        ReceivedMessage.CopyDataToDataArray(OirResult.FOptional, 4);  // Checks length internally
-
-        TreeViewOptionalInteractionRejected.Items.AddChild(TreeNode, 'ErrorCode: 0x' + IntToHex(OirResult.ErrorCode) + ' ' + ErrorCodeToStr(OirResult.ErrorCode));
-
-        if Length(OirResult.Optional) = 0 then
-          TreeViewOptionalInteractionRejected.Items.AddChild(TreeNode, '[No Optional Info]')
-        else
-          TreeViewOptionalInteractionRejected.Items.AddChild(TreeNode, 'Optional Info: ' + ByteArrayAsHexStr(OirResult.Optional, True));
-
-        TreeNode.ImageIndex := 0;
-      end;
-
-      TreeNode.MakeVisible;
-
-      NextMTI := NextOIR_MtiMessage(StateOIR.MtiQueried);
-      if NextMTI = 0 then
-        StateOIR.Enumerating := False
-      else begin
-        StateOir.MtiQueried := NextMTI;
-        WorkerMessage.SourceID := Node.NodeID;
-        WorkerMessage.SourceAlias := Node.AliasID;
-        WorkerMessage.DestID := TargetNode.NodeID;
-        WorkerMessage.DestAlias := TargetNode.Alias;
-        WorkerMessage.MTI := NextMTI;
-        WorkerMessage.DataCount := 0;
-        SendMessage(WorkerMessage);
-    end;
-  end;
-end;
-
-procedure TFormNodeInterrogator.HandleGetAddressSpaceInfoPresentReply(ReceivedMessage: TLccMessage);
+procedure TForm1.HandleGetAddressSpaceInfoPresentReply(ReceivedMessage: TLccMessage);
 
   procedure HandleAddressReadWrite(ATreeNode: TTreeNode);
   begin
@@ -2130,9 +1408,9 @@ procedure TFormNodeInterrogator.HandleGetAddressSpaceInfoPresentReply(ReceivedMe
   procedure UpdateDatagramReadPage(AddressWritable: Boolean);
   begin
 
-    ComboBoxDatagramRead_ReadableAddressSpaces.Items.AddPair('Space: 0x' + IntToHex(StatesAddressSpace.AddressSpaceQueried, 2) + ' - ' + AddressSpaceToStr(StatesAddressSpace.AddressSpaceQueried), IntToStr(StatesAddressSpace.AddressSpaceQueried));
+    ComboBoxDatagramRead_ReadableAddressSpaces.Items.AddPair('Space: 0x' + IntToHex(StatesAddressSpace.Queried, 2) + ' - ' + AddressSpaceToStr(StatesAddressSpace.Queried), IntToStr(StatesAddressSpace.Queried));
     if AddressWritable then
-      ComboBoxDatagramRead_WriteableAddressSpaces.Items.AddPair('Space: 0x' + IntToHex(StatesAddressSpace.AddressSpaceQueried, 2) + ' - ' + AddressSpaceToStr(StatesAddressSpace.AddressSpaceQueried), IntToStr(StatesAddressSpace.AddressSpaceQueried));      ;
+      ComboBoxDatagramRead_WriteableAddressSpaces.Items.AddPair('Space: 0x' + IntToHex(StatesAddressSpace.Queried, 2) + ' - ' + AddressSpaceToStr(StatesAddressSpace.Queried), IntToStr(StatesAddressSpace.Queried));      ;
 
     if (ComboBoxDatagramRead_WriteableAddressSpaces.Items.Count > 0) and (ComboBoxDatagramRead_WriteableAddressSpaces.ItemIndex < 0) then
       ComboBoxDatagramRead_WriteableAddressSpaces.ItemIndex := 0;
@@ -2145,9 +1423,9 @@ procedure TFormNodeInterrogator.HandleGetAddressSpaceInfoPresentReply(ReceivedMe
   procedure UpdateDatagramWritePage(AddressWritable: Boolean);
   begin
 
-    ComboBoxDatagramWrite_ReadableAddressSpaces.Items.AddPair('Space: 0x' + IntToHex(StatesAddressSpace.AddressSpaceQueried, 2) + ' - ' + AddressSpaceToStr(StatesAddressSpace.AddressSpaceQueried), IntToStr(StatesAddressSpace.AddressSpaceQueried));
+    ComboBoxDatagramWrite_ReadableAddressSpaces.Items.AddPair('Space: 0x' + IntToHex(StatesAddressSpace.Queried, 2) + ' - ' + AddressSpaceToStr(StatesAddressSpace.Queried), IntToStr(StatesAddressSpace.Queried));
     if AddressWritable then
-      ComboBoxDatagramWrite_WriteableAddressSpaces.Items.AddPair('Space: 0x' + IntToHex(StatesAddressSpace.AddressSpaceQueried, 2) + ' - ' + AddressSpaceToStr(StatesAddressSpace.AddressSpaceQueried), IntToStr(StatesAddressSpace.AddressSpaceQueried));      ;
+      ComboBoxDatagramWrite_WriteableAddressSpaces.Items.AddPair('Space: 0x' + IntToHex(StatesAddressSpace.Queried, 2) + ' - ' + AddressSpaceToStr(StatesAddressSpace.Queried), IntToStr(StatesAddressSpace.Queried));      ;
 
     if (ComboBoxDatagramWrite_WriteableAddressSpaces.Items.Count > 0) and (ComboBoxDatagramWrite_WriteableAddressSpaces.ItemIndex < 0) then
       ComboBoxDatagramWrite_WriteableAddressSpaces.ItemIndex := 0;
@@ -2163,8 +1441,7 @@ var
   AddressWritable: Boolean;
 begin
 
-  TreeNode := TreeViewConfigMemAddressSpaceInfo.Items.AddChild(nil, 'Address Space 0x' + IntToHex(StatesAddressSpace.AddressSpaceQueried) + ' Present');
-  TreeNode.ImageIndex := 2;
+  TreeNode := TreeViewConfigMemAddressSpaceInfo.Items.AddChild(nil, 'Address Space 0x' + IntToHex(StatesAddressSpace.Queried) + ' Present');
 
   TreeViewConfigMemAddressSpaceInfo.Items.AddChild(TreeNode, 'Space Reported: 0x' + IntToHex(ReceivedMessage.DataArray[2], 2));
   TreeViewConfigMemAddressSpaceInfo.Items.AddChild(TreeNode, 'Highest Address: 0x' + IntToHex(ReceivedMessage.ExtractDataBytesAsDWord(3), 4));
@@ -2179,10 +1456,10 @@ begin
 
   if StatesAddressSpace.EnumeratingWellKnown then
   begin
-    StatesAddressSpace.AddressSpaceQueried := StatesAddressSpace.AddressSpaceQueried - 1;
-    if StatesAddressSpace.AddressSpaceQueried <= ADDRESS_SPACE_FUNCTION_MEMORY then
+    StatesAddressSpace.Queried := StatesAddressSpace.Queried - 1;
+    if StatesAddressSpace.Queried <= ADDRESS_SPACE_FUNCTION_MEMORY then
        StatesAddressSpace.EnumeratingWellKnown := False;
-    SendAddressSpaceQuery(StatesAddressSpace.AddressSpaceQueried);
+    SendAddressSpaceQuery(StatesAddressSpace.Queried);
   end;
 
   if StatesAddressSpace.Enumerating then
@@ -2190,108 +1467,35 @@ begin
     UpdateDatagramReadPage(AddressWritable);
     UpdateDatagramWritePage(AddressWritable);
 
-    StatesAddressSpace.AddressSpaceQueried := StatesAddressSpace.AddressSpaceQueried - 1;
-    if StatesAddressSpace.AddressSpaceQueried <= 0 then
+    StatesAddressSpace.Queried := StatesAddressSpace.Queried - 1;
+    if StatesAddressSpace.Queried <= 0 then
        StatesAddressSpace.Enumerating := False;
-    SendAddressSpaceQuery(StatesAddressSpace.AddressSpaceQueried);
-  end;
-
-
-  if StateCdi.WaitingForSpaceInfo then
-  begin
-    if LowAddressPresent then
-      StateCdi.StartingAddress := ReceivedMessage.ExtractDataBytesAsDWord(8)
-    else
-      StateCdi.StartingAddress := 0;
-
-    StateCdi.CurrentAddressPointer := StateCdi.StartingAddress;
-    StateCdi.WaitingForCdi := True;
-    StateCdi.WaitingForSpaceInfo := False;
-    SetLength(StateCdi.FData, 0);
-
-    WorkerMessage.LoadCDIRequest(Node.NodeID, Node.AliasID, TargetNode.NodeID, TargetNode.Alias, StateCdi.StartingAddress );
-    SendMessage(WorkerMessage);
-
+    SendAddressSpaceQuery(StatesAddressSpace.Queried);
   end;
 
 end;
 
-procedure TFormNodeInterrogator.HandleGetAddressSpaceInfoNotPresentReply(ReceivedMessage: TLccMessage);
-var
-  TreeNode: TTreeNode;
+procedure TForm1.HandleGetAddressSpaceInfoNotPresentReply(
+  ReceivedMessage: TLccMessage);
 begin
 
-  TreeNode := TreeViewConfigMemAddressSpaceInfo.Items.AddChild(nil, 'Address Space 0x' + IntToHex(StatesAddressSpace.AddressSpaceQueried) + ' Not Present');
-  TreeNode.ImageIndex := 3;
+  TreeViewConfigMemAddressSpaceInfo.Items.AddChild(nil, 'Address Space 0x' + IntToHex(StatesAddressSpace.Queried) + ' Not Present');
 
   if StatesAddressSpace.EnumeratingWellKnown then
   begin
-    StatesAddressSpace.AddressSpaceQueried := StatesAddressSpace.AddressSpaceQueried - 1;
-    if StatesAddressSpace.AddressSpaceQueried <= ADDRESS_SPACE_FUNCTION_MEMORY then
+    StatesAddressSpace.Queried := StatesAddressSpace.Queried - 1;
+    if StatesAddressSpace.Queried <= ADDRESS_SPACE_FUNCTION_MEMORY then
        StatesAddressSpace.EnumeratingWellKnown := False;
-    SendAddressSpaceQuery(StatesAddressSpace.AddressSpaceQueried);
+    SendAddressSpaceQuery(StatesAddressSpace.Queried);
   end;
 
   if StatesAddressSpace.Enumerating then
   begin
-    StatesAddressSpace.AddressSpaceQueried := StatesAddressSpace.AddressSpaceQueried - 1;
-    if StatesAddressSpace.AddressSpaceQueried <= 0 then
+    StatesAddressSpace.Queried := StatesAddressSpace.Queried - 1;
+    if StatesAddressSpace.Queried <= 0 then
        StatesAddressSpace.Enumerating := False;
-    SendAddressSpaceQuery(StatesAddressSpace.AddressSpaceQueried);
+    SendAddressSpaceQuery(StatesAddressSpace.Queried);
   end;
-
-end;
-
-procedure TFormNodeInterrogator.HandleStateCdi_ReadCdi(ReceivedMessage: TLccMessage);
-var
-  i: Integer;
-  Done: Boolean;
-  CopiedCount: Integer;
-begin
-
-  if StateCdi.WaitingForCdi then
-  begin
-
-    Done := False;
-
-    if ReceivedMessage.DataArray[1] = MCP_READ_REPLY then
-      CopiedCount := ReceivedMessage.AppendDataToDataArray(StateCdi.FData, 7)
-    else
-      CopiedCount := ReceivedMessage.AppendDataToDataArray(StateCdi.FData, 6);
-
-    // Find the terminating Null
-    for i := 0 to Length(StateCdi.Data) - 1 do
-      if StateCdi.Data[i] = $00 then
-        Done := True;
-
-    if Done then
-    begin
-      PrintCdiDataArray;
-      StateCdi.WaitingForCdi := False;
-    end else
-    begin
-      StateCdi.CurrentAddressPointer := StateCdi.CurrentAddressPointer + CopiedCount;
-      WorkerMessage.LoadCDIRequest(Node.NodeID, Node.AliasID, TargetNode.NodeID, TargetNode.Alias, StateCdi.CurrentAddressPointer);
-      SendMessage(WorkerMessage);
-    end;
-
-  end;
-
-end;
-
-procedure TFormNodeInterrogator.HandleStateCdi_ReadCdiFailure(ReceivedMessage: TLccMessage);
-var
-  ErrorCode: Word;
-begin
-
-
-  MemoCdi_RawData.Lines.Add('Unable to read the CDI');
-  if ReceivedMessage.DataArray[1] = MCP_READ_REPLY then
-     ErrorCode := ReceivedMessage.ExtractDataBytesAsWord(7)
-  else
-     ErrorCode := ReceivedMessage.ExtractDataBytesAsWord(6);
-
-    MemoCdi_RawData.Lines.Add('Error Code: ' + IntToHex(ErrorCode, 4) + ' ' + ErrorCodeToStr(ErrorCode));
 
 end;
 

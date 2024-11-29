@@ -46,7 +46,7 @@ function UnknownStrToInt(Str: string): Integer;
 function ErrorCodeToStr(Code: Word): string;
 function ByteArrayAsHexStr(ADataArray: TLccDynamicByteArray; Dots: Boolean): String;
 function ByteArrayAsDecStr(ADataArray: TLccDynamicByteArray; Dots: Boolean): String;
-function ByteArrayAsCharStr(ADataArray: TLccDynamicByteArray; Dots: Boolean; ConversionChar: byte = 248): String;
+function ByteArrayAsCharStr(ADataArray: TLccDynamicByteArray; Dots: Boolean): String;
 
 
 function ThreadListCount(AThreadedList: TThreadList): int64;
@@ -1156,7 +1156,7 @@ begin
 
 end;
 
-function ByteArrayAsCharStr(ADataArray: TLccDynamicByteArray; Dots: Boolean; ConversionChar: byte = 248): String;
+function ByteArrayAsCharStr(ADataArray: TLccDynamicByteArray; Dots: Boolean): String;
 var
   i: Integer;
 begin
@@ -1167,7 +1167,7 @@ begin
     if (ADataArray[i] > $20) and (ADataArray[i] < $7F) then
       Result := Result + Char(ADataArray[i])
     else
-      Result := Result + Char(ConversionChar);
+      Result := Result + '.';
 
     if Dots then
     begin
