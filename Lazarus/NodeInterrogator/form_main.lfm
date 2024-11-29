@@ -1,5 +1,5 @@
 object FormNodeInterrogator: TFormNodeInterrogator
-  Left = 615
+  Left = 614
   Height = 755
   Top = 184
   Width = 1447
@@ -115,9 +115,9 @@ object FormNodeInterrogator: TFormNodeInterrogator
       Height = 685
       Top = 1
       Width = 1143
-      ActivePage = TabSheetCdi
+      ActivePage = TabSheetMultiFrame
       Align = alClient
-      TabIndex = 6
+      TabIndex = 7
       TabOrder = 1
       object TabSheetMessageNetwork: TTabSheet
         Caption = 'Message Network'
@@ -1727,6 +1727,7 @@ object FormNodeInterrogator: TFormNodeInterrogator
         Caption = 'Multi-Frame'
         ClientHeight = 649
         ClientWidth = 1137
+        OnContextPopup = TabSheetMultiFrameContextPopup
         object PanelDatagramTransport: TPanel
           Left = 0
           Height = 649
@@ -1738,11 +1739,11 @@ object FormNodeInterrogator: TFormNodeInterrogator
           TabOrder = 0
           object GroupBoxMultiFrame_Datagrams: TGroupBox
             Left = 8
-            Height = 280
+            Height = 248
             Top = 16
             Width = 616
             Caption = 'Datagram'
-            ClientHeight = 253
+            ClientHeight = 221
             ClientWidth = 606
             TabOrder = 0
             object ButtonMultiFrame_DatagramFirst: TButton
@@ -1813,12 +1814,12 @@ object FormNodeInterrogator: TFormNodeInterrogator
             end
           end
           object GroupBoxMultiFrame_Snip: TGroupBox
-            Left = 16
-            Height = 304
-            Top = 328
+            Left = 8
+            Height = 368
+            Top = 280
             Width = 608
             Caption = 'Simple Node Information (SNIP)'
-            ClientHeight = 277
+            ClientHeight = 341
             ClientWidth = 598
             TabOrder = 1
             object ButtonMultiFrame_SnipFirst: TButton
@@ -1882,52 +1883,52 @@ object FormNodeInterrogator: TFormNodeInterrogator
             end
             object GroupBoxMultiFrame_Manufacturer: TGroupBox
               Left = 296
-              Height = 171
-              Top = 16
+              Height = 157
+              Top = 3
               Width = 288
               Caption = 'Manufacturer'
-              ClientHeight = 144
+              ClientHeight = 130
               ClientWidth = 278
               TabOrder = 6
               object LabelMultiFrame_ManufacturerHardwareVersion: TLabel
-                Left = 12
+                Left = 8
                 Height = 16
-                Top = 94
+                Top = 78
                 Width = 107
                 Caption = 'Hardware Version'
               end
               object LabelMultiFrame_ManufacturerSoftwareVersion: TLabel
                 Left = 8
                 Height = 16
-                Top = 126
+                Top = 102
                 Width = 103
                 Caption = 'Software Version'
               end
               object LabelMultiFrame_ManufacturerVersion: TLabel
                 Left = 8
                 Height = 16
-                Top = 8
+                Top = 6
                 Width = 92
                 Caption = 'Version (1 or 4)'
               end
               object LabelMultiFrame_Manufacturer: TLabel
-                Left = 12
+                Left = 8
                 Height = 16
-                Top = 36
+                Top = 30
                 Width = 82
                 Caption = 'Manufacturer'
               end
               object LabelMultiFrame_ManufacturerName: TLabel
-                Left = 12
+                Left = 8
                 Height = 16
-                Top = 64
+                Top = 54
                 Width = 35
                 Caption = 'Name'
               end
               object EditMultiFrame_MfgName: TEdit
                 Left = 128
                 Height = 22
-                Top = 58
+                Top = 48
                 Width = 80
                 TabOrder = 0
                 Text = 'My Node'
@@ -1935,7 +1936,7 @@ object FormNodeInterrogator: TFormNodeInterrogator
               object EditMultiFrame_MfgHardwareVersion: TEdit
                 Left = 128
                 Height = 22
-                Top = 88
+                Top = 72
                 Width = 80
                 TabOrder = 1
                 Text = '1.0.2'
@@ -1943,41 +1944,41 @@ object FormNodeInterrogator: TFormNodeInterrogator
               object EditMultiFrame_MfgSoftwareVersion: TEdit
                 Left = 128
                 Height = 22
-                Top = 120
+                Top = 96
                 Width = 80
                 TabOrder = 2
                 Text = '2.0'
               end
-              object EEditMultiFrame_Mfg: TEdit
+              object EditMultiFrame_MfgManufacturer: TEdit
                 Left = 128
                 Height = 22
-                Top = 30
+                Top = 24
                 Width = 144
                 TabOrder = 3
                 Text = 'Spacely Sprocket'
               end
-              object Edit2: TEdit
+              object EditMultiFrame_MfgVersion: TEdit
                 Left = 128
                 Height = 22
-                Top = 2
+                Top = 0
                 Width = 80
                 TabOrder = 4
-                Text = 'Edit2'
+                Text = '4'
               end
             end
             object GroupBoxMultiFrame_User: TGroupBox
               Left = 296
-              Height = 80
-              Top = 192
+              Height = 104
+              Top = 168
               Width = 288
               Caption = 'User'
-              ClientHeight = 53
+              ClientHeight = 77
               ClientWidth = 278
               TabOrder = 7
-              object Edit7: TEdit
+              object EditMultiFrame_UserName: TEdit
                 Left = 120
                 Height = 22
-                Top = 0
+                Top = 24
                 Width = 80
                 TabOrder = 0
                 Text = 'Jim'
@@ -1985,7 +1986,7 @@ object FormNodeInterrogator: TFormNodeInterrogator
               object EditMultiFrame_UserDescription: TEdit
                 Left = 120
                 Height = 22
-                Top = 26
+                Top = 48
                 Width = 152
                 TabOrder = 1
                 Text = 'Sold'
@@ -1993,17 +1994,55 @@ object FormNodeInterrogator: TFormNodeInterrogator
               object LabelMultiFrame_UserDescription: TLabel
                 Left = 8
                 Height = 16
-                Top = 32
+                Top = 54
                 Width = 69
                 Caption = 'Description'
               end
               object LabelMultiFrame_UserName: TLabel
                 Left = 8
                 Height = 16
-                Top = 6
+                Top = 30
                 Width = 35
                 Caption = 'Name'
               end
+              object EditMultiFrame_UserVersion: TEdit
+                Left = 120
+                Height = 22
+                Top = 0
+                Width = 80
+                TabOrder = 2
+                Text = '2'
+              end
+              object LabelMultiFrame_UserVersion: TLabel
+                Left = 8
+                Height = 16
+                Top = 6
+                Width = 92
+                Caption = 'Version (1 or 2)'
+              end
+            end
+            object EditMultiFrame_SnipData: TEdit
+              Left = 32
+              Height = 22
+              Top = 312
+              Width = 560
+              TabOrder = 8
+            end
+            object LabelMultiFrame_SnipData: TLabel
+              Left = 24
+              Height = 16
+              Top = 280
+              Width = 81
+              Caption = 'SNIP Payload'
+            end
+            object ButtonMultiFrame_SnipConvert: TButton
+              Left = 328
+              Height = 25
+              Top = 280
+              Width = 227
+              Caption = 'Convert To Payload'
+              TabOrder = 9
+              OnClick = ButtonMultiFrame_SnipConvertClick
             end
           end
         end

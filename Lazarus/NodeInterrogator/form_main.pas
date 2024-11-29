@@ -10,7 +10,7 @@ uses
   lcc_node_messages, lcc_node_commandstation, lcc_node_controller,
   lcc_node_train, lcc_comport, lcc_alias_server,
   lcc_node_messages_can_assembler_disassembler, lcc_alias_server_thread,
-  LazSynaSer, lcc_connection_common, unit_comport, LCLType, contnrs;
+  LazSynaSer, lcc_connection_common, unit_comport, LCLType, contnrs, Types;
 
 const
   MAX_LOGGING_LINES = 200;
@@ -146,9 +146,22 @@ type
     property Data: TLccDynamicByteArray read FData write FData;
   end;
 
+  { TStateVariableMultiFrame }
+
+  TStateVariableMultiFrame = class
+
+  private
+    FDatagram: TLccDynamicByteArray;
+    FSnip: TLccDynamicByteArray;
+  public
+    property Datagram: TLccDynamicByteArray read FDatagram write FDatagram;
+    property Snip: TLccDynamicByteArray read FSnip write FSnip;
+  end;
+
   { TFormNodeInterrogator }
 
   TFormNodeInterrogator = class(TForm)
+    ButtonMultiFrame_SnipConvert: TButton;
     ButtonSelector_FindNodes: TButton;
     ButtonCdi_Read: TButton;
     ButtonMultiFrame_DatagramFirst: TButton;
@@ -222,16 +235,18 @@ type
     ComboBoxDatagramWrite_WriteableAddressSpaces: TComboBox;
     ComboBoxSelector: TComboBox;
     ComboBoxComPorts: TComboBox;
-    Edit2: TEdit;
+    EditMultiFrame_MfgVersion: TEdit;
+    EditMultiFrame_SnipData: TEdit;
     EditMultiFrame_MfgName: TEdit;
     EditMultiFrame_MfgHardwareVersion: TEdit;
     EditMultiFrame_MfgSoftwareVersion: TEdit;
-    EEditMultiFrame_Mfg: TEdit;
-    Edit7: TEdit;
+    EditMultiFrame_MfgManufacturer: TEdit;
+    EditMultiFrame_UserName: TEdit;
     EditMultiFrame_UserDescription: TEdit;
     EditMultiFrameDatagram_Sequence: TEdit;
     EditMultiFrame_SnipSequence: TEdit;
     EditMultiFrame_DatagramData: TEdit;
+    EditMultiFrame_UserVersion: TEdit;
     EditProtocolSupport_RawData: TEdit;
     EditSnip_ManufacturerVersion: TEdit;
     EditSnip_Manufacturer: TEdit;
@@ -285,6 +300,8 @@ type
     ImageDatagram_ReadRejected: TImage;
     ImageDatagram_WriteRejected: TImage;
     ImageListMain: TImageList;
+    LabelMultiFrame_SnipData: TLabel;
+    LabelMultiFrame_UserVersion: TLabel;
     LabelSelector: TLabel;
     Label2: TLabel;
     Label3: TLabel;
@@ -380,6 +397,7 @@ type
     procedure ButtonMultiFrame_DatagramLastClick(Sender: TObject);
     procedure ButtonMultiFrame_DatagramMiddleClick(Sender: TObject);
     procedure ButtonMultiframe_DatagramSendSequenceClick(Sender: TObject);
+    procedure ButtonMultiFrame_SnipConvertClick(Sender: TObject);
     procedure ButtonMultiFrame_SnipFirstClick(Sender: TObject);
     procedure ButtonMultiFrame_SnipLastClick(Sender: TObject);
     procedure ButtonMultiFrame_SnipMiddleClick(Sender: TObject);
@@ -425,11 +443,13 @@ type
     procedure RadioGroupDatagramRead_ViewOptionsClick(Sender: TObject);
     procedure RadioGroupDatagramWrite_ViewOptionsClick(Sender: TObject);
     procedure RadioGroupSnip_ViewOptionsClick(Sender: TObject);
+    procedure TabSheetMultiFrameContextPopup(Sender: TObject; MousePos: TPoint; var Handled: Boolean);
 
   private
     FAckWorker: TLccMessage;
     FKnownMtiList: TStringList;
     FStateCdi: TStateVariableCdi;
+    FStateMultiFrame: TStateVariableMultiFrame;
     FStateOIR: TStateVariableOIR;
     FStatesAddressSpace: TStateVariablesAddressSpaceMessage;
     FStatesDatagramRead: TStateVariablesReadDatagram;
@@ -452,6 +472,7 @@ type
     property StatesSnip: TStateVariabledSnip read FStateSnip write FStateSnip;
     property StateOIR: TStateVariableOIR read FStateOIR write FStateOIR;
     property StateCdi: TStateVariableCdi read FStateCdi write FStateCdi;
+    property StateMultiFrame: TStateVariableMultiFrame read FStateMultiFrame write FStateMultiFrame;
 
     // Datagram Read/Write States
     property TargetReplyEdit: TEdit read FTargetReplyEdit write FTargetReplyEdit;
@@ -617,6 +638,7 @@ begin
   StatesSnip := TStateVariabledSnip.Create;
   StateOIR := TStateVariableOIR.Create;
   StateCdi := TStateVariableCdi.Create;
+  StateMultiFrame := TStateVariableMultiFrame.Create;
 
   ConnectionFactory.OnLccMessageSend := @OnConnectionFactorySendMessage;
 end;
@@ -633,6 +655,7 @@ begin
   KnownMtiList.Free;
   StateOIR.Free;
   StateCdi.Free;
+  StateMultiFrame.Free;
 end;
 
 procedure TFormNodeInterrogator.FormCloseQuery(Sender: TObject; var CanClose: boolean);
@@ -1082,6 +1105,85 @@ begin
       ShowNoTargetMessage;
 end;
 
+procedure TFormNodeInterrogator.ButtonMultiFrame_SnipConvertClick(Sender: TObject);
+var
+  Index: Integer;
+  i: Integer;
+begin
+  SetLength(StateMultiFrame.FSnip,
+            EditMultiFrame_MfgManufacturer.GetTextLen +
+            EditMultiFrame_MfgName.GetTextLen +
+            EditMultiFrame_MfgHardwareVersion.GetTextLen +
+            EditMultiFrame_MfgSoftwareVersion.GetTextLen +
+            EditMultiFrame_UserName.GetTextLen +
+            EditMultiFrame_UserDescription.GetTextLen +
+            8 // Nulls + 2 Version bytes
+            );
+
+   Index := 0;
+   StateMultiFrame.Snip[Index] := StrToInt(EditMultiFrame_MfgVersion.Text);
+   Inc(Index);
+
+   for i := 1 to EditMultiFrame_MfgManufacturer.GetTextLen do
+   begin
+     StateMultiFrame.Snip[Index] := Ord( EditMultiFrame_MfgManufacturer.Text[i]);
+     Inc(Index);
+   end;
+
+   StateMultiFrame.Snip[Index] := $00;
+   Inc(Index);
+
+   for i := 1 to EditMultiFrame_MfgName.GetTextLen do
+   begin
+     StateMultiFrame.Snip[Index] := Ord( EditMultiFrame_MfgName.Text[i]);
+     Inc(Index);
+   end;
+
+   StateMultiFrame.Snip[Index] := $00;
+   Inc(Index);
+
+   for i := 1 to EditMultiFrame_MfgHardwareVersion.GetTextLen do
+   begin
+     StateMultiFrame.Snip[Index] := Ord( EditMultiFrame_MfgHardwareVersion.Text[i]);
+     Inc(Index);
+   end;
+
+   StateMultiFrame.Snip[Index] := $00;
+   Inc(Index);
+
+   for i := 1 to EditMultiFrame_MfgSoftwareVersion.GetTextLen do
+   begin
+     StateMultiFrame.Snip[Index] := Ord( EditMultiFrame_MfgSoftwareVersion.Text[i]);
+     Inc(Index);
+   end;
+
+   StateMultiFrame.Snip[Index] := $00;
+   Inc(Index);
+
+   StateMultiFrame.Snip[Index] := StrToInt(EditMultiFrame_UserVersion.Text);
+   Inc(Index);
+
+   for i := 1 to EditMultiFrame_UserName.GetTextLen do
+   begin
+     StateMultiFrame.Snip[Index] := Ord( EditMultiFrame_UserName.Text[i]);
+     Inc(Index);
+   end;
+
+   StateMultiFrame.Snip[Index] := $00;
+   Inc(Index);
+
+   for i := 1 to EditMultiFrame_UserDescription.GetTextLen do
+   begin
+     StateMultiFrame.Snip[Index] := Ord( EditMultiFrame_UserDescription.Text[i]);
+     Inc(Index);
+   end;
+
+   StateMultiFrame.Snip[Index] := $00;
+
+   EditMultiFrame_SnipData.Text := ByteArrayAsHexStr(StateMultiFrame.Snip, True);
+
+end;
+
 procedure TFormNodeInterrogator.ButtonMultiFrame_SnipFirstClick(Sender: TObject);
 begin
   if Assigned(TargetNode) and Assigned(Node) then
@@ -1175,6 +1277,12 @@ end;
 procedure TFormNodeInterrogator.RadioGroupSnip_ViewOptionsClick(Sender: TObject);
 begin
   PrintSnipDataArray;
+end;
+
+procedure TFormNodeInterrogator.TabSheetMultiFrameContextPopup(Sender: TObject;
+  MousePos: TPoint; var Handled: Boolean);
+begin
+
 end;
 
 function TFormNodeInterrogator.GetNode: TLccNode;
