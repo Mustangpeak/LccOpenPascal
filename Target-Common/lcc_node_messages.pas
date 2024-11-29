@@ -132,7 +132,8 @@ public
   function ExtractDataBytesAsHex(StartByteIndex, EndByteIndex: Integer): string;
   function ExtractDataByteArrayAsHex(Dots: Boolean): string;
   function DestinationMatchs(TestAliasID: Word; TestNodeID: TNodeID): Boolean;
-  procedure CopyDataToDataArray(var ADataArray: TLccDynamicByteArray);
+  function CopyDataToDataArray(var ADataArray: TLccDynamicByteArray; StartIndex: Integer): Integer;
+  function AppendDataToDataArray(var ADataArray: TLccDynamicByteArray; StartIndex: Integer): Integer;
 
   function ValidateAndRequestIfNecessaryAliasMappings(var ProblemAliasArray: TLccAliasIDArray; RequestMappingCallback: TLccMessageRequestMappingCallback): Boolean;
   function ValidateByNodeID(RequestMappingCallback: TLccMessageRequestMappingCallback; ANodeID: TNodeID): TLccAliasMapping;
@@ -1457,14 +1458,58 @@ begin
     Result := (TestNodeID[0] = DestID[0]) and (TestNodeID[1] = DestID[1]);
 end;
 
-procedure TLccMessage.CopyDataToDataArray(var ADataArray: TLccDynamicByteArray);
+function TLccMessage.CopyDataToDataArray(var ADataArray: TLccDynamicByteArray;
+  StartIndex: Integer): Integer;
 var
-  i: Integer;
+  i, Count, iArray: Integer;
 begin
-  SetLength(ADataArray, DataCount);
+  Result := 0;
 
-  for i := 0 to DataCount - 1 do
-    ADataArray[i] := DataArray[i];
+  Count := DataCount - StartIndex;
+
+  if Count < 1 then
+  begin
+    SetLength(ADataArray, 0);
+    Exit;
+  end;
+
+
+  SetLength(ADataArray, Count);
+
+  iArray := 0;
+  for i := StartIndex to (StartIndex + Count) - 1 do
+  begin
+    ADataArray[iArray] := DataArray[i];
+    Inc(iArray);
+    Inc(Result);
+  end;
+
+end;
+
+function TLccMessage.AppendDataToDataArray(
+  var ADataArray: TLccDynamicByteArray; StartIndex: Integer): Integer;
+  var
+  i, Count, iArray: Integer;
+begin
+
+  Result := 0;
+
+  Count := DataCount - StartIndex;
+
+  if Count < 1 then
+    Exit;
+
+  iArray := Length(ADataArray);
+
+  SetLength(ADataArray, Length(ADataArray) + Count);
+
+  for i := StartIndex to (StartIndex + Count) - 1 do
+  begin
+    ADataArray[iArray] := DataArray[i];
+    Inc(iArray);
+    Inc(Result);
+  end;
+
 end;
 
 function TLccMessage.ValidateAndRequestIfNecessaryAliasMappings(
