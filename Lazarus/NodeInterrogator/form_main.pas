@@ -1120,6 +1120,7 @@ begin
             8 // Nulls + 2 Version bytes
             );
 
+
    Index := 0;
    StateMultiFrame.Snip[Index] := StrToInt(EditMultiFrame_MfgVersion.Text);
    Inc(Index);
