@@ -44,9 +44,13 @@ function IsNumericChar(C: char): boolean;
 function AddressSpaceToStr(AddressSpace: byte): string;
 function UnknownStrToInt(Str: string): Integer;
 function ErrorCodeToStr(Code: Word): string;
-function ByteArrayAsHexStr(ADataArray: TLccDynamicByteArray; Dots: Boolean): String;
-function ByteArrayAsDecStr(ADataArray: TLccDynamicByteArray; Dots: Boolean): String;
-function ByteArrayAsCharStr(ADataArray: TLccDynamicByteArray; Dots: Boolean; ConversionChar: byte = 248): String;
+function ByteArrayAsHexStr(ADataArray: TLccDynamicByteArray; InsertDots: Boolean): String;
+function ByteArrayAsDecStr(ADataArray: TLccDynamicByteArray; InsertDots: Boolean): String;
+function ByteArrayAsCharStr(ADataArray: TLccDynamicByteArray; InsertDots: Boolean; ConversionChar: byte = 248): String;
+
+procedure HexStrAsByteArray(AString: String; var ADataArray: TLccDynamicByteArray);
+procedure DecStrAsByteArray(AString: String; var ADataArray: TLccDynamicByteArray);
+procedure CharStrAsByteArray(AString: String; var ADataArray: TLccDynamicByteArray);
 
 
 function ThreadListCount(AThreadedList: TThreadList): int64;
@@ -1121,7 +1125,7 @@ begin
   end;
 end;
 
-function ByteArrayAsHexStr(ADataArray: TLccDynamicByteArray; Dots: Boolean): String;
+function ByteArrayAsHexStr(ADataArray: TLccDynamicByteArray; InsertDots: Boolean): String;
 var
   i: Integer;
 begin
@@ -1130,7 +1134,7 @@ begin
   for i := 0 to Length(ADataArray) - 1 do
   begin
     Result := Result + IntToHex(ADataArray[i]);
-    if Dots then
+    if InsertDots then
     begin
       if i < Length(ADataArray) - 1 then
         Result := Result + '.'
@@ -1138,7 +1142,7 @@ begin
   end;
 end;
 
-function ByteArrayAsDecStr(ADataArray: TLccDynamicByteArray; Dots: Boolean): String;
+function ByteArrayAsDecStr(ADataArray: TLccDynamicByteArray; InsertDots: Boolean): String;
 var
   i: Integer;
 begin
@@ -1147,7 +1151,7 @@ begin
   for i := 0 to Length(ADataArray) - 1 do
   begin
     Result := Result + IntToStr(ADataArray[i]);
-    if Dots then
+    if InsertDots then
     begin
       if i < Length(ADataArray) - 1 then
         Result := Result + '.'
@@ -1156,7 +1160,7 @@ begin
 
 end;
 
-function ByteArrayAsCharStr(ADataArray: TLccDynamicByteArray; Dots: Boolean; ConversionChar: byte = 248): String;
+function ByteArrayAsCharStr(ADataArray: TLccDynamicByteArray; InsertDots: Boolean; ConversionChar: byte = 248): String;
 var
   i: Integer;
 begin
@@ -1169,13 +1173,98 @@ begin
     else
       Result := Result + Char(ConversionChar);
 
-    if Dots then
+    if InsertDots then
     begin
       if i < Length(ADataArray) - 1 then
         Result := Result + '.'
     end;
   end;
 
+end;
+
+procedure HexStrAsByteArray(AString: String; var ADataArray: TLccDynamicByteArray);
+var
+  StrLen, i, iArray: Integer;
+  Num: String;
+  C: Char;
+begin
+  AString := Trim(AString);
+
+  StrLen := Length(AString);
+  iArray := 0;
+  Num := '';
+  SetLength(ADataArray, 0);
+
+  for i := 1 to StrLen do
+  begin
+    C := Char( AString[i]);
+    if (C <> '.') and (C <> ',') and (C <> ':') and (C <> ';') then
+    begin
+      Num := Num + C;
+      if Length(Num) = 2 then
+      begin
+        SetLength(ADataArray, Length(ADataArray) + 1);  // Slow but easy
+        ADataArray[iArray] := Hex2Dec(Num);
+        Inc(iArray);
+        Num := '';
+      end;
+
+    end;
+  end;
+end;
+
+procedure DecStrAsByteArray(AString: String; var ADataArray: TLccDynamicByteArray);
+var
+  StrLen, i, iArray: Integer;
+  Num: String;
+  C: Char;
+begin
+  AString := Trim(AString);
+
+  StrLen := Length(AString);
+  iArray := 0;
+  Num := '';
+  SetLength(ADataArray, 0);
+
+  for i := 1 to StrLen do
+  begin
+    C := Char( AString[i]);
+    if (C <> '.') and (C <> ',') and (C <> ':') and (C <> ';') then
+    begin
+      Num := Num + C;
+      if Length(Num) = 2 then
+      begin
+        SetLength(ADataArray, Length(ADataArray) + 1);  // Slow but easy
+        ADataArray[iArray] := StrToInt(Num);
+        Inc(iArray);
+        Num := '';
+      end;
+
+    end;
+  end;
+end;
+
+procedure CharStrAsByteArray(AString: String; var ADataArray: TLccDynamicByteArray);
+var
+  StrLen, i, iArray: Integer;
+  C: Char;
+begin
+  AString := Trim(AString);
+
+  StrLen := Length(AString);
+  iArray := 0;
+  SetLength(ADataArray, 0);
+
+  for i := 1 to StrLen do
+  begin
+    C := Char( AString[i]);
+    if (C <> '.') and (C <> ',') and (C <> ':') and (C <> ';') then
+    begin
+      SetLength(ADataArray, Length(ADataArray) + 1);  // Slow but easy
+      ADataArray[iArray] := Ord(C);
+      Inc(iArray);
+    end;
+  end;
 end;
 
 

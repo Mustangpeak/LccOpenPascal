@@ -1,5 +1,5 @@
 object FormNodeInterrogator: TFormNodeInterrogator
-  Left = 614
+  Left = 612
   Height = 755
   Top = 184
   Width = 1447
@@ -115,9 +115,9 @@ object FormNodeInterrogator: TFormNodeInterrogator
       Height = 685
       Top = 1
       Width = 1143
-      ActivePage = TabSheetMultiFrame
+      ActivePage = TabSheetMessageNetwork
       Align = alClient
-      TabIndex = 7
+      TabIndex = 0
       TabOrder = 1
       object TabSheetMessageNetwork: TTabSheet
         Caption = 'Message Network'
@@ -266,6 +266,7 @@ object FormNodeInterrogator: TFormNodeInterrogator
               Width = 75
               Caption = 'Clear'
               TabOrder = 2
+              OnClick = ButtonOptionalInteractionRejected_ClearClick
             end
             object ButtonOptionalInteractionRejected_Cancel: TButton
               Left = 8
@@ -1800,7 +1801,7 @@ object FormNodeInterrogator: TFormNodeInterrogator
             object EditMultiFrameDatagram_Sequence: TEdit
               Left = 384
               Height = 22
-              Top = 136
+              Top = 130
               Width = 80
               TabOrder = 5
               Text = '500'

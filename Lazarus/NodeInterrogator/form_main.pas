@@ -403,6 +403,7 @@ type
     procedure ButtonMultiFrame_SnipMiddleClick(Sender: TObject);
     procedure ButtonMultiframe_SnipSendSequenceClick(Sender: TObject);
     procedure ButtonOptionalInteractionRejected_CancelClick(Sender: TObject);
+    procedure ButtonOptionalInteractionRejected_ClearClick(Sender: TObject);
     procedure ButtonOptionalInteractionRejected_CollapseAllClick(Sender: TObject);
     procedure ButtonOptionalInteractionRejected_ExpandAllClick(Sender: TObject);
     procedure ButtonOptionalInteractionRejected_RunClick(Sender: TObject);
@@ -606,6 +607,9 @@ end;
 { TFormNodeInterrogator }
 
 procedure TFormNodeInterrogator.FormCreate(Sender: TObject);
+
+var
+  x: TLccDynamicByteArray;
 begin
 
   EmulateCANBus := True;
@@ -1037,6 +1041,7 @@ procedure TFormNodeInterrogator.ButtonOptionalInteractionRejected_RunClick(Sende
 begin
   if Assigned(TargetNode) and Assigned(Node) then
     begin
+      TreeViewOptionalInteractionRejected.Items.Clear;
       StateOIR.Enumerating := True;
       StateOir.MtiQueried := NextOIR_MtiMessage($1000);
       StateOIR.Results.Clear;
@@ -1057,11 +1062,18 @@ begin
   StateOIR.Enumerating := False;
 end;
 
+procedure TFormNodeInterrogator.ButtonOptionalInteractionRejected_ClearClick(Sender: TObject);
+begin
+  TreeViewOptionalInteractionRejected.Items.Clear;
+end;
+
 procedure TFormNodeInterrogator.ButtonMultiFrame_DatagramFirstClick(Sender: TObject);
 begin
   if Assigned(TargetNode) and Assigned(Node) then
     begin
-       ShowMessage('Working on it');
+      HexStrAsByteArray( EditMultiFrame_DatagramData.Text,  StateMultiFrame.FDatagram);
+
+      ShowMessage('Working on it');
     end else
       ShowNoTargetMessage;
 end;
@@ -1082,6 +1094,9 @@ procedure TFormNodeInterrogator.ButtonMultiFrame_DatagramLastClick(Sender: TObje
 begin
   if Assigned(TargetNode) and Assigned(Node) then
     begin
+      HexStrAsByteArray( EditMultiFrame_DatagramData.Text,  StateMultiFrame.FDatagram);
+
+
        ShowMessage('Working on it');
     end else
       ShowNoTargetMessage;
@@ -1091,6 +1106,9 @@ procedure TFormNodeInterrogator.ButtonMultiFrame_DatagramMiddleClick(Sender: TOb
 begin
   if Assigned(TargetNode) and Assigned(Node) then
   begin
+    HexStrAsByteArray( EditMultiFrame_DatagramData.Text,  StateMultiFrame.FDatagram);
+
+
      ShowMessage('Working on it');
   end else
     ShowNoTargetMessage;
@@ -1100,6 +1118,9 @@ procedure TFormNodeInterrogator.ButtonMultiframe_DatagramSendSequenceClick(Sende
 begin
   if Assigned(TargetNode) and Assigned(Node) then
     begin
+      HexStrAsByteArray( EditMultiFrame_DatagramData.Text,  StateMultiFrame.FDatagram);
+
+
        ShowMessage('Working on it');
     end else
       ShowNoTargetMessage;
