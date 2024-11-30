@@ -2136,7 +2136,7 @@ begin
   ALength := 0;
   if FindCdiElement(ACdi, '<manufacturer>', AnOffset, ALength) then
   begin
-    if ALength < LEN_MFG_NAME then
+    if ALength < LEN_SNIP_MFG_NAME then
     begin
       StreamManufacturerData.Position := ADDRESS_MFG_NAME;
       for i := AnOffset to AnOffset + ALength - 1 do
@@ -2145,7 +2145,7 @@ begin
   end else Exit;
   if FindCdiElement(ACdi, '<model>', AnOffset, ALength) then
   begin
-    if ALength < LEN_MODEL_NAME then
+    if ALength < LEN_SNIP_MODEL then
     begin
       StreamManufacturerData.Position := ADDRESS_MODEL_NAME;
       for i := AnOffset to AnOffset + ALength - 1 do
@@ -2154,7 +2154,7 @@ begin
   end else Exit;
   if FindCdiElement(ACdi, '<hardwareVersion>', AnOffset, ALength) then
   begin
-    if ALength < LEN_HARDWARE_VERSION then
+    if ALength < LEN_SNIP_HARDWARE_VERSION then
     begin
       StreamManufacturerData.Position := ADDRESS_HARDWARE_VERSION;
       for i := AnOffset to AnOffset + ALength - 1 do
@@ -2163,7 +2163,7 @@ begin
   end else Exit;
   if FindCdiElement(ACdi, '<softwareVersion>', AnOffset, ALength) then
   begin
-    if ALength < LEN_SOFTWARE_VERSION then
+    if ALength < LEN_SNIP_SOFTWARE_VERSION then
     begin
       StreamManufacturerData.Position := ADDRESS_SOFTWARE_VERSION;
       for i := AnOffset to AnOffset + ALength - 1 do

@@ -1,7 +1,7 @@
 object FormNodeInterrogator: TFormNodeInterrogator
-  Left = 612
+  Left = 336
   Height = 755
-  Top = 184
+  Top = 264
   Width = 1447
   Caption = 'Node Interrogator v0.1'
   ClientHeight = 755
@@ -115,9 +115,9 @@ object FormNodeInterrogator: TFormNodeInterrogator
       Height = 685
       Top = 1
       Width = 1143
-      ActivePage = TabSheetMessageNetwork
+      ActivePage = TabSheetDatagramWrite
       Align = alClient
-      TabIndex = 0
+      TabIndex = 5
       TabOrder = 1
       object TabSheetMessageNetwork: TTabSheet
         Caption = 'Message Network'
@@ -1570,6 +1570,7 @@ object FormNodeInterrogator: TFormNodeInterrogator
               ItemHeight = 19
               Style = csDropDownList
               TabOrder = 0
+              OnChange = ComboBoxDatagramWrite_WriteableAddressSpacesChange
             end
             object ButtonDatagramWrite_FindWritableAddressSpaces: TButton
               Left = 24
@@ -1588,6 +1589,7 @@ object FormNodeInterrogator: TFormNodeInterrogator
               ItemHeight = 19
               Style = csDropDownList
               TabOrder = 2
+              OnChange = ComboBoxDatagramWrite_ReadableAddressSpacesChange
             end
             object LabelDatagramWrite_WritableAddressSpaces: TLabel
               Left = 24

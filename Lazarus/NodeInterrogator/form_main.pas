@@ -434,6 +434,10 @@ type
     procedure ComboBoxConfigMemAddressSpaceChange(Sender: TObject);
     procedure ComboBoxDatagramRead_AcdiOffsetsChange(Sender: TObject);
     procedure ComboBoxDatagramWrite_AcdiOffsetsChange(Sender: TObject);
+    procedure ComboBoxDatagramWrite_ReadableAddressSpacesChange(Sender: TObject
+      );
+    procedure ComboBoxDatagramWrite_WriteableAddressSpacesChange(Sender: TObject
+      );
     procedure FormCloseQuery(Sender: TObject; var CanClose: boolean);
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
@@ -716,26 +720,76 @@ end;
 
 procedure TFormNodeInterrogator.ComboBoxDatagramRead_AcdiOffsetsChange(Sender: TObject);
 begin
-  begin
+
   case ComboBoxDatagramRead_AcdiOffsets.ItemIndex of
-    0: EditDatagramRead_StartAddress.Text := '0x00';
-    1: EditDatagramRead_StartAddress.Text := '0x01';
-    2: EditDatagramRead_StartAddress.Text := '0x2A';
-    3: EditDatagramRead_StartAddress.Text := '0x53';
-    4: EditDatagramRead_StartAddress.Text := '0x68';
-    5: EditDatagramRead_StartAddress.Text := '0x00';
-    6: EditDatagramRead_StartAddress.Text := '0x01';
-    7: EditDatagramRead_StartAddress.Text := '0x40';
+    0: begin
+      EditDatagramRead_StartAddress.Text := '0x00';
+      EditDatagramRead_Space.Text := '0xFC';
+      EditDatagramRead_Count.Text := IntToStr(LEN_SNIP_MFG_VERSION);
+    end;
+    1: begin
+      EditDatagramRead_StartAddress.Text := '0x01';
+      EditDatagramRead_Space.Text := '0xFC';
+      EditDatagramRead_Count.Text := IntToStr(LEN_SNIP_MFG_NAME);
+    end;
+    2: begin
+      EditDatagramRead_StartAddress.Text := '0x2A';
+      EditDatagramRead_Space.Text := '0xFC';
+      EditDatagramRead_Count.Text := IntToStr(LEN_SNIP_MODEL);
+    end;
+    3: begin
+      EditDatagramRead_StartAddress.Text := '0x53';
+      EditDatagramRead_Space.Text := '0xFC';
+      EditDatagramRead_Count.Text := IntToStr(LEN_SNIP_HARDWARE_VERSION);
+    end;
+    4: begin
+      EditDatagramRead_StartAddress.Text := '0x68';
+      EditDatagramRead_Space.Text := '0xFC';
+      EditDatagramRead_Count.Text := IntToStr(LEN_SNIP_SOFTWARE_VERSION);
+    end;
+    5: begin
+      EditDatagramRead_StartAddress.Text := '0x00';
+      EditDatagramRead_Space.Text := '0xFB';
+      EditDatagramRead_Count.Text := IntToStr(LEN_SNIP_USER_VERSION);
+    end;
+    6: begin
+      EditDatagramRead_StartAddress.Text := '0x01';
+      EditDatagramRead_Space.Text := '0xFB';
+      EditDatagramRead_Count.Text := IntToStr(LEN_SNIP_USER_NAME);
+    end;
+    7: begin
+      EditDatagramRead_StartAddress.Text := '0x40';
+      EditDatagramRead_Space.Text := '0xFB';
+      EditDatagramRead_Count.Text := IntToStr(LEN_SNIP_USER_DESCRIPTION);
+    end;
   end;
-end;
+
 end;
 
 procedure TFormNodeInterrogator.ComboBoxDatagramWrite_AcdiOffsetsChange(Sender: TObject);
 begin
   case ComboBoxDatagramWrite_AcdiOffsets.ItemIndex of
-    0: EditDatagramWrite_StartAddress.Text := '0x01';
-    1: EditDatagramWrite_StartAddress.Text := '0x40';
+    0: begin
+      EditDatagramWrite_StartAddress.Text := '0x01';
+      EditDatagramWrite_Space.Text := '0xFB';
+      EditDatagramWrite_Count.Text := IntToStr(LEN_SNIP_MFG_VERSION);
+    end;
+    1: begin
+      EditDatagramWrite_StartAddress.Text := '0x40';
+      EditDatagramWrite_Space.Text := '0xFB';
+      EditDatagramWrite_Count.Text := IntToStr(LEN_SNIP_MFG_NAME);
+    end;
   end;
+end;
+
+procedure TFormNodeInterrogator.ComboBoxDatagramWrite_ReadableAddressSpacesChange(Sender: TObject);
+begin
+
+end;
+
+procedure TFormNodeInterrogator.ComboBoxDatagramWrite_WriteableAddressSpacesChange(Sender: TObject);
+begin
+
 end;
 
 procedure TFormNodeInterrogator.ButtonRefreshComPortClick(Sender: TObject);
@@ -2416,12 +2470,16 @@ begin
 
 
   MemoCdi_RawData.Lines.Add('Unable to read the CDI');
-  if ReceivedMessage.DataArray[1] = MCP_READ_REPLY then
+  if ReceivedMessage.DataArray[1] = MCP_READ_REPLY_FAILURE then
      ErrorCode := ReceivedMessage.ExtractDataBytesAsWord(7)
   else
      ErrorCode := ReceivedMessage.ExtractDataBytesAsWord(6);
 
+     PrintCdiDataArray;
+
     MemoCdi_RawData.Lines.Add('Error Code: ' + IntToHex(ErrorCode, 4) + ' ' + ErrorCodeToStr(ErrorCode));
+
+    StateCdi.WaitingForCdi := False;
 
 end;
 
