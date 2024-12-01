@@ -1,7 +1,7 @@
 object FormNodeInterrogator: TFormNodeInterrogator
-  Left = 608
+  Left = 599
   Height = 795
-  Top = 261
+  Top = 253
   Width = 1447
   Caption = 'Node Interrogator v0.1'
   ClientHeight = 795
@@ -490,8 +490,7 @@ object FormNodeInterrogator: TFormNodeInterrogator
             Checked = True
             State = cbChecked
             TabOrder = 11
-            OnChange = CheckBoxDatagramWrite_UseDotsChange
-            OnClick = CheckBoxSnip_UseDotsClick
+            OnChange = CheckBoxSnip_UseDotsChange
           end
         end
       end
@@ -1207,12 +1206,12 @@ object FormNodeInterrogator: TFormNodeInterrogator
           end
           object GroupBoxDataRead_ReplyMessage: TGroupBox
             Left = 1
-            Height = 164
+            Height = 196
             Top = 493
             Width = 1135
             Align = alTop
             Caption = 'Read Reply Message'
-            ClientHeight = 137
+            ClientHeight = 169
             ClientWidth = 1125
             TabOrder = 3
             object RadioGroupDatagramRead_ReplyMessage: TRadioGroup
@@ -1245,17 +1244,17 @@ object FormNodeInterrogator: TFormNodeInterrogator
               TabOrder = 0
             end
             object ImageDatagram_ReadFailureErrorCode: TImage
-              Left = 104
+              Left = 32
               Height = 16
-              Top = 110
+              Top = 108
               Width = 16
               ImageIndex = 1
               Images = ImageListMain
             end
             object EditDatagramRead_FailureErrorCode: TEdit
-              Left = 272
+              Left = 200
               Height = 22
-              Top = 106
+              Top = 104
               Width = 80
               ReadOnly = True
               TabOrder = 1
@@ -1268,10 +1267,10 @@ object FormNodeInterrogator: TFormNodeInterrogator
               ReadOnly = True
               TabOrder = 2
             end
-            object LabelDatagramWrite_FailureErrorCode1: TLabel
-              Left = 136
+            object LabelDatagramRead_FailureErrorCode: TLabel
+              Left = 64
               Height = 16
-              Top = 110
+              Top = 108
               Width = 129
               Caption = 'Error Code (required)'
             end
@@ -1281,6 +1280,13 @@ object FormNodeInterrogator: TFormNodeInterrogator
               Top = 110
               Width = 189
               Caption = 'Error Message String (optional)'
+            end
+            object EditDatagramRead_FailureErrorCodeDescription: TEdit
+              Left = 200
+              Height = 22
+              Top = 136
+              Width = 862
+              TabOrder = 3
             end
           end
         end
@@ -1655,12 +1661,12 @@ object FormNodeInterrogator: TFormNodeInterrogator
           end
           object GroupBoxDataWrite_ReplyMessage: TGroupBox
             Left = 1
-            Height = 164
+            Height = 188
             Top = 493
             Width = 1135
             Align = alTop
             Caption = 'Write Reply Message'
-            ClientHeight = 137
+            ClientHeight = 161
             ClientWidth = 1125
             TabOrder = 3
             object RadioGroupDatagramWrite_ReplyMessage: TRadioGroup
@@ -1693,17 +1699,17 @@ object FormNodeInterrogator: TFormNodeInterrogator
               TabOrder = 0
             end
             object ImageDatagram_WriteFailureErrorCode: TImage
-              Left = 104
+              Left = 32
               Height = 16
-              Top = 110
+              Top = 108
               Width = 16
               ImageIndex = 1
               Images = ImageListMain
             end
             object EditDatagramWrite_FailureErrorCode: TEdit
-              Left = 272
+              Left = 200
               Height = 22
-              Top = 106
+              Top = 104
               Width = 80
               ReadOnly = True
               TabOrder = 1
@@ -1717,9 +1723,9 @@ object FormNodeInterrogator: TFormNodeInterrogator
               TabOrder = 2
             end
             object LabelDatagramWrite_FailureErrorCode: TLabel
-              Left = 136
+              Left = 64
               Height = 16
-              Top = 112
+              Top = 108
               Width = 129
               Caption = 'Error Code (required)'
             end
@@ -1729,6 +1735,13 @@ object FormNodeInterrogator: TFormNodeInterrogator
               Top = 110
               Width = 189
               Caption = 'Error Message String (optional)'
+            end
+            object EditDatagramWrite_FailureErrorCodeDescription: TEdit
+              Left = 200
+              Height = 22
+              Top = 136
+              Width = 862
+              TabOrder = 3
             end
           end
         end
@@ -1797,8 +1810,75 @@ object FormNodeInterrogator: TFormNodeInterrogator
             Checked = True
             State = cbChecked
             TabOrder = 3
-            OnChange = CheckBoxDatagramWrite_UseDotsChange
-            OnClick = CheckBoxCdi_UseDotsClick
+            OnChange = CheckBoxCdi_UseDotsChange
+          end
+        end
+      end
+      object TabSheetFdi: TTabSheet
+        Caption = 'FDI'
+        ClientHeight = 689
+        ClientWidth = 1137
+        object PanelFdi: TPanel
+          Left = 0
+          Height = 689
+          Top = 0
+          Width = 1137
+          Align = alClient
+          ClientHeight = 689
+          ClientWidth = 1137
+          TabOrder = 0
+          object MemoFdi_RawData: TMemo
+            Left = 32
+            Height = 456
+            Top = 80
+            Width = 1064
+            TabOrder = 0
+          end
+          object ButtonFdi_Read: TButton
+            Left = 32
+            Height = 25
+            Top = 33
+            Width = 281
+            Caption = 'Read FDI'
+            TabOrder = 1
+            OnClick = ButtonFdi_ReadClick
+          end
+          object RadioGroupFdi_ViewOptions: TRadioGroup
+            Left = 40
+            Height = 42
+            Top = 552
+            Width = 401
+            AutoFill = True
+            Caption = 'View Options'
+            ChildSizing.LeftRightSpacing = 6
+            ChildSizing.EnlargeHorizontal = crsHomogenousChildResize
+            ChildSizing.EnlargeVertical = crsHomogenousChildResize
+            ChildSizing.ShrinkHorizontal = crsScaleChilds
+            ChildSizing.ShrinkVertical = crsScaleChilds
+            ChildSizing.Layout = cclLeftToRightThenTopToBottom
+            ChildSizing.ControlsPerLine = 3
+            ClientHeight = 15
+            ClientWidth = 391
+            Columns = 3
+            ItemIndex = 0
+            Items.Strings = (
+              'View in Hex'
+              'View in Decimal'
+              'View as String'
+            )
+            TabOrder = 2
+            OnClick = RadioGroupFdi_ViewOptionsClick
+          end
+          object CheckBoxFdi_UseDots: TCheckBox
+            Left = 472
+            Height = 18
+            Top = 576
+            Width = 124
+            Caption = 'Use Dot Notation'
+            Checked = True
+            State = cbChecked
+            TabOrder = 3
+            OnChange = CheckBoxFdi_UseDotsChange
           end
         end
       end

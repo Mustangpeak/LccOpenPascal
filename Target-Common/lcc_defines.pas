@@ -600,6 +600,7 @@ const
   ERROR_CODE_PERMANENT_SUBCOMMAND_UNKNOWN    = $1041; // complete code: Not implemented, subcommand is unknown.
   ERROR_CODE_PERMANENT_TYPE_UNKNOWN          = $1042; // complete code: Not implemented, Datagram-type, Stream-type, or command is unknown.
   ERROR_CODE_PERMANENT_MTI_TRANSPORT_UNKNOWN = $1043; // complete code: Not implemented, unknown MTI, or Transport protocol (datagrams/streams) is not supported.
+  ERROR_CODE_PERMANENT_COUNT_OUT_OF_RANGE    = $1044;
 
   // Temporary error modifier
   ERROR_CODE_TEMPORARY                       = $2000; // major code: Temporary error, not further not specified

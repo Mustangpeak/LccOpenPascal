@@ -249,7 +249,7 @@ class  function TractionSearchEncodeNMRA(ForceLongAddress: Boolean; SpeedStep: T
   procedure LoadSimpleNodeIdentInfoRequest(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word);
   procedure ExtractSimpleNodeIdentInfo(var Version: byte; var Manufacturer: string; var Model: string; var HardwareVersion: string; var SoftwareVersion: string; var UserVersion: byte; var UserName: string; var UserDescription: string);
   // FDI
-  procedure LoadFDIRequest(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word);
+  procedure LoadFDIRequest(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; Address: DWORD);
   procedure LoadFunctionConfigurationRead(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; FunctionAddress: DWord; Count: Integer);
   procedure LoadFunctionConfigurationWrite(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; FunctionAddress: DWord; Count: Integer; Functions: TFunctionStatesArray);
   // CDI
@@ -2824,7 +2824,9 @@ begin
   end;
 end;
 
-procedure TLccMessage.LoadFDIRequest(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word);
+procedure TLccMessage.LoadFDIRequest(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; Address: DWORD);
+var
+  TempHi, TempLo: Word;
 begin
   // Really should be a Get Address Space Info message here to make sure the start address is 0.....
   ZeroFields;
@@ -2835,10 +2837,12 @@ begin
   DataCount := 8;
   FDataArray[0] := DATAGRAM_PROTOCOL_CONFIGURATION;
   FDataArray[1] := MCP_READ;
-  FDataArray[2] := 0;
-  FDataArray[3] := 0;
-  FDataArray[4] := 0;
-  FDataArray[5] := 0;
+  TempHi := Hi(Address);
+  TempLo := Lo(Address);
+  FDataArray[2] := Hi(TempHi);
+  FDataArray[3] := Lo(TempHi);
+  FDataArray[4] := Hi(TempLo);  ;
+  FDataArray[5] := Lo(TempLo);
   FDataArray[6] := MSI_TRACTION_FDI;
   FDataArray[7] := 64;                     // Read until the end.....
   MTI := MTI_DATAGRAM;

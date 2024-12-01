@@ -18,8 +18,8 @@
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
         <IsVisibleTab Value="True"/>
-        <TopLine Value="2523"/>
-        <CursorPos X="55" Y="2553"/>
+        <TopLine Value="2463"/>
+        <CursorPos Y="2474"/>
         <UsageCount Value="202"/>
         <Loaded Value="True"/>
         <LoadedDesigner Value="True"/>
@@ -27,7 +27,7 @@
       <Unit>
         <Filename Value="unit_comport.pas"/>
         <IsPartOfProject Value="True"/>
-        <EditorIndex Value="1"/>
+        <EditorIndex Value="2"/>
         <TopLine Value="176"/>
         <CursorPos Y="201"/>
         <UsageCount Value="204"/>
@@ -42,7 +42,7 @@
         <EditorIndex Value="-1"/>
         <TopLine Value="470"/>
         <CursorPos X="108" Y="501"/>
-        <UsageCount Value="107"/>
+        <UsageCount Value="104"/>
       </Unit>
       <Unit>
         <Filename Value="../../Target-PC/HardwareConnection/TLazSerial/lazsynaser.pas"/>
@@ -50,13 +50,13 @@
         <EditorIndex Value="-1"/>
         <TopLine Value="2401"/>
         <CursorPos Y="2428"/>
-        <UsageCount Value="100"/>
+        <UsageCount Value="97"/>
       </Unit>
       <Unit>
         <Filename Value="../../Target-Common/lcc_defines.pas"/>
         <EditorIndex Value="6"/>
-        <TopLine Value="399"/>
-        <CursorPos X="25" Y="417"/>
+        <TopLine Value="582"/>
+        <CursorPos X="57" Y="603"/>
         <UsageCount Value="101"/>
         <Loaded Value="True"/>
       </Unit>
@@ -65,42 +65,35 @@
         <EditorIndex Value="-1"/>
         <TopLine Value="681"/>
         <CursorPos X="28" Y="699"/>
-        <UsageCount Value="98"/>
+        <UsageCount Value="95"/>
       </Unit>
       <Unit>
         <Filename Value="../../Target-PC/lcc_threaded_stringlist.pas"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="100"/>
         <CursorPos Y="117"/>
-        <UsageCount Value="26"/>
-      </Unit>
-      <Unit>
-        <Filename Value="/usr/local/share/fpcsrc/rtl/objpas/classes/classesh.inc"/>
-        <EditorIndex Value="-1"/>
-        <TopLine Value="684"/>
-        <CursorPos X="14" Y="701"/>
-        <UsageCount Value="1"/>
+        <UsageCount Value="22"/>
       </Unit>
       <Unit>
         <Filename Value="../../Target-PC/lcc_gridconnect.pas"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="57"/>
         <CursorPos X="10" Y="57"/>
-        <UsageCount Value="72"/>
+        <UsageCount Value="69"/>
       </Unit>
       <Unit>
         <Filename Value="../../Target-Common/lcc_node_manager.pas"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="449"/>
         <CursorPos Y="465"/>
-        <UsageCount Value="104"/>
+        <UsageCount Value="101"/>
       </Unit>
       <Unit>
         <Filename Value="../../../../Downloads/lazarus/lcl/include/customcombobox.inc"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="1012"/>
         <CursorPos Y="1035"/>
-        <UsageCount Value="75"/>
+        <UsageCount Value="71"/>
       </Unit>
       <Unit>
         <Filename Value="../../Target-Common/lcc_node.pas"/>
@@ -116,13 +109,13 @@
         <EditorIndex Value="-1"/>
         <TopLine Value="649"/>
         <CursorPos Y="663"/>
-        <UsageCount Value="27"/>
+        <UsageCount Value="23"/>
       </Unit>
       <Unit>
         <Filename Value="../../Target-Common/lcc_node_messages.pas"/>
         <EditorIndex Value="3"/>
-        <TopLine Value="111"/>
-        <CursorPos X="32" Y="129"/>
+        <TopLine Value="229"/>
+        <CursorPos X="13" Y="252"/>
         <UsageCount Value="104"/>
         <Loaded Value="True"/>
       </Unit>
@@ -131,69 +124,30 @@
         <EditorIndex Value="4"/>
         <TopLine Value="660"/>
         <CursorPos Y="682"/>
-        <UsageCount Value="99"/>
+        <UsageCount Value="109"/>
         <Loaded Value="True"/>
       </Unit>
       <Unit>
         <Filename Value="../../Target-Common/lcc_utilities.pas"/>
-        <EditorIndex Value="-1"/>
-        <TopLine Value="1182"/>
-        <CursorPos X="28" Y="1185"/>
-        <UsageCount Value="91"/>
+        <EditorIndex Value="1"/>
+        <TopLine Value="1073"/>
+        <CursorPos X="128" Y="1093"/>
+        <UsageCount Value="101"/>
+        <Loaded Value="True"/>
       </Unit>
       <Unit>
         <Filename Value="../../Target-PC/lcc_node_messages_can_assembler_disassembler.pas"/>
-        <EditorIndex Value="2"/>
+        <EditorIndex Value="-1"/>
         <TopLine Value="340"/>
         <CursorPos Y="378"/>
-        <UsageCount Value="20"/>
-        <Loaded Value="True"/>
+        <UsageCount Value="31"/>
       </Unit>
       <Unit>
         <Filename Value="../../Target-PC/HardwareConnection/lcc_ethernet_server.pas"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="610"/>
         <CursorPos X="171" Y="630"/>
-        <UsageCount Value="67"/>
-      </Unit>
-      <Unit>
-        <Filename Value="../../../../Downloads/lazarus/lcl/dialogs.pp"/>
-        <UnitName Value="Dialogs"/>
-        <EditorIndex Value="-1"/>
-        <TopLine Value="1108"/>
-        <CursorPos X="22" Y="1128"/>
-        <UsageCount Value="1"/>
-      </Unit>
-      <Unit>
-        <Filename Value="../../../../Downloads/lazarus/lcl/lcltype.pp"/>
-        <UnitName Value="LCLType"/>
-        <EditorIndex Value="-1"/>
-        <TopLine Value="749"/>
-        <CursorPos X="3" Y="769"/>
-        <UsageCount Value="1"/>
-      </Unit>
-      <Unit>
-        <Filename Value="../../../../Downloads/lazarus/lcl/include/messagedialogs.inc"/>
-        <EditorIndex Value="-1"/>
-        <TopLine Value="138"/>
-        <CursorPos X="55" Y="139"/>
-        <UsageCount Value="1"/>
-      </Unit>
-      <Unit>
-        <Filename Value="../../../../Downloads/lazarus/lcl/forms.pp"/>
-        <UnitName Value="Forms"/>
-        <EditorIndex Value="-1"/>
-        <TopLine Value="461"/>
-        <CursorPos X="36" Y="481"/>
-        <UsageCount Value="1"/>
-      </Unit>
-      <Unit>
-        <Filename Value="/usr/local/share/fpcsrc/packages/rtl-objpas/src/inc/system.uitypes.pp"/>
-        <UnitName Value="System.UITypes"/>
-        <EditorIndex Value="-1"/>
-        <TopLine Value="188"/>
-        <CursorPos X="7" Y="209"/>
-        <UsageCount Value="1"/>
+        <UsageCount Value="64"/>
       </Unit>
       <Unit>
         <Filename Value="/Applications/lazarus/lcl/interfaces/cocoa/cocoaint.pas"/>
@@ -201,129 +155,129 @@
         <EditorIndex Value="-1"/>
         <TopLine Value="704"/>
         <CursorPos Y="724"/>
-        <UsageCount Value="10"/>
+        <UsageCount Value="6"/>
       </Unit>
     </Units>
     <JumpHistory HistoryIndex="29">
       <Position>
         <Filename Value="form_main.pas"/>
-        <Caret Line="495" Column="15" TopLine="477"/>
+        <Caret Line="478" Column="59" TopLine="460"/>
       </Position>
       <Position>
         <Filename Value="form_main.pas"/>
-        <Caret Line="1406" TopLine="1398"/>
+        <Caret Line="764" Column="94" TopLine="742"/>
       </Position>
       <Position>
         <Filename Value="form_main.pas"/>
-        <Caret Line="1409" TopLine="1398"/>
+        <Caret Line="2023" Column="27" TopLine="1997"/>
       </Position>
       <Position>
         <Filename Value="form_main.pas"/>
-        <Caret Line="1411" TopLine="1398"/>
+        <Caret Line="593" Column="15" TopLine="593"/>
       </Position>
       <Position>
         <Filename Value="form_main.pas"/>
-        <Caret Line="1413" TopLine="1398"/>
+        <Caret Line="2657" Column="12" TopLine="2634"/>
       </Position>
       <Position>
         <Filename Value="form_main.pas"/>
-        <Caret Line="1414" TopLine="1398"/>
+        <Caret Line="591" Column="15" TopLine="575"/>
       </Position>
       <Position>
         <Filename Value="form_main.pas"/>
-        <Caret Line="1415" TopLine="1398"/>
+        <Caret Line="2592" Column="61" TopLine="2567"/>
       </Position>
       <Position>
         <Filename Value="form_main.pas"/>
-        <Caret Line="1417" TopLine="1398"/>
-      </Position>
-      <Position>
-        <Filename Value="unit_comport.pas"/>
-        <Caret Line="289" TopLine="269"/>
-      </Position>
-      <Position>
-        <Filename Value="unit_comport.pas"/>
-        <Caret Line="246" TopLine="226"/>
-      </Position>
-      <Position>
-        <Filename Value="unit_comport.pas"/>
-        <Caret Line="247" TopLine="226"/>
-      </Position>
-      <Position>
-        <Filename Value="unit_comport.pas"/>
-        <Caret Line="202" TopLine="176"/>
-      </Position>
-      <Position>
-        <Filename Value="unit_comport.pas"/>
-        <Caret Line="201" TopLine="176"/>
-      </Position>
-      <Position>
-        <Filename Value="../../Target-PC/lcc_node_messages_can_assembler_disassembler.pas"/>
-        <Caret Line="206" TopLine="186"/>
-      </Position>
-      <Position>
-        <Filename Value="../../Target-PC/lcc_node_messages_can_assembler_disassembler.pas"/>
-        <Caret Line="207" TopLine="186"/>
-      </Position>
-      <Position>
-        <Filename Value="../../Target-PC/lcc_node_messages_can_assembler_disassembler.pas"/>
-        <Caret Line="209" TopLine="186"/>
-      </Position>
-      <Position>
-        <Filename Value="../../Target-PC/lcc_node_messages_can_assembler_disassembler.pas"/>
-        <Caret Line="312" TopLine="293"/>
-      </Position>
-      <Position>
-        <Filename Value="../../Target-PC/lcc_node_messages_can_assembler_disassembler.pas"/>
-        <Caret Line="352" TopLine="333"/>
-      </Position>
-      <Position>
-        <Filename Value="../../Target-PC/lcc_node_messages_can_assembler_disassembler.pas"/>
-        <Caret Line="354" TopLine="333"/>
-      </Position>
-      <Position>
-        <Filename Value="../../Target-PC/lcc_node_messages_can_assembler_disassembler.pas"/>
-        <Caret Line="355" TopLine="333"/>
-      </Position>
-      <Position>
-        <Filename Value="../../Target-PC/lcc_node_messages_can_assembler_disassembler.pas"/>
-        <Caret Line="367" TopLine="335"/>
-      </Position>
-      <Position>
-        <Filename Value="../../Target-PC/lcc_node_messages_can_assembler_disassembler.pas"/>
-        <Caret Line="378" TopLine="340"/>
-      </Position>
-      <Position>
-        <Filename Value="unit_comport.pas"/>
-        <Caret Line="201" TopLine="176"/>
+        <Caret Line="587" Column="30" TopLine="573"/>
       </Position>
       <Position>
         <Filename Value="form_main.pas"/>
-        <Caret Line="2191" Column="201" TopLine="2177"/>
+        <Caret Line="2493" Column="14" TopLine="2461"/>
       </Position>
       <Position>
         <Filename Value="form_main.pas"/>
-        <Caret Line="933" Column="17" TopLine="913"/>
+        <Caret Line="2475" TopLine="2460"/>
       </Position>
       <Position>
         <Filename Value="form_main.pas"/>
-        <Caret Line="1010" Column="29" TopLine="985"/>
+        <Caret Line="2477" TopLine="2460"/>
       </Position>
       <Position>
         <Filename Value="form_main.pas"/>
-        <Caret Line="931" Column="38" TopLine="911"/>
+        <Caret Line="2480" TopLine="2460"/>
       </Position>
       <Position>
         <Filename Value="form_main.pas"/>
-        <Caret Line="2536" Column="51" TopLine="2501"/>
+        <Caret Line="2482" TopLine="2460"/>
       </Position>
       <Position>
         <Filename Value="form_main.pas"/>
-        <Caret Line="452" Column="20" TopLine="430"/>
+        <Caret Line="2490" TopLine="2460"/>
       </Position>
       <Position>
         <Filename Value="form_main.pas"/>
-        <Caret Line="1342" Column="10" TopLine="1331"/>
+        <Caret Line="2502" TopLine="2483"/>
+      </Position>
+      <Position>
+        <Filename Value="form_main.pas"/>
+        <Caret Line="2521" TopLine="2489"/>
+      </Position>
+      <Position>
+        <Filename Value="form_main.pas"/>
+        <Caret Line="2541" TopLine="2464"/>
+      </Position>
+      <Position>
+        <Filename Value="form_main.pas"/>
+        <Caret Line="2474" TopLine="2464"/>
+      </Position>
+      <Position>
+        <Filename Value="form_main.pas"/>
+        <Caret Line="2475" TopLine="2464"/>
+      </Position>
+      <Position>
+        <Filename Value="form_main.pas"/>
+        <Caret Line="2477" TopLine="2464"/>
+      </Position>
+      <Position>
+        <Filename Value="form_main.pas"/>
+        <Caret Line="2480" TopLine="2464"/>
+      </Position>
+      <Position>
+        <Filename Value="form_main.pas"/>
+        <Caret Line="2419" TopLine="2400"/>
+      </Position>
+      <Position>
+        <Filename Value="form_main.pas"/>
+        <Caret Line="2421" TopLine="2400"/>
+      </Position>
+      <Position>
+        <Filename Value="form_main.pas"/>
+        <Caret Line="2423" TopLine="2400"/>
+      </Position>
+      <Position>
+        <Filename Value="form_main.pas"/>
+        <Caret Line="2391" TopLine="2371"/>
+      </Position>
+      <Position>
+        <Filename Value="form_main.pas"/>
+        <Caret Line="2395" Column="87" TopLine="2371"/>
+      </Position>
+      <Position>
+        <Filename Value="form_main.pas"/>
+        <Caret Line="2396" TopLine="2371"/>
+      </Position>
+      <Position>
+        <Filename Value="form_main.pas"/>
+        <Caret Line="2425" TopLine="2406"/>
+      </Position>
+      <Position>
+        <Filename Value="form_main.pas"/>
+        <Caret Line="2426" TopLine="2406"/>
+      </Position>
+      <Position>
+        <Filename Value="form_main.pas"/>
+        <Caret Line="2430" TopLine="2406"/>
       </Position>
     </JumpHistory>
     <RunParams>

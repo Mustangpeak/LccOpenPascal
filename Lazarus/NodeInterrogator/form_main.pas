@@ -133,6 +133,7 @@ type
   private
     FCurrentAddressPointer: DWord;
     FData: TLccDynamicByteArray;
+    FEndingAddress: DWord;
     FStartingAddress: DWord;
     FWaitingForCdi: Boolean;
     FWaitingForSpaceInfo: Boolean;
@@ -141,9 +142,33 @@ type
     property WaitingForSpaceInfo: Boolean read FWaitingForSpaceInfo write FWaitingForSpaceInfo;
     property WaitingForCdi: Boolean read FWaitingForCdi write FWaitingForCdi;
     property StartingAddress: DWord read FStartingAddress write FStartingAddress;
+    property EndingAddress: DWord read FEndingAddress write FEndingAddress;
     property CurrentAddressPointer: DWord read FCurrentAddressPointer write FCurrentAddressPointer;
 
     property Data: TLccDynamicByteArray read FData write FData;
+  end;
+
+  { TStateVariableFdi }
+
+  TStateVariableFdi = class
+
+  private
+    FCurrentAddressPointer: DWord;
+    FData: TLccDynamicByteArray;
+    FEndingAddress: DWord;
+    FStartingAddress: DWord;
+    FWaitingForFdi: Boolean;
+    FWaitingForSpaceInfo: Boolean;
+    public
+
+    property WaitingForSpaceInfo: Boolean read FWaitingForSpaceInfo write FWaitingForSpaceInfo;
+    property WaitingForFdi: Boolean read FWaitingForFdi write FWaitingForFdi;
+    property StartingAddress: DWord read FStartingAddress write FStartingAddress;
+    property EndingAddress: DWord read FEndingAddress write FEndingAddress;
+    property CurrentAddressPointer: DWord read FCurrentAddressPointer write FCurrentAddressPointer;
+
+    property Data: TLccDynamicByteArray read FData write FData;
+
   end;
 
   { TStateVariableMultiFrame }
@@ -161,6 +186,7 @@ type
   { TFormNodeInterrogator }
 
   TFormNodeInterrogator = class(TForm)
+    ButtonFdi_Read: TButton;
     ButtonMultiFrame_SnipConvert: TButton;
     ButtonSelector_FindNodes: TButton;
     ButtonCdi_Read: TButton;
@@ -198,6 +224,7 @@ type
     ButtonComPortConnect: TButton;
     ButtonVerifyNodesAddressed: TButton;
     CheckBox1: TCheckBox;
+    CheckBoxFdi_UseDots: TCheckBox;
     CheckBoxProtcolSupport_ReservedBitClear: TCheckBox;
     CheckBoxDatagramWrite_AckOk: TCheckBox;
     CheckBoxDatagramWrite_AckRejected: TCheckBox;
@@ -235,6 +262,8 @@ type
     ComboBoxDatagramWrite_WriteableAddressSpaces: TComboBox;
     ComboBoxSelector: TComboBox;
     ComboBoxComPorts: TComboBox;
+    EditDatagramRead_FailureErrorCodeDescription: TEdit;
+    EditDatagramWrite_FailureErrorCodeDescription: TEdit;
     EditDatagramWrite_FailureErrorCode: TEdit;
     EditDatagramRead_FailureErrorCode: TEdit;
     EditDatagramWrite_FailureOptionalMessage: TEdit;
@@ -307,7 +336,7 @@ type
     ImageDatagram_WriteFailureErrorCode: TImage;
     ImageListMain: TImageList;
     LabelDatagramWrite_FailureErrorCode: TLabel;
-    LabelDatagramWrite_FailureErrorCode1: TLabel;
+    LabelDatagramRead_FailureErrorCode: TLabel;
     LabelDatagramWrite_FailureOptionalMessage: TLabel;
     LabelDatagramRead_FailureOptionalMessage: TLabel;
     LabelMultiFrame_SnipData: TLabel;
@@ -366,10 +395,12 @@ type
     LabelDatagramWrite_WritableAddressSpaces: TLabel;
     LabelNodeID: TLabel;
     MemoCdi_RawData: TMemo;
+    MemoFdi_RawData: TMemo;
     MemoSnip_RawData: TMemo;
     MemoComPort: TMemo;
     PageControlMain: TPageControl;
     PanelCdi: TPanel;
+    PanelFdi: TPanel;
     PanelDatagramTransport: TPanel;
     PanelTabSnip: TPanel;
     PanelNodeList: TPanel;
@@ -382,6 +413,7 @@ type
     PanelTabSheetConfigMem: TPanel;
     PanelMemo: TPanel;
     PanelTabMessageNetwork: TPanel;
+    RadioGroupFdi_ViewOptions: TRadioGroup;
     RadioGroupDatagramRead_ReplyMessage: TRadioGroup;
     RadioGroupDatagramWrite_ReplyMessage: TRadioGroup;
     RadioGroupDatagramWrite_MessageOptions: TRadioGroup;
@@ -392,6 +424,7 @@ type
     RadioGroupCdi_ViewOptions: TRadioGroup;
     Splitter1: TSplitter;
     StatusBarMain: TStatusBar;
+    TabSheetFdi: TTabSheet;
     TabSheetCdi: TTabSheet;
     TabSheetMultiFrame: TTabSheet;
     TabSheetSnip: TTabSheet;
@@ -403,6 +436,7 @@ type
     TreeViewOptionalInteractionRejected: TTreeView;
     TreeViewConfigMemAddressSpaceInfo: TTreeView;
     procedure ButtonCdi_ReadClick(Sender: TObject);
+    procedure ButtonFdi_ReadClick(Sender: TObject);
     procedure ButtonMultiFrame_DatagramFirstClick(Sender: TObject);
     procedure ButtonMultiFrame_DatagramLastClick(Sender: TObject);
     procedure ButtonMultiFrame_DatagramMiddleClick(Sender: TObject);
@@ -437,10 +471,11 @@ type
     procedure ButtonCreateNodeClick(Sender: TObject);
     procedure ButtonRefreshComPortClick(Sender: TObject);
     procedure ButtonComPortConnectClick(Sender: TObject);
-    procedure CheckBoxCdi_UseDotsClick(Sender: TObject);
+    procedure CheckBoxCdi_UseDotsChange(Sender: TObject);
     procedure CheckBoxDatagramRead_UseDotsChange(Sender: TObject);
     procedure CheckBoxDatagramWrite_UseDotsChange(Sender: TObject);
-    procedure CheckBoxSnip_UseDotsClick(Sender: TObject);
+    procedure CheckBoxFdi_UseDotsChange(Sender: TObject);
+    procedure CheckBoxSnip_UseDotsChange(Sender: TObject);
     procedure ComboBoxConfigMemAddressSpaceChange(Sender: TObject);
     procedure ComboBoxDatagramRead_AcdiOffsetsChange(Sender: TObject);
     procedure ComboBoxDatagramWrite_AcdiOffsetsChange(Sender: TObject);
@@ -455,6 +490,7 @@ type
     procedure RadioGroupCdi_ViewOptionsClick(Sender: TObject);
     procedure RadioGroupDatagramRead_ViewOptionsClick(Sender: TObject);
     procedure RadioGroupDatagramWrite_ViewOptionsClick(Sender: TObject);
+    procedure RadioGroupFdi_ViewOptionsClick(Sender: TObject);
     procedure RadioGroupSnip_ViewOptionsClick(Sender: TObject);
     procedure TabSheetMultiFrameContextPopup(Sender: TObject; MousePos: TPoint; var Handled: Boolean);
 
@@ -462,6 +498,7 @@ type
     FAckWorker: TLccMessage;
     FKnownMtiList: TStringList;
     FStateCdi: TStateVariableCdi;
+    FStateFdi: TStateVariableFdi;
     FStateMultiFrame: TStateVariableMultiFrame;
     FStateOIR: TStateVariableOIR;
     FStatesAddressSpace: TStateVariablesAddressSpaceMessage;
@@ -485,6 +522,7 @@ type
     property StatesSnip: TStateVariabledSnip read FStateSnip write FStateSnip;
     property StateOIR: TStateVariableOIR read FStateOIR write FStateOIR;
     property StateCdi: TStateVariableCdi read FStateCdi write FStateCdi;
+    property StateFdi: TStateVariableFdi read FStateFdi write FStateFdi;
     property StateMultiFrame: TStateVariableMultiFrame read FStateMultiFrame write FStateMultiFrame;
 
     // Datagram Read/Write States
@@ -521,6 +559,7 @@ type
     procedure LoadKnownMtiList;
     function NextOIR_MtiMessage(MTI: Word): Word;
     procedure PrintCdiDataArray;
+    procedure PrintFdiDataArray;
 
     procedure HandleVerifiedNode(ReceivedMessage: TLccMessage);
     procedure HandleGetConfigOptionsReply(ReceivedMessage: TLccMessage);
@@ -551,6 +590,8 @@ type
 
     procedure HandleStateCdi_ReadCdi(ReceivedMessage: TLccMessage);
     procedure HandleStateCdi_ReadCdiFailure(ReceivedMessage: TLccMessage);
+    procedure HandleStateFdi_ReadFdi(ReceivedMessage: TLccMessage);
+    procedure HandleStateFdi_ReadFdiFailure(ReceivedMessage: TLccMessage);
     procedure HandleReadReplyFailureUpdate(ReceivedMessage: TLccMessage);
     procedure HandleWriteReplyFailureUpdate(ReceivedMessage: TLccMessage);
 
@@ -656,6 +697,7 @@ begin
   StatesSnip := TStateVariabledSnip.Create;
   StateOIR := TStateVariableOIR.Create;
   StateCdi := TStateVariableCdi.Create;
+  StateFdi := TStateVariableFdi.Create;
   StateMultiFrame := TStateVariableMultiFrame.Create;
 
   ConnectionFactory.OnLccMessageSend := @OnConnectionFactorySendMessage;
@@ -674,6 +716,7 @@ begin
   StateOIR.Free;
   StateCdi.Free;
   StateMultiFrame.Free;
+  StateFdi.Free;
 end;
 
 procedure TFormNodeInterrogator.FormCloseQuery(Sender: TObject; var CanClose: boolean);
@@ -703,9 +746,9 @@ begin
 
 end;
 
-procedure TFormNodeInterrogator.CheckBoxCdi_UseDotsClick(Sender: TObject);
+procedure TFormNodeInterrogator.CheckBoxCdi_UseDotsChange(Sender: TObject);
 begin
-  PrintCdiDataArray;
+  PrintCdiDataArray
 end;
 
 procedure TFormNodeInterrogator.CheckBoxDatagramRead_UseDotsChange(Sender: TObject);
@@ -718,9 +761,14 @@ begin
   PrintWriteDataArray;
 end;
 
-procedure TFormNodeInterrogator.CheckBoxSnip_UseDotsClick(Sender: TObject);
+procedure TFormNodeInterrogator.CheckBoxFdi_UseDotsChange(Sender: TObject);
 begin
-  PrintSnipDataArray;
+  PrintFdiDataArray
+end;
+
+procedure TFormNodeInterrogator.CheckBoxSnip_UseDotsChange(Sender: TObject);
+begin
+  PrintSnipDataArray
 end;
 
 procedure TFormNodeInterrogator.ComboBoxConfigMemAddressSpaceChange(Sender: TObject);
@@ -928,6 +976,7 @@ begin
     EditDatagramRead_FailureOptionalMessage.Text := '';
     EditDatagramRead_FailureErrorCode.Text := '';
     ImageDatagram_ReadFailureErrorCode.ImageIndex := -1;
+    EditDatagramRead_FailureErrorCodeDescription.Text := '';
 
     StatesDatagramRead.WaitingForAck := True;
 
@@ -1006,6 +1055,7 @@ begin
     EditDatagramWrite_FailureOptionalMessage.Text := '';
     EditDatagramWrite_FailureErrorCode.Text := '';
     ImageDatagram_WriteFailureErrorCode.ImageIndex := -1;
+    EditDatagramWrite_FailureErrorCodeDescription.Text := '';
 
     StatesDatagramWrite.WaitingForAck := True;
 
@@ -1155,6 +1205,18 @@ begin
       MemoCdi_RawData.Clear;
       StateCdi.WaitingForSpaceInfo := True;
       WorkerMessage.LoadConfigMemAddressSpaceInfo(Node.NodeID, Node.AliasID, TargetNode.NodeID, TargetNode.Alias, ADDRESS_SPACE_CONFIG_DEFINITION_INFO);
+      SendMessage(WorkerMessage);
+    end else
+      ShowNoTargetMessage;
+end;
+
+procedure TFormNodeInterrogator.ButtonFdi_ReadClick(Sender: TObject);
+begin
+   if Assigned(TargetNode) and Assigned(Node) then
+    begin
+      MemoFdi_RawData.Clear;
+      StateFdi.WaitingForSpaceInfo := True;
+      WorkerMessage.LoadConfigMemAddressSpaceInfo(Node.NodeID, Node.AliasID, TargetNode.NodeID, TargetNode.Alias, ADDRESS_SPACE_FUNCTION_DEFINITION_INFO);
       SendMessage(WorkerMessage);
     end else
       ShowNoTargetMessage;
@@ -1367,6 +1429,11 @@ end;
 procedure TFormNodeInterrogator.RadioGroupDatagramWrite_ViewOptionsClick(Sender: TObject);
 begin
    PrintWriteDataArray;
+end;
+
+procedure TFormNodeInterrogator.RadioGroupFdi_ViewOptionsClick(Sender: TObject);
+begin
+  PrintFdiDataArray;
 end;
 
 procedure TFormNodeInterrogator.RadioGroupSnip_ViewOptionsClick(Sender: TObject);
@@ -1866,6 +1933,15 @@ begin
   end;
 end;
 
+procedure TFormNodeInterrogator.PrintFdiDataArray;
+begin
+   case RadioGroupFdi_ViewOptions.ItemIndex of
+    0: MemoFdi_RawData.Text := ByteArrayAsHexStr(StateFdi.Data, CheckBoxFdi_UseDots.Checked);
+    1: MemoFdi_RawData.Text := ByteArrayAsDecStr(StateFdi.Data, CheckBoxFdi_UseDots.Checked);
+    2: MemoFdi_RawData.Text := ByteArrayAsCharStr(StateFdi.Data, CheckBoxFdi_UseDots.Checked);
+  end;
+end;
+
 
 procedure TFormNodeInterrogator.HandleVerifiedNode(ReceivedMessage: TLccMessage);
 var
@@ -1940,7 +2016,11 @@ begin
   ReceivedMessage.CopyDataToDataArray(StatesDatagramRead.FData, 0);
   PrintReadDataArray;
 
-  HandleStateCdi_ReadCdi(ReceivedMessage);
+  if ReceivedMessage.DataArray[6] = ADDRESS_SPACE_CONFIG_DEFINITION_INFO then
+    HandleStateCdi_ReadCdi(ReceivedMessage);
+
+  if ReceivedMessage.DataArray[6] = ADDRESS_SPACE_FUNCTION_DEFINITION_INFO then
+    HandleStateFdi_ReadFdi(ReceivedMessage);
 
 end;
 
@@ -1976,6 +2056,9 @@ begin
 
   if ReceivedMessage.DataArray[6] = ADDRESS_SPACE_CONFIG_DEFINITION_INFO then
     HandleStateCdi_ReadCdiFailure(ReceivedMessage);
+
+  if ReceivedMessage.DataArray[6] = ADDRESS_SPACE_FUNCTION_DEFINITION_INFO then
+    HandleStateFdi_ReadFdiFailure(ReceivedMessage);
 
   HandleReadReplyFailureUpdate(ReceivedMessage);
 end;
@@ -2307,9 +2390,9 @@ procedure TFormNodeInterrogator.HandleGetAddressSpaceInfoPresentReply(ReceivedMe
   begin
     if ReceivedMessage.DataArray[7] and $01 = $01 then
     begin
-      TreeViewConfigMemAddressSpaceInfo.Items.AddChild(ATreeNode, 'Address is Writable');
-    end else
       TreeViewConfigMemAddressSpaceInfo.Items.AddChild(ATreeNode, 'Address is Read Only');
+    end else
+      TreeViewConfigMemAddressSpaceInfo.Items.AddChild(ATreeNode, 'Address is Writable');
   end;
 
   procedure HandleLowAddressPresent(ATreeNode: TTreeNode);
@@ -2389,7 +2472,7 @@ begin
   TreeViewConfigMemAddressSpaceInfo.Items.AddChild(TreeNode, 'Highest Address: 0x' + IntToHex(ReceivedMessage.ExtractDataBytesAsDWord(3), 4));
 
   LowAddressPresent := ReceivedMessage.DataArray[7] and $02 = $02;
-  AddressWritable := ReceivedMessage.DataArray[7] and $01 = $01;
+  AddressWritable :=  ReceivedMessage.DataArray[7] and $01 = $00;
 
   if LowAddressPresent then
     HandleLowAddressPresent(TreeNode)
@@ -2423,12 +2506,34 @@ begin
     else
       StateCdi.StartingAddress := 0;
 
+    StateCdi.EndingAddress := ReceivedMessage.ExtractDataBytesAsDWord(3);
+
     StateCdi.CurrentAddressPointer := StateCdi.StartingAddress;
     StateCdi.WaitingForCdi := True;
     StateCdi.WaitingForSpaceInfo := False;
     SetLength(StateCdi.FData, 0);
 
     WorkerMessage.LoadCDIRequest(Node.NodeID, Node.AliasID, TargetNode.NodeID, TargetNode.Alias, StateCdi.StartingAddress );
+    SendMessage(WorkerMessage);
+
+  end;
+
+  if StateFdi.WaitingForSpaceInfo then
+  begin
+
+    if LowAddressPresent then
+      StateFdi.StartingAddress := ReceivedMessage.ExtractDataBytesAsDWord(8)
+    else
+      StateFdi.StartingAddress := 0;
+
+    StateFdi.EndingAddress := ReceivedMessage.ExtractDataBytesAsDWord(3);
+
+    StateFdi.CurrentAddressPointer := StateFdi.StartingAddress;
+    StateFdi.WaitingForFdi := True;
+    StateFdi.WaitingForSpaceInfo := False;
+    SetLength(StateFdi.FData, 0);
+
+    WorkerMessage.LoadFDIRequest(Node.NodeID, Node.AliasID, TargetNode.NodeID, TargetNode.Alias, StateFdi.StartingAddress );
     SendMessage(WorkerMessage);
 
   end;
@@ -2483,6 +2588,13 @@ begin
       if StateCdi.Data[i] = $00 then
         Done := True;
 
+    if StateCdi.CurrentAddressPointer >= StateCdi.EndingAddress then
+    begin
+      MemoCdi_RawData.Text := 'Unable to find the terminating null before the End Address returned by Get Address Space Info';
+      StateCdi.WaitingForCdi := False;
+      Exit;
+    end;
+
     if Done then
     begin
       PrintCdiDataArray;
@@ -2503,7 +2615,6 @@ var
   ErrorCode: Word;
 begin
 
-
   MemoCdi_RawData.Lines.Add('Unable to read the CDI');
   if ReceivedMessage.DataArray[1] = MCP_READ_REPLY_FAILURE then
      ErrorCode := ReceivedMessage.ExtractDataBytesAsWord(7)
@@ -2518,6 +2629,69 @@ begin
 
 end;
 
+procedure TFormNodeInterrogator.HandleStateFdi_ReadFdi(ReceivedMessage: TLccMessage);
+var
+  i: Integer;
+  Done: Boolean;
+  CopiedCount: Integer;
+begin
+
+  if StateFdi.WaitingForFdi then
+  begin
+
+    Done := False;
+
+    if ReceivedMessage.DataArray[1] = MCP_READ_REPLY then
+      CopiedCount := ReceivedMessage.AppendDataToDataArray(StateFdi.FData, 7)
+    else
+      CopiedCount := ReceivedMessage.AppendDataToDataArray(StateFdi.FData, 6);
+
+    // Find the terminating Null
+    for i := 0 to Length(StateFdi.Data) - 1 do
+      if StateFdi.Data[i] = $00 then
+        Done := True;
+
+    if StateFdi.CurrentAddressPointer >= StateFdi.EndingAddress then
+    begin
+      MemoFdi_RawData.Text := 'Unable to find the terminating null before the End Address returned by Get Address Space Info';
+      StateFdi.WaitingForFdi := False;
+      Exit;
+    end;
+
+    if Done then
+    begin
+      PrintFdiDataArray;
+      StateFdi.WaitingForFdi := False;
+    end else
+    begin
+      StateFdi.CurrentAddressPointer := StateFdi.CurrentAddressPointer + CopiedCount;
+      WorkerMessage.LoadFDIRequest(Node.NodeID, Node.AliasID, TargetNode.NodeID, TargetNode.Alias, StateFdi.CurrentAddressPointer);
+      SendMessage(WorkerMessage);
+    end;
+
+  end;
+
+end;
+
+procedure TFormNodeInterrogator.HandleStateFdi_ReadFdiFailure(ReceivedMessage: TLccMessage);
+var
+  ErrorCode: Word;
+begin
+
+  MemoFdi_RawData.Lines.Add('Unable to read the FDI');
+  if ReceivedMessage.DataArray[1] = MCP_READ_REPLY_FAILURE then
+     ErrorCode := ReceivedMessage.ExtractDataBytesAsWord(7)
+  else
+     ErrorCode := ReceivedMessage.ExtractDataBytesAsWord(6);
+
+     PrintFdiDataArray;
+
+    MemoFdi_RawData.Lines.Add('Error Code: ' + IntToHex(ErrorCode, 4) + ' ' + ErrorCodeToStr(ErrorCode));
+
+    StateFdi.WaitingForFdi := False;
+
+end;
+
 procedure TFormNodeInterrogator.HandleReadReplyFailureUpdate(ReceivedMessage: TLccMessage);
 var
   Count: Integer;
@@ -2526,11 +2700,13 @@ begin
   if ReceivedMessage.DataArray[1] = MCP_READ_REPLY_FAILURE then
     begin
       EditDatagramRead_FailureErrorCode.Text := '0x' + IntToHex( ReceivedMessage.ExtractDataBytesAsWord(7), 4);
+      EditDatagramRead_FailureErrorCodeDescription.Text := ErrorCodeToStr(ReceivedMessage.ExtractDataBytesAsWord(7));
       if ReceivedMessage.DataCount > 9 then
         EditDatagramRead_FailureOptionalMessage.Text := ReceivedMessage.ExtractDataBytesAsNullString(9, Count);
     end
     else begin
       EditDatagramRead_FailureErrorCode.Text := '0x' + IntToHex( ReceivedMessage.ExtractDataBytesAsWord(6), 4);
+      EditDatagramRead_FailureErrorCodeDescription.Text := ErrorCodeToStr(ReceivedMessage.ExtractDataBytesAsWord(6));
       if ReceivedMessage.DataCount > 8 then
         EditDatagramRead_FailureOptionalMessage.Text := ReceivedMessage.ExtractDataBytesAsNullString(8, Count);
     end;
@@ -2546,11 +2722,13 @@ begin
   if ReceivedMessage.DataArray[1] = MCP_WRITE_REPLY_FAILURE then
   begin
     EditDatagramWrite_FailureErrorCode.Text := '0x' + IntToHex( ReceivedMessage.ExtractDataBytesAsWord(7), 4);
+    EditDatagramWrite_FailureErrorCodeDescription.Text := ErrorCodeToStr(ReceivedMessage.ExtractDataBytesAsWord(7));
     if ReceivedMessage.DataCount > 9 then
       EditDatagramWrite_FailureOptionalMessage.Text := ReceivedMessage.ExtractDataBytesAsNullString(9, Count);
   end
   else begin
     EditDatagramWrite_FailureErrorCode.Text := '0x' + IntToHex( ReceivedMessage.ExtractDataBytesAsWord(6), 4);
+    EditDatagramWrite_FailureErrorCodeDescription.Text := ErrorCodeToStr(ReceivedMessage.ExtractDataBytesAsWord(6));
     if ReceivedMessage.DataCount > 8 then
       EditDatagramWrite_FailureOptionalMessage.Text := ReceivedMessage.ExtractDataBytesAsNullString(8, Count);
   end;
