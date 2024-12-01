@@ -126,7 +126,7 @@ public
   function ExtractDataBytesAsEventID(StartIndex: Integer): TEventID;
   function ExtractDataBytesAsInt(StartByteIndex, EndByteIndex: Integer): DWORD;
   function ExtractDataBytesAsNodeID(StartIndex: Integer; var ANodeID: TNodeID): TNodeID;
-  function ExtractDataBytesAsString(StartIndex: Integer; var Count: Integer): String;
+  function ExtractDataBytesAsNullString(StartIndex: Integer; var Count: Integer): String;
   function ExtractDataBytesAsWord(StartIndex: Integer): Word;
   function ExtractDataBytesAsDWord(StartIndex: Integer): DWORD;
   function ExtractDataBytesAsHex(StartByteIndex, EndByteIndex: Integer): string;
@@ -954,7 +954,7 @@ begin
   Result := ANodeID;
 end;
 
-function TLccMessage.ExtractDataBytesAsString(StartIndex: Integer; var Count: Integer): String;
+function TLccMessage.ExtractDataBytesAsNullString(StartIndex: Integer; var Count: Integer): String;
 var
   i: Integer;
 begin

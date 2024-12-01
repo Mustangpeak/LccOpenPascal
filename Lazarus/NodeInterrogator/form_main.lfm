@@ -1,10 +1,10 @@
 object FormNodeInterrogator: TFormNodeInterrogator
-  Left = 336
-  Height = 755
-  Top = 264
+  Left = 608
+  Height = 795
+  Top = 261
   Width = 1447
   Caption = 'Node Interrogator v0.1'
-  ClientHeight = 755
+  ClientHeight = 795
   ClientWidth = 1447
   LCLVersion = '4.0.0.1'
   OnCloseQuery = FormCloseQuery
@@ -14,7 +14,7 @@ object FormNodeInterrogator: TFormNodeInterrogator
   object StatusBarMain: TStatusBar
     Left = 0
     Height = 18
-    Top = 737
+    Top = 777
     Width = 1447
     Panels = <    
       item
@@ -27,26 +27,26 @@ object FormNodeInterrogator: TFormNodeInterrogator
   end
   object PanelMain: TPanel
     Left = 0
-    Height = 687
+    Height = 727
     Top = 50
     Width = 1447
     Align = alClient
-    ClientHeight = 687
+    ClientHeight = 727
     ClientWidth = 1447
     TabOrder = 1
     object PanelMemo: TPanel
       Left = 1
-      Height = 685
+      Height = 725
       Top = 1
       Width = 297
       Align = alLeft
       Caption = 'PanelMemo'
-      ClientHeight = 685
+      ClientHeight = 725
       ClientWidth = 297
       TabOrder = 0
       object MemoComPort: TMemo
         Left = 1
-        Height = 530
+        Height = 570
         Top = 154
         Width = 295
         Align = alClient
@@ -112,24 +112,24 @@ object FormNodeInterrogator: TFormNodeInterrogator
     end
     object PageControlMain: TPageControl
       Left = 303
-      Height = 685
+      Height = 725
       Top = 1
       Width = 1143
-      ActivePage = TabSheetDatagramWrite
+      ActivePage = TabSheetDatagramRead
       Align = alClient
-      TabIndex = 5
+      TabIndex = 4
       TabOrder = 1
       object TabSheetMessageNetwork: TTabSheet
         Caption = 'Message Network'
-        ClientHeight = 649
+        ClientHeight = 689
         ClientWidth = 1137
         object PanelTabMessageNetwork: TPanel
           Left = 0
-          Height = 649
+          Height = 689
           Top = 0
           Width = 1137
           Align = alClient
-          ClientHeight = 649
+          ClientHeight = 689
           ClientWidth = 1137
           TabOrder = 0
           object ButtonVerifyNodesGlobal: TButton
@@ -300,15 +300,15 @@ object FormNodeInterrogator: TFormNodeInterrogator
       end
       object TabSheetSnip: TTabSheet
         Caption = 'SNIP'
-        ClientHeight = 649
+        ClientHeight = 689
         ClientWidth = 1137
         object PanelTabSnip: TPanel
           Left = 0
-          Height = 649
+          Height = 689
           Top = 0
           Width = 1137
           Align = alClient
-          ClientHeight = 649
+          ClientHeight = 689
           ClientWidth = 1137
           TabOrder = 0
           OnClick = PanelTabSnipClick
@@ -497,11 +497,11 @@ object FormNodeInterrogator: TFormNodeInterrogator
       end
       object TabSheetEvents: TTabSheet
         Caption = 'Events'
-        ClientHeight = 649
+        ClientHeight = 689
         ClientWidth = 1137
         object PanelTabEvents: TPanel
           Left = 0
-          Height = 649
+          Height = 689
           Top = 0
           Width = 1137
           Align = alClient
@@ -510,15 +510,15 @@ object FormNodeInterrogator: TFormNodeInterrogator
       end
       object TabSheetConfigMem: TTabSheet
         Caption = 'Config Memory Info'
-        ClientHeight = 649
+        ClientHeight = 689
         ClientWidth = 1137
         object PanelTabSheetConfigMem: TPanel
           Left = 0
-          Height = 649
+          Height = 689
           Top = 0
           Width = 1137
           Align = alClient
-          ClientHeight = 649
+          ClientHeight = 689
           ClientWidth = 1137
           TabOrder = 0
           object GroupBoxConfMemOptions: TGroupBox
@@ -836,15 +836,15 @@ object FormNodeInterrogator: TFormNodeInterrogator
       end
       object TabSheetDatagramRead: TTabSheet
         Caption = 'Datagram Read'
-        ClientHeight = 649
+        ClientHeight = 689
         ClientWidth = 1137
         object PanelTabDatagramRead: TPanel
           Left = 0
-          Height = 649
+          Height = 689
           Top = 0
           Width = 1137
           Align = alClient
-          ClientHeight = 649
+          ClientHeight = 689
           ClientWidth = 1137
           TabOrder = 0
           OnClick = PanelTabDatagramReadClick
@@ -1207,12 +1207,12 @@ object FormNodeInterrogator: TFormNodeInterrogator
           end
           object GroupBoxDataRead_ReplyMessage: TGroupBox
             Left = 1
-            Height = 139
+            Height = 164
             Top = 493
             Width = 1135
             Align = alTop
             Caption = 'Read Reply Message'
-            ClientHeight = 112
+            ClientHeight = 137
             ClientWidth = 1125
             TabOrder = 3
             object RadioGroupDatagramRead_ReplyMessage: TRadioGroup
@@ -1244,20 +1244,58 @@ object FormNodeInterrogator: TFormNodeInterrogator
               )
               TabOrder = 0
             end
+            object ImageDatagram_ReadFailureErrorCode: TImage
+              Left = 104
+              Height = 16
+              Top = 110
+              Width = 16
+              ImageIndex = 1
+              Images = ImageListMain
+            end
+            object EditDatagramRead_FailureErrorCode: TEdit
+              Left = 272
+              Height = 22
+              Top = 106
+              Width = 80
+              ReadOnly = True
+              TabOrder = 1
+            end
+            object EditDatagramRead_FailureOptionalMessage: TEdit
+              Left = 592
+              Height = 22
+              Top = 104
+              Width = 470
+              ReadOnly = True
+              TabOrder = 2
+            end
+            object LabelDatagramWrite_FailureErrorCode1: TLabel
+              Left = 136
+              Height = 16
+              Top = 110
+              Width = 129
+              Caption = 'Error Code (required)'
+            end
+            object LabelDatagramRead_FailureOptionalMessage: TLabel
+              Left = 379
+              Height = 16
+              Top = 110
+              Width = 189
+              Caption = 'Error Message String (optional)'
+            end
           end
         end
       end
       object TabSheetDatagramWrite: TTabSheet
         Caption = 'Datagram Write'
-        ClientHeight = 649
+        ClientHeight = 689
         ClientWidth = 1137
         object PanelTabDatagramWrite: TPanel
           Left = 0
-          Height = 649
+          Height = 689
           Top = 0
           Width = 1137
           Align = alClient
-          ClientHeight = 649
+          ClientHeight = 689
           ClientWidth = 1137
           TabOrder = 0
           OnClick = PanelTabDatagramReadClick
@@ -1617,12 +1655,12 @@ object FormNodeInterrogator: TFormNodeInterrogator
           end
           object GroupBoxDataWrite_ReplyMessage: TGroupBox
             Left = 1
-            Height = 139
+            Height = 164
             Top = 493
             Width = 1135
             Align = alTop
             Caption = 'Write Reply Message'
-            ClientHeight = 112
+            ClientHeight = 137
             ClientWidth = 1125
             TabOrder = 3
             object RadioGroupDatagramWrite_ReplyMessage: TRadioGroup
@@ -1654,20 +1692,58 @@ object FormNodeInterrogator: TFormNodeInterrogator
               )
               TabOrder = 0
             end
+            object ImageDatagram_WriteFailureErrorCode: TImage
+              Left = 104
+              Height = 16
+              Top = 110
+              Width = 16
+              ImageIndex = 1
+              Images = ImageListMain
+            end
+            object EditDatagramWrite_FailureErrorCode: TEdit
+              Left = 272
+              Height = 22
+              Top = 106
+              Width = 80
+              ReadOnly = True
+              TabOrder = 1
+            end
+            object EditDatagramWrite_FailureOptionalMessage: TEdit
+              Left = 592
+              Height = 22
+              Top = 104
+              Width = 470
+              ReadOnly = True
+              TabOrder = 2
+            end
+            object LabelDatagramWrite_FailureErrorCode: TLabel
+              Left = 136
+              Height = 16
+              Top = 112
+              Width = 129
+              Caption = 'Error Code (required)'
+            end
+            object LabelDatagramWrite_FailureOptionalMessage: TLabel
+              Left = 379
+              Height = 16
+              Top = 110
+              Width = 189
+              Caption = 'Error Message String (optional)'
+            end
           end
         end
       end
       object TabSheetCdi: TTabSheet
         Caption = 'CDI'
-        ClientHeight = 649
+        ClientHeight = 689
         ClientWidth = 1137
         object PanelCdi: TPanel
           Left = 0
-          Height = 649
+          Height = 689
           Top = 0
           Width = 1137
           Align = alClient
-          ClientHeight = 649
+          ClientHeight = 689
           ClientWidth = 1137
           TabOrder = 0
           object MemoCdi_RawData: TMemo
@@ -1728,16 +1804,16 @@ object FormNodeInterrogator: TFormNodeInterrogator
       end
       object TabSheetMultiFrame: TTabSheet
         Caption = 'Multi-Frame'
-        ClientHeight = 649
+        ClientHeight = 689
         ClientWidth = 1137
         OnContextPopup = TabSheetMultiFrameContextPopup
         object PanelDatagramTransport: TPanel
           Left = 0
-          Height = 649
+          Height = 689
           Top = 0
           Width = 1137
           Align = alClient
-          ClientHeight = 649
+          ClientHeight = 689
           ClientWidth = 1137
           TabOrder = 0
           object GroupBoxMultiFrame_Datagrams: TGroupBox
@@ -2053,7 +2129,7 @@ object FormNodeInterrogator: TFormNodeInterrogator
     end
     object Splitter1: TSplitter
       Left = 298
-      Height = 685
+      Height = 725
       Top = 1
       Width = 5
     end

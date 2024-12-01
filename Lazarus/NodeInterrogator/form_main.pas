@@ -235,6 +235,10 @@ type
     ComboBoxDatagramWrite_WriteableAddressSpaces: TComboBox;
     ComboBoxSelector: TComboBox;
     ComboBoxComPorts: TComboBox;
+    EditDatagramWrite_FailureErrorCode: TEdit;
+    EditDatagramRead_FailureErrorCode: TEdit;
+    EditDatagramWrite_FailureOptionalMessage: TEdit;
+    EditDatagramRead_FailureOptionalMessage: TEdit;
     EditMultiFrame_MfgVersion: TEdit;
     EditMultiFrame_SnipData: TEdit;
     EditMultiFrame_MfgName: TEdit;
@@ -298,8 +302,14 @@ type
     ImageDatagramRead_Ok: TImage;
     ImageDatagramWrite_Ok: TImage;
     ImageDatagram_ReadRejected: TImage;
+    ImageDatagram_ReadFailureErrorCode: TImage;
     ImageDatagram_WriteRejected: TImage;
+    ImageDatagram_WriteFailureErrorCode: TImage;
     ImageListMain: TImageList;
+    LabelDatagramWrite_FailureErrorCode: TLabel;
+    LabelDatagramWrite_FailureErrorCode1: TLabel;
+    LabelDatagramWrite_FailureOptionalMessage: TLabel;
+    LabelDatagramRead_FailureOptionalMessage: TLabel;
     LabelMultiFrame_SnipData: TLabel;
     LabelMultiFrame_UserVersion: TLabel;
     LabelSelector: TLabel;
@@ -434,10 +444,8 @@ type
     procedure ComboBoxConfigMemAddressSpaceChange(Sender: TObject);
     procedure ComboBoxDatagramRead_AcdiOffsetsChange(Sender: TObject);
     procedure ComboBoxDatagramWrite_AcdiOffsetsChange(Sender: TObject);
-    procedure ComboBoxDatagramWrite_ReadableAddressSpacesChange(Sender: TObject
-      );
-    procedure ComboBoxDatagramWrite_WriteableAddressSpacesChange(Sender: TObject
-      );
+    procedure ComboBoxDatagramWrite_ReadableAddressSpacesChange(Sender: TObject);
+    procedure ComboBoxDatagramWrite_WriteableAddressSpacesChange(Sender: TObject);
     procedure FormCloseQuery(Sender: TObject; var CanClose: boolean);
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
@@ -543,6 +551,8 @@ type
 
     procedure HandleStateCdi_ReadCdi(ReceivedMessage: TLccMessage);
     procedure HandleStateCdi_ReadCdiFailure(ReceivedMessage: TLccMessage);
+    procedure HandleReadReplyFailureUpdate(ReceivedMessage: TLccMessage);
+    procedure HandleWriteReplyFailureUpdate(ReceivedMessage: TLccMessage);
 
 
   public
@@ -915,6 +925,9 @@ begin
     EditDatagramRead_RawData.Text := '';
     EditDatagramRead.Text := '';
     RadioGroupDatagramRead_ReplyMessage.ItemIndex := -1;
+    EditDatagramRead_FailureOptionalMessage.Text := '';
+    EditDatagramRead_FailureErrorCode.Text := '';
+    ImageDatagram_ReadFailureErrorCode.ImageIndex := -1;
 
     StatesDatagramRead.WaitingForAck := True;
 
@@ -990,6 +1003,9 @@ begin
     EditDatagramWrite_RawData.Text := '';
     EditDatagramWrite.Text := '';
     RadioGroupDatagramWrite_ReplyMessage.ItemIndex := -1;
+    EditDatagramWrite_FailureOptionalMessage.Text := '';
+    EditDatagramWrite_FailureErrorCode.Text := '';
+    ImageDatagram_WriteFailureErrorCode.ImageIndex := -1;
 
     StatesDatagramWrite.WaitingForAck := True;
 
@@ -1323,6 +1339,9 @@ begin
   ImageDatagram_ReadRejected.ImageIndex := -1;
   ImageDatagramWrite_Ok.ImageIndex := -1;
   ImageDatagram_WriteRejected.ImageIndex := -1;
+  ImageDatagram_ReadFailureErrorCode.ImageIndex := -1;
+  ImageDatagram_WriteFailureErrorCode.ImageIndex := -1;
+
 end;
 
 procedure TFormNodeInterrogator.PanelTabDatagramReadClick(Sender: TObject);
@@ -1901,7 +1920,7 @@ begin
     EditConfigMemLowestAddressSpace.Text := '0x' + IntToHex( ReceivedMessage.DataArray[6], 2);
     LabelConfigMemLowestAddressSpaceName.Caption := AddressSpaceToStr(ReceivedMessage.DataArray[6]);
     if ReceivedMessage.DataCount > 7 then
-      EditCongMemOpNameString.Text := ReceivedMessage.ExtractDataBytesAsString(7, StringLen)
+      EditCongMemOpNameString.Text := ReceivedMessage.ExtractDataBytesAsNullString(7, StringLen)
     else
       EditCongMemOpNameString.Text := '[not included in message]';
   end else
@@ -1955,7 +1974,10 @@ begin
   ReceivedMessage.CopyDataToDataArray(StatesDatagramRead.FData, 0);
   PrintReadDataArray;
 
-  HandleStateCdi_ReadCdiFailure(ReceivedMessage);
+  if ReceivedMessage.DataArray[6] = ADDRESS_SPACE_CONFIG_DEFINITION_INFO then
+    HandleStateCdi_ReadCdiFailure(ReceivedMessage);
+
+  HandleReadReplyFailureUpdate(ReceivedMessage);
 end;
 
 procedure TFormNodeInterrogator.HandleReadReplyFailureCDI(ReceivedMessage: TLccMessage);
@@ -1965,6 +1987,7 @@ begin
   PrintReadDataArray;
 
   HandleStateCdi_ReadCdiFailure(ReceivedMessage);
+  HandleReadReplyFailureUpdate(ReceivedMessage);
 end;
 
 procedure TFormNodeInterrogator.HandleReadReplyFailureAll(ReceivedMessage: TLccMessage);
@@ -1972,6 +1995,8 @@ begin
   RadioGroupDatagramRead_ReplyMessage.ItemIndex := 6;
   ReceivedMessage.CopyDataToDataArray(StatesDatagramRead.FData, 0);
   PrintReadDataArray;
+
+  HandleReadReplyFailureUpdate(ReceivedMessage);
 end;
 
 procedure TFormNodeInterrogator.HandleReadReplyFailureConfig(ReceivedMessage: TLccMessage);
@@ -1979,6 +2004,8 @@ begin
   RadioGroupDatagramRead_ReplyMessage.ItemIndex := 7;
   ReceivedMessage.CopyDataToDataArray(StatesDatagramRead.FData, 0);
   PrintReadDataArray;
+
+  HandleReadReplyFailureUpdate(ReceivedMessage);
 end;
 
 procedure TFormNodeInterrogator.HandleWriteReply(ReceivedMessage: TLccMessage);
@@ -2014,6 +2041,8 @@ begin
   RadioGroupDatagramWrite_ReplyMessage.ItemIndex := 4;
   ReceivedMessage.CopyDataToDataArray(StatesDatagramWrite.FData, 0);
   PrintWriteDataArray;
+
+  HandleWriteReplyFailureUpdate(ReceivedMessage);
 end;
 
 procedure TFormNodeInterrogator.HandleWriteReplyFailureCDI(ReceivedMessage: TLccMessage);
@@ -2021,6 +2050,8 @@ begin
   RadioGroupDatagramWrite_ReplyMessage.ItemIndex := 5;
   ReceivedMessage.CopyDataToDataArray(StatesDatagramWrite.FData, 0);
   PrintWriteDataArray;
+
+  HandleWriteReplyFailureUpdate(ReceivedMessage);
 end;
 
 procedure TFormNodeInterrogator.HandleWriteReplyFailureAll(ReceivedMessage: TLccMessage);
@@ -2028,6 +2059,8 @@ begin
   RadioGroupDatagramWrite_ReplyMessage.ItemIndex := 6;
   ReceivedMessage.CopyDataToDataArray(StatesDatagramWrite.FData, 0);
   PrintWriteDataArray;
+
+  HandleWriteReplyFailureUpdate(ReceivedMessage);
 end;
 
 procedure TFormNodeInterrogator.HandleWriteReplyFailureConfig(ReceivedMessage: TLccMessage);
@@ -2035,6 +2068,8 @@ begin
   RadioGroupDatagramWrite_ReplyMessage.ItemIndex := 7;
   ReceivedMessage.CopyDataToDataArray(StatesDatagramWrite.FData, 0);
   PrintWriteDataArray;
+
+  HandleWriteReplyFailureUpdate(ReceivedMessage);
 end;
 
 procedure TFormNodeInterrogator.HandleDatagramAckOk(ReceivedMessage: TLccMessage);
@@ -2288,7 +2323,7 @@ procedure TFormNodeInterrogator.HandleGetAddressSpaceInfoPresentReply(ReceivedMe
     HandleAddressReadWrite(ATreeNode);
 
     if ReceivedMessage.DataCount > 12 then
-      TreeViewConfigMemAddressSpaceInfo.Items.AddChild(ATreeNode, 'Description: ' + ReceivedMessage.ExtractDataBytesAsString(12, ACount))
+      TreeViewConfigMemAddressSpaceInfo.Items.AddChild(ATreeNode, 'Description: ' + ReceivedMessage.ExtractDataBytesAsNullString(12, ACount))
     else
       TreeViewConfigMemAddressSpaceInfo.Items.AddChild(ATreeNode, 'Description: [None]');
 
@@ -2305,7 +2340,7 @@ procedure TFormNodeInterrogator.HandleGetAddressSpaceInfoPresentReply(ReceivedMe
     HandleAddressReadWrite(ATreeNode);
 
     if ReceivedMessage.DataCount > 8 then
-      TreeViewConfigMemAddressSpaceInfo.Items.AddChild(ATreeNode, 'Description: ' + ReceivedMessage.ExtractDataBytesAsString(8, ACount))
+      TreeViewConfigMemAddressSpaceInfo.Items.AddChild(ATreeNode, 'Description: ' + ReceivedMessage.ExtractDataBytesAsNullString(8, ACount))
     else
       TreeViewConfigMemAddressSpaceInfo.Items.AddChild(ATreeNode, 'Description: [None]');
 
@@ -2480,6 +2515,47 @@ begin
     MemoCdi_RawData.Lines.Add('Error Code: ' + IntToHex(ErrorCode, 4) + ' ' + ErrorCodeToStr(ErrorCode));
 
     StateCdi.WaitingForCdi := False;
+
+end;
+
+procedure TFormNodeInterrogator.HandleReadReplyFailureUpdate(ReceivedMessage: TLccMessage);
+var
+  Count: Integer;
+begin
+  Count := 0;
+  if ReceivedMessage.DataArray[1] = MCP_READ_REPLY_FAILURE then
+    begin
+      EditDatagramRead_FailureErrorCode.Text := '0x' + IntToHex( ReceivedMessage.ExtractDataBytesAsWord(7), 4);
+      if ReceivedMessage.DataCount > 9 then
+        EditDatagramRead_FailureOptionalMessage.Text := ReceivedMessage.ExtractDataBytesAsNullString(9, Count);
+    end
+    else begin
+      EditDatagramRead_FailureErrorCode.Text := '0x' + IntToHex( ReceivedMessage.ExtractDataBytesAsWord(6), 4);
+      if ReceivedMessage.DataCount > 8 then
+        EditDatagramRead_FailureOptionalMessage.Text := ReceivedMessage.ExtractDataBytesAsNullString(8, Count);
+    end;
+
+    ImageDatagram_ReadFailureErrorCode.ImageIndex := 1;
+end;
+
+procedure TFormNodeInterrogator.HandleWriteReplyFailureUpdate(ReceivedMessage: TLccMessage);
+var
+  Count: Integer;
+begin
+  Count := 0;
+  if ReceivedMessage.DataArray[1] = MCP_WRITE_REPLY_FAILURE then
+  begin
+    EditDatagramWrite_FailureErrorCode.Text := '0x' + IntToHex( ReceivedMessage.ExtractDataBytesAsWord(7), 4);
+    if ReceivedMessage.DataCount > 9 then
+      EditDatagramWrite_FailureOptionalMessage.Text := ReceivedMessage.ExtractDataBytesAsNullString(9, Count);
+  end
+  else begin
+    EditDatagramWrite_FailureErrorCode.Text := '0x' + IntToHex( ReceivedMessage.ExtractDataBytesAsWord(6), 4);
+    if ReceivedMessage.DataCount > 8 then
+      EditDatagramWrite_FailureOptionalMessage.Text := ReceivedMessage.ExtractDataBytesAsNullString(8, Count);
+  end;
+
+  ImageDatagram_WriteFailureErrorCode.ImageIndex := 1;
 
 end;
 

@@ -1059,7 +1059,7 @@ begin
   for i := 0  to VersionStringCount - 1 do
   begin
     StrLen := 0;  // Read a null terminated string and return the StrLen
-    Str := SourceLccMessage.ExtractDataBytesAsString(iArray, StrLen);
+    Str := SourceLccMessage.ExtractDataBytesAsNullString(iArray, StrLen);
     case i of
       0 : FManufacturer := Str;
       1 : FModel := Str;
@@ -1078,7 +1078,7 @@ begin
   for i := 0 to VersionStringCount - 1 do
   begin
     StrLen := 0;  // Read a null terminated string and return the StrLen
-    Str := SourceLccMessage.ExtractDataBytesAsString(iArray, StrLen);
+    Str := SourceLccMessage.ExtractDataBytesAsNullString(iArray, StrLen);
     case i of
       0 : FUserName := Str;
       1 : FUserDescription := Str;
