@@ -1,10 +1,10 @@
 object FormNodeInterrogator: TFormNodeInterrogator
-  Left = 599
-  Height = 795
-  Top = 253
+  Left = 597
+  Height = 804
+  Top = 252
   Width = 1447
   Caption = 'Node Interrogator v0.1'
-  ClientHeight = 795
+  ClientHeight = 804
   ClientWidth = 1447
   LCLVersion = '4.0.0.1'
   OnCloseQuery = FormCloseQuery
@@ -14,7 +14,7 @@ object FormNodeInterrogator: TFormNodeInterrogator
   object StatusBarMain: TStatusBar
     Left = 0
     Height = 18
-    Top = 777
+    Top = 786
     Width = 1447
     Panels = <    
       item
@@ -27,26 +27,26 @@ object FormNodeInterrogator: TFormNodeInterrogator
   end
   object PanelMain: TPanel
     Left = 0
-    Height = 727
+    Height = 736
     Top = 50
     Width = 1447
     Align = alClient
-    ClientHeight = 727
+    ClientHeight = 736
     ClientWidth = 1447
     TabOrder = 1
     object PanelMemo: TPanel
       Left = 1
-      Height = 725
+      Height = 734
       Top = 1
       Width = 297
       Align = alLeft
       Caption = 'PanelMemo'
-      ClientHeight = 725
+      ClientHeight = 734
       ClientWidth = 297
       TabOrder = 0
       object MemoComPort: TMemo
         Left = 1
-        Height = 570
+        Height = 579
         Top = 154
         Width = 295
         Align = alClient
@@ -112,24 +112,24 @@ object FormNodeInterrogator: TFormNodeInterrogator
     end
     object PageControlMain: TPageControl
       Left = 303
-      Height = 725
+      Height = 734
       Top = 1
       Width = 1143
-      ActivePage = TabSheetDatagramRead
+      ActivePage = TabSheetDatagramWrite
       Align = alClient
-      TabIndex = 4
+      TabIndex = 5
       TabOrder = 1
       object TabSheetMessageNetwork: TTabSheet
         Caption = 'Message Network'
-        ClientHeight = 689
+        ClientHeight = 698
         ClientWidth = 1137
         object PanelTabMessageNetwork: TPanel
           Left = 0
-          Height = 689
+          Height = 698
           Top = 0
           Width = 1137
           Align = alClient
-          ClientHeight = 689
+          ClientHeight = 698
           ClientWidth = 1137
           TabOrder = 0
           object ButtonVerifyNodesGlobal: TButton
@@ -300,15 +300,15 @@ object FormNodeInterrogator: TFormNodeInterrogator
       end
       object TabSheetSnip: TTabSheet
         Caption = 'SNIP'
-        ClientHeight = 689
+        ClientHeight = 698
         ClientWidth = 1137
         object PanelTabSnip: TPanel
           Left = 0
-          Height = 689
+          Height = 698
           Top = 0
           Width = 1137
           Align = alClient
-          ClientHeight = 689
+          ClientHeight = 698
           ClientWidth = 1137
           TabOrder = 0
           OnClick = PanelTabSnipClick
@@ -496,11 +496,11 @@ object FormNodeInterrogator: TFormNodeInterrogator
       end
       object TabSheetEvents: TTabSheet
         Caption = 'Events'
-        ClientHeight = 689
+        ClientHeight = 698
         ClientWidth = 1137
         object PanelTabEvents: TPanel
           Left = 0
-          Height = 689
+          Height = 698
           Top = 0
           Width = 1137
           Align = alClient
@@ -509,15 +509,15 @@ object FormNodeInterrogator: TFormNodeInterrogator
       end
       object TabSheetConfigMem: TTabSheet
         Caption = 'Config Memory Info'
-        ClientHeight = 689
+        ClientHeight = 698
         ClientWidth = 1137
         object PanelTabSheetConfigMem: TPanel
           Left = 0
-          Height = 689
+          Height = 698
           Top = 0
           Width = 1137
           Align = alClient
-          ClientHeight = 689
+          ClientHeight = 698
           ClientWidth = 1137
           TabOrder = 0
           object GroupBoxConfMemOptions: TGroupBox
@@ -835,15 +835,15 @@ object FormNodeInterrogator: TFormNodeInterrogator
       end
       object TabSheetDatagramRead: TTabSheet
         Caption = 'Datagram Read'
-        ClientHeight = 689
+        ClientHeight = 698
         ClientWidth = 1137
         object PanelTabDatagramRead: TPanel
           Left = 0
-          Height = 689
+          Height = 698
           Top = 0
           Width = 1137
           Align = alClient
-          ClientHeight = 689
+          ClientHeight = 698
           ClientWidth = 1137
           TabOrder = 0
           OnClick = PanelTabDatagramReadClick
@@ -1293,26 +1293,26 @@ object FormNodeInterrogator: TFormNodeInterrogator
       end
       object TabSheetDatagramWrite: TTabSheet
         Caption = 'Datagram Write'
-        ClientHeight = 689
+        ClientHeight = 698
         ClientWidth = 1137
         object PanelTabDatagramWrite: TPanel
           Left = 0
-          Height = 689
+          Height = 698
           Top = 0
           Width = 1137
           Align = alClient
-          ClientHeight = 689
+          ClientHeight = 698
           ClientWidth = 1137
           TabOrder = 0
           OnClick = PanelTabDatagramReadClick
           object GroupBoxDatagram_Write: TGroupBox
             Left = 1
-            Height = 164
+            Height = 175
             Top = 137
             Width = 1135
             Align = alTop
-            Caption = 'Read Datagram'
-            ClientHeight = 137
+            Caption = 'Write Datagram'
+            ClientHeight = 148
             ClientWidth = 1125
             TabOrder = 0
             object ButtonDatagram_Write: TButton
@@ -1327,10 +1327,9 @@ object FormNodeInterrogator: TFormNodeInterrogator
             object EditDatagramWrite: TEdit
               Left = 40
               Height = 22
-              Top = 40
-              Width = 725
+              Top = 72
+              Width = 728
               AutoSize = False
-              ReadOnly = True
               TabOrder = 5
             end
             object RadioGroupDatagramWrite_MessageOptions: TRadioGroup
@@ -1390,8 +1389,8 @@ object FormNodeInterrogator: TFormNodeInterrogator
               Left = 560
               Height = 16
               Top = 14
-              Width = 113
-              Caption = 'Read Count (1-64)'
+              Width = 114
+              Caption = 'Write Count (1-64)'
             end
             object EditDatagramWrite_Count: TEdit
               Left = 685
@@ -1402,9 +1401,9 @@ object FormNodeInterrogator: TFormNodeInterrogator
               Text = '16'
             end
             object RadioGroupDatagramWrite_ViewOptions: TRadioGroup
-              Left = 55
+              Left = 56
               Height = 42
-              Top = 70
+              Top = 104
               Width = 401
               AutoFill = True
               Caption = 'View Options'
@@ -1430,7 +1429,7 @@ object FormNodeInterrogator: TFormNodeInterrogator
             object CheckBoxDatagramWrite_UseDots: TCheckBox
               Left = 472
               Height = 18
-              Top = 92
+              Top = 128
               Width = 124
               Caption = 'Use Dot Notation'
               Checked = True
@@ -1439,9 +1438,9 @@ object FormNodeInterrogator: TFormNodeInterrogator
               OnChange = CheckBoxDatagramWrite_UseDotsChange
             end
             object ComboBoxDatagramWrite_AcdiOffsets: TComboBox
-              Left = 648
+              Left = 647
               Height = 20
-              Top = 104
+              Top = 120
               Width = 415
               ItemHeight = 19
               ItemIndex = 0
@@ -1458,18 +1457,42 @@ object FormNodeInterrogator: TFormNodeInterrogator
             object LabelDatagramWrite_AcdiOffsets: TLabel
               Left = 632
               Height = 16
-              Top = 80
+              Top = 96
               Width = 406
               Caption = 'ACDI Manufacturer and User Spaces (0xFC-0xFB) Fixed Addresses'
+            end
+            object EditDatagramWrite_WriteString: TEdit
+              Left = 152
+              Height = 22
+              Top = 40
+              Width = 520
+              TabOrder = 9
+              Text = 'This is a test string.'
+            end
+            object LabelDatagram_WriteString: TLabel
+              Left = 16
+              Height = 16
+              Top = 40
+              Width = 125
+              Caption = 'Enter String To Write'
+            end
+            object ButtonDatagramWrite_Convert: TButton
+              Left = 680
+              Height = 25
+              Top = 37
+              Width = 75
+              Caption = 'Convert....'
+              TabOrder = 10
+              OnClick = ButtonDatagramWrite_ConvertClick
             end
           end
           object GroupBoxDatagramWrite_Ack: TGroupBox
             Left = 1
             Height = 192
-            Top = 301
+            Top = 312
             Width = 1135
             Align = alTop
-            Caption = 'Read Datagram Reponse'
+            Caption = 'Write Datagram Reponse'
             ClientHeight = 165
             ClientWidth = 1125
             TabOrder = 1
@@ -1662,7 +1685,7 @@ object FormNodeInterrogator: TFormNodeInterrogator
           object GroupBoxDataWrite_ReplyMessage: TGroupBox
             Left = 1
             Height = 188
-            Top = 493
+            Top = 504
             Width = 1135
             Align = alTop
             Caption = 'Write Reply Message'
@@ -1748,15 +1771,15 @@ object FormNodeInterrogator: TFormNodeInterrogator
       end
       object TabSheetCdi: TTabSheet
         Caption = 'CDI'
-        ClientHeight = 689
+        ClientHeight = 698
         ClientWidth = 1137
         object PanelCdi: TPanel
           Left = 0
-          Height = 689
+          Height = 698
           Top = 0
           Width = 1137
           Align = alClient
-          ClientHeight = 689
+          ClientHeight = 698
           ClientWidth = 1137
           TabOrder = 0
           object MemoCdi_RawData: TMemo
@@ -1816,15 +1839,15 @@ object FormNodeInterrogator: TFormNodeInterrogator
       end
       object TabSheetFdi: TTabSheet
         Caption = 'FDI'
-        ClientHeight = 689
+        ClientHeight = 698
         ClientWidth = 1137
         object PanelFdi: TPanel
           Left = 0
-          Height = 689
+          Height = 698
           Top = 0
           Width = 1137
           Align = alClient
-          ClientHeight = 689
+          ClientHeight = 698
           ClientWidth = 1137
           TabOrder = 0
           object MemoFdi_RawData: TMemo
@@ -1884,16 +1907,16 @@ object FormNodeInterrogator: TFormNodeInterrogator
       end
       object TabSheetMultiFrame: TTabSheet
         Caption = 'Multi-Frame'
-        ClientHeight = 689
+        ClientHeight = 698
         ClientWidth = 1137
         OnContextPopup = TabSheetMultiFrameContextPopup
         object PanelDatagramTransport: TPanel
           Left = 0
-          Height = 689
+          Height = 698
           Top = 0
           Width = 1137
           Align = alClient
-          ClientHeight = 689
+          ClientHeight = 698
           ClientWidth = 1137
           TabOrder = 0
           object GroupBoxMultiFrame_Datagrams: TGroupBox
@@ -2209,7 +2232,7 @@ object FormNodeInterrogator: TFormNodeInterrogator
     end
     object Splitter1: TSplitter
       Left = 298
-      Height = 725
+      Height = 734
       Top = 1
       Width = 5
     end

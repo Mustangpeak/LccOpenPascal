@@ -186,6 +186,7 @@ type
   { TFormNodeInterrogator }
 
   TFormNodeInterrogator = class(TForm)
+    ButtonDatagramWrite_Convert: TButton;
     ButtonFdi_Read: TButton;
     ButtonMultiFrame_SnipConvert: TButton;
     ButtonSelector_FindNodes: TButton;
@@ -262,6 +263,7 @@ type
     ComboBoxDatagramWrite_WriteableAddressSpaces: TComboBox;
     ComboBoxSelector: TComboBox;
     ComboBoxComPorts: TComboBox;
+    EditDatagramWrite_WriteString: TEdit;
     EditDatagramRead_FailureErrorCodeDescription: TEdit;
     EditDatagramWrite_FailureErrorCodeDescription: TEdit;
     EditDatagramWrite_FailureErrorCode: TEdit;
@@ -335,6 +337,7 @@ type
     ImageDatagram_WriteRejected: TImage;
     ImageDatagram_WriteFailureErrorCode: TImage;
     ImageListMain: TImageList;
+    LabelDatagram_WriteString: TLabel;
     LabelDatagramWrite_FailureErrorCode: TLabel;
     LabelDatagramRead_FailureErrorCode: TLabel;
     LabelDatagramWrite_FailureOptionalMessage: TLabel;
@@ -436,6 +439,7 @@ type
     TreeViewOptionalInteractionRejected: TTreeView;
     TreeViewConfigMemAddressSpaceInfo: TTreeView;
     procedure ButtonCdi_ReadClick(Sender: TObject);
+    procedure ButtonDatagramWrite_ConvertClick(Sender: TObject);
     procedure ButtonFdi_ReadClick(Sender: TObject);
     procedure ButtonMultiFrame_DatagramFirstClick(Sender: TObject);
     procedure ButtonMultiFrame_DatagramLastClick(Sender: TObject);
@@ -1033,6 +1037,7 @@ end;
 procedure TFormNodeInterrogator.ButtonDatagram_WriteClick(Sender: TObject);
 var
   AddressSpace: Byte;
+  i: Integer;
 begin
 
   if Assigned(TargetNode) and Assigned(Node) then
@@ -1057,6 +1062,8 @@ begin
     ImageDatagram_WriteFailureErrorCode.ImageIndex := -1;
     EditDatagramWrite_FailureErrorCodeDescription.Text := '';
 
+    PrintWriteDataArray;
+
     StatesDatagramWrite.WaitingForAck := True;
 
 
@@ -1070,7 +1077,7 @@ begin
 
     case RadioGroupDatagramWrite_MessageOptions.ItemIndex of
       0: begin
-            AddressSpace := UnknownStrToInt( EditDatagramRead_Space.Text);
+            AddressSpace := UnknownStrToInt( EditDatagramWrite_Space.Text);
             case AddressSpace of
               ADDRESS_SPACE_CONFIG_DEFINITION_INFO: WorkerMessage.DataArrayIndexer[1] := MCP_WRITE_CDI;
               ADDRESS_SPACE_ALL                   : WorkerMessage.DataArrayIndexer[1] := MCP_WRITE_ALL;
@@ -1097,6 +1104,17 @@ begin
       WorkerMessage.DataArrayIndexer[6] := UnknownStrToInt( EditDatagramWrite_Count.Text);
       WorkerMessage.DataCount := 7;
     end;
+
+    if Length(StatesDatagramWrite.Data) = 0 then
+    begin
+      ShowMessage('No data to write, enter a string to write and convert it');
+      Exit;
+    end;
+
+    for i := 0 to Length(StatesDatagramWrite.Data) - 1 do
+      WorkerMessage.DataArrayIndexer[WorkerMessage.DataCount + i] := StatesDatagramWrite.Data[i];
+
+    WorkerMessage.DataCount := WorkerMessage.DataCount + Length(StatesDatagramWrite.Data);
 
     SendMessage(WorkerMessage);
 
@@ -1208,6 +1226,24 @@ begin
       SendMessage(WorkerMessage);
     end else
       ShowNoTargetMessage;
+end;
+
+procedure TFormNodeInterrogator.ButtonDatagramWrite_ConvertClick(Sender: TObject);
+var
+  i: Integer;
+  StrLen: Integer;
+begin
+  StrLen := Length( EditDatagramWrite_WriteString.Text);
+
+  SetLength(StatesDatagramWrite.FData, StrLen + 1);  // Null
+  for i := 0 to Length(EditDatagramWrite_WriteString.Text) - 1 do
+    StatesDatagramWrite.Data[i] := Ord( EditDatagramWrite_WriteString.Text[i+1]);
+
+  StatesDatagramWrite.Data[StrLen] := $00;
+
+
+  EditDatagramWrite_Count.Text := IntToStr( Length(StatesDatagramWrite.Data));
+  PrintWriteDataArray;
 end;
 
 procedure TFormNodeInterrogator.ButtonFdi_ReadClick(Sender: TObject);
@@ -2094,35 +2130,30 @@ end;
 procedure TFormNodeInterrogator.HandleWriteReply(ReceivedMessage: TLccMessage);
 begin
   RadioGroupDatagramWrite_ReplyMessage.ItemIndex := 0;
-  ReceivedMessage.CopyDataToDataArray(StatesDatagramWrite.FData, 0);
   PrintWriteDataArray;
 end;
 
 procedure TFormNodeInterrogator.HandleWriteReplyCDI(ReceivedMessage: TLccMessage);
 begin
   RadioGroupDatagramWrite_ReplyMessage.ItemIndex := 1;
-  ReceivedMessage.CopyDataToDataArray(StatesDatagramWrite.FData, 0);
   PrintWriteDataArray;
 end;
 
 procedure TFormNodeInterrogator.HandleWriteReplyAll(ReceivedMessage: TLccMessage);
 begin
   RadioGroupDatagramWrite_ReplyMessage.ItemIndex := 2;
-  ReceivedMessage.CopyDataToDataArray(StatesDatagramWrite.FData, 0);
   PrintWriteDataArray;
 end;
 
 procedure TFormNodeInterrogator.HandleWriteReplyConfig(ReceivedMessage: TLccMessage);
 begin
   RadioGroupDatagramWrite_ReplyMessage.ItemIndex := 3;
-  ReceivedMessage.CopyDataToDataArray(StatesDatagramWrite.FData, 0);
   PrintWriteDataArray;
 end;
 
 procedure TFormNodeInterrogator.HandleWriteReplyFailure(ReceivedMessage: TLccMessage);
 begin
   RadioGroupDatagramWrite_ReplyMessage.ItemIndex := 4;
-  ReceivedMessage.CopyDataToDataArray(StatesDatagramWrite.FData, 0);
   PrintWriteDataArray;
 
   HandleWriteReplyFailureUpdate(ReceivedMessage);
@@ -2131,7 +2162,6 @@ end;
 procedure TFormNodeInterrogator.HandleWriteReplyFailureCDI(ReceivedMessage: TLccMessage);
 begin
   RadioGroupDatagramWrite_ReplyMessage.ItemIndex := 5;
-  ReceivedMessage.CopyDataToDataArray(StatesDatagramWrite.FData, 0);
   PrintWriteDataArray;
 
   HandleWriteReplyFailureUpdate(ReceivedMessage);
@@ -2140,7 +2170,6 @@ end;
 procedure TFormNodeInterrogator.HandleWriteReplyFailureAll(ReceivedMessage: TLccMessage);
 begin
   RadioGroupDatagramWrite_ReplyMessage.ItemIndex := 6;
-  ReceivedMessage.CopyDataToDataArray(StatesDatagramWrite.FData, 0);
   PrintWriteDataArray;
 
   HandleWriteReplyFailureUpdate(ReceivedMessage);
@@ -2149,7 +2178,6 @@ end;
 procedure TFormNodeInterrogator.HandleWriteReplyFailureConfig(ReceivedMessage: TLccMessage);
 begin
   RadioGroupDatagramWrite_ReplyMessage.ItemIndex := 7;
-  ReceivedMessage.CopyDataToDataArray(StatesDatagramWrite.FData, 0);
   PrintWriteDataArray;
 
   HandleWriteReplyFailureUpdate(ReceivedMessage);

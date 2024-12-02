@@ -329,6 +329,7 @@ end;
 function TLccComPort.Connect(ComPortPath: string): TLccComPortThread;
 begin
   Thread := TLccComPortThread.Create(True);
+  Thread.FreeOnTerminate := False;
   Thread.GridConnectHelper := TGridConnectDecodeStateMachine.Create;
   Thread.OutgoingGridConnectList := TThreadStringList.Create;
   Thread.GridConnectDisassembler := TLccGridConnectMessageDisAssembler.Create;
@@ -349,6 +350,9 @@ begin
     begin
       Application.ProcessMessages;
       Sleep(100);
+      // There may be some reentrant thing going on here on shut down
+      if not Assigned(Thread) then
+        Exit;
     end;
 
     Thread.GridConnectHelper.Free;
