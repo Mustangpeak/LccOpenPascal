@@ -9,7 +9,7 @@
     <map>
       <relation>
         <property>Description</property>
-        <value>Mustangpeak Exomple Raspberry Pi Node</value>
+        <value>Mustangpeak Test Node</value>
       </relation>
       <relation>
         <property>Status</property>
@@ -17,7 +17,7 @@
       </relation>
     </map>
   </identification>
-  <acdi fixed="1" var="1"/>
+  <acdi/>
   <segment origin="0" space="253">
     <name>Options</name>
     <description>Options for the Mustangpeak Example</description>
@@ -31,37 +31,5 @@
         <name>User Description</name>
       </string>
     </group>
-  </segment>
-  <segment origin="0" space="252">
-    <name>Manufacturer Information</name>
-    <description>Manufacturer-provided fixed node description</description>
-    <int size="1">
-      <name>Version</name>
-    </int>
-    <string size="12">
-      <name>Manufacturer Name</name>
-    </string>
-    <string size="6">
-      <name>Manufacturer Info</name>
-    </string>
-    <string size="4">
-      <name>Hardware Version</name>
-    </string>
-    <string size="4">
-      <name>Software Version</name>
-    </string>
-  </segment>
-  <segment origin="0" space="251">
-    <name>User Data</name>
-    <description>Add your own unique node info here</description>
-    <int size="1">
-      <name>Version</name>
-    </int>
-    <string size="63">
-      <name>User Name</name>
-    </string>
-    <string size="64">
-      <name>User Description</name>
-    </string>
   </segment>
 </cdi>

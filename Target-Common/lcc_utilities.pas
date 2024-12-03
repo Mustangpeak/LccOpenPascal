@@ -1170,9 +1170,9 @@ begin
   for i := 0 to Length(ADataArray) - 1 do
   begin
     if (ADataArray[i] > $20) and (ADataArray[i] < $7F) then
-      Result := Result + Char(ADataArray[i])
+      Result := Result + Chr(ADataArray[i])
     else
-      Result := Result + Char(ConversionChar);
+      Result := Result + Chr(ConversionChar);
 
     if InsertDots then
     begin

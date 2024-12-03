@@ -186,7 +186,9 @@ type
   { TFormNodeInterrogator }
 
   TFormNodeInterrogator = class(TForm)
+    ButtonDatagramWrite_ZeroUserName: TButton;
     ButtonDatagramWrite_Convert: TButton;
+    ButtonDatagramWrite_ZeroUserDesc: TButton;
     ButtonFdi_Read: TButton;
     ButtonMultiFrame_SnipConvert: TButton;
     ButtonSelector_FindNodes: TButton;
@@ -440,6 +442,8 @@ type
     TreeViewConfigMemAddressSpaceInfo: TTreeView;
     procedure ButtonCdi_ReadClick(Sender: TObject);
     procedure ButtonDatagramWrite_ConvertClick(Sender: TObject);
+    procedure ButtonDatagramWrite_ZeroUserDescClick(Sender: TObject);
+    procedure ButtonDatagramWrite_ZeroUserNameClick(Sender: TObject);
     procedure ButtonFdi_ReadClick(Sender: TObject);
     procedure ButtonMultiFrame_DatagramFirstClick(Sender: TObject);
     procedure ButtonMultiFrame_DatagramLastClick(Sender: TObject);
@@ -564,6 +568,7 @@ type
     function NextOIR_MtiMessage(MTI: Word): Word;
     procedure PrintCdiDataArray;
     procedure PrintFdiDataArray;
+    procedure PrepareForUiDatagramWrite;
 
     procedure HandleVerifiedNode(ReceivedMessage: TLccMessage);
     procedure HandleGetConfigOptionsReply(ReceivedMessage: TLccMessage);
@@ -1046,21 +1051,7 @@ begin
     if DefaultMessageBox('WARNING: Are you sure you want to write to this Node. It could cause unintended consquences!', 'WARNING', MB_OKCANCEL) <> mrOK then
       Exit;
 
-    CheckBoxDatagramWrite_AckOk.Checked := False;
-    CheckBoxDatagramWrite_AckRejected.Checked := False;
-    CheckBoxDatagramWrite_AckReplyPending.Checked := False;
-    CheckBoxDatagramWrite_AckReservedBitsClear.Checked := False;
-    EditDatagramWrite_AckEstimatedWaitTime.Text := '';
-    EditDatagramWrite_AckErrorCode.Text := '';
-    EditDatagramWrite_AckAdditionalInfo.Text := '';
-    EditDatagramWrite_AckDataBytes.Text := '';
-    EditDatagramWrite_RawData.Text := '';
-    EditDatagramWrite.Text := '';
-    RadioGroupDatagramWrite_ReplyMessage.ItemIndex := -1;
-    EditDatagramWrite_FailureOptionalMessage.Text := '';
-    EditDatagramWrite_FailureErrorCode.Text := '';
-    ImageDatagram_WriteFailureErrorCode.ImageIndex := -1;
-    EditDatagramWrite_FailureErrorCodeDescription.Text := '';
+    PrepareForUiDatagramWrite();
 
     PrintWriteDataArray;
 
@@ -1244,6 +1235,54 @@ begin
 
   EditDatagramWrite_Count.Text := IntToStr( Length(StatesDatagramWrite.Data));
   PrintWriteDataArray;
+end;
+
+procedure TFormNodeInterrogator.ButtonDatagramWrite_ZeroUserDescClick(Sender: TObject);
+var
+  i: Integer;
+begin
+  begin
+   if Assigned(TargetNode) and Assigned(Node) then
+    begin
+      PrepareForUiDatagramWrite;
+
+      SetLength(StatesDatagramWrite.FData, ACDI_USER_SIZE_DESCRIPTION);
+      for i := 0 to ACDI_USER_SIZE_DESCRIPTION - 1 do
+        StatesDatagramWrite.Data[i] := $00;
+
+      PrintWriteDataArray;
+
+      StatesDatagramWrite.WaitingForAck := True;
+
+      WorkerMessage.LoadConfigMemWrite(Node.NodeID, Node.AliasID, TargetNode.NodeID, TargetNode.Alias, ADDRESS_SPACE_ACDI_USER, 64, StatesDatagramWrite.Data);
+      SendMessage(WorkerMessage);
+    end else
+      ShowNoTargetMessage;
+  end;
+end;
+
+procedure TFormNodeInterrogator.ButtonDatagramWrite_ZeroUserNameClick(Sender: TObject);
+var
+  i: Integer;
+begin
+  begin
+   if Assigned(TargetNode) and Assigned(Node) then
+    begin
+      PrepareForUiDatagramWrite;
+
+      SetLength(StatesDatagramWrite.FData, ACDI_USER_SIZE_NAME);
+      for i := 0 to ACDI_USER_SIZE_NAME - 1 do
+        StatesDatagramWrite.Data[i] := $00;
+
+      PrintWriteDataArray;
+
+      StatesDatagramWrite.WaitingForAck := True;
+
+      WorkerMessage.LoadConfigMemWrite(Node.NodeID, Node.AliasID, TargetNode.NodeID, TargetNode.Alias, ADDRESS_SPACE_ACDI_USER, 1, StatesDatagramWrite.Data);
+      SendMessage(WorkerMessage);
+    end else
+      ShowNoTargetMessage;
+  end;
 end;
 
 procedure TFormNodeInterrogator.ButtonFdi_ReadClick(Sender: TObject);
@@ -1976,6 +2015,25 @@ begin
     1: MemoFdi_RawData.Text := ByteArrayAsDecStr(StateFdi.Data, CheckBoxFdi_UseDots.Checked);
     2: MemoFdi_RawData.Text := ByteArrayAsCharStr(StateFdi.Data, CheckBoxFdi_UseDots.Checked);
   end;
+end;
+
+procedure TFormNodeInterrogator.PrepareForUiDatagramWrite;
+begin
+  CheckBoxDatagramWrite_AckOk.Checked := False;
+  CheckBoxDatagramWrite_AckRejected.Checked := False;
+  CheckBoxDatagramWrite_AckReplyPending.Checked := False;
+  CheckBoxDatagramWrite_AckReservedBitsClear.Checked := False;
+  EditDatagramWrite_AckEstimatedWaitTime.Text := '';
+  EditDatagramWrite_AckErrorCode.Text := '';
+  EditDatagramWrite_AckAdditionalInfo.Text := '';
+  EditDatagramWrite_AckDataBytes.Text := '';
+  EditDatagramWrite_RawData.Text := '';
+  EditDatagramWrite.Text := '';
+  RadioGroupDatagramWrite_ReplyMessage.ItemIndex := -1;
+  EditDatagramWrite_FailureOptionalMessage.Text := '';
+  EditDatagramWrite_FailureErrorCode.Text := '';
+  ImageDatagram_WriteFailureErrorCode.ImageIndex := -1;
+  EditDatagramWrite_FailureErrorCodeDescription.Text := '';
 end;
 
 
