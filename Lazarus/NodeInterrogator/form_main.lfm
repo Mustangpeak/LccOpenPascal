@@ -1,7 +1,7 @@
 object FormNodeInterrogator: TFormNodeInterrogator
-  Left = 596
+  Left = -1563
   Height = 804
-  Top = 249
+  Top = 264
   Width = 1447
   Caption = 'Node Interrogator v0.1'
   ClientHeight = 804
@@ -115,9 +115,9 @@ object FormNodeInterrogator: TFormNodeInterrogator
       Height = 734
       Top = 1
       Width = 1143
-      ActivePage = TabSheetDatagramWrite
+      ActivePage = TabSheetMultiFrame
       Align = alClient
-      TabIndex = 5
+      TabIndex = 8
       TabOrder = 1
       object TabSheetMessageNetwork: TTabSheet
         Caption = 'Message Network'
@@ -1973,44 +1973,29 @@ object FormNodeInterrogator: TFormNodeInterrogator
               TabOrder = 2
               OnClick = ButtonMultiFrame_DatagramLastClick
             end
-            object EditMultiFrame_DatagramData: TEdit
-              Left = 32
+            object EditMultiFrame_DatagramFirstFrame: TEdit
+              Left = 304
               Height = 22
-              Top = 192
-              Width = 560
+              Top = 16
+              Width = 232
               TabOrder = 3
-              Text = '00.01.02.03.04.05.06.07.08.09.0A.0B.0C.0D.0E.0F'
+              Text = ':X1B640AAAN0102030405060708;'
             end
-            object LabelMultiFrame_DatagramData: TLabel
-              Left = 16
-              Height = 16
-              Top = 168
-              Width = 110
-              Caption = 'Datagram Payload'
-            end
-            object ButtonMultiframe_DatagramSendSequence: TButton
-              Left = 16
-              Height = 25
-              Top = 127
-              Width = 264
-              Caption = 'Send In Sequence'
-              TabOrder = 4
-              OnClick = ButtonMultiframe_DatagramSendSequenceClick
-            end
-            object EditMultiFrameDatagram_Sequence: TEdit
-              Left = 384
+            object EditMultiFrame_DatagramMiddleFrame: TEdit
+              Left = 304
               Height = 22
-              Top = 130
-              Width = 80
-              TabOrder = 5
-              Text = '500'
+              Top = 48
+              Width = 232
+              TabOrder = 4
+              Text = ':X1C640AAAN0102030405060708;'
             end
-            object LabelMultiFrame_DatagramSequence: TLabel
-              Left = 296
-              Height = 16
-              Top = 136
-              Width = 72
-              Caption = 'Timing (ms)'
+            object EditMultiFrame_DatagramLastFrame: TEdit
+              Left = 304
+              Height = 22
+              Top = 80
+              Width = 232
+              TabOrder = 5
+              Text = ':X1D640AAAN01020304;'
             end
           end
           object GroupBoxMultiFrame_Snip: TGroupBox
@@ -2049,200 +2034,29 @@ object FormNodeInterrogator: TFormNodeInterrogator
               TabOrder = 2
               OnClick = ButtonMultiFrame_SnipLastClick
             end
-            object ButtonMultiframe_SnipSendSequence: TButton
-              Left = 16
-              Height = 25
-              Top = 120
-              Width = 264
-              Caption = 'Send In Sequence'
+            object EditMultiFrame_SnipFirstFrame: TEdit
+              Left = 304
+              Height = 22
+              Top = 16
+              Width = 232
               TabOrder = 3
-              OnClick = ButtonMultiframe_SnipSendSequenceClick
+              Text = ':X19A08AAAN464002AABB00AA00;'
             end
-            object EditMultiFrame_SnipSequence: TEdit
-              Left = 152
+            object EditMultiFrame_SnipMiddleFrame: TEdit
+              Left = 304
               Height = 22
-              Top = 152
-              Width = 80
+              Top = 48
+              Width = 232
               TabOrder = 4
-              Text = '500'
+              Text = ':X19A08AAANC6400422007700;'
             end
-            object LabelMultiFrame_DatagramSequence1: TLabel
-              Left = 56
-              Height = 16
-              Top = 152
-              Width = 72
-              Caption = 'Timing (ms)'
-            end
-            object CheckBox1: TCheckBox
-              Left = 32
-              Height = 18
-              Top = 200
-              Width = 221
-              Caption = 'Use Legacy Snip (no Framing Bits)'
-              TabOrder = 5
-            end
-            object GroupBoxMultiFrame_Manufacturer: TGroupBox
-              Left = 296
-              Height = 157
-              Top = 3
-              Width = 288
-              Caption = 'Manufacturer'
-              ClientHeight = 130
-              ClientWidth = 278
-              TabOrder = 6
-              object LabelMultiFrame_ManufacturerHardwareVersion: TLabel
-                Left = 8
-                Height = 16
-                Top = 78
-                Width = 107
-                Caption = 'Hardware Version'
-              end
-              object LabelMultiFrame_ManufacturerSoftwareVersion: TLabel
-                Left = 8
-                Height = 16
-                Top = 102
-                Width = 103
-                Caption = 'Software Version'
-              end
-              object LabelMultiFrame_ManufacturerVersion: TLabel
-                Left = 8
-                Height = 16
-                Top = 6
-                Width = 92
-                Caption = 'Version (1 or 4)'
-              end
-              object LabelMultiFrame_Manufacturer: TLabel
-                Left = 8
-                Height = 16
-                Top = 30
-                Width = 82
-                Caption = 'Manufacturer'
-              end
-              object LabelMultiFrame_ManufacturerName: TLabel
-                Left = 8
-                Height = 16
-                Top = 54
-                Width = 35
-                Caption = 'Name'
-              end
-              object EditMultiFrame_MfgName: TEdit
-                Left = 128
-                Height = 22
-                Top = 48
-                Width = 80
-                TabOrder = 0
-                Text = 'My Node'
-              end
-              object EditMultiFrame_MfgHardwareVersion: TEdit
-                Left = 128
-                Height = 22
-                Top = 72
-                Width = 80
-                TabOrder = 1
-                Text = '1.0.2'
-              end
-              object EditMultiFrame_MfgSoftwareVersion: TEdit
-                Left = 128
-                Height = 22
-                Top = 96
-                Width = 80
-                TabOrder = 2
-                Text = '2.0'
-              end
-              object EditMultiFrame_MfgManufacturer: TEdit
-                Left = 128
-                Height = 22
-                Top = 24
-                Width = 144
-                TabOrder = 3
-                Text = 'Spacely Sprocket'
-              end
-              object EditMultiFrame_MfgVersion: TEdit
-                Left = 128
-                Height = 22
-                Top = 0
-                Width = 80
-                TabOrder = 4
-                Text = '4'
-              end
-            end
-            object GroupBoxMultiFrame_User: TGroupBox
-              Left = 296
-              Height = 104
-              Top = 168
-              Width = 288
-              Caption = 'User'
-              ClientHeight = 77
-              ClientWidth = 278
-              TabOrder = 7
-              object EditMultiFrame_UserName: TEdit
-                Left = 120
-                Height = 22
-                Top = 24
-                Width = 80
-                TabOrder = 0
-                Text = 'Jim'
-              end
-              object EditMultiFrame_UserDescription: TEdit
-                Left = 120
-                Height = 22
-                Top = 48
-                Width = 152
-                TabOrder = 1
-                Text = 'Sold'
-              end
-              object LabelMultiFrame_UserDescription: TLabel
-                Left = 8
-                Height = 16
-                Top = 54
-                Width = 69
-                Caption = 'Description'
-              end
-              object LabelMultiFrame_UserName: TLabel
-                Left = 8
-                Height = 16
-                Top = 30
-                Width = 35
-                Caption = 'Name'
-              end
-              object EditMultiFrame_UserVersion: TEdit
-                Left = 120
-                Height = 22
-                Top = 0
-                Width = 80
-                TabOrder = 2
-                Text = '2'
-              end
-              object LabelMultiFrame_UserVersion: TLabel
-                Left = 8
-                Height = 16
-                Top = 6
-                Width = 92
-                Caption = 'Version (1 or 2)'
-              end
-            end
-            object EditMultiFrame_SnipData: TEdit
-              Left = 32
+            object EditMultiFrame_SnipLastFrame: TEdit
+              Left = 304
               Height = 22
-              Top = 312
-              Width = 560
-              TabOrder = 8
-            end
-            object LabelMultiFrame_SnipData: TLabel
-              Left = 24
-              Height = 16
-              Top = 280
-              Width = 81
-              Caption = 'SNIP Payload'
-            end
-            object ButtonMultiFrame_SnipConvert: TButton
-              Left = 328
-              Height = 25
-              Top = 280
-              Width = 227
-              Caption = 'Convert To Payload'
-              TabOrder = 9
-              OnClick = ButtonMultiFrame_SnipConvertClick
+              Top = 80
+              Width = 232
+              TabOrder = 5
+              Text = ':X19A08AAAN86406600778800;'
             end
           end
         end

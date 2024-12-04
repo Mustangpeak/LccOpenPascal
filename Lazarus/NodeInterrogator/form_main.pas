@@ -190,7 +190,6 @@ type
     ButtonDatagramWrite_Convert: TButton;
     ButtonDatagramWrite_ZeroUserDesc: TButton;
     ButtonFdi_Read: TButton;
-    ButtonMultiFrame_SnipConvert: TButton;
     ButtonSelector_FindNodes: TButton;
     ButtonCdi_Read: TButton;
     ButtonMultiFrame_DatagramFirst: TButton;
@@ -199,8 +198,6 @@ type
     ButtonMultiFrame_DatagramMiddle: TButton;
     ButtonMultiFrame_DatagramLast: TButton;
     ButtonMultiFrame_SnipMiddle: TButton;
-    ButtonMultiframe_DatagramSendSequence: TButton;
-    ButtonMultiframe_SnipSendSequence: TButton;
     ButtonOptionalInteractionRejected_ExpandAll: TButton;
     ButtonOptionalInteractionRejected_CollapseAll: TButton;
     ButtonOptionalInteractionRejected_Cancel: TButton;
@@ -226,7 +223,6 @@ type
     ButtonRefreshComPort: TButton;
     ButtonComPortConnect: TButton;
     ButtonVerifyNodesAddressed: TButton;
-    CheckBox1: TCheckBox;
     CheckBoxFdi_UseDots: TCheckBox;
     CheckBoxProtcolSupport_ReservedBitClear: TCheckBox;
     CheckBoxDatagramWrite_AckOk: TCheckBox;
@@ -265,6 +261,11 @@ type
     ComboBoxDatagramWrite_WriteableAddressSpaces: TComboBox;
     ComboBoxSelector: TComboBox;
     ComboBoxComPorts: TComboBox;
+    EditMultiFrame_DatagramFirstFrame: TEdit;
+    EditMultiFrame_SnipFirstFrame: TEdit;
+    EditMultiFrame_SnipLastFrame: TEdit;
+    EditMultiFrame_DatagramMiddleFrame: TEdit;
+    EditMultiFrame_DatagramLastFrame: TEdit;
     EditDatagramWrite_WriteString: TEdit;
     EditDatagramRead_FailureErrorCodeDescription: TEdit;
     EditDatagramWrite_FailureErrorCodeDescription: TEdit;
@@ -272,18 +273,7 @@ type
     EditDatagramRead_FailureErrorCode: TEdit;
     EditDatagramWrite_FailureOptionalMessage: TEdit;
     EditDatagramRead_FailureOptionalMessage: TEdit;
-    EditMultiFrame_MfgVersion: TEdit;
-    EditMultiFrame_SnipData: TEdit;
-    EditMultiFrame_MfgName: TEdit;
-    EditMultiFrame_MfgHardwareVersion: TEdit;
-    EditMultiFrame_MfgSoftwareVersion: TEdit;
-    EditMultiFrame_MfgManufacturer: TEdit;
-    EditMultiFrame_UserName: TEdit;
-    EditMultiFrame_UserDescription: TEdit;
-    EditMultiFrameDatagram_Sequence: TEdit;
-    EditMultiFrame_SnipSequence: TEdit;
-    EditMultiFrame_DatagramData: TEdit;
-    EditMultiFrame_UserVersion: TEdit;
+    EditMultiFrame_SnipMiddleFrame: TEdit;
     EditProtocolSupport_RawData: TEdit;
     EditSnip_ManufacturerVersion: TEdit;
     EditSnip_Manufacturer: TEdit;
@@ -315,8 +305,6 @@ type
     EditConfigMemLowestAddressSpace: TEdit;
     EditDatagramWrite_StartAddress: TEdit;
     GroupBox1: TGroupBox;
-    GroupBoxMultiFrame_User: TGroupBox;
-    GroupBoxMultiFrame_Manufacturer: TGroupBox;
     GroupBoxMultiFrame_Datagrams: TGroupBox;
     GroupBoxMultiFrame_Snip: TGroupBox;
     GroupBoxOptionalInteractionRejected: TGroupBox;
@@ -344,21 +332,9 @@ type
     LabelDatagramRead_FailureErrorCode: TLabel;
     LabelDatagramWrite_FailureOptionalMessage: TLabel;
     LabelDatagramRead_FailureOptionalMessage: TLabel;
-    LabelMultiFrame_SnipData: TLabel;
-    LabelMultiFrame_UserVersion: TLabel;
     LabelSelector: TLabel;
     Label2: TLabel;
     Label3: TLabel;
-    LabelMultiFrame_UserDescription: TLabel;
-    LabelMultiFrame_UserName: TLabel;
-    LabelMultiFrame_ManufacturerSoftwareVersion: TLabel;
-    LabelMultiFrame_ManufacturerHardwareVersion: TLabel;
-    LabelMultiFrame_ManufacturerVersion: TLabel;
-    LabelMultiFrame_Manufacturer: TLabel;
-    LabelMultiFrame_ManufacturerName: TLabel;
-    LabelMultiFrame_DatagramSequence: TLabel;
-    LabelMultiFrame_DatagramData: TLabel;
-    LabelMultiFrame_DatagramSequence1: TLabel;
     LabelProtocolSupport_RawData: TLabel;
     LabelSnip_RawData: TLabel;
     LabelSnip_Manufacturer: TLabel;
@@ -448,12 +424,9 @@ type
     procedure ButtonMultiFrame_DatagramFirstClick(Sender: TObject);
     procedure ButtonMultiFrame_DatagramLastClick(Sender: TObject);
     procedure ButtonMultiFrame_DatagramMiddleClick(Sender: TObject);
-    procedure ButtonMultiframe_DatagramSendSequenceClick(Sender: TObject);
-    procedure ButtonMultiFrame_SnipConvertClick(Sender: TObject);
     procedure ButtonMultiFrame_SnipFirstClick(Sender: TObject);
     procedure ButtonMultiFrame_SnipLastClick(Sender: TObject);
     procedure ButtonMultiFrame_SnipMiddleClick(Sender: TObject);
-    procedure ButtonMultiframe_SnipSendSequenceClick(Sender: TObject);
     procedure ButtonOptionalInteractionRejected_CancelClick(Sender: TObject);
     procedure ButtonOptionalInteractionRejected_ClearClick(Sender: TObject);
     procedure ButtonOptionalInteractionRejected_CollapseAllClick(Sender: TObject);
@@ -569,6 +542,7 @@ type
     procedure PrintCdiDataArray;
     procedure PrintFdiDataArray;
     procedure PrepareForUiDatagramWrite;
+
 
     procedure HandleVerifiedNode(ReceivedMessage: TLccMessage);
     procedure HandleGetConfigOptionsReply(ReceivedMessage: TLccMessage);
@@ -1196,17 +1170,6 @@ begin
   TreeViewOptionalInteractionRejected.Items.Clear;
 end;
 
-procedure TFormNodeInterrogator.ButtonMultiFrame_DatagramFirstClick(Sender: TObject);
-begin
-  if Assigned(TargetNode) and Assigned(Node) then
-    begin
-      HexStrAsByteArray( EditMultiFrame_DatagramData.Text,  StateMultiFrame.FDatagram);
-
-      ShowMessage('Working on it');
-    end else
-      ShowNoTargetMessage;
-end;
-
 procedure TFormNodeInterrogator.ButtonCdi_ReadClick(Sender: TObject);
 begin
   if Assigned(TargetNode) and Assigned(Node) then
@@ -1301,10 +1264,20 @@ procedure TFormNodeInterrogator.ButtonMultiFrame_DatagramLastClick(Sender: TObje
 begin
   if Assigned(TargetNode) and Assigned(Node) then
     begin
-      HexStrAsByteArray( EditMultiFrame_DatagramData.Text,  StateMultiFrame.FDatagram);
 
+      SerialLink.SendString(EditMultiFrame_DatagramLastFrame.Text);
 
-       ShowMessage('Working on it');
+    end else
+      ShowNoTargetMessage;
+end;
+
+procedure TFormNodeInterrogator.ButtonMultiFrame_DatagramFirstClick(Sender: TObject);
+begin
+  if Assigned(TargetNode) and Assigned(Node) then
+    begin
+
+      SerialLink.SendString(EditMultiFrame_DatagramFirstFrame.Text);
+
     end else
       ShowNoTargetMessage;
 end;
@@ -1313,111 +1286,21 @@ procedure TFormNodeInterrogator.ButtonMultiFrame_DatagramMiddleClick(Sender: TOb
 begin
   if Assigned(TargetNode) and Assigned(Node) then
   begin
-    HexStrAsByteArray( EditMultiFrame_DatagramData.Text,  StateMultiFrame.FDatagram);
 
+     SerialLink.SendString(EditMultiFrame_DatagramMiddleFrame.Text);
 
-     ShowMessage('Working on it');
   end else
     ShowNoTargetMessage;
 end;
 
-procedure TFormNodeInterrogator.ButtonMultiframe_DatagramSendSequenceClick(Sender: TObject);
-begin
-  if Assigned(TargetNode) and Assigned(Node) then
-    begin
-      HexStrAsByteArray( EditMultiFrame_DatagramData.Text,  StateMultiFrame.FDatagram);
-
-
-       ShowMessage('Working on it');
-    end else
-      ShowNoTargetMessage;
-end;
-
-procedure TFormNodeInterrogator.ButtonMultiFrame_SnipConvertClick(Sender: TObject);
-var
-  Index: Integer;
-  i: Integer;
-begin
-  SetLength(StateMultiFrame.FSnip,
-            EditMultiFrame_MfgManufacturer.GetTextLen +
-            EditMultiFrame_MfgName.GetTextLen +
-            EditMultiFrame_MfgHardwareVersion.GetTextLen +
-            EditMultiFrame_MfgSoftwareVersion.GetTextLen +
-            EditMultiFrame_UserName.GetTextLen +
-            EditMultiFrame_UserDescription.GetTextLen +
-            8 // Nulls + 2 Version bytes
-            );
-
-
-   Index := 0;
-   StateMultiFrame.Snip[Index] := StrToInt(EditMultiFrame_MfgVersion.Text);
-   Inc(Index);
-
-   for i := 1 to EditMultiFrame_MfgManufacturer.GetTextLen do
-   begin
-     StateMultiFrame.Snip[Index] := Ord( EditMultiFrame_MfgManufacturer.Text[i]);
-     Inc(Index);
-   end;
-
-   StateMultiFrame.Snip[Index] := $00;
-   Inc(Index);
-
-   for i := 1 to EditMultiFrame_MfgName.GetTextLen do
-   begin
-     StateMultiFrame.Snip[Index] := Ord( EditMultiFrame_MfgName.Text[i]);
-     Inc(Index);
-   end;
-
-   StateMultiFrame.Snip[Index] := $00;
-   Inc(Index);
-
-   for i := 1 to EditMultiFrame_MfgHardwareVersion.GetTextLen do
-   begin
-     StateMultiFrame.Snip[Index] := Ord( EditMultiFrame_MfgHardwareVersion.Text[i]);
-     Inc(Index);
-   end;
-
-   StateMultiFrame.Snip[Index] := $00;
-   Inc(Index);
-
-   for i := 1 to EditMultiFrame_MfgSoftwareVersion.GetTextLen do
-   begin
-     StateMultiFrame.Snip[Index] := Ord( EditMultiFrame_MfgSoftwareVersion.Text[i]);
-     Inc(Index);
-   end;
-
-   StateMultiFrame.Snip[Index] := $00;
-   Inc(Index);
-
-   StateMultiFrame.Snip[Index] := StrToInt(EditMultiFrame_UserVersion.Text);
-   Inc(Index);
-
-   for i := 1 to EditMultiFrame_UserName.GetTextLen do
-   begin
-     StateMultiFrame.Snip[Index] := Ord( EditMultiFrame_UserName.Text[i]);
-     Inc(Index);
-   end;
-
-   StateMultiFrame.Snip[Index] := $00;
-   Inc(Index);
-
-   for i := 1 to EditMultiFrame_UserDescription.GetTextLen do
-   begin
-     StateMultiFrame.Snip[Index] := Ord( EditMultiFrame_UserDescription.Text[i]);
-     Inc(Index);
-   end;
-
-   StateMultiFrame.Snip[Index] := $00;
-
-   EditMultiFrame_SnipData.Text := ByteArrayAsHexStr(StateMultiFrame.Snip, True);
-
-end;
 
 procedure TFormNodeInterrogator.ButtonMultiFrame_SnipFirstClick(Sender: TObject);
 begin
   if Assigned(TargetNode) and Assigned(Node) then
     begin
-       ShowMessage('Working on it');
+
+      SerialLink.SendString(EditMultiFrame_SnipFirstFrame.Text);
+
     end else
       ShowNoTargetMessage;
 end;
@@ -1426,7 +1309,9 @@ procedure TFormNodeInterrogator.ButtonMultiFrame_SnipLastClick(Sender: TObject);
 begin
   if Assigned(TargetNode) and Assigned(Node) then
     begin
-       ShowMessage('Working on it');
+
+      SerialLink.SendString(EditMultiFrame_SnipLastFrame.Text);
+
     end else
       ShowNoTargetMessage;
 end;
@@ -1435,16 +1320,9 @@ procedure TFormNodeInterrogator.ButtonMultiFrame_SnipMiddleClick(Sender: TObject
 begin
   if Assigned(TargetNode) and Assigned(Node) then
     begin
-       ShowMessage('Working on it');
-    end else
-      ShowNoTargetMessage;
-end;
 
-procedure TFormNodeInterrogator.ButtonMultiframe_SnipSendSequenceClick(Sender: TObject);
-begin
-  if Assigned(TargetNode) and Assigned(Node) then
-    begin
-       ShowMessage('Working on it');
+      SerialLink.SendString(EditMultiFrame_SnipMiddleFrame.Text);
+
     end else
       ShowNoTargetMessage;
 end;
