@@ -1,7 +1,7 @@
 object FormNodeInterrogator: TFormNodeInterrogator
-  Left = -1563
+  Left = 581
   Height = 804
-  Top = 264
+  Top = 196
   Width = 1447
   Caption = 'Node Interrogator v0.1'
   ClientHeight = 804
@@ -1997,15 +1997,74 @@ object FormNodeInterrogator: TFormNodeInterrogator
               TabOrder = 5
               Text = ':X1D640AAAN01020304;'
             end
+            object ButtonMultiFrame_SendDatagramSpaceInfo: TButton
+              Left = 24
+              Height = 25
+              Top = 144
+              Width = 256
+              Caption = 'Send Get Space Info 0xFF'
+              TabOrder = 6
+              OnClick = ButtonMultiFrame_SendDatagramSpaceInfoClick
+            end
+            object ButtonMultiFrame_SendDatagramOk: TButton
+              Left = 96
+              Height = 25
+              Top = 168
+              Width = 184
+              Caption = 'Send Datagram Ok'
+              TabOrder = 7
+              OnClick = ButtonMultiFrame_SendDatagramOkClick
+            end
+            object ButtonMultiFrame_SendDatagramRejected: TButton
+              Left = 96
+              Height = 25
+              Top = 192
+              Width = 184
+              Caption = 'Send Datagram Rejected'
+              TabOrder = 8
+              OnClick = ButtonMultiFrame_SendDatagramRejectedClick
+            end
+            object EditMultiFrame_DatagramSendGetSpaceInfoFF: TEdit
+              Left = 304
+              Height = 22
+              Top = 147
+              Width = 232
+              TabOrder = 9
+              Text = ':X1A641AAAN2080;'
+            end
+            object EditMultiFrame_DatagramSendOkAck: TEdit
+              Left = 304
+              Height = 22
+              Top = 171
+              Width = 232
+              TabOrder = 10
+              Text = ':X19A28AAAN064180;'
+            end
+            object EditMultiFrame_DatagramSendFailAck: TEdit
+              Left = 304
+              Height = 22
+              Top = 195
+              Width = 232
+              TabOrder = 11
+              Text = ':X19A48AAAN06412000;'
+            end
+            object CheckBoxMultiframe_DisableAutoAck: TCheckBox
+              Left = 32
+              Height = 18
+              Top = 120
+              Width = 167
+              Caption = 'Disable Auto Ack Replies'
+              TabOrder = 12
+            end
           end
           object GroupBoxMultiFrame_Snip: TGroupBox
             Left = 8
             Height = 368
             Top = 280
-            Width = 608
+            Width = 616
             Caption = 'Simple Node Information (SNIP)'
             ClientHeight = 341
-            ClientWidth = 598
+            ClientWidth = 606
             TabOrder = 1
             object ButtonMultiFrame_SnipFirst: TButton
               Left = 16
@@ -2057,6 +2116,40 @@ object FormNodeInterrogator: TFormNodeInterrogator
               Width = 232
               TabOrder = 5
               Text = ':X19A08AAAN86406600778800;'
+            end
+            object ButtonMultiFrame_SendDatagramSnip: TButton
+              Left = 24
+              Height = 25
+              Top = 144
+              Width = 256
+              Caption = 'Send Get SNIP'
+              TabOrder = 6
+              OnClick = ButtonMultiFrame_SendDatagramSnipClick
+            end
+            object ButtonMultiFrame_SendOIRTemporary: TButton
+              Left = 64
+              Height = 25
+              Top = 168
+              Width = 216
+              Caption = 'Send OIR Rejected Temporary'
+              TabOrder = 7
+              OnClick = ButtonMultiFrame_SendOIRTemporaryClick
+            end
+            object EditMultiFrame_DatagramSendSnip: TEdit
+              Left = 304
+              Height = 22
+              Top = 147
+              Width = 232
+              TabOrder = 8
+              Text = ':X19DE8AAAN0641;'
+            end
+            object EditMultiFrame_DatagramSendOIRTemporary: TEdit
+              Left = 304
+              Height = 22
+              Top = 171
+              Width = 232
+              TabOrder = 9
+              Text = ':X19068AAAN064120000DE8;'
             end
           end
         end

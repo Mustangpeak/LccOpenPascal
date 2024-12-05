@@ -186,10 +186,15 @@ type
   { TFormNodeInterrogator }
 
   TFormNodeInterrogator = class(TForm)
+    ButtonMultiFrame_SendOIRTemporary: TButton;
+    ButtonMultiFrame_SendDatagramSpaceInfo: TButton;
     ButtonDatagramWrite_ZeroUserName: TButton;
     ButtonDatagramWrite_Convert: TButton;
     ButtonDatagramWrite_ZeroUserDesc: TButton;
     ButtonFdi_Read: TButton;
+    ButtonMultiFrame_SendDatagramOk: TButton;
+    ButtonMultiFrame_SendDatagramRejected: TButton;
+    ButtonMultiFrame_SendDatagramSnip: TButton;
     ButtonSelector_FindNodes: TButton;
     ButtonCdi_Read: TButton;
     ButtonMultiFrame_DatagramFirst: TButton;
@@ -223,6 +228,7 @@ type
     ButtonRefreshComPort: TButton;
     ButtonComPortConnect: TButton;
     ButtonVerifyNodesAddressed: TButton;
+    CheckBoxMultiframe_DisableAutoAck: TCheckBox;
     CheckBoxFdi_UseDots: TCheckBox;
     CheckBoxProtcolSupport_ReservedBitClear: TCheckBox;
     CheckBoxDatagramWrite_AckOk: TCheckBox;
@@ -262,6 +268,11 @@ type
     ComboBoxSelector: TComboBox;
     ComboBoxComPorts: TComboBox;
     EditMultiFrame_DatagramFirstFrame: TEdit;
+    EditMultiFrame_DatagramSendGetSpaceInfoFF: TEdit;
+    EditMultiFrame_DatagramSendSnip: TEdit;
+    EditMultiFrame_DatagramSendOkAck: TEdit;
+    EditMultiFrame_DatagramSendFailAck: TEdit;
+    EditMultiFrame_DatagramSendOIRTemporary: TEdit;
     EditMultiFrame_SnipFirstFrame: TEdit;
     EditMultiFrame_SnipLastFrame: TEdit;
     EditMultiFrame_DatagramMiddleFrame: TEdit;
@@ -424,6 +435,11 @@ type
     procedure ButtonMultiFrame_DatagramFirstClick(Sender: TObject);
     procedure ButtonMultiFrame_DatagramLastClick(Sender: TObject);
     procedure ButtonMultiFrame_DatagramMiddleClick(Sender: TObject);
+    procedure ButtonMultiFrame_SendDatagramOkClick(Sender: TObject);
+    procedure ButtonMultiFrame_SendDatagramRejectedClick(Sender: TObject);
+    procedure ButtonMultiFrame_SendDatagramSnipClick(Sender: TObject);
+    procedure ButtonMultiFrame_SendDatagramSpaceInfoClick(Sender: TObject);
+    procedure ButtonMultiFrame_SendOIRTemporaryClick(Sender: TObject);
     procedure ButtonMultiFrame_SnipFirstClick(Sender: TObject);
     procedure ButtonMultiFrame_SnipLastClick(Sender: TObject);
     procedure ButtonMultiFrame_SnipMiddleClick(Sender: TObject);
@@ -1293,6 +1309,63 @@ begin
     ShowNoTargetMessage;
 end;
 
+procedure TFormNodeInterrogator.ButtonMultiFrame_SendDatagramOkClick(Sender: TObject);
+begin
+   if Assigned(TargetNode) and Assigned(Node) then
+  begin
+
+     SerialLink.SendString(EditMultiFrame_DatagramSendOkAck.Text);
+
+  end else
+    ShowNoTargetMessage;
+end;
+
+procedure TFormNodeInterrogator.ButtonMultiFrame_SendDatagramRejectedClick(Sender: TObject);
+begin
+   if Assigned(TargetNode) and Assigned(Node) then
+  begin
+
+     SerialLink.SendString(EditMultiFrame_DatagramSendFailAck.Text);
+
+  end else
+    ShowNoTargetMessage;
+end;
+
+procedure TFormNodeInterrogator.ButtonMultiFrame_SendDatagramSnipClick(Sender: TObject);
+begin
+   if Assigned(TargetNode) and Assigned(Node) then
+   begin
+
+     SerialLink.SendString(EditMultiFrame_DatagramSendSnip.Text);
+
+   end else
+     ShowNoTargetMessage;
+end;
+
+procedure TFormNodeInterrogator.ButtonMultiFrame_SendDatagramSpaceInfoClick(Sender: TObject);
+begin
+
+  if Assigned(TargetNode) and Assigned(Node) then
+  begin
+
+    SerialLink.SendString(EditMultiFrame_DatagramSendGetSpaceInfoFF.Text);
+
+  end else
+    ShowNoTargetMessage;
+
+end;
+
+procedure TFormNodeInterrogator.ButtonMultiFrame_SendOIRTemporaryClick(Sender: TObject);
+begin
+  if Assigned(TargetNode) and Assigned(Node) then
+ begin
+
+    SerialLink.SendString(EditMultiFrame_DatagramSendOIRTemporary.Text);
+
+ end else
+   ShowNoTargetMessage;
+end;
+
 
 procedure TFormNodeInterrogator.ButtonMultiFrame_SnipFirstClick(Sender: TObject);
 begin
@@ -1503,7 +1576,8 @@ begin
       MTI_DATAGRAM:
       begin
 
-        SendAck(ReceiveMessage);
+       if not CheckBoxMultiframe_DisableAutoAck.Checked then
+         SendAck(ReceiveMessage);
 
         case ReceiveMessage.DataArray[0] of
 
