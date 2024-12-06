@@ -1,7 +1,7 @@
 object FormNodeInterrogator: TFormNodeInterrogator
-  Left = 581
+  Left = 580
   Height = 804
-  Top = 196
+  Top = 195
   Width = 1447
   Caption = 'Node Interrogator v0.1'
   ClientHeight = 804
@@ -115,9 +115,9 @@ object FormNodeInterrogator: TFormNodeInterrogator
       Height = 734
       Top = 1
       Width = 1143
-      ActivePage = TabSheetMultiFrame
+      ActivePage = TabSheetCdi
       Align = alClient
-      TabIndex = 8
+      TabIndex = 6
       TabOrder = 1
       object TabSheetMessageNetwork: TTabSheet
         Caption = 'Message Network'

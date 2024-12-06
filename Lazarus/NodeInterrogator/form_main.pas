@@ -1576,121 +1576,125 @@ begin
       MTI_DATAGRAM:
       begin
 
-       if not CheckBoxMultiframe_DisableAutoAck.Checked then
-         SendAck(ReceiveMessage);
+       if ReceiveMessage.DestAlias = TargetNode.Alias then
+       begin
 
-        case ReceiveMessage.DataArray[0] of
+         if not CheckBoxMultiframe_DisableAutoAck.Checked then
+           SendAck(ReceiveMessage);
 
-          DATAGRAM_PROTOCOL_CONFIGURATION:
+          case ReceiveMessage.DataArray[0] of
 
-            case ReceiveMessage.DataArray[1] of
+            DATAGRAM_PROTOCOL_CONFIGURATION:
 
-              MCP_READ_REPLY:
-              begin
-                HandleReadReply(ReceiveMessage);
-              end;
-              MCP_READ_REPLY_CDI:
-              begin
-                HandleReadReplyCDI(ReceiveMessage);
-              end;
-              MCP_READ_REPLY_ALL:
-              begin
-                HandleReadReplyAll(ReceiveMessage);
-              end;
-              MCP_READ_REPLY_CONFIG:
-              begin
-                HandleReadReplyConfig(ReceiveMessage);
-              end;
+              case ReceiveMessage.DataArray[1] of
 
-              MCP_READ_REPLY_FAILURE:
-              begin
-                HandleReadReplyFailure(ReceiveMessage);
-              end;
+                MCP_READ_REPLY:
+                begin
+                  HandleReadReply(ReceiveMessage);
+                end;
+                MCP_READ_REPLY_CDI:
+                begin
+                  HandleReadReplyCDI(ReceiveMessage);
+                end;
+                MCP_READ_REPLY_ALL:
+                begin
+                  HandleReadReplyAll(ReceiveMessage);
+                end;
+                MCP_READ_REPLY_CONFIG:
+                begin
+                  HandleReadReplyConfig(ReceiveMessage);
+                end;
 
-              MCP_READ_REPLY_FAILURE_CDI:
-              begin
-                HandleReadReplyFailureCDI(ReceiveMessage);
-              end;
+                MCP_READ_REPLY_FAILURE:
+                begin
+                  HandleReadReplyFailure(ReceiveMessage);
+                end;
 
-              MCP_READ_REPLY_FAILURE_ALL:
-              begin
-                HandleReadReplyFailureAll(ReceiveMessage);
-              end;
+                MCP_READ_REPLY_FAILURE_CDI:
+                begin
+                  HandleReadReplyFailureCDI(ReceiveMessage);
+                end;
 
-              MCP_READ_REPLY_FAILURE_CONFIG:
-              begin
-                HandleReadReplyFailureConfig(ReceiveMessage);
-              end;
+                MCP_READ_REPLY_FAILURE_ALL:
+                begin
+                  HandleReadReplyFailureAll(ReceiveMessage);
+                end;
 
-
-              MCP_WRITE_REPLY:
-              begin
-                HandleWriteReply(ReceiveMessage);
-              end;
-              MCP_WRITE_REPLY_CDI:
-              begin
-                HandleWriteReplyCDI(ReceiveMessage);
-              end;
-              MCP_WRITE_REPLY_ALL:
-              begin
-                HandleWriteReplyAll(ReceiveMessage);
-              end;
-              MCP_WRITE_REPLY_CONFIG:
-              begin
-                HandleWriteReplyConfig(ReceiveMessage);
-              end;
-
-              MCP_WRITE_REPLY_FAILURE:
-              begin
-                HandleWriteReplyFailure(ReceiveMessage);
-              end;
-
-              MCP_WRITE_REPLY_FAILURE_CDI:
-              begin
-                HandleWriteReplyFailureCDI(ReceiveMessage);
-              end;
-
-              MCP_WRITE_REPLY_FAILURE_ALL:
-              begin
-                HandleWriteReplyFailureAll(ReceiveMessage);
-              end;
-
-              MCP_WRITE_REPLY_FAILURE_CONFIG:
-              begin
-                 HandleWriteReplyFailureConfig(ReceiveMessage);
-              end;
+                MCP_READ_REPLY_FAILURE_CONFIG:
+                begin
+                  HandleReadReplyFailureConfig(ReceiveMessage);
+                end;
 
 
-              MCP_OP_GET_CONFIG_OPTIONS_REPLY:
-              begin
-                 HandleGetConfigOptionsReply(ReceiveMessage);
-              end;
-              MCP_OP_GET_ADD_SPACE_INFO_PRESENT_REPLY:
-              begin
-                 HandleGetAddressSpaceInfoPresentReply(ReceiveMessage);
-              end;
-              MCP_OP_GET_ADD_SPACE_INFO_NOT_PRESENT_REPLY:
-              begin
-                 HandleGetAddressSpaceInfoNotPresentReply(ReceiveMessage);
-              end;
+                MCP_WRITE_REPLY:
+                begin
+                  HandleWriteReply(ReceiveMessage);
+                end;
+                MCP_WRITE_REPLY_CDI:
+                begin
+                  HandleWriteReplyCDI(ReceiveMessage);
+                end;
+                MCP_WRITE_REPLY_ALL:
+                begin
+                  HandleWriteReplyAll(ReceiveMessage);
+                end;
+                MCP_WRITE_REPLY_CONFIG:
+                begin
+                  HandleWriteReplyConfig(ReceiveMessage);
+                end;
 
-              MCP_OP_LOCK_REPLY:
-              begin
+                MCP_WRITE_REPLY_FAILURE:
+                begin
+                  HandleWriteReplyFailure(ReceiveMessage);
+                end;
+
+                MCP_WRITE_REPLY_FAILURE_CDI:
+                begin
+                  HandleWriteReplyFailureCDI(ReceiveMessage);
+                end;
+
+                MCP_WRITE_REPLY_FAILURE_ALL:
+                begin
+                  HandleWriteReplyFailureAll(ReceiveMessage);
+                end;
+
+                MCP_WRITE_REPLY_FAILURE_CONFIG:
+                begin
+                   HandleWriteReplyFailureConfig(ReceiveMessage);
+                end;
+
+
+                MCP_OP_GET_CONFIG_OPTIONS_REPLY:
+                begin
+                   HandleGetConfigOptionsReply(ReceiveMessage);
+                end;
+                MCP_OP_GET_ADD_SPACE_INFO_PRESENT_REPLY:
+                begin
+                   HandleGetAddressSpaceInfoPresentReply(ReceiveMessage);
+                end;
+                MCP_OP_GET_ADD_SPACE_INFO_NOT_PRESENT_REPLY:
+                begin
+                   HandleGetAddressSpaceInfoNotPresentReply(ReceiveMessage);
+                end;
+
+                MCP_OP_LOCK_REPLY:
+                begin
+
+                end;
+                MCP_OP_GET_UNIQUEID_REPLY:
+                begin
+
+                end;
+                MC_OP_UNFREEZE:
+                begin
+
+                end;
+                MCP_OP_UPDATE_COMPLETE:
+                begin
+
+                end;
 
               end;
-              MCP_OP_GET_UNIQUEID_REPLY:
-              begin
-
-              end;
-              MC_OP_UNFREEZE:
-              begin
-
-              end;
-              MCP_OP_UPDATE_COMPLETE:
-              begin
-
-              end;
-
             end;
          end;
       end;
