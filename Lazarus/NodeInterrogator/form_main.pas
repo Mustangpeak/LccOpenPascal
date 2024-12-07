@@ -171,6 +171,23 @@ type
 
   end;
 
+  { TStateWriteUnderMask }
+
+  TStateWriteUnderMask = class
+
+  private
+    FData: TLccDynamicByteArray;
+    FWaitingForInitialWriteReply: Boolean;
+    FWaitingForReadReply: Boolean;
+    FWaitingForReply: Boolean;
+  public
+    property WaitingForReply: Boolean read FWaitingForReply write FWaitingForReply;
+    property WaitingForInitialWriteReply: Boolean read FWaitingForInitialWriteReply write FWaitingForInitialWriteReply;
+    property WaitingForReadReply: Boolean read FWaitingForReadReply write FWaitingForReadReply;
+
+    property Data: TLccDynamicByteArray read FData write FData;
+  end;
+
   { TStateVariableMultiFrame }
 
   TStateVariableMultiFrame = class
@@ -186,6 +203,10 @@ type
   { TFormNodeInterrogator }
 
   TFormNodeInterrogator = class(TForm)
+    ButtonDatagramWriteUnderMask_write_intial_byte: TButton;
+    ButtonDatagramWriteUnderMask_write: TButton;
+    ButtonDatagramWriteUnderMask_convert_to_binary: TButton;
+    ButtonDatagramWriteUnderMask_read: TButton;
     ButtonMultiFrame_SendOIRTemporary: TButton;
     ButtonMultiFrame_SendDatagramSpaceInfo: TButton;
     ButtonDatagramWrite_ZeroUserName: TButton;
@@ -267,6 +288,13 @@ type
     ComboBoxDatagramWrite_WriteableAddressSpaces: TComboBox;
     ComboBoxSelector: TComboBox;
     ComboBoxComPorts: TComboBox;
+    EditDatagramWriteUnderMask_read: TEdit;
+    EditDatagramWriteUnderMask_address_space: TEdit;
+    EditDatagramWriteUnderMask_write_address: TEdit;
+    EditDatagramWriteUnderMask_new_data_byte: TEdit;
+    EditDatagramWriteUnderMask_write_count: TEdit;
+    EditDatagramWriteUnderMask_mask: TEdit;
+    EditDatagramWriteUnderMask_initial_byte: TEdit;
     EditMultiFrame_DatagramFirstFrame: TEdit;
     EditMultiFrame_DatagramSendGetSpaceInfoFF: TEdit;
     EditMultiFrame_DatagramSendSnip: TEdit;
@@ -338,6 +366,15 @@ type
     ImageDatagram_WriteRejected: TImage;
     ImageDatagram_WriteFailureErrorCode: TImage;
     ImageListMain: TImageList;
+    LabelDatagramWriteUnderMask_initial_binary: TLabel;
+    LabelDatagramWriteUnderMask_address_space: TLabel;
+    LabelDatagramWriteUnderMask_new_byte_binary: TLabel;
+    LabelDatagramWriteUnderMask_mask_binary: TLabel;
+    LabelDatagramWriteUnderMask_initial_byte: TLabel;
+    LabelDatagramWriteUnderMask_mask_byte: TLabel;
+    LabelDatagramWriteUnderMask_write_address: TLabel;
+    LabelDatagramWriteUnderMask_write_count: TLabel;
+    LabelDatagramWriteUnderMask_new_data_byte: TLabel;
     LabelDatagram_WriteString: TLabel;
     LabelDatagramWrite_FailureErrorCode: TLabel;
     LabelDatagramRead_FailureErrorCode: TLabel;
@@ -391,6 +428,7 @@ type
     MemoSnip_RawData: TMemo;
     MemoComPort: TMemo;
     PageControlMain: TPageControl;
+    PanelDatagramWriteUnderMask: TPanel;
     PanelCdi: TPanel;
     PanelFdi: TPanel;
     PanelDatagramTransport: TPanel;
@@ -416,6 +454,7 @@ type
     RadioGroupCdi_ViewOptions: TRadioGroup;
     Splitter1: TSplitter;
     StatusBarMain: TStatusBar;
+    TabSheetDatagramWriteUnderMask: TTabSheet;
     TabSheetFdi: TTabSheet;
     TabSheetCdi: TTabSheet;
     TabSheetMultiFrame: TTabSheet;
@@ -427,7 +466,11 @@ type
     TabSheetDatagramRead: TTabSheet;
     TreeViewOptionalInteractionRejected: TTreeView;
     TreeViewConfigMemAddressSpaceInfo: TTreeView;
+    procedure ButtonDatagramWriteUnderMask_readClick(Sender: TObject);
+    procedure ButtonDatagramWriteUnderMask_writeClick(Sender: TObject);
     procedure ButtonCdi_ReadClick(Sender: TObject);
+    procedure ButtonDatagramWriteUnderMask_convert_to_binaryClick(Sender: TObject);
+    procedure ButtonDatagramWriteUnderMask_write_intial_byteClick(Sender: TObject);
     procedure ButtonDatagramWrite_ConvertClick(Sender: TObject);
     procedure ButtonDatagramWrite_ZeroUserDescClick(Sender: TObject);
     procedure ButtonDatagramWrite_ZeroUserNameClick(Sender: TObject);
@@ -506,6 +549,7 @@ type
 
     FSerialLink: TLccComPort;
     FStateSnip: TStateVariabledSnip;
+    FStateWriteUnderMask: TStateWriteUnderMask;
     FTargetReplyEdit: TEdit;
     FWorkerMessage: TLccMessage;
     function GetNode: TLccNode;
@@ -521,6 +565,7 @@ type
     property StateCdi: TStateVariableCdi read FStateCdi write FStateCdi;
     property StateFdi: TStateVariableFdi read FStateFdi write FStateFdi;
     property StateMultiFrame: TStateVariableMultiFrame read FStateMultiFrame write FStateMultiFrame;
+    property StateWriteUnderMask: TStateWriteUnderMask read FStateWriteUnderMask write FStateWriteUnderMask;
 
     // Datagram Read/Write States
     property TargetReplyEdit: TEdit read FTargetReplyEdit write FTargetReplyEdit;
@@ -698,6 +743,7 @@ begin
   StateCdi := TStateVariableCdi.Create;
   StateFdi := TStateVariableFdi.Create;
   StateMultiFrame := TStateVariableMultiFrame.Create;
+  StateWriteUnderMask := TStateWriteUnderMask.Create;
 
   ConnectionFactory.OnLccMessageSend := @OnConnectionFactorySendMessage;
 end;
@@ -716,10 +762,12 @@ begin
   StateCdi.Free;
   StateMultiFrame.Free;
   StateFdi.Free;
+  StateWriteUnderMask.Free;
 end;
 
 procedure TFormNodeInterrogator.FormCloseQuery(Sender: TObject; var CanClose: boolean);
 begin
+  ConnectionFactory.OnLccMessageSend := nil;
   DisconnectSerialLink
 end;
 
@@ -1198,6 +1246,128 @@ begin
       ShowNoTargetMessage;
 end;
 
+procedure TFormNodeInterrogator.ButtonDatagramWriteUnderMask_writeClick(Sender: TObject);
+var
+  i, Count: Integer;
+  Data: TLccDynamicByteArray;
+  Address: DWord;
+  AddressSpace: Byte;
+begin
+  if Assigned(TargetNode) and Assigned(Node) then
+    begin
+
+      EditDatagramWriteUnderMask_read.Text := '';
+
+      ButtonDatagramWriteUnderMask_convert_to_binaryClick(Sender);
+
+
+      Count := StrToInt(EditDatagramWriteUnderMask_write_count.Text);
+
+      if (Count <= 32) and (Count >= 1) then
+      begin
+
+        SetLength(Data, Count * 2);
+
+        i := 0;
+        while (i < 63) do
+        begin
+           Data[i] := StrToInt( EditDatagramWriteUnderMask_mask.Text);
+           Data[i+1] := StrToInt( EditDatagramWriteUnderMask_new_data_byte.Text);
+           Inc(i, 2);
+        end;
+
+        Address := StrToInt( EditDatagramWriteUnderMask_write_address.Text);
+        AddressSpace := StrToInt( EditDatagramWriteUnderMask_address_space.Text);
+
+        WorkerMessage.LoadConfigMemWriteUnderMask(Node.NodeID, Node.AliasID, TargetNode.NodeID, TargetNode.Alias, AddressSpace, Address, Data );
+        SendMessage(WorkerMessage);
+
+        StateWriteUnderMask.WaitingForReply := True;
+
+      end else
+        showMessage('Data Count must be and even number between 2 and 32');
+    end else
+      ShowNoTargetMessage;
+
+end;
+
+procedure TFormNodeInterrogator.ButtonDatagramWriteUnderMask_readClick(Sender: TObject);
+var
+  Count: Integer;
+  Address: DWord;
+  AddressSpace: Byte;
+begin
+
+  if Assigned(TargetNode) and Assigned(Node) then
+  begin
+
+    Count := StrToInt(EditDatagramWriteUnderMask_write_count.Text);
+
+    if (Count <= 32) and (Count >= 1) then
+    begin
+
+      Address := StrToInt( EditDatagramWriteUnderMask_write_address.Text);
+      AddressSpace := StrToInt( EditDatagramWriteUnderMask_address_space.Text);
+
+      WorkerMessage.LoadConfigMemRead(Node.NodeID, Node.AliasID, TargetNode.NodeID, TargetNode.Alias, AddressSpace, Address, Count);
+      SendMessage(WorkerMessage);
+
+      StateWriteUnderMask.WaitingForReadReply := True;
+
+    end else
+      ShowMessage('Data Count must be and even number between 2 and 32');
+
+  end else
+    ShowNoTargetMessage;
+
+end;
+
+procedure TFormNodeInterrogator.ButtonDatagramWriteUnderMask_convert_to_binaryClick(Sender: TObject);
+begin
+   LabelDatagramWriteUnderMask_mask_binary.Caption := BinStr(  StrToInt( EditDatagramWriteUnderMask_mask.Text), 8);
+   LabelDatagramWriteUnderMask_new_byte_binary.Caption := BinStr(  StrToInt( EditDatagramWriteUnderMask_new_data_byte.Text), 8);
+   LabelDatagramWriteUnderMask_initial_binary.Caption := BinStr(  StrToInt( EditDatagramWriteUnderMask_initial_byte.Text), 8);
+end;
+
+procedure TFormNodeInterrogator.ButtonDatagramWriteUnderMask_write_intial_byteClick(Sender: TObject);
+
+var
+  Data: TLccDynamicByteArray;
+  i, Count: Integer;
+  Address: DWord;
+  AddressSpace: Byte;
+begin
+
+  if Assigned(TargetNode) and Assigned(Node) then
+  begin
+    ButtonDatagramWriteUnderMask_convert_to_binaryClick(Sender);
+
+    Count := StrToInt(EditDatagramWriteUnderMask_write_count.Text);
+
+    if (Count <= 32) and (Count >= 1) then
+    begin
+
+      SetLength(Data, Count);
+      for i := 0 to Count - 1 do
+        Data[i] := StrToInt( EditDatagramWriteUnderMask_initial_byte.Text);
+
+      Address := StrToInt( EditDatagramWriteUnderMask_write_address.Text);
+      AddressSpace := StrToInt( EditDatagramWriteUnderMask_address_space.Text);
+
+      WorkerMessage.LoadConfigMemWrite(Node.NodeID, Node.AliasID, TargetNode.NodeID, TargetNode.Alias, AddressSpace, Address, Data);
+      SendMessage(WorkerMessage);
+
+      StateWriteUnderMask.WaitingForInitialWriteReply := True;
+
+    end else
+      ShowMessage('Data Count must be and even number between 2 and 32');
+
+  end else
+    ShowNoTargetMessage;
+
+end;
+
+
 procedure TFormNodeInterrogator.ButtonDatagramWrite_ConvertClick(Sender: TObject);
 var
   i: Integer;
@@ -1576,7 +1746,7 @@ begin
       MTI_DATAGRAM:
       begin
 
-       if ReceiveMessage.DestAlias = TargetNode.Alias then
+   //    if ReceiveMessage.DestAlias = TargetNode.Alias then
        begin
 
          if not CheckBoxMultiframe_DisableAutoAck.Checked then
@@ -2062,15 +2232,25 @@ end;
 
 procedure TFormNodeInterrogator.HandleReadReply(ReceivedMessage: TLccMessage);
 begin
-  RadioGroupDatagramRead_ReplyMessage.ItemIndex := 0;
-  ReceivedMessage.CopyDataToDataArray(StatesDatagramRead.FData, 0);
-  PrintReadDataArray;
+  if StateWriteUnderMask.WaitingForReadReply then
+  begin
+    ReceivedMessage.CopyDataToDataArray(StateWriteUnderMask.FData, 0);
+    EditDatagramWriteUnderMask_read.Text := ByteArrayAsHexStr(StateWriteUnderMask.Data, True);
+    StateWriteUnderMask.WaitingForReadReply := False;
+  end else
+  begin
 
-  if ReceivedMessage.DataArray[6] = ADDRESS_SPACE_CONFIG_DEFINITION_INFO then
-    HandleStateCdi_ReadCdi(ReceivedMessage);
+    RadioGroupDatagramRead_ReplyMessage.ItemIndex := 0;
+    ReceivedMessage.CopyDataToDataArray(StatesDatagramRead.FData, 0);
+    PrintReadDataArray;
 
-  if ReceivedMessage.DataArray[6] = ADDRESS_SPACE_FUNCTION_DEFINITION_INFO then
-    HandleStateFdi_ReadFdi(ReceivedMessage);
+    if ReceivedMessage.DataArray[6] = ADDRESS_SPACE_CONFIG_DEFINITION_INFO then
+      HandleStateCdi_ReadCdi(ReceivedMessage);
+
+    if ReceivedMessage.DataArray[6] = ADDRESS_SPACE_FUNCTION_DEFINITION_INFO then
+      HandleStateFdi_ReadFdi(ReceivedMessage);
+
+  end;
 
 end;
 
@@ -2093,24 +2273,41 @@ end;
 
 procedure TFormNodeInterrogator.HandleReadReplyConfig(ReceivedMessage: TLccMessage);
 begin
-  RadioGroupDatagramRead_ReplyMessage.ItemIndex := 3;
-  ReceivedMessage.CopyDataToDataArray(StatesDatagramRead.FData, 0);
-  PrintReadDataArray;
+    if StateWriteUnderMask.WaitingForReadReply then
+  begin
+    ReceivedMessage.CopyDataToDataArray(StateWriteUnderMask.FData, 0);
+    EditDatagramWriteUnderMask_read.Text := ByteArrayAsHexStr(StateWriteUnderMask.Data, True);
+    StateWriteUnderMask.WaitingForReadReply := False;
+  end else
+  begin
+    RadioGroupDatagramRead_ReplyMessage.ItemIndex := 3;
+    ReceivedMessage.CopyDataToDataArray(StatesDatagramRead.FData, 0);
+    PrintReadDataArray;
+  end;
 end;
 
 procedure TFormNodeInterrogator.HandleReadReplyFailure(ReceivedMessage: TLccMessage);
 begin
-  RadioGroupDatagramRead_ReplyMessage.ItemIndex := 4;
-  ReceivedMessage.CopyDataToDataArray(StatesDatagramRead.FData, 0);
-  PrintReadDataArray;
+  if StateWriteUnderMask.WaitingForReadReply = True then
+  begin
 
-  if ReceivedMessage.DataArray[6] = ADDRESS_SPACE_CONFIG_DEFINITION_INFO then
-    HandleStateCdi_ReadCdiFailure(ReceivedMessage);
+    ShowMessage('Error Reading the Configuration Memory Space');
 
-  if ReceivedMessage.DataArray[6] = ADDRESS_SPACE_FUNCTION_DEFINITION_INFO then
-    HandleStateFdi_ReadFdiFailure(ReceivedMessage);
+  end else
+  begin
+    RadioGroupDatagramRead_ReplyMessage.ItemIndex := 4;
+    ReceivedMessage.CopyDataToDataArray(StatesDatagramRead.FData, 0);
+    PrintReadDataArray;
 
-  HandleReadReplyFailureUpdate(ReceivedMessage);
+    if ReceivedMessage.DataArray[6] = ADDRESS_SPACE_CONFIG_DEFINITION_INFO then
+      HandleStateCdi_ReadCdiFailure(ReceivedMessage);
+
+    if ReceivedMessage.DataArray[6] = ADDRESS_SPACE_FUNCTION_DEFINITION_INFO then
+      HandleStateFdi_ReadFdiFailure(ReceivedMessage);
+
+    HandleReadReplyFailureUpdate(ReceivedMessage);
+
+  end;
 end;
 
 procedure TFormNodeInterrogator.HandleReadReplyFailureCDI(ReceivedMessage: TLccMessage);
@@ -2134,17 +2331,35 @@ end;
 
 procedure TFormNodeInterrogator.HandleReadReplyFailureConfig(ReceivedMessage: TLccMessage);
 begin
-  RadioGroupDatagramRead_ReplyMessage.ItemIndex := 7;
-  ReceivedMessage.CopyDataToDataArray(StatesDatagramRead.FData, 0);
-  PrintReadDataArray;
+  if StateWriteUnderMask.WaitingForReadReply then
+  begin
+    ShowMessage('Error Reading the Configuration Memory Space');
+  end else
+  begin
+    RadioGroupDatagramRead_ReplyMessage.ItemIndex := 7;
+    ReceivedMessage.CopyDataToDataArray(StatesDatagramRead.FData, 0);
+    PrintReadDataArray;
 
-  HandleReadReplyFailureUpdate(ReceivedMessage);
+    HandleReadReplyFailureUpdate(ReceivedMessage);
+  end;
 end;
 
 procedure TFormNodeInterrogator.HandleWriteReply(ReceivedMessage: TLccMessage);
 begin
-  RadioGroupDatagramWrite_ReplyMessage.ItemIndex := 0;
-  PrintWriteDataArray;
+  if StateWriteUnderMask.WaitingForInitialWriteReply then
+  begin
+     ShowMessage('Write Initial Result = OK');
+     StateWriteUnderMask.WaitingForInitialWriteReply := False;
+  end else
+  if StateWriteUnderMask.WaitingForReply then
+  begin
+     ShowMessage('Write Under Mask Result = OK');
+     StateWriteUnderMask.WaitingForReply := False;
+  end else
+  begin
+    RadioGroupDatagramWrite_ReplyMessage.ItemIndex := 3;
+    PrintWriteDataArray;
+  end;
 end;
 
 procedure TFormNodeInterrogator.HandleWriteReplyCDI(ReceivedMessage: TLccMessage);
@@ -2161,16 +2376,35 @@ end;
 
 procedure TFormNodeInterrogator.HandleWriteReplyConfig(ReceivedMessage: TLccMessage);
 begin
-  RadioGroupDatagramWrite_ReplyMessage.ItemIndex := 3;
-  PrintWriteDataArray;
+  if StateWriteUnderMask.WaitingForInitialWriteReply then
+  begin
+     ShowMessage('Write Initial Result = OK');
+     StateWriteUnderMask.WaitingForInitialWriteReply := False;
+  end else
+  if StateWriteUnderMask.WaitingForReply then
+  begin
+     ShowMessage('Write Under Mask Result = OK');
+     StateWriteUnderMask.WaitingForReply := False;
+  end else
+  begin
+    RadioGroupDatagramWrite_ReplyMessage.ItemIndex := 3;
+    PrintWriteDataArray;
+  end;
 end;
 
 procedure TFormNodeInterrogator.HandleWriteReplyFailure(ReceivedMessage: TLccMessage);
 begin
-  RadioGroupDatagramWrite_ReplyMessage.ItemIndex := 4;
-  PrintWriteDataArray;
+  if StateWriteUnderMask.WaitingForReply then
+  begin
+     ShowMessage('Write Under Mask Result = OK');
+     StateWriteUnderMask.WaitingForReply := False;
+  end else
+  begin
+    RadioGroupDatagramWrite_ReplyMessage.ItemIndex := 4;
+    PrintWriteDataArray;
 
-  HandleWriteReplyFailureUpdate(ReceivedMessage);
+    HandleWriteReplyFailureUpdate(ReceivedMessage);
+  end;
 end;
 
 procedure TFormNodeInterrogator.HandleWriteReplyFailureCDI(ReceivedMessage: TLccMessage);
@@ -2191,10 +2425,17 @@ end;
 
 procedure TFormNodeInterrogator.HandleWriteReplyFailureConfig(ReceivedMessage: TLccMessage);
 begin
-  RadioGroupDatagramWrite_ReplyMessage.ItemIndex := 7;
-  PrintWriteDataArray;
+   if StateWriteUnderMask.WaitingForReply then
+  begin
+     ShowMessage('Write Under Mask Result = OK');
+     StateWriteUnderMask.WaitingForReply := False;
+  end else
+  begin
+    RadioGroupDatagramWrite_ReplyMessage.ItemIndex := 4;
+    PrintWriteDataArray;
 
-  HandleWriteReplyFailureUpdate(ReceivedMessage);
+    HandleWriteReplyFailureUpdate(ReceivedMessage);
+  end;
 end;
 
 procedure TFormNodeInterrogator.HandleDatagramAckOk(ReceivedMessage: TLccMessage);

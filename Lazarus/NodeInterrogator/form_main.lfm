@@ -1,7 +1,7 @@
 object FormNodeInterrogator: TFormNodeInterrogator
-  Left = 580
+  Left = 575
   Height = 804
-  Top = 195
+  Top = 192
   Width = 1447
   Caption = 'Node Interrogator v0.1'
   ClientHeight = 804
@@ -115,7 +115,7 @@ object FormNodeInterrogator: TFormNodeInterrogator
       Height = 734
       Top = 1
       Width = 1143
-      ActivePage = TabSheetCdi
+      ActivePage = TabSheetDatagramWriteUnderMask
       Align = alClient
       TabIndex = 6
       TabOrder = 1
@@ -1784,6 +1784,175 @@ object FormNodeInterrogator: TFormNodeInterrogator
               Width = 862
               TabOrder = 3
             end
+          end
+        end
+      end
+      object TabSheetDatagramWriteUnderMask: TTabSheet
+        Caption = 'Write Under Mask'
+        ClientHeight = 698
+        ClientWidth = 1137
+        object PanelDatagramWriteUnderMask: TPanel
+          Left = 0
+          Height = 698
+          Top = 0
+          Width = 1137
+          Align = alClient
+          ClientHeight = 698
+          ClientWidth = 1137
+          TabOrder = 0
+          object ButtonDatagramWriteUnderMask_write: TButton
+            Left = 8
+            Height = 25
+            Top = 168
+            Width = 160
+            Caption = 'Write Under Mask'
+            TabOrder = 0
+            OnClick = ButtonDatagramWriteUnderMask_writeClick
+          end
+          object ButtonDatagramWriteUnderMask_convert_to_binary: TButton
+            Left = 463
+            Height = 25
+            Top = 56
+            Width = 215
+            Caption = 'Convert to Binary'
+            TabOrder = 1
+            OnClick = ButtonDatagramWriteUnderMask_convert_to_binaryClick
+          end
+          object ButtonDatagramWriteUnderMask_read: TButton
+            Left = 24
+            Height = 25
+            Top = 280
+            Width = 136
+            Caption = 'Read'
+            TabOrder = 2
+            OnClick = ButtonDatagramWriteUnderMask_readClick
+          end
+          object EditDatagramWriteUnderMask_write_address: TEdit
+            Left = 368
+            Height = 22
+            Top = 56
+            Width = 80
+            TabOrder = 3
+            Text = '0x40'
+          end
+          object EditDatagramWriteUnderMask_write_count: TEdit
+            Left = 368
+            Height = 22
+            Top = 80
+            Width = 80
+            TabOrder = 4
+            Text = '2'
+          end
+          object LabelDatagramWriteUnderMask_write_address: TLabel
+            Left = 176
+            Height = 16
+            Top = 62
+            Width = 85
+            Caption = 'Write Address'
+          end
+          object LabelDatagramWriteUnderMask_write_count: TLabel
+            Left = 176
+            Height = 16
+            Top = 86
+            Width = 113
+            Caption = 'Write Count (1-32)'
+          end
+          object EditDatagramWriteUnderMask_new_data_byte: TEdit
+            Left = 368
+            Height = 22
+            Top = 152
+            Width = 80
+            TabOrder = 5
+            Text = '0xFF'
+          end
+          object EditDatagramWriteUnderMask_mask: TEdit
+            Left = 368
+            Height = 22
+            Top = 179
+            Width = 80
+            TabOrder = 6
+            Text = '0xAA'
+          end
+          object LabelDatagramWriteUnderMask_new_data_byte: TLabel
+            Left = 176
+            Height = 16
+            Top = 158
+            Width = 90
+            Caption = 'New Data Byte'
+          end
+          object LabelDatagramWriteUnderMask_mask_byte: TLabel
+            Left = 176
+            Height = 16
+            Top = 185
+            Width = 63
+            Caption = 'Mask Byte'
+          end
+          object EditDatagramWriteUnderMask_initial_byte: TEdit
+            Left = 368
+            Height = 22
+            Top = 104
+            Width = 80
+            TabOrder = 7
+            Text = '0x55'
+          end
+          object LabelDatagramWriteUnderMask_initial_byte: TLabel
+            Left = 176
+            Height = 16
+            Top = 110
+            Width = 117
+            Caption = 'Initial Byte To Write'
+          end
+          object LabelDatagramWriteUnderMask_initial_binary: TLabel
+            Left = 456
+            Height = 16
+            Top = 104
+            Width = 277
+            AutoSize = False
+          end
+          object LabelDatagramWriteUnderMask_new_byte_binary: TLabel
+            Left = 456
+            Height = 16
+            Top = 153
+            Width = 303
+            AutoSize = False
+          end
+          object LabelDatagramWriteUnderMask_mask_binary: TLabel
+            Left = 456
+            Height = 16
+            Top = 179
+            Width = 277
+            AutoSize = False
+          end
+          object LabelDatagramWriteUnderMask_address_space: TLabel
+            Left = 176
+            Height = 16
+            Top = 38
+            Width = 91
+            Caption = 'Address Space'
+          end
+          object EditDatagramWriteUnderMask_address_space: TEdit
+            Left = 368
+            Height = 22
+            Top = 32
+            Width = 80
+            TabOrder = 8
+            Text = '0xFD'
+          end
+          object EditDatagramWriteUnderMask_read: TEdit
+            Left = 181
+            Height = 22
+            Top = 283
+            Width = 787
+            TabOrder = 9
+          end
+          object ButtonDatagramWriteUnderMask_write_intial_byte: TButton
+            Left = 8
+            Height = 25
+            Top = 104
+            Width = 160
+            Caption = 'Write Initial Byte Value'
+            TabOrder = 10
+            OnClick = ButtonDatagramWriteUnderMask_write_intial_byteClick
           end
         end
       end

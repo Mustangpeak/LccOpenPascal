@@ -424,6 +424,11 @@ const
   MCP_WRITE_ALL                       = $02;
   MCP_WRITE_CDI                       = $03;
 
+  MCP_WRITE_UNDER_MASK                = $08;                                    // MemoryConfigurationProtocol - Write Memory Mask
+  MCP_WRITE_CONFIGURATION_UNDER_MASK  = $09;
+  MCP_WRITE_ALL_UNDER_MASK            = $0A;
+  MCP_WRITE_CDI_UNDER_MASK            = $0B;
+
   MCP_WRITE_REPLY                     = $10;                                    // MemoryConfigurationProtocol - Read Reply Mask [Does not include the Address Space Mask "or" it with the the Address space masks below]
   MCP_WRITE_REPLY_CONFIG              = $11;
   MCP_WRITE_REPLY_ALL                 = $12;

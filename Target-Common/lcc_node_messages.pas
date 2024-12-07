@@ -265,6 +265,7 @@ class  function TractionSearchEncodeNMRA(ForceLongAddress: Boolean; SpeedStep: T
   procedure LoadConfigMemReadReply(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; AddressSpace: Byte; ConfigMemAddress: DWord; ConfigMemData: array of Byte);
   procedure LoadConfigMemReadReplyError(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; AddressSpace: Byte; ConfigMemAddress: DWord; ErrorCode: Word; ErrorCodeString: string);
   procedure LoadConfigMemWrite(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; AddressSpace: Byte; ConfigMemAddress: DWord; AnArray: array of Byte);
+  procedure LoadConfigMemWriteUnderMask(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; AddressSpace: Byte; ConfigMemAddress: DWord; AnArray: array of Byte);
   procedure LoadConfigMemWriteReply(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; AddressSpace: Byte; ConfigMemAddress: DWord);
   procedure LoadConfigMemWriteReplyError(ASourceID: TNodeID; ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; AddressSpace: Byte; ConfigMemAddress: DWord; ErrorCode: Word; ErrorCodeString: string);
   function DecodeMemorySpace: Byte;
@@ -3182,6 +3183,55 @@ begin
   DataCount := DataCount + Length(AnArray);
 
   MTI := MTI_DATAGRAM;
+end;
+
+procedure TLccMessage.LoadConfigMemWriteUnderMask(ASourceID: TNodeID;
+  ASourceAlias: Word; ADestID: TNodeID; ADestAlias: Word; AddressSpace: Byte;
+  ConfigMemAddress: DWord; AnArray: array of Byte);
+var
+  i, WriteCount: Integer;
+begin
+  WriteCount := Length(AnArray);
+
+  Assert(WriteCount <= 64, 'TLccMessage.LoadConfigMemWrite must be less than 64 bytes');
+
+  ZeroFields;
+  SourceID := ASourceID;
+  DestID := ADestID;
+  SourceAlias := ASourceAlias;
+  DestAlias := ADestAlias;
+  FDataArray[0] := DATAGRAM_PROTOCOL_CONFIGURATION;
+
+  if AddressSpace < MSI_CONFIG then
+  begin
+    FDataArray[1] := MCP_WRITE_UNDER_MASK;
+    FDataArray[2] := _Highest(ConfigMemAddress);
+    FDataArray[3] := _Higher(ConfigMemAddress);
+    FDataArray[4] := _Hi(ConfigMemAddress);
+    FDataArray[5] := _Lo(ConfigMemAddress);
+    FDataArray[6] := AddressSpace;
+    DataCount := 7;
+  end else
+  begin
+    case AddressSpace of
+      MSI_CDI    : FDataArray[1] := MCP_WRITE_UNDER_MASK or MCP_CDI;
+      MSI_ALL    : FDataArray[1] := MCP_WRITE_UNDER_MASK or MCP_ALL;
+      MSI_CONFIG : FDataArray[1] := MCP_WRITE_UNDER_MASK or MCP_CONFIGURATION;
+    end;
+    FDataArray[2] := _Highest(ConfigMemAddress);
+    FDataArray[3] := _Higher(ConfigMemAddress);
+    FDataArray[4] := _Hi(ConfigMemAddress);
+    FDataArray[5] := _Lo(ConfigMemAddress);
+    DataCount := 6;
+  end;
+
+  for i := 0 to WriteCount - 1 do
+    FDataArray[i + DataCount] := AnArray[i];
+
+  DataCount := DataCount + Length(AnArray);
+
+  MTI := MTI_DATAGRAM;
+
 end;
 
 procedure TLccMessage.LoadConfigMemWriteReply(ASourceID: TNodeID;
