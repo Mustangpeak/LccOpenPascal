@@ -569,7 +569,9 @@ type
     // This forces you to think about it....
     // This can be nil if the message is not using a NodeID and Alias associated with an internal node
     procedure SendMessage(ALccMessage: TLccMessage; AnAssociatedNode: TLccNode);
-
+    procedure RequestIdentifyEvents;
+    procedure RequestIdentifyProducer(Event: TEventID);
+    procedure RequestIdentifyConsumer(Event: TEventID);
     function RequestSNIP(ATarget: TNodeID; ACallback: TOnTaskCallback; ATag: Integer = 0; ATagObject: TObject = nil): Boolean;   // Callback: TTaskReadSNIP
     function RequestPIP(ATarget: TNodeID; ACallback: TOnTaskCallback; ATag: Integer = 0; ATagObject: TObject = nil): Boolean;    // Callback: TTaskReadPIP
     function RequestCDI(ATarget: TNodeID; ACallback: TOnTaskCallback; ATag: Integer = 0; ATagObject: TObject = nil): Boolean;
@@ -1626,6 +1628,24 @@ begin
   (Owner as TLccNodeManager).SendLccMessageNodeManager(ALccMessage);
 end;
 
+procedure TLccNode.RequestIdentifyEvents;
+begin
+  WorkerMessage.LoadIdentifyEvents(NodeID, AliasID);
+  SendMessage(WorkerMessage, Self);
+end;
+
+procedure TLccNode.RequestIdentifyProducer(Event: TEventID);
+begin
+  WorkerMessage.LoadProducerIdentify(NodeID, AliasID, Event);
+  SendMessage(WorkerMessage, Self);
+end;
+
+procedure TLccNode.RequestIdentifyConsumer(Event: TEventID);
+begin
+  WorkerMessage.LoadConsumerIdentify(NodeID, AliasID, Event);
+  SendMessage(WorkerMessage, Self);
+end;
+
 function TLccNode.RequestSNIP(ATarget: TNodeID; ACallback: TOnTaskCallback ; ATag: Integer = 0; ATagObject: TObject = nil): Boolean;
 begin
   Result := False;
@@ -1676,7 +1696,7 @@ end;
 
 function TLccNode.RequestQueueConfigMemRead(ATarget: TNodeID; MemAddressStart, MemAddressEnd: DWord; IsString: Boolean; ACallback: TOnTaskCallback; ATag: Integer; ATagObject: TObject): Boolean;
 begin
-  Result := InternalRequestConfigMemRead(ATarget, MemAddressStart, MemAddressEnd, IsString, ACallback, ATag, ATagObject, TRue);
+  Result := InternalRequestConfigMemRead(ATarget, MemAddressStart, MemAddressEnd, IsString, ACallback, ATag, ATagObject, True);
 end;
 
 function TLccNode.RequestConfigMemWriteString(ATarget: TNodeID; MemAddressStart, MemAddressEnd: DWord; AString: String; ACallback: TOnTaskCallback; ATag: Integer; ATagObject: TObject): Boolean;

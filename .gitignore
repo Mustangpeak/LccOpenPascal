@@ -993,3 +993,7 @@ Dephi/LccThrottleApp/iOSSimARM64/Debug/lcc_connection_common.dcu
 Dephi/LccThrottleApp/iOSSimARM64/Debug/lcc_connection_common.o
 Target-Common/__history/
 Target-PC/__history/
+Lazarus/HexToImage/HexToImage.app
+Lazarus/HexToImage/lib
+Lazarus/HexEditor/hexboss.dSYM
+Lazarus/HexEditor/lib

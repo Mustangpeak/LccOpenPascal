@@ -46,7 +46,7 @@
   <CompilerOptions>
     <Version Value="11"/>
     <Target>
-      <Filename Value="Compiled_Binaries/$(TargetCPU)-$(TargetOS)/cdi_parser"/>
+      <Filename Value="lib/$(TargetCPU)-$(TargetOS)/cdi_parser"/>
     </Target>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir)"/>

@@ -6,8 +6,8 @@ object Form1: TForm1
   Caption = 'Form1'
   ClientHeight = 665
   ClientWidth = 783
+  LCLVersion = '4.0.0.1'
   OnCreate = FormCreate
-  LCLVersion = '2.2.4.0'
   object Panel1: TPanel
     Left = 0
     Height = 50
@@ -23,8 +23,8 @@ object Form1: TForm1
       Top = 16
       Width = 139
       Caption = 'Open CDI'
-      OnClick = Button1Click
       TabOrder = 0
+      OnClick = Button1Click
     end
     object Label4: TLabel
       Left = 300
@@ -40,8 +40,8 @@ object Form1: TForm1
       Top = 17
       Width = 75
       Caption = 'Button2'
-      OnClick = Button2Click
       TabOrder = 1
+      OnClick = Button2Click
     end
   end
   object Panel2: TPanel

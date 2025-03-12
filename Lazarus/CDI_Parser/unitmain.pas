@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, StdCtrls, ComCtrls,
-  lcc_cdi_parser, lcc_xmlutilities;
+  lcc_cdi_parser, lcc_xmlutilities, lcc_defines;
 
 type
 
@@ -43,11 +43,15 @@ implementation
 procedure TForm1.Button1Click(Sender: TObject);
 var
   CDI: TLccXMLDocument;
+  NodeID: TNodeID;
+  x: HRESULT;
 begin
   if OpenDialog1.Execute then
   begin
+    NodeID[0] := $AABBCC;
+    NodeID[1] := $AABBCC;
     CDI := XmlLoadFromFile(OpenDialog1.FileName);
-    Parser.Build_CDI_Interface(nil, Panel2, CDI);
+    Parser.Build_CDI_Interface(nil, NodeID, Panel2, CDI);
     XmlFreeDocument(CDI);
   end;
 end;
