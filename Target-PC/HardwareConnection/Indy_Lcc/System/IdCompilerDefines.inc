@@ -16,7 +16,8 @@
 {.$IFDEF IdIPv6} // use IPv6 by default
 
 {$DEFINE INDY100}
-{$DEFINE 10_6_2}  //so developers can IFDEF for this specific version
+{$DEFINE 10_6_3}    //so developers can IFDEF for this product version
+{$DEFINE 10_6_3_9}  //so developers can IFDEF for this specific version
 
 // When generating C++Builder output files, certain workarounds to compiler
 // problems need to be enabled! When invoking DCC on the command-line, use
@@ -440,6 +441,30 @@
     {$ENDIF}
   {$ENDIF}
 
+  //Delphi & CBuilder 12.0 Athens (Yukon)
+  {$IFDEF VER360}
+    {$DEFINE VCL_12}
+    {$IFDEF CBUILDER}
+      {$DEFINE CBUILDER_12}
+    {$ELSE}
+      {$DEFINE DELPHI_12}
+    {$ENDIF}
+  {$ENDIF}
+
+  //Delphi & CBuilder 13.0+ (?)
+  {$IFDEF CONDITIONALEXPRESSIONS}
+    {$IF CompilerVersion >= 37}
+      {$MESSAGE WARN 'Unknown compiler version detected! Assuming >= 13.x '}
+      {$DEFINE VCL_UNKNOWN_VERSION}
+      {$DEFINE VCL_13}
+      {$IFDEF CBUILDER}
+        {$DEFINE CBUILDER_13}
+      {$ELSE}
+        {$DEFINE DELPHI_13}
+      {$ENDIF}
+    {$IFEND}
+  {$ENDIF}
+
   // Kylix
   //
   //Important:  Don't use CompilerVersion here as IF's are evaluated before
@@ -526,11 +551,6 @@
   // {$MODE DelphiUnicode} anyway, and then deal with any RTL function issues
   // on an as-needed basis...
   {$MODE Delphi}
-  {$IFDEF FPC_2_7_1_OR_ABOVE}
-    {.$MODE DelphiUnicode}
-    {.$MODESWITCH UnicodeStrings}
-    {.$CODEPAGE UTF8} // needed for Unicode string literals to work properly
-  {$ENDIF}
   //note that we may need further defines for widget types depending on
   //what we do and what platforms we support in FPC.
   //I'll let Marco think about that one.
@@ -729,6 +749,9 @@
 
   {.$IFDEF FPC_2_7_1_OR_ABOVE}
     // support for RawByteString and UnicodeString
+    {.$MODE DelphiUnicode}
+    {.$MODESWITCH UnicodeStrings}
+    {.$CODEPAGE UTF8} // needed for Unicode string literals to work properly
     {.$DEFINE VCL_2009}
     {.$DEFINE DELPHI_2009}
   {.$ELSE}
@@ -739,8 +762,24 @@
 
 // end FPC
 
-{$IFDEF VCL_11}
+{$IFDEF VCL_13}
+  {$DEFINE VCL_13_OR_ABOVE}
+{$ENDIF}
+
+{$IFDEF VCL_13_OR_ABOVE}
+  {$DEFINE VCL_12_OR_ABOVE}
+{$ELSE}
+  {$IFDEF VCL_12}
+    {$DEFINE VCL_12_OR_ABOVE}
+  {$ENDIF}
+{$ENDIF}
+
+{$IFDEF VCL_12_OR_ABOVE}
   {$DEFINE VCL_11_OR_ABOVE}
+{$ELSE}
+  {$IFDEF VCL_11}
+    {$DEFINE VCL_11_OR_ABOVE}
+  {$ENDIF}
 {$ENDIF}
 
 {$IFDEF VCL_11_OR_ABOVE}
@@ -1145,6 +1184,7 @@
 {$IFDEF VCL_2006_OR_ABOVE}
   {$DEFINE USE_INLINE}
   {$DEFINE HAS_2PARAM_FileAge}
+  {$DEFINE HAS_TStrings_LineBreak} // TODO: when was LineBreak introduced?
   {$IFDEF WINDOWS}
     // System.RegisterExpectedMemoryLeak() is only available on Windows at this time
     {$DEFINE HAS_System_RegisterExpectedMemoryLeak}
@@ -1455,6 +1495,7 @@
   {$ENDIF}
   {$DEFINE HAS_UNIT_ctypes}
   {$DEFINE HAS_sLineBreak}
+  {$DEFINE HAS_TStrings_LineBreak} // TODO: when was LineBreak introduced?
   {$IFDEF FPC_HAS_UNICODESTRING}
     {$DEFINE HAS_UnicodeString}
   {$ELSE}
@@ -1599,7 +1640,7 @@
 {$IFDEF WIN32_OR_WIN64}
   {$DEFINE USE_ZLIB_UNIT}
   {$IFNDEF DCC_NEXTGEN}
-    {$DEFINE USE_OPENSSL} // !!!·MOVED·HERE·BY·EMBT
+    {$DEFINE USE_OPENSSL} // !!! MOVED HERE BY EMBT
     {$DEFINE USE_SSPI}
     {$IFDEF STRING_IS_UNICODE}
       {$DEFINE SSPI_UNICODE}
@@ -1627,7 +1668,7 @@
 {$IFDEF UNIX}
   {$DEFINE USE_OPENSSL}
   {$DEFINE USE_ZLIB_UNIT}
-  {$DEFINE HAS_getifaddrs}  
+  {$DEFINE HAS_getifaddrs}
 {$ENDIF}
 
 {$IFDEF MACOS}
@@ -1663,6 +1704,10 @@
 
 {$IFDEF FREEBSD}
   {$DEFINE HAS_getifaddrs}
+{$ENDIF}
+
+{$IFDEF ANDROID}
+  {$UNDEF HAS_getifaddrs}
 {$ENDIF}
 
 {$IFDEF FPC_REQUIRES_PROPER_ALIGNMENT}
