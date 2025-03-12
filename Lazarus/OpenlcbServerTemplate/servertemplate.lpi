@@ -1,0 +1,270 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CONFIG>
+  <ProjectOptions>
+    <Version Value="12"/>
+    <PathDelim Value="\"/>
+    <General>
+      <Flags>
+        <CompatibilityMode Value="True"/>
+      </Flags>
+      <SessionStorage Value="InProjectDir"/>
+      <Title Value="servertemplate"/>
+      <Scaled Value="True"/>
+      <ResourceType Value="res"/>
+      <UseXPManifest Value="True"/>
+      <Icon Value="0"/>
+    </General>
+    <BuildModes Count="3">
+      <Item1 Name="Default" Default="True"/>
+      <Item2 Name="Debug">
+        <CompilerOptions>
+          <Version Value="11"/>
+          <PathDelim Value="\"/>
+          <Target>
+            <Filename Value="Compiled_Binaries\$(TargetCPU)-$(TargetOS)\servertemplate"/>
+          </Target>
+          <SearchPaths>
+            <IncludeFiles Value="$(ProjOutDir)"/>
+            <OtherUnitFiles Value="..\..\Target-PC;..\..\Target-PC\HardwareConnection;..\..\Target-Common;..\..\Target-PC\HardwareConnection\Indy_Lcc\Core;..\..\Target-PC\HardwareConnection\Indy_Lcc\Protocols;..\..\Target-PC\HardwareConnection\Indy_Lcc\System;..\..\Target-PC\HardwareConnection\TLazSerial"/>
+            <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
+          </SearchPaths>
+          <Conditionals Value="if TargetOS = &apos;darwin&apos; then
+begin
+//  CustomOptions += &apos;-k-macosx_version_min -k10.4&apos;;
+ // CustomOptions += &apos;-XR/Developer/SDKs/MacOSX10.4u.sdk/&apos;;
+  CustomOptions += &apos; -dUseCThreads&apos;;
+end;
+if TargetOS = &apos;linux&apos; then
+  CustomOptions += &apos; -dUseCThreads&apos;;"/>
+          <BuildMacros>
+            <Count Value="1"/>
+            <Item1>
+              <Identifier Value="MustangpeakCompilerOptions"/>
+              <Description Value="Compiler Options for Platforms"/>
+            </Item1>
+          </BuildMacros>
+          <Parsing>
+            <SyntaxOptions>
+              <IncludeAssertionCode Value="True"/>
+            </SyntaxOptions>
+          </Parsing>
+          <CodeGeneration>
+            <Checks>
+              <IOChecks Value="True"/>
+              <RangeChecks Value="True"/>
+              <OverflowChecks Value="True"/>
+              <StackChecks Value="True"/>
+            </Checks>
+            <Optimizations>
+              <OptimizationLevel Value="0"/>
+            </Optimizations>
+          </CodeGeneration>
+          <Linking>
+            <Debugging>
+              <DebugInfoType Value="dsDwarf2"/>
+              <UseValgrind Value="True"/>
+              <UseExternalDbgSyms Value="True"/>
+            </Debugging>
+            <Options>
+              <Win32>
+                <GraphicApplication Value="True"/>
+              </Win32>
+            </Options>
+          </Linking>
+          <Other>
+            <CustomOptions Value="-dLOG_MAPPING"/>
+            <OtherDefines Count="1">
+              <Define0 Value="LOG_MAPPING"/>
+            </OtherDefines>
+          </Other>
+        </CompilerOptions>
+      </Item2>
+      <Item3 Name="Release">
+        <CompilerOptions>
+          <Version Value="11"/>
+          <PathDelim Value="\"/>
+          <Target>
+            <Filename Value="Compiled_Binaries\$(TargetCPU)-$(TargetOS)\servertemplate"/>
+          </Target>
+          <SearchPaths>
+            <IncludeFiles Value="$(ProjOutDir)"/>
+            <OtherUnitFiles Value="..\..\Target-PC;..\..\Target-PC\HardwareConnection;..\..\Target-Common;..\..\Target-PC\Synapse_LCC"/>
+            <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
+          </SearchPaths>
+          <Conditionals Value="if TargetOS = &apos;darwin&apos; then
+begin
+//  CustomOptions += &apos;-k-macosx_version_min -k10.4&apos;;
+ // CustomOptions += &apos;-XR/Developer/SDKs/MacOSX10.4u.sdk/&apos;;
+  CustomOptions += &apos; -dUseCThreads&apos;;
+end;
+if TargetOS = &apos;linux&apos; then
+  CustomOptions += &apos; -dUseCThreads&apos;;"/>
+          <BuildMacros>
+            <Count Value="1"/>
+            <Item1>
+              <Identifier Value="MustangpeakCompilerOptions"/>
+              <Description Value="Compiler Options for Platforms"/>
+            </Item1>
+          </BuildMacros>
+          <CodeGeneration>
+            <SmartLinkUnit Value="True"/>
+            <TargetCPU Value="x86_64"/>
+            <TargetOS Value="darwin"/>
+            <Optimizations>
+              <OptimizationLevel Value="3"/>
+            </Optimizations>
+          </CodeGeneration>
+          <Linking>
+            <Debugging>
+              <GenerateDebugInfo Value="False"/>
+              <UseValgrind Value="True"/>
+            </Debugging>
+            <LinkSmart Value="True"/>
+            <Options>
+              <Win32>
+                <GraphicApplication Value="True"/>
+              </Win32>
+            </Options>
+          </Linking>
+        </CompilerOptions>
+      </Item3>
+      <SharedMatrixOptions Count="2">
+        <Item1 ID="829270481337" Type="IDEMacro" MacroName="LCLWidgetType" Value="cocoa"/>
+        <Item2 ID="342356827358" Type="IDEMacro" MacroName="LCLWidgetType" Value="carbon"/>
+      </SharedMatrixOptions>
+    </BuildModes>
+    <PublishOptions>
+      <Version Value="2"/>
+      <UseFileFilters Value="True"/>
+    </PublishOptions>
+    <RunParams>
+      <FormatVersion Value="2"/>
+    </RunParams>
+    <RequiredPackages Count="3">
+      <Item1>
+        <PackageName Value="laz.virtualtreeview_package"/>
+      </Item1>
+      <Item2>
+        <PackageName Value="MemDSLaz"/>
+      </Item2>
+      <Item3>
+        <PackageName Value="LCL"/>
+      </Item3>
+    </RequiredPackages>
+    <Units Count="4">
+      <Unit0>
+        <Filename Value="servertemplate.lpr"/>
+        <IsPartOfProject Value="True"/>
+      </Unit0>
+      <Unit1>
+        <Filename Value="form_server_template.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="FormTrainCommander"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+      </Unit1>
+      <Unit2>
+        <Filename Value="traindatabaseunit.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="TrainDatabaseUnit"/>
+      </Unit2>
+      <Unit3>
+        <Filename Value="servervisualunit.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="FormServerInfo"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+      </Unit3>
+    </Units>
+  </ProjectOptions>
+  <CompilerOptions>
+    <Version Value="11"/>
+    <PathDelim Value="\"/>
+    <Target>
+      <Filename Value="lib\$(TargetCPU)-$(TargetOS)\servertemplate"/>
+    </Target>
+    <SearchPaths>
+      <IncludeFiles Value="$(ProjOutDir)"/>
+      <OtherUnitFiles Value="..\..\Target-PC;..\..\Target-PC\HardwareConnection;..\..\Target-Common;..\..\Target-PC\HardwareConnection\Indy_Lcc\Core;..\..\Target-PC\HardwareConnection\Indy_Lcc\Protocols;..\..\Target-PC\HardwareConnection\Indy_Lcc\System;..\..\Target-PC\HardwareConnection\TLazSerial"/>
+      <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
+    </SearchPaths>
+    <Conditionals Value="if TargetOS = &apos;darwin&apos; then
+begin
+//  CustomOptions += &apos;-k-macosx_version_min -k10.4&apos;;
+ // CustomOptions += &apos;-XR/Developer/SDKs/MacOSX10.4u.sdk/&apos;;
+  CustomOptions += &apos; -dUseCThreads&apos;;
+end;
+if TargetOS = &apos;linux&apos; then
+  CustomOptions += &apos; -dUseCThreads&apos;;"/>
+    <BuildMacros>
+      <Count Value="1"/>
+      <Item1>
+        <Identifier Value="MustangpeakCompilerOptions"/>
+        <Description Value="Compiler Options for Platforms"/>
+      </Item1>
+    </BuildMacros>
+    <Parsing>
+      <SyntaxOptions>
+        <IncludeAssertionCode Value="True"/>
+      </SyntaxOptions>
+    </Parsing>
+    <CodeGeneration>
+      <Checks>
+        <IOChecks Value="True"/>
+        <RangeChecks Value="True"/>
+        <OverflowChecks Value="True"/>
+        <StackChecks Value="True"/>
+      </Checks>
+      <VerifyObjMethodCallValidity Value="True"/>
+      <Optimizations>
+        <OptimizationLevel Value="0"/>
+      </Optimizations>
+    </CodeGeneration>
+    <Linking>
+      <Debugging>
+        <DebugInfoType Value="dsDwarf2Set"/>
+        <UseValgrind Value="True"/>
+      </Debugging>
+      <Options>
+        <Win32>
+          <GraphicApplication Value="True"/>
+        </Win32>
+      </Options>
+    </Linking>
+    <Other>
+      <CustomOptions Value="//-dPYTHON_SCRIPT_COMPATIBLE"/>
+      <OtherDefines Count="1">
+        <Define0 Value="PYTHON_SCRIPT_COMPATIBLE"/>
+      </OtherDefines>
+    </Other>
+  </CompilerOptions>
+  <Debugging>
+    <Exceptions Count="7">
+      <Item1>
+        <Name Value="EAbort"/>
+      </Item1>
+      <Item2>
+        <Name Value="ECodetoolError"/>
+        <Enabled Value="False"/>
+      </Item2>
+      <Item3>
+        <Name Value="EFOpenError"/>
+        <Enabled Value="False"/>
+      </Item3>
+      <Item4>
+        <Name Value="EIdSilentException"/>
+        <Enabled Value="False"/>
+      </Item4>
+      <Item5>
+        <Name Value="EIdSocketError"/>
+        <Enabled Value="False"/>
+      </Item5>
+      <Item6>
+        <Name Value="00000006EAbort"/>
+      </Item6>
+      <Item7>
+        <Name Value="EInOutError"/>
+      </Item7>
+    </Exceptions>
+  </Debugging>
+</CONFIG>

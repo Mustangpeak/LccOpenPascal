@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CONFIG>
+  <ProjectSession>
+    <Version Value="12"/>
+    <BuildModes Active="Default"/>
+    <Units>
+      <Unit>
+        <Filename Value="hex2dshex.lpr"/>
+        <IsPartOfProject Value="True"/>
+        <IsVisibleTab Value="True"/>
+        <TopLine Value="368"/>
+        <CursorPos Y="378"/>
+        <UsageCount Value="23"/>
+        <Loaded Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="../HexEditor/unit_main.pas"/>
+        <ComponentName Value="Form1"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="367"/>
+        <CursorPos X="27" Y="381"/>
+        <UsageCount Value="10"/>
+      </Unit>
+      <Unit>
+        <Filename Value="../../../../Desktop/lazarus/components/virtualtreeview/laz.virtualtrees.pas"/>
+        <UnitName Value="laz.VirtualTrees"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="4489"/>
+        <CursorPos X="74" Y="4496"/>
+        <UsageCount Value="11"/>
+      </Unit>
+      <Unit>
+        <Filename Value="../../../../Desktop/lazarus/components/virtualtreeview/include/intf/cocoa/laz.vtvdragmanager.inc"/>
+        <EditorIndex Value="-1"/>
+        <UsageCount Value="10"/>
+      </Unit>
+      <Unit>
+        <Filename Value="../../../../Desktop/lazarus/components/virtualtreeview/include/intf/carbon/laz.vtvdragmanager.inc"/>
+        <EditorIndex Value="-1"/>
+        <UsageCount Value="10"/>
+      </Unit>
+      <Unit>
+        <Filename Value="../../../../Desktop/lazarus/components/virtualtreeview/include/intf/laz.dummydragmanager.inc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="94"/>
+        <UsageCount Value="10"/>
+      </Unit>
+      <Unit>
+        <Filename Value="../../../../Desktop/lazarus/fpc/3.2.2/sources/rtl/inc/objpash.inc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="52"/>
+        <CursorPos X="25" Y="66"/>
+        <UsageCount Value="11"/>
+      </Unit>
+      <Unit>
+        <Filename Value="../../../../Desktop/lazarus/fpc/3.2.2/sources/rtl/inc/systemh.inc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="451"/>
+        <CursorPos X="59" Y="480"/>
+        <UsageCount Value="11"/>
+      </Unit>
+      <Unit>
+        <Filename Value="../../../../Desktop/lazarus/fpc/3.2.2/sources/rtl/inc/system.inc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="844"/>
+        <CursorPos X="38" Y="859"/>
+        <UsageCount Value="10"/>
+      </Unit>
+    </Units>
+    <JumpHistory HistoryIndex="12">
+      <Position>
+        <Filename Value="hex2dshex.lpr"/>
+        <Caret Line="432" TopLine="410"/>
+      </Position>
+      <Position>
+        <Filename Value="hex2dshex.lpr"/>
+        <Caret Line="433" TopLine="410"/>
+      </Position>
+      <Position>
+        <Filename Value="hex2dshex.lpr"/>
+        <Caret Line="435" TopLine="410"/>
+      </Position>
+      <Position>
+        <Filename Value="hex2dshex.lpr"/>
+        <Caret Line="436" TopLine="410"/>
+      </Position>
+      <Position>
+        <Filename Value="hex2dshex.lpr"/>
+        <Caret Line="438" TopLine="410"/>
+      </Position>
+      <Position>
+        <Filename Value="hex2dshex.lpr"/>
+        <Caret Line="440" TopLine="410"/>
+      </Position>
+      <Position>
+        <Filename Value="hex2dshex.lpr"/>
+        <Caret Line="442" TopLine="410"/>
+      </Position>
+      <Position>
+        <Filename Value="hex2dshex.lpr"/>
+        <Caret Line="444" TopLine="410"/>
+      </Position>
+      <Position>
+        <Filename Value="hex2dshex.lpr"/>
+        <Caret Line="446" TopLine="410"/>
+      </Position>
+      <Position>
+        <Filename Value="hex2dshex.lpr"/>
+        <Caret Line="447" TopLine="411"/>
+      </Position>
+      <Position>
+        <Filename Value="hex2dshex.lpr"/>
+        <Caret Line="453" TopLine="442"/>
+      </Position>
+      <Position>
+        <Filename Value="hex2dshex.lpr"/>
+        <Caret Line="85" Column="19" TopLine="66"/>
+      </Position>
+      <Position>
+        <Filename Value="hex2dshex.lpr"/>
+        <Caret Line="443" TopLine="423"/>
+      </Position>
+    </JumpHistory>
+    <RunParams>
+      <FormatVersion Value="2"/>
+      <Modes ActiveMode="default">
+        <Mode Name="default">
+          <local>
+            <CommandLineParams Value="-f /Users/jimkueneman/Documents/OpenLcbCLib/src/applications/dsPIC/TurnoutBOSS.X/dist/default/production/TurnoutBOSS.X.production.hex -m 0xB000 -x 0x55000 -e 1024 -c 0x54800 -k MustangpeakEngineeringTurnoutBoss2.0"/>
+          </local>
+        </Mode>
+      </Modes>
+    </RunParams>
+    <HistoryLists>
+      <List Name="CommandLineParameters" Count="13">
+        <Item1 Value="-f /Users/jimkueneman/Documents/OpenLcbCLib/src/applications/dsPIC/TurnoutBOSS.X/dist/default/production/TurnoutBOSS.X.production.hex -m 0xB000 -x 0x55000 -e 1024 -c 0x54800 -k MustangpeakEngineeringTurnoutBoss2.0"/>
+        <Item2 Value="-f /Users/jimkueneman/Documents/OpenLcbCLib/src/applications/dsPIC/TurnoutBOSS.X/dist/default/production/TurnoutBOSS.X.production.hex -m 0xB000 -x 0x0055000 -e 1024 -c 0x54000 -k MustangpeakEngineeringTurnoutBoss2.0"/>
+        <Item3 Value="-f /Users/jimkueneman/Documents/OpenLcbCLib/src/applications/dsPIC/TurnoutBOSS.X/dist/default/production/TurnoutBOSS.X.production.hex -m 0xB000 -x 0x0055800 -e 1024 -c 0x54000 -k MustangpeakEngineeringTurnoutBoss2.0"/>
+        <Item4 Value="-f /Users/jimkueneman/Documents/OpenLcbCLib/src/applications/dsPIC/TurnoutBOSS.X/dist/default/production/TurnoutBOSS.X.production.hex -m 0xB000 -x 0x0055800 -e 1024 -c 0x54000 -k UniqueIdentifierForLoad"/>
+        <Item5 Value="-f /Users/jimkueneman/Documents/OpenLcbCLib/src/applications/dsPIC/TurnoutBOSS.X/dist/default/production/TurnoutBOSS.X.production.hex -m 0xB000 -x 0x0055800 -e 1024"/>
+        <Item6 Value="-f /Users/jimkueneman/Documents/OpenLcbCLib/src/applications/dsPIC/TurnoutBOSS.X/dist/default/production/TurnoutBOSS.X.production.hex -m 0xB000"/>
+        <Item7 Value="-f /Users/jimkueneman/Documents/OpenLcbCLib/src/applications/dsPIC/TurnoutBOSS.X/dist/default/production/TurnoutBOSS.X.production.hex -mB000 "/>
+        <Item8 Value="-f /Users/jimkueneman/Documents/OpenLcbCLib/src/applications/dsPIC/TurnoutBOSS.X/dist/default/production/TurnoutBOSS.X.production.hex "/>
+        <Item9 Value="-f /Users/jimkueneman/Documents/OpenLcbCLib/src/applications/dsPIC/TurnoutBOSS.X/dist/default/production/TurnoutBOSS.X.production.hex -mB000 -x0055800 -e1024"/>
+        <Item10 Value="-f /Users/jimkueneman/Documents/OpenLcbCLib/src/applications/dsPIC/TurnoutBOSS.X/dist/default/production/TurnoutBOSS.X.production.hex -m0xB000 -x0x0055800 -e1024"/>
+        <Item11 Value="-f /Users/jimkueneman/Documents/OpenLcbCLib/src/applications/dsPIC/TurnoutBOSS.X/dist/default/production/TurnoutBOSS.X.production.hex -m0xB000 -M0x0055800 -e1024"/>
+        <Item12 Value="-f /Users/jimkueneman/Documents/OpenLcbCLib/src/applications/dsPIC/TurnoutBOSS.X/dist/default/production/TurnoutBOSS.X.production.hex"/>
+        <Item13 Value="-f /Users/jimkueneman/Documents/OpenLcbCLib/src/applications/dsPIC/TurnoutBOSS.X/dist/default/production/TurnoutBOSS.X.production.hex -mB000"/>
+      </List>
+    </HistoryLists>
+  </ProjectSession>
+</CONFIG>

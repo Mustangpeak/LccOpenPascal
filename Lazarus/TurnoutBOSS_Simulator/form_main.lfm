@@ -1,0 +1,152 @@
+object Form_turnoutboss_simulator: TForm_turnoutboss_simulator
+  Left = 460
+  Height = 767
+  Top = 228
+  Width = 270
+  Caption = 'TurnoutBOSS Simulator'
+  ClientHeight = 767
+  ClientWidth = 270
+  LCLVersion = '4.0.0.1'
+  OnCreate = FormCreate
+  OnShow = FormShow
+  object StatusBarMain: TStatusBar
+    Left = 0
+    Height = 18
+    Top = 749
+    Width = 270
+    Panels = <    
+      item
+        Width = 300
+      end>
+    SimplePanel = False
+  end
+  object Panel_header: TPanel
+    Left = 0
+    Height = 160
+    Top = 0
+    Width = 270
+    Align = alTop
+    ClientHeight = 160
+    ClientWidth = 270
+    TabOrder = 1
+    object Label1: TLabel
+      Left = 16
+      Height = 16
+      Top = 8
+      Width = 49
+      Caption = 'Node ID'
+    end
+    object Edit_node_id: TEdit
+      Left = 96
+      Height = 22
+      Top = 2
+      Width = 153
+      TabOrder = 0
+      Text = '05.07.01.01.00.10'
+    end
+    object RadioGroup_turnout_type: TRadioGroup
+      Left = 16
+      Height = 49
+      Top = 64
+      Width = 232
+      AutoFill = True
+      Caption = 'Turnout Type'
+      ChildSizing.LeftRightSpacing = 6
+      ChildSizing.EnlargeHorizontal = crsHomogenousChildResize
+      ChildSizing.EnlargeVertical = crsHomogenousChildResize
+      ChildSizing.ShrinkHorizontal = crsScaleChilds
+      ChildSizing.ShrinkVertical = crsScaleChilds
+      ChildSizing.Layout = cclLeftToRightThenTopToBottom
+      ChildSizing.ControlsPerLine = 2
+      ClientHeight = 22
+      ClientWidth = 222
+      Columns = 2
+      ItemIndex = 0
+      Items.Strings = (
+        'Left Hand'
+        'Right Hand'
+      )
+      TabOrder = 1
+      OnClick = RadioGroup_turnout_typeClick
+    end
+    object ButtonEthernetConnect: TButton
+      Left = 16
+      Height = 25
+      Top = 120
+      Width = 147
+      Caption = 'Connect Ethernet'
+      TabOrder = 2
+      OnClick = ButtonEthernetConnectClick
+    end
+    object Label2: TLabel
+      Left = 16
+      Height = 16
+      Top = 32
+      Width = 36
+      Caption = 'Alias: '
+    end
+    object Edit_alias: TEdit
+      Left = 96
+      Height = 22
+      Top = 26
+      Width = 80
+      ReadOnly = True
+      TabOrder = 3
+    end
+  end
+  object Panel_frame_container: TPanel
+    Left = 0
+    Height = 480
+    Top = 160
+    Width = 270
+    Align = alClient
+    TabOrder = 2
+  end
+  object Panel1: TPanel
+    Left = 0
+    Height = 109
+    Top = 640
+    Width = 270
+    Align = alBottom
+    BorderWidth = 4
+    ClientHeight = 109
+    ClientWidth = 270
+    TabOrder = 3
+    object Label3: TLabel
+      Left = 5
+      Height = 16
+      Top = 5
+      Width = 260
+      Align = alTop
+      Caption = 'TurnoutBOSS To the Left'
+    end
+    object Label4: TLabel
+      Left = 5
+      Height = 16
+      Top = 43
+      Width = 260
+      Align = alTop
+      Alignment = taRightJustify
+      Caption = 'TurnoutBOSS To the Right'
+    end
+    object Edit_turnoutboss_left: TEdit
+      Left = 5
+      Height = 22
+      Top = 21
+      Width = 260
+      Align = alTop
+      TabOrder = 0
+      Text = '05.07.01.01.01.20'
+    end
+    object Edit_turnoutboss_right: TEdit
+      Left = 5
+      Height = 22
+      Top = 59
+      Width = 260
+      Align = alTop
+      Alignment = taRightJustify
+      TabOrder = 1
+      Text = '05.07.01.01.01.30'
+    end
+  end
+end

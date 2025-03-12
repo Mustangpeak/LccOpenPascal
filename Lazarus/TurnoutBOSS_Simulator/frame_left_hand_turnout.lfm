@@ -1,0 +1,223 @@
+object Frame_left_hand_turnoutboss: TFrame_left_hand_turnoutboss
+  Left = 0
+  Height = 480
+  Top = 0
+  Width = 270
+  ClientHeight = 480
+  ClientWidth = 270
+  TabOrder = 0
+  DesignLeft = 680
+  DesignTop = 463
+  object Panel1: TPanel
+    Left = 0
+    Height = 480
+    Top = 0
+    Width = 270
+    Align = alClient
+    ClientHeight = 480
+    ClientWidth = 270
+    TabOrder = 0
+    object RadioGroup_signal_normal: TRadioGroup
+      Left = 152
+      Height = 76
+      Top = 112
+      Width = 102
+      AutoFill = True
+      Caption = 'Signal Normal'
+      ChildSizing.LeftRightSpacing = 6
+      ChildSizing.EnlargeHorizontal = crsHomogenousChildResize
+      ChildSizing.EnlargeVertical = crsHomogenousChildResize
+      ChildSizing.ShrinkHorizontal = crsScaleChilds
+      ChildSizing.ShrinkVertical = crsScaleChilds
+      ChildSizing.Layout = cclLeftToRightThenTopToBottom
+      ChildSizing.ControlsPerLine = 1
+      ClientHeight = 49
+      ClientWidth = 92
+      ItemIndex = 2
+      Items.Strings = (
+        'Green'
+        'Yellow'
+        'Red'
+      )
+      TabOrder = 0
+    end
+    object RadioGroup_signal_diverging: TRadioGroup
+      Left = 152
+      Height = 76
+      Top = 8
+      Width = 102
+      AutoFill = True
+      Caption = 'Signal Diverging'
+      ChildSizing.LeftRightSpacing = 6
+      ChildSizing.EnlargeHorizontal = crsHomogenousChildResize
+      ChildSizing.EnlargeVertical = crsHomogenousChildResize
+      ChildSizing.ShrinkHorizontal = crsScaleChilds
+      ChildSizing.ShrinkVertical = crsScaleChilds
+      ChildSizing.Layout = cclLeftToRightThenTopToBottom
+      ChildSizing.ControlsPerLine = 1
+      ClientHeight = 49
+      ClientWidth = 92
+      ItemIndex = 2
+      Items.Strings = (
+        'Green'
+        'Yellow'
+        'Red'
+      )
+      TabOrder = 1
+    end
+    object GroupBox_approach: TGroupBox
+      Left = 8
+      Height = 186
+      Top = 8
+      Width = 112
+      Caption = 'Approach'
+      ClientHeight = 159
+      ClientWidth = 102
+      TabOrder = 2
+      object RadioGroup_signal_approach_normal: TRadioGroup
+        Left = -2
+        Height = 76
+        Top = 80
+        Width = 102
+        AutoFill = True
+        Caption = 'Signal Normal'
+        ChildSizing.LeftRightSpacing = 6
+        ChildSizing.EnlargeHorizontal = crsHomogenousChildResize
+        ChildSizing.EnlargeVertical = crsHomogenousChildResize
+        ChildSizing.ShrinkHorizontal = crsScaleChilds
+        ChildSizing.ShrinkVertical = crsScaleChilds
+        ChildSizing.Layout = cclLeftToRightThenTopToBottom
+        ChildSizing.ControlsPerLine = 1
+        ClientHeight = 49
+        ClientWidth = 92
+        ItemIndex = 2
+        Items.Strings = (
+          'Green'
+          'Yellow'
+          'Red'
+        )
+        TabOrder = 0
+      end
+      object RadioGroup_signal_approach_diverging: TRadioGroup
+        Left = 0
+        Height = 76
+        Top = 0
+        Width = 102
+        AutoFill = True
+        Caption = 'Signal Diverging'
+        ChildSizing.LeftRightSpacing = 6
+        ChildSizing.EnlargeHorizontal = crsHomogenousChildResize
+        ChildSizing.EnlargeVertical = crsHomogenousChildResize
+        ChildSizing.ShrinkHorizontal = crsScaleChilds
+        ChildSizing.ShrinkVertical = crsScaleChilds
+        ChildSizing.Layout = cclLeftToRightThenTopToBottom
+        ChildSizing.ControlsPerLine = 1
+        ClientHeight = 49
+        ClientWidth = 92
+        ItemIndex = 2
+        Items.Strings = (
+          'Green'
+          'Yellow'
+          'Red'
+        )
+        TabOrder = 1
+      end
+    end
+    object GroupBox_turnout: TGroupBox
+      Left = 8
+      Height = 224
+      Top = 248
+      Width = 248
+      Caption = 'Turnout'
+      ClientHeight = 197
+      ClientWidth = 238
+      TabOrder = 3
+      object RadioGroup_turnout_commanded_position: TRadioGroup
+        Left = 0
+        Height = 65
+        Top = 0
+        Width = 152
+        AutoFill = True
+        Caption = 'Commanded Position'
+        ChildSizing.LeftRightSpacing = 6
+        ChildSizing.EnlargeHorizontal = crsHomogenousChildResize
+        ChildSizing.EnlargeVertical = crsHomogenousChildResize
+        ChildSizing.ShrinkHorizontal = crsScaleChilds
+        ChildSizing.ShrinkVertical = crsScaleChilds
+        ChildSizing.Layout = cclLeftToRightThenTopToBottom
+        ChildSizing.ControlsPerLine = 1
+        ClientHeight = 38
+        ClientWidth = 142
+        Items.Strings = (
+          'Normal'
+          'Diverging'
+        )
+        TabOrder = 0
+      end
+      object RadioGroup_turnout_sensed_position: TRadioGroup
+        Left = 0
+        Height = 65
+        Top = 72
+        Width = 152
+        AutoFill = True
+        Caption = 'Sensed Position'
+        ChildSizing.LeftRightSpacing = 6
+        ChildSizing.EnlargeHorizontal = crsHomogenousChildResize
+        ChildSizing.EnlargeVertical = crsHomogenousChildResize
+        ChildSizing.ShrinkHorizontal = crsScaleChilds
+        ChildSizing.ShrinkVertical = crsScaleChilds
+        ChildSizing.Layout = cclLeftToRightThenTopToBottom
+        ChildSizing.ControlsPerLine = 1
+        ClientHeight = 38
+        ClientWidth = 142
+        Items.Strings = (
+          'Normal'
+          'Diverging'
+        )
+        TabOrder = 1
+      end
+      object Button_facia_button_normal: TButton
+        Left = 1
+        Height = 25
+        Top = 144
+        Width = 168
+        Caption = 'Facia Button Normal'
+        TabOrder = 2
+        OnClick = Button_facia_button_normalClick
+      end
+      object Button_facia_button_diverging: TButton
+        Left = 0
+        Height = 25
+        Top = 168
+        Width = 169
+        Caption = 'Facia Button Diverging'
+        TabOrder = 3
+        OnClick = Button_facia_button_divergingClick
+      end
+    end
+    object CheckBox_detection_turnout: TCheckBox
+      Left = 16
+      Height = 18
+      Top = 216
+      Width = 79
+      Caption = 'Detected'
+      TabOrder = 4
+    end
+    object CheckBox_detection_diverging_track: TCheckBox
+      Left = 168
+      Height = 18
+      Top = 192
+      Width = 79
+      Caption = 'Detected'
+      TabOrder = 5
+    end
+    object CheckBox_detection_normal_track: TCheckBox
+      Left = 168
+      Height = 18
+      Top = 216
+      Width = 79
+      Caption = 'Detected'
+      TabOrder = 6
+    end
+  end
+end

@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CONFIG>
+  <ProjectSession>
+    <Version Value="12"/>
+    <BuildModes Active="Default"/>
+    <Units>
+      <Unit>
+        <Filename Value="buildversion.lpr"/>
+        <IsPartOfProject Value="True"/>
+        <IsVisibleTab Value="True"/>
+        <TopLine Value="61"/>
+        <CursorPos Y="78"/>
+        <UsageCount Value="25"/>
+        <Loaded Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="/Applications/lazarus-4RC1/fpc/3.2.2/sources/rtl/objpas/objpas.pp"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="125"/>
+        <CursorPos X="33" Y="142"/>
+        <UsageCount Value="11"/>
+      </Unit>
+      <Unit>
+        <Filename Value="/Applications/lazarus-4RC1/fpc/3.2.2/sources/packages/fcl-base/src/custapp.pp"/>
+        <UnitName Value="CustApp"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="83"/>
+        <CursorPos X="14" Y="96"/>
+        <UsageCount Value="11"/>
+      </Unit>
+    </Units>
+    <JumpHistory HistoryIndex="29">
+      <Position>
+        <Filename Value="buildversion.lpr"/>
+        <Caret Line="58" TopLine="44"/>
+      </Position>
+      <Position>
+        <Filename Value="buildversion.lpr"/>
+        <Caret Line="59" TopLine="44"/>
+      </Position>
+      <Position>
+        <Filename Value="buildversion.lpr"/>
+        <Caret Line="67" TopLine="46"/>
+      </Position>
+      <Position>
+        <Filename Value="buildversion.lpr"/>
+        <Caret Line="68" TopLine="47"/>
+      </Position>
+      <Position>
+        <Filename Value="buildversion.lpr"/>
+        <Caret Line="70" TopLine="49"/>
+      </Position>
+      <Position>
+        <Filename Value="buildversion.lpr"/>
+        <Caret Line="71" TopLine="50"/>
+      </Position>
+      <Position>
+        <Filename Value="buildversion.lpr"/>
+        <Caret Line="73" TopLine="52"/>
+      </Position>
+      <Position>
+        <Filename Value="buildversion.lpr"/>
+        <Caret Line="75" TopLine="54"/>
+      </Position>
+      <Position>
+        <Filename Value="buildversion.lpr"/>
+        <Caret Line="76" TopLine="55"/>
+      </Position>
+      <Position>
+        <Filename Value="buildversion.lpr"/>
+        <Caret Line="78" TopLine="57"/>
+      </Position>
+      <Position>
+        <Filename Value="buildversion.lpr"/>
+        <Caret Line="81" TopLine="60"/>
+      </Position>
+      <Position>
+        <Filename Value="buildversion.lpr"/>
+        <Caret Line="84" TopLine="63"/>
+      </Position>
+      <Position>
+        <Filename Value="buildversion.lpr"/>
+        <Caret Line="85" TopLine="64"/>
+      </Position>
+      <Position>
+        <Filename Value="buildversion.lpr"/>
+        <Caret Line="86" TopLine="65"/>
+      </Position>
+      <Position>
+        <Filename Value="buildversion.lpr"/>
+        <Caret Line="87" TopLine="66"/>
+      </Position>
+      <Position>
+        <Filename Value="buildversion.lpr"/>
+        <Caret Line="89" TopLine="68"/>
+      </Position>
+      <Position>
+        <Filename Value="buildversion.lpr"/>
+        <Caret Line="90" TopLine="69"/>
+      </Position>
+      <Position>
+        <Filename Value="buildversion.lpr"/>
+        <Caret Line="91" TopLine="70"/>
+      </Position>
+      <Position>
+        <Filename Value="buildversion.lpr"/>
+        <Caret Line="92" TopLine="71"/>
+      </Position>
+      <Position>
+        <Filename Value="buildversion.lpr"/>
+        <Caret Line="93" TopLine="72"/>
+      </Position>
+      <Position>
+        <Filename Value="buildversion.lpr"/>
+        <Caret Line="94" TopLine="73"/>
+      </Position>
+      <Position>
+        <Filename Value="buildversion.lpr"/>
+        <Caret Line="95" TopLine="74"/>
+      </Position>
+      <Position>
+        <Filename Value="buildversion.lpr"/>
+        <Caret Line="96" TopLine="75"/>
+      </Position>
+      <Position>
+        <Filename Value="buildversion.lpr"/>
+        <Caret Line="97" TopLine="76"/>
+      </Position>
+      <Position>
+        <Filename Value="buildversion.lpr"/>
+        <Caret Line="98" TopLine="77"/>
+      </Position>
+      <Position>
+        <Filename Value="buildversion.lpr"/>
+        <Caret Line="99" TopLine="78"/>
+      </Position>
+      <Position>
+        <Filename Value="buildversion.lpr"/>
+        <Caret Line="100" TopLine="79"/>
+      </Position>
+      <Position>
+        <Filename Value="buildversion.lpr"/>
+        <Caret Line="101" TopLine="80"/>
+      </Position>
+      <Position>
+        <Filename Value="buildversion.lpr"/>
+        <Caret Line="102" TopLine="81"/>
+      </Position>
+      <Position>
+        <Filename Value="buildversion.lpr"/>
+        <Caret Line="103" TopLine="82"/>
+      </Position>
+    </JumpHistory>
+    <RunParams>
+      <FormatVersion Value="2"/>
+      <Modes ActiveMode="default">
+        <Mode Name="default">
+          <local>
+            <CommandLineParams Value="-f /Users/jimkueneman/Documents/OpenLcbCLib/src/applications/dsPIC/TurnoutBossCommon/turnoutboss_version.h"/>
+          </local>
+        </Mode>
+      </Modes>
+    </RunParams>
+    <HistoryLists>
+      <List Name="CommandLineParameters" Count="8">
+        <Item1 Value="-f /Users/jimkueneman/Documents/OpenLcbCLib/src/applications/dsPIC/TurnoutBossCommon/turnoutboss_version.h"/>
+        <Item2 Value="-f /Users"/>
+        <Item3 Value="-f/Users/jimkueneman/Documents/OpenLcbCLib/src/applications/dsPIC/TurnoutBossCommon/turnoutboss_version.h"/>
+        <Item4 Value="-f&quot;/Users/jimkueneman/Documents/OpenLcbCLib/src/applications/dsPIC/TurnoutBossCommon/turnoutboss_version.h&quot;"/>
+        <Item5 Value="&quot;/Users/jimkueneman/Documents/OpenLcbCLib/src/applications/dsPIC/TurnoutBossCommon/turnoutboss_version.h&quot;"/>
+        <Item6 Value="-/Users/jimkueneman/Documents/OpenLcbCLib/src/applications/dsPIC/TurnoutBossCommon/turnoutboss_version.h"/>
+        <Item7 Value="/Users/jimkueneman/Documents/OpenLcbCLib/src/applications/dsPIC/TurnoutBossCommon/turnoutboss_version.h"/>
+        <Item8 Value="-f &quot;/Users/jimkueneman/Documents/OpenLcbCLib/src/applications/dsPIC/TurnoutBossCommon/turnoutboss_version.h&quot;"/>
+      </List>
+    </HistoryLists>
+  </ProjectSession>
+  <Debugging>
+    <BreakPoints>
+      <Item>
+        <Kind Value="bpkSource"/>
+        <WatchScope Value="wpsLocal"/>
+        <WatchKind Value="wpkWrite"/>
+        <Source Value="buildversion.lpr"/>
+        <Line Value="36"/>
+      </Item>
+    </BreakPoints>
+  </Debugging>
+</CONFIG>

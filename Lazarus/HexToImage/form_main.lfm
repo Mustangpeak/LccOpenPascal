@@ -1,0 +1,47 @@
+object Form1: TForm1
+  Left = 704
+  Height = 567
+  Top = 197
+  Width = 789
+  Caption = 'HEX to Image'
+  ClientHeight = 567
+  ClientWidth = 789
+  LCLVersion = '4.0.0.1'
+  OnCreate = FormCreate
+  OnDestroy = FormDestroy
+  object Button_open_hex: TButton
+    Left = 48
+    Height = 25
+    Top = 13
+    Width = 171
+    Caption = 'Open Hex File'
+    TabOrder = 0
+    OnClick = Button_open_hexClick
+  end
+  object ButtonAnalyze: TButton
+    Left = 48
+    Height = 25
+    Top = 64
+    Width = 163
+    Caption = 'Analyze'
+    TabOrder = 1
+    OnClick = ButtonAnalyzeClick
+  end
+  object Memo1: TMemo
+    Left = 256
+    Height = 567
+    Top = 0
+    Width = 533
+    Align = alRight
+    Lines.Strings = (
+      'Memo1'
+    )
+    ScrollBars = ssAutoBoth
+    TabOrder = 2
+  end
+  object OpenDialog: TOpenDialog
+    DefaultExt = '.hex'
+    Left = 120
+    Top = 168
+  end
+end

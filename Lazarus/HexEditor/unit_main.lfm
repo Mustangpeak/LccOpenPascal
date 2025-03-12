@@ -1,0 +1,284 @@
+object Form_hex2dshex: TForm_hex2dshex
+  Left = 556
+  Height = 620
+  Top = 37
+  Width = 1533
+  Caption = 'Hex2dsHex GUI'
+  ClientHeight = 620
+  ClientWidth = 1533
+  OnCreate = FormCreate
+  object ButtonOpen: TButton
+    Left = 1153
+    Height = 25
+    Top = 8
+    Width = 258
+    Anchors = [akTop, akRight]
+    Caption = 'Open Hex File...'
+    TabOrder = 0
+    OnClick = ButtonOpenClick
+  end
+  object Memo_hex: TMemo
+    Left = 0
+    Height = 620
+    Top = 0
+    Width = 375
+    Align = alLeft
+    Anchors = [akTop, akLeft, akRight, akBottom]
+    Lines.Strings = (
+      ''
+    )
+    ParentFont = False
+    ScrollBars = ssAutoVertical
+    TabOrder = 1
+  end
+  object TreeView_addresses: TTreeView
+    Left = 391
+    Height = 620
+    Top = 0
+    Width = 318
+    Align = alLeft
+    ParentFont = False
+    TabOrder = 2
+  end
+  object Splitter1: TSplitter
+    Left = 375
+    Height = 620
+    Top = 0
+    Width = 16
+  end
+  object Label1: TLabel
+    Left = 1168
+    Height = 16
+    Top = 40
+    Width = 209
+    Anchors = [akTop, akRight]
+    Caption = 'Total 24 bit (DWORD) Instructions:'
+  end
+  object Label_instruction_count: TLabel
+    Left = 1176
+    Height = 17
+    Top = 64
+    Width = 104
+    Anchors = [akTop, akRight]
+    AutoSize = False
+    Caption = '0'
+  end
+  object Splitter2: TSplitter
+    Left = 709
+    Height = 620
+    Top = 0
+    Width = 13
+  end
+  object Button_analyze: TButton
+    Left = 1296
+    Height = 25
+    Top = 56
+    Width = 180
+    Anchors = [akTop, akRight]
+    Caption = 'Analyze address gaps....'
+    TabOrder = 5
+    OnClick = Button_analyzeClick
+  end
+  object Edit_min_address: TEdit
+    Left = 1250
+    Height = 21
+    Top = 120
+    Width = 176
+    Anchors = [akTop, akRight]
+    TabOrder = 6
+    Text = '0xB000'
+  end
+  object Edit_max_address: TEdit
+    Left = 1250
+    Height = 21
+    Top = 176
+    Width = 176
+    Anchors = [akTop, akRight]
+    TabOrder = 7
+    Text = '0x55000'
+  end
+  object Edit_erase_page_size: TEdit
+    Left = 1250
+    Height = 21
+    Top = 224
+    Width = 176
+    Anchors = [akTop, akRight]
+    TabOrder = 8
+    Text = '1024'
+  end
+  object Label2: TLabel
+    Left = 1176
+    Height = 16
+    Top = 96
+    Width = 278
+    Anchors = [akTop, akRight]
+    Caption = 'Min Address to include (greater than equal to)'
+  end
+  object Label3: TLabel
+    Left = 1176
+    Height = 16
+    Top = 152
+    Width = 212
+    Anchors = [akTop, akRight]
+    Caption = 'Max Address to exclude (less than)'
+  end
+  object Label4: TLabel
+    Left = 1176
+    Height = 16
+    Top = 200
+    Width = 180
+    Anchors = [akTop, akRight]
+    Caption = 'Erase page size (Instructions)'
+  end
+  object Button_generate_dshex: TButton
+    Left = 1160
+    Height = 25
+    Top = 448
+    Width = 255
+    Anchors = [akTop, akRight]
+    Caption = 'Generate dsHEX'
+    Enabled = False
+    TabOrder = 9
+    OnClick = Button_generate_dshexClick
+  end
+  object Label5: TLabel
+    Left = 1176
+    Height = 16
+    Top = 256
+    Width = 273
+    Anchors = [akTop, akRight]
+    Caption = 'Erase Page Start Address to place Checksum'
+  end
+  object Edit_checksum_page: TEdit
+    Left = 1250
+    Height = 21
+    Top = 280
+    Width = 176
+    Anchors = [akTop, akRight]
+    TabOrder = 10
+    Text = '0x54800'
+  end
+  object TreeView_addresses_dshex: TTreeView
+    Left = 722
+    Height = 620
+    Top = 0
+    Width = 406
+    Align = alLeft
+    ParentFont = False
+    TabOrder = 11
+  end
+  object Button_generate_nodeid_dshex: TButton
+    Left = 1160
+    Height = 25
+    Top = 584
+    Width = 255
+    Anchors = [akTop, akRight]
+    Caption = 'Generate Node ID dsHEX'
+    Enabled = False
+    TabOrder = 12
+    OnClick = Button_generate_nodeid_dshexClick
+  end
+  object Edit_nodeid: TEdit
+    Left = 1198
+    Height = 21
+    Top = 560
+    Width = 176
+    Anchors = [akTop, akRight]
+    TabOrder = 13
+    Text = '0x0507010100AA'
+  end
+  object Label6: TLabel
+    Left = 1176
+    Height = 16
+    Top = 536
+    Width = 147
+    Anchors = [akTop, akRight]
+    Caption = 'Node ID to write to flash'
+    OnClick = Label6Click
+  end
+  object Label7: TLabel
+    Left = 1176
+    Height = 16
+    Top = 480
+    Width = 242
+    Anchors = [akTop, akRight]
+    Caption = 'Erase Page to place the Node ID in flash'
+    OnClick = Label6Click
+  end
+  object Edit_nodeid_erasepage: TEdit
+    Left = 1198
+    Height = 21
+    Top = 504
+    Width = 176
+    Anchors = [akTop, akRight]
+    TabOrder = 14
+    Text = '0x054000'
+  end
+  object Label8: TLabel
+    Left = 1176
+    Height = 16
+    Top = 312
+    Width = 336
+    Anchors = [akTop, akRight]
+    Caption = 'Identifier to use in first line of dsHex file (64 bytes max)'
+  end
+  object Edit_guid: TEdit
+    Left = 1250
+    Height = 21
+    Top = 336
+    Width = 272
+    Anchors = [akTop, akRight]
+    TabOrder = 15
+    Text = 'MustangpeakEngineeringTurnoutBoss2.0'
+  end
+  object Label9: TLabel
+    Left = 1176
+    Height = 16
+    Top = 392
+    Width = 271
+    Anchors = [akTop, akRight]
+    Caption = 'Min Allowed Version (YYYYMMDD.HHMMSS)'
+    Enabled = False
+  end
+  object Edit_min_version: TEdit
+    Left = 1257
+    Height = 21
+    Top = 416
+    Width = 176
+    Anchors = [akTop, akRight]
+    Enabled = False
+    TabOrder = 16
+    Text = '20250101.120000'
+  end
+  object CheckBox_new_version_only: TCheckBox
+    Left = 1176
+    Height = 18
+    Top = 368
+    Width = 226
+    Anchors = [akTop, akRight]
+    Caption = 'Only allow versions greather than...'
+    Enabled = False
+    TabOrder = 17
+  end
+  object Edit_checksum: TEdit
+    Left = 1424
+    Height = 21
+    Top = 456
+    Width = 104
+    ReadOnly = True
+    TabOrder = 18
+  end
+  object Label10: TLabel
+    Left = 1443
+    Height = 16
+    Top = 439
+    Width = 64
+    Caption = 'Checksum'
+  end
+  object OpenDialog: TOpenDialog
+    DefaultExt = '.*.hex'
+    Filter = 'hex'
+    Left = 439
+    Top = 319
+  end
+end

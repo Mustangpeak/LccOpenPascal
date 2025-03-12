@@ -1,0 +1,456 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CONFIG>
+  <ProjectSession>
+    <Version Value="12"/>
+    <BuildModes Active="Default"/>
+    <Units>
+      <Unit>
+        <Filename Value="eventbuilder.lpr"/>
+        <IsPartOfProject Value="True"/>
+        <EditorIndex Value="-1"/>
+        <CursorPos X="32" Y="17"/>
+        <UsageCount Value="61"/>
+      </Unit>
+      <Unit>
+        <Filename Value="form_main.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="Form1"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+        <IsVisibleTab Value="True"/>
+        <TopLine Value="73"/>
+        <CursorPos X="37" Y="102"/>
+        <UsageCount Value="61"/>
+        <Loaded Value="True"/>
+        <LoadedDesigner Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="frame_workspace.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="FrameWorkspace"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Frame"/>
+        <EditorIndex Value="2"/>
+        <TopLine Value="175"/>
+        <CursorPos X="2" Y="197"/>
+        <UsageCount Value="61"/>
+        <Loaded Value="True"/>
+        <LoadedDesigner Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="unit_types.pas"/>
+        <IsPartOfProject Value="True"/>
+        <EditorIndex Value="-1"/>
+        <CursorPos Y="9"/>
+        <UsageCount Value="61"/>
+      </Unit>
+      <Unit>
+        <Filename Value="unit_turnout.pas"/>
+        <IsPartOfProject Value="True"/>
+        <EditorIndex Value="16"/>
+        <TopLine Value="52"/>
+        <CursorPos X="60" Y="76"/>
+        <UsageCount Value="61"/>
+        <Loaded Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="unit_switchmachine.pas"/>
+        <IsPartOfProject Value="True"/>
+        <EditorIndex Value="-1"/>
+        <CursorPos X="6" Y="10"/>
+        <UsageCount Value="61"/>
+      </Unit>
+      <Unit>
+        <Filename Value="unit_layout.pas"/>
+        <IsPartOfProject Value="True"/>
+        <EditorIndex Value="8"/>
+        <TopLine Value="36"/>
+        <CursorPos X="59" Y="65"/>
+        <UsageCount Value="61"/>
+        <Loaded Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="unit_division.pas"/>
+        <IsPartOfProject Value="True"/>
+        <EditorIndex Value="9"/>
+        <TopLine Value="30"/>
+        <CursorPos X="61" Y="63"/>
+        <UsageCount Value="61"/>
+        <Loaded Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="unit_subdivision.pas"/>
+        <IsPartOfProject Value="True"/>
+        <EditorIndex Value="10"/>
+        <TopLine Value="47"/>
+        <CursorPos X="64" Y="70"/>
+        <UsageCount Value="61"/>
+        <Loaded Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="unit_junction.pas"/>
+        <IsPartOfProject Value="True"/>
+        <EditorIndex Value="13"/>
+        <TopLine Value="31"/>
+        <CursorPos X="61" Y="58"/>
+        <UsageCount Value="61"/>
+        <Loaded Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="unit_actuator.pas"/>
+        <IsPartOfProject Value="True"/>
+        <EditorIndex Value="17"/>
+        <TopLine Value="47"/>
+        <CursorPos X="62" Y="75"/>
+        <UsageCount Value="61"/>
+        <Loaded Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="unit_sensor.pas"/>
+        <IsPartOfProject Value="True"/>
+        <EditorIndex Value="18"/>
+        <TopLine Value="40"/>
+        <CursorPos X="59" Y="67"/>
+        <UsageCount Value="61"/>
+        <Loaded Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="unit_yard.pas"/>
+        <IsPartOfProject Value="True"/>
+        <EditorIndex Value="15"/>
+        <TopLine Value="33"/>
+        <CursorPos X="64" Y="62"/>
+        <UsageCount Value="61"/>
+        <Loaded Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="unit_station.pas"/>
+        <IsPartOfProject Value="True"/>
+        <EditorIndex Value="14"/>
+        <TopLine Value="31"/>
+        <CursorPos X="60" Y="59"/>
+        <UsageCount Value="61"/>
+        <Loaded Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="unit_base_location.pas"/>
+        <IsPartOfProject Value="True"/>
+        <EditorIndex Value="11"/>
+        <TopLine Value="17"/>
+        <CursorPos X="22" Y="19"/>
+        <UsageCount Value="61"/>
+        <Loaded Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="unit_animations.pas"/>
+        <IsPartOfProject Value="True"/>
+        <EditorIndex Value="19"/>
+        <TopLine Value="41"/>
+        <CursorPos X="4" Y="68"/>
+        <UsageCount Value="61"/>
+        <Loaded Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="unit_base_layout_item.pas"/>
+        <IsPartOfProject Value="True"/>
+        <EditorIndex Value="7"/>
+        <TopLine Value="33"/>
+        <CursorPos X="20" Y="60"/>
+        <UsageCount Value="61"/>
+        <Loaded Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="unit_town.pas"/>
+        <IsPartOfProject Value="True"/>
+        <EditorIndex Value="12"/>
+        <TopLine Value="31"/>
+        <CursorPos X="57" Y="58"/>
+        <UsageCount Value="61"/>
+        <Loaded Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="unit_workspace.pas"/>
+        <IsPartOfProject Value="True"/>
+        <EditorIndex Value="5"/>
+        <TopLine Value="41"/>
+        <CursorPos Y="67"/>
+        <UsageCount Value="61"/>
+        <Loaded Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="unit_base_frame.pas"/>
+        <IsPartOfProject Value="True"/>
+        <EditorIndex Value="4"/>
+        <TopLine Value="13"/>
+        <CursorPos Y="45"/>
+        <UsageCount Value="61"/>
+        <Loaded Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="my_fgl.pas"/>
+        <IsPartOfProject Value="True"/>
+        <EditorIndex Value="6"/>
+        <TopLine Value="1164"/>
+        <CursorPos Y="1183"/>
+        <UsageCount Value="60"/>
+        <Loaded Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="unit_defines.pas"/>
+        <IsPartOfProject Value="True"/>
+        <EditorIndex Value="-1"/>
+        <CursorPos Y="11"/>
+        <UsageCount Value="51"/>
+      </Unit>
+      <Unit>
+        <Filename Value="unit_popup_menus.pas"/>
+        <IsPartOfProject Value="True"/>
+        <EditorIndex Value="3"/>
+        <TopLine Value="149"/>
+        <CursorPos Y="184"/>
+        <UsageCount Value="50"/>
+        <Loaded Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="/Applications/lazarus/lcl/forms.pp"/>
+        <UnitName Value="Forms"/>
+        <EditorIndex Value="1"/>
+        <TopLine Value="332"/>
+        <CursorPos X="17" Y="350"/>
+        <UsageCount Value="10"/>
+        <Loaded Value="True"/>
+      </Unit>
+      <Unit>
+        <Filename Value="/usr/local/share/fpcsrc/rtl/objpas/fgl.pp"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="2033"/>
+        <CursorPos X="25" Y="2038"/>
+        <UsageCount Value="6"/>
+      </Unit>
+      <Unit>
+        <Filename Value="/usr/local/share/fpcsrc/rtl/inc/objpash.inc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="201"/>
+        <CursorPos X="17" Y="206"/>
+        <UsageCount Value="6"/>
+      </Unit>
+      <Unit>
+        <Filename Value="/Applications/lazarus/lcl/comctrls.pp"/>
+        <UnitName Value="ComCtrls"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="3219"/>
+        <CursorPos X="14" Y="3237"/>
+        <UsageCount Value="6"/>
+      </Unit>
+      <Unit>
+        <Filename Value="/Applications/lazarus/lcl/include/treeview.inc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="2430"/>
+        <CursorPos X="5" Y="2434"/>
+        <UsageCount Value="6"/>
+      </Unit>
+      <Unit>
+        <Filename Value="/Applications/lazarus/lcl/actnlist.pas"/>
+        <UnitName Value="ActnList"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="94"/>
+        <CursorPos X="15" Y="98"/>
+        <UsageCount Value="10"/>
+      </Unit>
+      <Unit>
+        <Filename Value="unit_base_layout.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="12"/>
+        <CursorPos X="21" Y="41"/>
+        <UsageCount Value="7"/>
+      </Unit>
+      <Unit>
+        <Filename Value="backup/unit_workspace.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="48"/>
+        <CursorPos Y="63"/>
+        <UsageCount Value="7"/>
+      </Unit>
+      <Unit>
+        <Filename Value="/Applications/lazarus/lcl/include/menuitem.inc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="196"/>
+        <CursorPos Y="217"/>
+        <UsageCount Value="7"/>
+      </Unit>
+      <Unit>
+        <Filename Value="/Applications/lazarus/lcl/include/customactionlist.inc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="55"/>
+        <CursorPos X="25" Y="79"/>
+        <UsageCount Value="13"/>
+      </Unit>
+      <Unit>
+        <Filename Value="/usr/local/share/fpcsrc/rtl/objpas/classes/classesh.inc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="2002"/>
+        <CursorPos X="3" Y="2020"/>
+        <UsageCount Value="10"/>
+      </Unit>
+      <Unit>
+        <Filename Value="backup/unit_station.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="23"/>
+        <CursorPos X="21" Y="42"/>
+        <UsageCount Value="10"/>
+      </Unit>
+      <Unit>
+        <Filename Value="/Applications/lazarus/lcl/imglist.pp"/>
+        <UnitName Value="ImgList"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="376"/>
+        <CursorPos X="15" Y="392"/>
+        <UsageCount Value="10"/>
+      </Unit>
+      <Unit>
+        <Filename Value="/Applications/lazarus/lcl/include/imglist.inc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="2455"/>
+        <CursorPos X="3" Y="2466"/>
+        <UsageCount Value="10"/>
+      </Unit>
+    </Units>
+    <JumpHistory HistoryIndex="29">
+      <Position>
+        <Filename Value="frame_workspace.pas"/>
+        <Caret Line="165" Column="29" TopLine="147"/>
+      </Position>
+      <Position>
+        <Filename Value="frame_workspace.pas"/>
+        <Caret Line="166" Column="29" TopLine="148"/>
+      </Position>
+      <Position>
+        <Filename Value="frame_workspace.pas"/>
+        <Caret Line="167" Column="29" TopLine="149"/>
+      </Position>
+      <Position>
+        <Filename Value="frame_workspace.pas"/>
+        <Caret Line="168" Column="29" TopLine="150"/>
+      </Position>
+      <Position>
+        <Filename Value="frame_workspace.pas"/>
+        <Caret Line="169" Column="29" TopLine="151"/>
+      </Position>
+      <Position>
+        <Filename Value="frame_workspace.pas"/>
+        <Caret Line="170" Column="29" TopLine="152"/>
+      </Position>
+      <Position>
+        <Filename Value="frame_workspace.pas"/>
+        <Caret Line="171" Column="29" TopLine="153"/>
+      </Position>
+      <Position>
+        <Filename Value="frame_workspace.pas"/>
+        <Caret Line="172" Column="29" TopLine="154"/>
+      </Position>
+      <Position>
+        <Filename Value="frame_workspace.pas"/>
+        <Caret Line="173" Column="29" TopLine="155"/>
+      </Position>
+      <Position>
+        <Filename Value="frame_workspace.pas"/>
+        <Caret Line="174" Column="29" TopLine="156"/>
+      </Position>
+      <Position>
+        <Filename Value="frame_workspace.pas"/>
+        <Caret Line="175" Column="29" TopLine="157"/>
+      </Position>
+      <Position>
+        <Filename Value="frame_workspace.pas"/>
+        <Caret Line="176" Column="29" TopLine="158"/>
+      </Position>
+      <Position>
+        <Filename Value="frame_workspace.pas"/>
+        <Caret Line="177" Column="29" TopLine="159"/>
+      </Position>
+      <Position>
+        <Filename Value="frame_workspace.pas"/>
+        <Caret Line="178" Column="29" TopLine="160"/>
+      </Position>
+      <Position>
+        <Filename Value="frame_workspace.pas"/>
+        <Caret Line="179" Column="29" TopLine="161"/>
+      </Position>
+      <Position>
+        <Filename Value="frame_workspace.pas"/>
+        <Caret Line="180" Column="29" TopLine="162"/>
+      </Position>
+      <Position>
+        <Filename Value="frame_workspace.pas"/>
+        <Caret Line="181" Column="29" TopLine="163"/>
+      </Position>
+      <Position>
+        <Filename Value="frame_workspace.pas"/>
+        <Caret Line="182" Column="29" TopLine="164"/>
+      </Position>
+      <Position>
+        <Filename Value="frame_workspace.pas"/>
+        <Caret Line="183" Column="29" TopLine="165"/>
+      </Position>
+      <Position>
+        <Filename Value="frame_workspace.pas"/>
+        <Caret Line="184" Column="29" TopLine="166"/>
+      </Position>
+      <Position>
+        <Filename Value="frame_workspace.pas"/>
+        <Caret Line="185" Column="29" TopLine="167"/>
+      </Position>
+      <Position>
+        <Filename Value="frame_workspace.pas"/>
+        <Caret Line="186" Column="29" TopLine="168"/>
+      </Position>
+      <Position>
+        <Filename Value="frame_workspace.pas"/>
+        <Caret Line="187" Column="29" TopLine="169"/>
+      </Position>
+      <Position>
+        <Filename Value="frame_workspace.pas"/>
+        <Caret Line="188" Column="29" TopLine="170"/>
+      </Position>
+      <Position>
+        <Filename Value="frame_workspace.pas"/>
+        <Caret Line="189" Column="29" TopLine="171"/>
+      </Position>
+      <Position>
+        <Filename Value="frame_workspace.pas"/>
+        <Caret Line="190" Column="29" TopLine="172"/>
+      </Position>
+      <Position>
+        <Filename Value="frame_workspace.pas"/>
+        <Caret Line="191" Column="29" TopLine="173"/>
+      </Position>
+      <Position>
+        <Filename Value="frame_workspace.pas"/>
+        <Caret Line="192" Column="29" TopLine="174"/>
+      </Position>
+      <Position>
+        <Filename Value="frame_workspace.pas"/>
+        <Caret Line="198" Column="3" TopLine="175"/>
+      </Position>
+      <Position>
+        <Filename Value="frame_workspace.pas"/>
+        <Caret Line="199" Column="105" TopLine="175"/>
+      </Position>
+    </JumpHistory>
+    <RunParams>
+      <FormatVersion Value="2"/>
+      <Modes ActiveMode=""/>
+    </RunParams>
+  </ProjectSession>
+  <Debugging>
+    <BreakPoints>
+      <Item>
+        <Kind Value="bpkSource"/>
+        <WatchScope Value="wpsLocal"/>
+        <WatchKind Value="wpkWrite"/>
+        <Source Value="unit_base_layout_item.pas"/>
+        <Line Value="67"/>
+      </Item>
+    </BreakPoints>
+  </Debugging>
+</CONFIG>

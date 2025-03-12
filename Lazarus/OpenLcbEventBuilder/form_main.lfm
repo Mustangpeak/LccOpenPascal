@@ -1,0 +1,142 @@
+object Form1: TForm1
+  Left = 562
+  Height = 777
+  Top = 271
+  Width = 1105
+  Align = alTop
+  Caption = 'Opencb Event Builder Prototype'
+  ClientHeight = 777
+  ClientWidth = 1105
+  LCLVersion = '4.0.0.1'
+  OnCloseQuery = FormCloseQuery
+  OnCreate = FormCreate
+  OnShow = FormShow
+  object Panel_sidebar: TPanel
+    Left = 0
+    Height = 777
+    Top = 0
+    Width = 170
+    Align = alLeft
+    ClientHeight = 777
+    ClientWidth = 170
+    TabOrder = 0
+    object Panel_layout: TPanel
+      Left = 1
+      Height = 177
+      Top = 24
+      Width = 168
+      Align = alTop
+      ClientHeight = 177
+      ClientWidth = 168
+      TabOrder = 0
+      object Panel_turnouts: TPanel
+        Left = 1
+        Height = 26
+        Top = 1
+        Width = 166
+        Align = alTop
+        Caption = 'Turnouts'
+        TabOrder = 0
+        OnClick = Panel_turnoutsClick
+      end
+      object Panel_pushbuttons: TPanel
+        Left = 1
+        Height = 26
+        Top = 27
+        Width = 166
+        Align = alTop
+        Caption = 'Pushbuttons'
+        TabOrder = 1
+      end
+      object Panel3: TPanel
+        Left = 1
+        Height = 26
+        Top = 79
+        Width = 166
+        Align = alTop
+        TabOrder = 2
+        OnClick = Panel_turnoutsClick
+      end
+      object Panel_occupancy_detectors: TPanel
+        Left = 1
+        Height = 26
+        Top = 53
+        Width = 166
+        Align = alTop
+        Caption = 'Occupancy Detectors'
+        TabOrder = 3
+        OnClick = Panel_turnoutsClick
+      end
+    end
+    object Panel_network: TPanel
+      Left = 1
+      Height = 178
+      Top = 227
+      Width = 168
+      Align = alTop
+      ClientHeight = 178
+      ClientWidth = 168
+      TabOrder = 1
+      object Panel_nodes: TPanel
+        Left = 1
+        Height = 26
+        Top = 1
+        Width = 166
+        Align = alTop
+        Caption = 'Nodes'
+        TabOrder = 0
+        OnClick = Panel_turnoutsClick
+      end
+      object Panel5: TPanel
+        Left = 1
+        Height = 26
+        Top = 27
+        Width = 166
+        Align = alTop
+        TabOrder = 1
+        OnClick = Panel_turnoutsClick
+      end
+      object Panel6: TPanel
+        Left = 1
+        Height = 26
+        Top = 53
+        Width = 166
+        Align = alTop
+        TabOrder = 2
+        OnClick = Panel_turnoutsClick
+      end
+    end
+    object Panel_network_header: TPanel
+      Left = 1
+      Height = 26
+      Top = 201
+      Width = 168
+      Align = alTop
+      Caption = 'My Lcc Network'
+      Color = clMenuBar
+      ParentBackground = False
+      ParentColor = False
+      TabOrder = 2
+    end
+    object Panel_layout_header: TPanel
+      Left = 1
+      Height = 23
+      Top = 1
+      Width = 168
+      Align = alTop
+      Caption = 'My Layout'
+      Color = clMenuBar
+      ParentBackground = False
+      ParentColor = False
+      TabOrder = 3
+    end
+  end
+  object PanelFrameContainer: TPanel
+    Left = 170
+    Height = 777
+    Top = 0
+    Width = 935
+    Align = alClient
+    TabOrder = 1
+  end
+end

@@ -1,0 +1,156 @@
+object FrameLayout: TFrameLayout
+  Left = 0
+  Height = 616
+  Top = 0
+  Width = 583
+  ClientHeight = 616
+  ClientWidth = 583
+  TabOrder = 0
+  DesignLeft = 690
+  DesignTop = 121
+  object Panel_treeview: TPanel
+    Left = 0
+    Height = 616
+    Top = 0
+    Width = 582
+    Align = alLeft
+    Anchors = [akTop, akLeft, akRight, akBottom]
+    Caption = 'Panel_treeview'
+    ClientHeight = 616
+    ClientWidth = 582
+    TabOrder = 0
+    object TreeView_turnouts: TTreeView
+      Left = 144
+      Height = 614
+      Top = 1
+      Width = 437
+      Align = alClient
+      MultiSelect = True
+      TabOrder = 0
+      Options = [tvoAllowMultiselect, tvoAutoItemHeight, tvoHideSelection, tvoKeepCollapsedNodes, tvoShowButtons, tvoShowLines, tvoShowRoot, tvoToolTips, tvoThemedDraw]
+      OnEdited = TreeView_turnoutsEdited
+    end
+    object Panel_treeview_header: TPanel
+      Left = 1
+      Height = 614
+      Top = 1
+      Width = 143
+      Align = alLeft
+      ClientHeight = 614
+      ClientWidth = 143
+      TabOrder = 1
+      object BitBtn_create_layout: TBitBtn
+        Left = 1
+        Height = 49
+        Top = 1
+        Width = 141
+        Action = Action_create_layout
+        Align = alTop
+        Layout = blGlyphTop
+        Images = ImageListLayout
+        ImageIndex = 0
+        TabOrder = 0
+      end
+    end
+  end
+  object ImageListLayout: TImageList
+    Left = 109
+    Top = 500
+    Bitmap = {
+      4C7A0500000010000000100000007A0100000000000078DAED974B4A03411445
+      5B110D6A66AE40F1AF741B3F3305776006C60D3872EA06C40F31448D38138588
+      19E95AB200476EC00D84043FF7C11542A37455BDC24EA42F1CE8AAEE5BBCEA7A
+      0DB783A027B4009EC033B873F0EF825770083E39B7C7F5841AE76A5D73A5047F
+      C9C2AFADDFC7FE5BE0DEB17EF137C101E8F4E9FE5FC03E683B9E7FDCFF97FBFF
+      6F1A5078C7C035D876F08E822A5806C760DDC29B0315B008C6C1059836F48E80
+      3208597F853D61A261700656C110A88313F65712457A37B8D6206B5833A4EEC1
+      AFAD5FFBFE7C9C9F8FFEF1D1BF3EBE9F7ED3AD923725134AD2563365D296F6FC
+      B4FDA3EDDF4C99BEB5020A16E3B8F71D7CF03A691C5781F7E499C860FC5B0D91
+      C53853F64F60A24D70C35CE7F24D493E9D0757CC67369A029720CF35AACC8936
+      9AA54FEA5F624ECDF1DE8E61563E028FCCD811F3B264EF078BBC1E32E3071C97
+      157EC9FBE796F537587FD855BF896698E77F7A7F499AA457CE6FCEE1FCA47F4E
+      15FD23DA62FFE67BED9FE00BC7ACCC63
+    }
+  end
+  object ActionListLayout: TActionList
+    Images = ImageListLayout
+    Left = 40
+    Top = 248
+    object Action_create_layout: TAction
+      Caption = 'Create Layout'
+      Hint = 'Creates a new Layout'
+      ImageIndex = 0
+      OnExecute = Action_create_layoutExecute
+    end
+    object Action_create_division: TAction
+      Caption = 'Create Division'
+      ImageIndex = 0
+    end
+    object Action_create_subdivision: TAction
+      Caption = 'Create Subdivision'
+      ImageIndex = 0
+    end
+    object Action_create_town: TAction
+      Caption = 'Create Town'
+      ImageIndex = 0
+    end
+    object Action_create_junction: TAction
+      Caption = 'Create Junction'
+      ImageIndex = 0
+    end
+    object Action_create_station: TAction
+      Caption = 'Create Station'
+      ImageIndex = 0
+    end
+    object Action_create_freightyard: TAction
+      Caption = 'Create Freight Yard'
+      ImageIndex = 0
+    end
+    object Action_create_turnout: TAction
+      Caption = 'Create Turnout'
+      ImageIndex = 0
+    end
+    object Action_create_actuator: TAction
+      Caption = 'Create Actuator'
+      ImageIndex = 0
+    end
+    object Action_create_sensor: TAction
+      Caption = 'Create Sensor'
+      ImageIndex = 0
+    end
+    object Action_create_control_panel: TAction
+      Caption = 'Create Control Panel'
+      ImageIndex = 0
+    end
+    object Action_create_pushbutton: TAction
+      Caption = 'Create Pushbutton'
+      ImageIndex = 0
+    end
+  end
+  object PopupMenu_layout: TPopupMenu
+    Left = 208
+    Top = 32
+    object MenuItem_layout_create_division: TMenuItem
+      Action = Action_create_division
+    end
+  end
+  object PopupMenu_division: TPopupMenu
+    Left = 336
+    Top = 32
+    object MenuItem1: TMenuItem
+      Action = Action_create_subdivision
+    end
+  end
+  object PopupMenu_subdivision: TPopupMenu
+    Left = 208
+    Top = 88
+  end
+  object PopupMenu3: TPopupMenu
+    Left = 336
+    Top = 88
+  end
+  object PopupMenu4: TPopupMenu
+    Left = 208
+    Top = 233
+  end
+end
