@@ -39,6 +39,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
       CustomIcon = <
         item
         end>
+      TextSettings.Trimming = None
       IsSelected = True
       Size.Width = 103.000000000000000000
       Size.Height = 49.000000000000000000
@@ -82,6 +83,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
               Size.PlatformDefault = False
               TabOrder = 27
               Text = 'F0'
+              TextSettings.Trimming = None
               OnClick = ButtonFnClick
             end
             object ButtonF19: TButton
@@ -98,6 +100,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
               Size.PlatformDefault = False
               TabOrder = 24
               Text = 'F19'
+              TextSettings.Trimming = None
               OnClick = ButtonFnClick
             end
             object ButtonF18: TButton
@@ -114,6 +117,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
               Size.PlatformDefault = False
               TabOrder = 23
               Text = 'F18'
+              TextSettings.Trimming = None
               OnClick = ButtonFnClick
             end
             object ButtonF17: TButton
@@ -130,6 +134,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
               Size.PlatformDefault = False
               TabOrder = 22
               Text = 'F17'
+              TextSettings.Trimming = None
               OnClick = ButtonFnClick
             end
             object ButtonF16: TButton
@@ -146,6 +151,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
               Size.PlatformDefault = False
               TabOrder = 21
               Text = 'F16'
+              TextSettings.Trimming = None
               OnClick = ButtonFnClick
             end
             object ButtonF15: TButton
@@ -162,6 +168,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
               Size.PlatformDefault = False
               TabOrder = 20
               Text = 'F15'
+              TextSettings.Trimming = None
               OnClick = ButtonFnClick
             end
             object ButtonF14: TButton
@@ -178,6 +185,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
               Size.PlatformDefault = False
               TabOrder = 19
               Text = 'F14'
+              TextSettings.Trimming = None
               OnClick = ButtonFnClick
             end
             object ButtonF13: TButton
@@ -194,6 +202,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
               Size.PlatformDefault = False
               TabOrder = 18
               Text = 'F13'
+              TextSettings.Trimming = None
               OnClick = ButtonFnClick
             end
             object ButtonF12: TButton
@@ -210,6 +219,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
               Size.PlatformDefault = False
               TabOrder = 17
               Text = 'F12'
+              TextSettings.Trimming = None
               OnClick = ButtonFnClick
             end
             object ButtonF11: TButton
@@ -226,6 +236,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
               Size.PlatformDefault = False
               TabOrder = 16
               Text = 'F11'
+              TextSettings.Trimming = None
               OnClick = ButtonFnClick
             end
             object ButtonF10: TButton
@@ -242,6 +253,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
               Size.PlatformDefault = False
               TabOrder = 26
               Text = 'F10'
+              TextSettings.Trimming = None
               OnClick = ButtonFnClick
             end
             object ButtonF1: TButton
@@ -258,6 +270,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
               Size.PlatformDefault = False
               TabOrder = 0
               Text = 'F1'
+              TextSettings.Trimming = None
               OnClick = ButtonFnClick
             end
             object ButtonF2: TButton
@@ -274,6 +287,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
               Size.PlatformDefault = False
               TabOrder = 1
               Text = 'F2'
+              TextSettings.Trimming = None
               OnClick = ButtonFnClick
             end
             object ButtonF3: TButton
@@ -290,6 +304,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
               Size.PlatformDefault = False
               TabOrder = 2
               Text = 'F3'
+              TextSettings.Trimming = None
               OnClick = ButtonFnClick
             end
             object ButtonF4: TButton
@@ -306,6 +321,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
               Size.PlatformDefault = False
               TabOrder = 3
               Text = 'F4'
+              TextSettings.Trimming = None
               OnClick = ButtonFnClick
             end
             object ButtonF5: TButton
@@ -322,6 +338,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
               Size.PlatformDefault = False
               TabOrder = 4
               Text = 'F5'
+              TextSettings.Trimming = None
               OnClick = ButtonFnClick
             end
             object ButtonF6: TButton
@@ -338,6 +355,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
               Size.PlatformDefault = False
               TabOrder = 5
               Text = 'F6'
+              TextSettings.Trimming = None
               OnClick = ButtonFnClick
             end
             object ButtonF7: TButton
@@ -354,6 +372,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
               Size.PlatformDefault = False
               TabOrder = 6
               Text = 'F7'
+              TextSettings.Trimming = None
               OnClick = ButtonFnClick
             end
             object ButtonF8: TButton
@@ -370,6 +389,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
               Size.PlatformDefault = False
               TabOrder = 7
               Text = 'F8'
+              TextSettings.Trimming = None
               OnClick = ButtonFnClick
             end
             object ButtonF9: TButton
@@ -386,6 +406,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
               Size.PlatformDefault = False
               TabOrder = 8
               Text = 'F9'
+              TextSettings.Trimming = None
               OnClick = ButtonFnClick
             end
             object ButtonF20: TButton
@@ -402,6 +423,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
               Size.PlatformDefault = False
               TabOrder = 25
               Text = 'F20'
+              TextSettings.Trimming = None
               OnClick = ButtonFnClick
             end
             object ButtonF21: TButton
@@ -418,6 +440,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
               Size.PlatformDefault = False
               TabOrder = 9
               Text = 'F21'
+              TextSettings.Trimming = None
               OnClick = ButtonFnClick
             end
             object ButtonF22: TButton
@@ -434,6 +457,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
               Size.PlatformDefault = False
               TabOrder = 10
               Text = 'F22'
+              TextSettings.Trimming = None
               OnClick = ButtonFnClick
             end
             object ButtonF23: TButton
@@ -450,6 +474,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
               Size.PlatformDefault = False
               TabOrder = 11
               Text = 'F23'
+              TextSettings.Trimming = None
               OnClick = ButtonFnClick
             end
             object ButtonF24: TButton
@@ -466,6 +491,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
               Size.PlatformDefault = False
               TabOrder = 12
               Text = 'F24'
+              TextSettings.Trimming = None
               OnClick = ButtonFnClick
             end
             object ButtonF25: TButton
@@ -482,6 +508,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
               Size.PlatformDefault = False
               TabOrder = 13
               Text = 'F25'
+              TextSettings.Trimming = None
               OnClick = ButtonFnClick
             end
             object ButtonF26: TButton
@@ -498,6 +525,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
               Size.PlatformDefault = False
               TabOrder = 14
               Text = 'F26'
+              TextSettings.Trimming = None
               OnClick = ButtonFnClick
             end
             object ButtonF27: TButton
@@ -514,6 +542,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
               Size.PlatformDefault = False
               TabOrder = 15
               Text = 'F27'
+              TextSettings.Trimming = None
               OnClick = ButtonFnClick
             end
           end
@@ -538,6 +567,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
                 Size.Height = 50.000000000000000000
                 Size.PlatformDefault = False
                 Text = 'Rev'
+                TextSettings.Trimming = None
                 OnClick = SpeedButtonTrainsRevClick
               end
               object SpeedButtonTrainsFwd: TSpeedButton
@@ -549,6 +579,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
                 Size.Height = 50.000000000000000000
                 Size.PlatformDefault = False
                 Text = 'Fwd'
+                TextSettings.Trimming = None
                 OnClick = SpeedButtonTrainsFwdClick
               end
               object SpeedButtonTrainsStop: TSpeedButton
@@ -557,6 +588,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
                 Size.Height = 50.000000000000000000
                 Size.PlatformDefault = False
                 Text = 'Stop'
+                TextSettings.Trimming = None
                 OnClick = SpeedButtonTrainsStopClick
               end
             end
@@ -660,6 +692,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
               CustomIcon = <
                 item
                 end>
+              TextSettings.Trimming = None
               IsSelected = True
               Size.Width = 54.000000000000000000
               Size.Height = 26.000000000000000000
@@ -691,6 +724,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
               CustomIcon = <
                 item
                 end>
+              TextSettings.Trimming = None
               IsSelected = False
               Size.Width = 56.000000000000000000
               Size.Height = 26.000000000000000000
@@ -811,6 +845,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
                     Size.PlatformDefault = False
                     StyleLookup = 'arrowlefttoolbutton'
                     Text = 'SpeedButtonTrainRosterBack'
+                    TextSettings.Trimming = None
                     OnClick = SpeedButtonTrainRosterBackClick
                   end
                 end
@@ -820,6 +855,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
               CustomIcon = <
                 item
                 end>
+              TextSettings.Trimming = None
               IsSelected = False
               Size.Width = 41.000000000000000000
               Size.Height = 26.000000000000000000
@@ -849,6 +885,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
                     Size.PlatformDefault = False
                     StyleLookup = 'arrowlefttoolbutton'
                     Text = 'SpeedButtonTrainRosterBack'
+                    TextSettings.Trimming = None
                     OnClick = SpeedButtonTrainRosterBackClick
                   end
                 end
@@ -893,6 +930,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
               CustomIcon = <
                 item
                 end>
+              TextSettings.Trimming = None
               IsSelected = True
               Size.Width = 64.000000000000000000
               Size.Height = 26.000000000000000000
@@ -938,6 +976,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
               CustomIcon = <
                 item
                 end>
+              TextSettings.Trimming = None
               IsSelected = False
               Size.Width = 69.000000000000000000
               Size.Height = 26.000000000000000000
@@ -972,6 +1011,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
           Size.PlatformDefault = False
           StyleLookup = 'detailstoolbutton'
           Text = 'Roster'
+          TextSettings.Trimming = None
           Visible = False
         end
         object SpeedButtonTrainsConsist: TSpeedButton
@@ -982,6 +1022,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
           Size.PlatformDefault = False
           StyleLookup = 'detailstoolbutton'
           Text = 'Roster'
+          TextSettings.Trimming = None
         end
       end
     end
@@ -989,6 +1030,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
       CustomIcon = <
         item
         end>
+      TextSettings.Trimming = None
       IsSelected = False
       Size.Width = 103.000000000000000000
       Size.Height = 49.000000000000000000
@@ -1027,6 +1069,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
             Size.Height = 40.000000000000000000
             Size.PlatformDefault = False
             Text = 'Clear'
+            TextSettings.Trimming = None
             OnClick = SpeedButtonLogClearClick
           end
           object SpeedButtonLogEnable: TSpeedButton
@@ -1036,6 +1079,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
             Size.Height = 40.000000000000000000
             Size.PlatformDefault = False
             Text = 'Enable'
+            TextSettings.Trimming = None
           end
         end
       end
@@ -1044,6 +1088,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
       CustomIcon = <
         item
         end>
+      TextSettings.Trimming = None
       IsSelected = False
       Size.Width = 103.000000000000000000
       Size.Height = 49.000000000000000000
@@ -1073,6 +1118,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
       CustomIcon = <
         item
         end>
+      TextSettings.Trimming = None
       IsSelected = False
       Size.Width = 105.000000000000000000
       Size.Height = 49.000000000000000000
@@ -1112,6 +1158,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
           Size.PlatformDefault = False
           TabOrder = 6
           Text = 'Reset Connection'
+          TextSettings.Trimming = None
           OnClick = ButtonSettingsResetConnectionClick
           object Layout3D1: TLayout3D
             Height = 4.000000000000000000
@@ -1176,7 +1223,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
           Touch.InteractiveGestures = [LongTap, DoubleTap]
           Anchors = [akLeft, akTop, akRight]
           TabOrder = 2
-          Text = '10.0.3.132'
+          Text = '192.168.0.99'
           Position.X = 208.000000000000000000
           Position.Y = 8.000000000000000000
           Size.Width = 200.000000000000000000
@@ -1224,6 +1271,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
           Size.PlatformDefault = False
           TabOrder = 16
           Text = 'Delete Settings File'
+          TextSettings.Trimming = None
           OnClick = ButtonSettingsDeleteSettingsFileClick
         end
         object ButtonSettingsDeleteAppFolder: TButton
@@ -1235,6 +1283,7 @@ object LccThrottleAppForm: TLccThrottleAppForm
           Size.PlatformDefault = False
           TabOrder = 15
           Text = 'Delete Application Files Folder'
+          TextSettings.Trimming = None
           OnClick = ButtonSettingsDeleteAppFolderClick
         end
         object LabelSettingsSystemDocumentsPathHeader: TLabel

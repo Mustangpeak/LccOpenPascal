@@ -1157,8 +1157,6 @@ end;
 { TLccTaskControllerQuery }
 
 procedure TLccTaskControllerQuery.Start(ATimeout: Integer);
-var
-  Alias: Word;
 begin
   inherited Start(ATimeout);
 

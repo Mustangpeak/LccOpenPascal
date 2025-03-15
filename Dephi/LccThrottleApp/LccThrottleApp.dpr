@@ -3,13 +3,13 @@ program LccThrottleApp;
 uses
   System.StartUpCopy,
   FMX.Forms,
-  Skia.FMX,
+//  Skia.FMX,
   FormLccThrottleApp in 'FormLccThrottleApp.pas' {LccThrottleAppForm};
 
 {$R *.res}
 
 begin
-  GlobalUseSkia := True;
+ // GlobalUseSkia := True;
   Application.Initialize;
   Application.CreateForm(TLccThrottleAppForm, LccThrottleAppForm);
   Application.Run;

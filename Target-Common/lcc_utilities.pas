@@ -6,6 +6,7 @@ unit lcc_utilities;
 {$mode objfpc}{$H+}
 {$ENDIF}
 
+
 interface
 
 uses
@@ -15,10 +16,8 @@ uses
   lcc_defines;
 
 function FormatStrToInt(AStr: string): string;
-function EqualNodeID(NodeID1: TNodeID; NodeID2: TNodeID;
-  IncludeNullNode: boolean): boolean;
-function EqualNode(NodeID1: TNodeID; Node1AliasID: word; NodeID2: TNodeID;
-  Node2AliasID: word; NodeID_OR_Alias: boolean): boolean;
+function EqualNodeID(NodeID1: TNodeID; NodeID2: TNodeID; IncludeNullNode: boolean): boolean;
+function EqualNode(NodeID1: TNodeID; Node1AliasID: word; NodeID2: TNodeID; Node2AliasID: word; NodeID_OR_Alias: boolean): boolean;
 function EqualEventID(EventID1, EventID2: TEventID): boolean;
 procedure NodeIDToEventID(NodeID: TNodeID; LowBytes: word; var EventID: TEventID);
 function NullNodeID(ANodeID: TNodeID): boolean;
@@ -92,25 +91,31 @@ begin
     begin
       if not TryStrToInt(AddressStr, DccAddress) then
         Result := False;
-    end
-    else
+    end else
     begin
+      {$IFDEF LCC_MOBILE}
+      for i := 0 to Length(AddressStr) - 1 do
+      {$ELSE}
       for i := 1 to Length(AddressStr) do
+      {$ENDIF}
       begin
+        {$IFDEF LCC_MOBILE}
+        if i < Length(AddressStr) - 1 then
+        {$ELSE}
         if i < Length(AddressStr) then
+        {$ENDIF}
         begin
           if (AddressStr[i] < '0') or (AddressStr[i] > '9') then
             Result := False;
-        end
-        else
+        end else
         begin
+          // Look at the last character for a number or S/L s/l for short/long address
           if (AddressStr[i] >= '0') and (AddressStr[i] <= '9') then
           begin // all numbers
             if not TryStrToInt(AddressStr, DccAddress) then
               // This should always succeed
               Result := False;
-          end
-          else
+          end else
           begin
             if (AddressStr[i] = 'L') or (AddressStr[i] = 'l') or
               (AddressStr[i] = 'S') or (AddressStr[i] = 's') then
@@ -120,13 +125,13 @@ begin
               if not TryStrToInt(AddressStr, DccAddress) then
                 // This should always succeed
                 Result := False;
-            end
-            else
+            end else
               Result := False;
           end;
         end;
       end;
-      Result := (DccAddress > 0) and (DccAddress <= MAX_DCC_ADDRESS);
+      if Result then
+        Result := (DccAddress > 0) and (DccAddress <= MAX_DCC_ADDRESS);
     end;
   end;
 end;
@@ -1072,10 +1077,16 @@ end;
 function UnknownStrToInt(Str: string): Integer;
 begin
    Str := Trim( StringReplace(Str, '0x', '$', [rfReplaceAll, rfIgnoreCase]));
+
+   {$IFDEF LCC_DELPHI}
+     Result := StrToInt(Str)
+   {$ELSE}
    if Str[1] = '$' then
      Result := Hex2Dec(Str)
    else
      Result := StrToInt(Str);
+   {$ENDIF}
+
 end;
 
 function ErrorCodeToStr(Code: Word): string;
@@ -1205,7 +1216,11 @@ begin
       if Length(Num) = 2 then
       begin
         SetLength(ADataArray, Length(ADataArray) + 1);  // Slow but easy
+        {$IFDEF LCC_DELPHI}
+        ADataArray[iArray] := StrToInt('$' + Num);
+        {$ELSE}
         ADataArray[iArray] := Hex2Dec(Num);
+        {$ENDIF}
         Inc(iArray);
         Num := '';
       end;

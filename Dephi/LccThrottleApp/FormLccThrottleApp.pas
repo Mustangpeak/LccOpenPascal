@@ -36,7 +36,8 @@ const
   FILENAME_SETTINGS = 'settings.xml';
   FILENAME_MEMORY_CONFIG = 'memconfig.xml';
   FOLDERNAME_APP = 'LccThrottleApp';
-  DEFAULT_IP_ADDRESS = '192.168.0.35';
+  DEFAULT_IP_ADDRESS = '192.168.0.99';
+//  DEFAULT_IP_ADDRESS = '127.0.0.1';
   DEFAULT_PORT = 12021;
   DEFAULT_NODE_ID = '02.02.04.05.0A.0B';
 
@@ -1142,7 +1143,7 @@ begin
   if TabControlTrainRoster.ActiveTab = TabItemTrainRosterSelect then
   begin
     TrainTabDetailsLoad('');
-    Controller.AbortCDI;
+  //  Controller.AbortCDI;
   end;
   lbStatus.Text := '';
 end;

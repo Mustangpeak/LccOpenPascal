@@ -1539,7 +1539,8 @@ begin
   {$IFDEF LCC_FPC}
   FreeAndNil(FQueue);
   {$ELSE}
-    Queue.DisposeOf;
+    Queue.Free;
+    Queue := nil;
   {$ENDIF}
   inherited Destroy;
 end;
@@ -1713,7 +1714,7 @@ function TLccNode.RequestConfigMemWriteEventID(ATarget: TNodeID;
   MemAddressStart, MemAddressEnd: DWord; AnEventID: TEventID;
   ACallback: TOnTaskCallback; ATag: Integer; ATagObject: TObject): Boolean;
 begin
-  InternalRequestConfigMemWriteEventID(ATarget, MemAddressStart, MemAddressEnd, AnEventID, ACallback, ATag, ATagObject, False);
+  Result := InternalRequestConfigMemWriteEventID(ATarget, MemAddressStart, MemAddressEnd, AnEventID, ACallback, ATag, ATagObject, False);
 end;
 
 function TLccNode.RequestQueueConfigMemWriteString(ATarget: TNodeID; MemAddressStart, MemAddressEnd: DWord; AString: String; ACallback: TOnTaskCallback; ATag: Integer; ATagObject: TObject): Boolean;
